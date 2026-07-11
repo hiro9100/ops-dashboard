@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>スクール決済システム比較スライド — のびしろ＋</title>
+<style>
+:root {
+  --primary:      #38B2F0;
+  --primary-dark: #1A8ED6;
+  --primary-light:#EBF8FF;
+  --bg:           #F4F8FB;
+  --surface:      #FFFFFF;
+  --text:         #1A202C;
+  --text-2:       #4A5568;
+  --text-3:       #718096;
+  --border:       #E2EEF5;
+  --success:      #2F855A;
+  --success-bg:   #F0FFF4;
+  --warn:         #B7791F;
+  --bar-own:      #1A8ED6;
+  --bar-other:    #64748B;
+  --bar-other-fix:#C3CCD9;
+  --row-own:      #EBF8FF;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: #E7EDF2; }
+body {
+  font-family: 'Noto Sans JP', 'Hiragino Kaku Gothic ProN', 'Yu Gothic', -apple-system, sans-serif;
+  color: var(--text);
+  line-height: 1.5;
+}
+.slide {
+  width: 1280px; height: 720px;
+  background: var(--bg);
+  overflow: hidden;
+  position: relative;
+  padding: 30px 40px 26px;
+  page-break-after: always;
+  break-after: page;
+}
+@media print {
+  html, body { background: none; }
+  .slide { margin: 0; }
+}
+@media screen {
+  .slide { margin: 24px auto; box-shadow: 0 8px 30px rgba(0,0,0,0.15); }
+}
+
+/* header */
+.eyebrow { font-size: 11px; font-weight: 800; letter-spacing: 0.14em; color: var(--primary-dark); }
+h1 { font-size: 25px; font-weight: 900; letter-spacing: -0.01em; margin: 2px 0 2px; }
+.headrow { display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; margin-bottom: 14px; }
+.meta { font-size: 10.5px; color: var(--text-3); }
+.chips { display: flex; gap: 8px; }
+.chip {
+  background: var(--primary-light); color: var(--primary-dark); border: 1px solid var(--border);
+  border-radius: 999px; padding: 3px 13px; font-size: 11.5px; font-weight: 800; white-space: nowrap;
+}
+.pageno { position: absolute; bottom: 12px; right: 40px; font-size: 10px; color: var(--text-3); }
+
+/* table */
+.tablecard { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+table { border-collapse: collapse; width: 100%; font-size: 10.5px; }
+th, td { padding: 5px 9px; text-align: left; vertical-align: middle; border-bottom: 1px solid var(--border); }
+thead th { font-size: 9.5px; font-weight: 800; letter-spacing: 0.05em; color: var(--text-3); background: var(--bg); white-space: nowrap; }
+tbody tr:last-child td { border-bottom: none; }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.svc { font-weight: 800; white-space: nowrap; }
+.svc .cat { display: block; font-size: 8.5px; font-weight: 700; color: var(--text-3); }
+tr.own td { background: var(--row-own); }
+tr.own .svc { color: var(--primary-dark); }
+tr.own td:first-child { box-shadow: inset 3px 0 0 var(--primary); }
+.fee-good { color: var(--success); font-weight: 800; }
+.fee-hi { color: var(--warn); font-weight: 700; }
+.na { color: var(--text-3); }
+.note-s { font-size: 8.5px; color: var(--text-3); display: block; white-space: nowrap; }
+.feat { letter-spacing: 0.14em; font-size: 9.5px; white-space: nowrap; }
+.legend-feat { font-size: 9px; color: var(--text-3); margin-top: 7px; }
+
+/* slide2 layout */
+.grid2 { display: grid; grid-template-columns: 1.08fr 1fr; gap: 18px; }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; }
+h2 { font-size: 14px; font-weight: 900; margin-bottom: 2px; }
+.h2sub { font-size: 9.5px; color: var(--text-2); margin-bottom: 10px; }
+
+/* chart */
+.chart-legend { display: flex; gap: 14px; font-size: 9px; color: var(--text-2); margin-bottom: 10px; }
+.chart-legend span { display: inline-flex; align-items: center; gap: 5px; }
+.sw { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+.bars { display: grid; gap: 9px; }
+.brow { display: grid; grid-template-columns: 158px 1fr 92px; gap: 8px; align-items: center; }
+.brow .bl { font-size: 10px; font-weight: 700; text-align: right; line-height: 1.25; }
+.brow .bl small { display: block; font-weight: 500; color: var(--text-3); font-size: 8.5px; }
+.brow.own .bl { color: var(--primary-dark); }
+.btrack { position: relative; height: 16px; }
+.bseg { position: absolute; top: 0; height: 16px; border-radius: 0 3px 3px 0; }
+.bseg.fee { left: 0; border-radius: 3px 0 0 3px; }
+.bseg.fee.only { border-radius: 3px; }
+.brow .bv { font-size: 10px; font-weight: 800; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.brow .bv small { display: block; font-weight: 700; font-size: 8.5px; color: var(--success); }
+.chart-note { font-size: 8.5px; color: var(--text-3); margin-top: 10px; }
+
+/* sim table */
+.sim { font-size: 10px; }
+.sim th, .sim td { padding: 5px 8px; }
+.sim td.gain { color: var(--success); font-weight: 800; }
+.sim-callout {
+  margin-top: 10px; background: var(--success-bg); border: 1px solid var(--border);
+  border-radius: 8px; padding: 9px 12px; font-size: 10px; color: var(--text-2); line-height: 1.55;
+}
+.sim-callout strong { color: var(--success); }
+
+/* points + footer */
+.points { font-size: 9.5px; color: var(--text-2); margin-top: 14px; padding-left: 16px; }
+.points li { margin-bottom: 3px; }
+.points strong { color: var(--text); }
+.footnote { font-size: 8px; color: var(--text-3); margin-top: 12px; line-height: 1.6; }
+</style>
+</head>
+<body>
+
+<!-- ===== SLIDE 1: 比較表 ===== -->
+<div class="slide">
+  <div class="headrow">
+    <div>
+      <div class="eyebrow">のびしろ＋ — 運営レポート</div>
+      <h1>スクール管理・月謝決済システム 徹底比較</h1>
+      <div class="meta">スポーツスクール・習い事教室向け 主要13サービス ｜ 2026年7月時点の公開情報 ※非公開料金は「要問合せ」</div>
+    </div>
+    <div class="chips">
+      <span class="chip">カード 2.59%（PAY.JP）</span>
+      <span class="chip">口座振替 1.95%</span>
+      <span class="chip">件数課金・月額固定費なし</span>
+    </div>
+  </div>
+
+  <div class="tablecard">
+    <table>
+      <thead>
+        <tr>
+          <th>サービス</th>
+          <th class="num">初期費用</th>
+          <th class="num">月額費用</th>
+          <th class="num">カード手数料</th>
+          <th class="num">口座振替</th>
+          <th>予約/出欠/連絡/自動請求</th>
+          <th>特記事項</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="own">
+          <td><span class="svc">のびしろ＋<span class="cat">自社運用（PAY.JP直契約）</span></span></td>
+          <td class="num">—</td>
+          <td class="num">0円<span class="note-s">※PAY.JPプロプラン月額1万円</span></td>
+          <td class="num fee-good">2.59%</td>
+          <td class="num fee-good">1.95%</td>
+          <td class="feat">● ● ● ●</td>
+          <td>件数課金なし・料率のみ。予約〜請求まで一元管理</td>
+        </tr>
+        <tr>
+          <td><span class="svc">会費ペイ<span class="cat">決済特化</span></span></td>
+          <td class="num">0円</td>
+          <td class="num">0円</td>
+          <td class="num fee-hi">3.5% + 100円/件</td>
+          <td class="num fee-hi">3.5% + 100円/件</td>
+          <td class="feat">△ — — ●</td>
+          <td>口座登録500円/件・振込手数料300円/回が別途</td>
+        </tr>
+        <tr>
+          <td><span class="svc">月謝ペイ<span class="cat">決済特化（ROBOT PAYMENT）</span></span></td>
+          <td class="num">要問合せ</td>
+          <td class="num">要問合せ</td>
+          <td class="num">2.65%〜</td>
+          <td class="num">対応（要問合せ）</td>
+          <td class="feat">— — — ●</td>
+          <td>生徒管理DB付き。コンビニ・銀行振込にも対応</td>
+        </tr>
+        <tr>
+          <td><span class="svc">enpay byGMO<span class="cat">決済特化（教育・保育）</span></span></td>
+          <td class="num">0円</td>
+          <td class="num">定額（要問合せ）</td>
+          <td class="num">非公開</td>
+          <td class="num">対応（非公開）</td>
+          <td class="feat">— — △ ●</td>
+          <td>カード/コンビニ/PayPay等対応。ウォレットで−0.5%</td>
+        </tr>
+        <tr>
+          <td><span class="svc">Square<span class="cat">汎用予約・決済</span></span></td>
+          <td class="num">0円</td>
+          <td class="num">0円〜</td>
+          <td class="num fee-hi">継続課金 3.75%<span class="note-s">事前決済3.6% / 対面2.5%</span></td>
+          <td class="num na">×</td>
+          <td class="feat">● — — ●</td>
+          <td>振込手数料0円・最短翌営業日入金</td>
+        </tr>
+        <tr>
+          <td><span class="svc">STORES 予約<span class="cat">汎用予約</span></span></td>
+          <td class="num">0円</td>
+          <td class="num">0〜28,600円<span class="note-s">スモール9,790円（税込）</span></td>
+          <td class="num fee-hi">4.9% + 99円</td>
+          <td class="num na">×</td>
+          <td class="feat">● ● △ ●</td>
+          <td>月謝（サブスク）機能あり。料率は全プラン共通で高め</td>
+        </tr>
+        <tr>
+          <td><span class="svc">hacomono<span class="cat">スクール管理SaaS</span></span></td>
+          <td class="num">165,000円〜</td>
+          <td class="num">38,500円/店舗〜<span class="note-s">スクールプラン: 生徒108円/月（最低11,000円）</span></td>
+          <td class="num">非公開（個別見積）<span class="note-s">カード決済機能 +5,500円/月</span></td>
+          <td class="num">対応（非公開）</td>
+          <td class="feat">● ● ● ●</td>
+          <td>フィットネス・スイミングで実績多数。オプション課金に注意</td>
+        </tr>
+        <tr>
+          <td><span class="svc">Sgrum<span class="cat">スポーツスクール特化</span></span></td>
+          <td class="num">0円</td>
+          <td class="num">100円/世帯<span class="note-s">最低3,600円/月（税別）</span></td>
+          <td class="num">別途（非公開）</td>
+          <td class="num">対応（非公開）</td>
+          <td class="feat">● ● ● ●</td>
+          <td>連絡網・出欠・月謝徴収を一律料金で提供</td>
+        </tr>
+        <tr>
+          <td><span class="svc">Comiru<span class="cat">塾・スクール管理SaaS</span></span></td>
+          <td class="num">要問合せ</td>
+          <td class="num">要問合せ<span class="note-s">従量制・500円/教室〜の情報あり</span></td>
+          <td class="num">1.7%〜</td>
+          <td class="num">58〜68円/件</td>
+          <td class="feat">△ ● ● ●</td>
+          <td>導入4,000教室超。システム利用料が別途（非公開）</td>
+        </tr>
+        <tr>
+          <td><span class="svc">スクパス<span class="cat">塾・スクール管理（決済: ゼウス）</span></span></td>
+          <td class="num">0円〜<span class="note-s">口振単体は初期3万円等の条件あり</span></td>
+          <td class="num">生徒190円/月〜<span class="note-s">全機能でも最大290円/生徒</span></td>
+          <td class="num">1.9%<span class="note-s">対面学習塾の授業料決済限定</span></td>
+          <td class="num">75〜130円/件水準</td>
+          <td class="feat">△ ● ● ●</td>
+          <td>入退室管理・座席（コマ組み）。生徒数比例の月額が別途</td>
+        </tr>
+        <tr>
+          <td><span class="svc">コドモン<span class="cat">保育・教育ICT</span></span></td>
+          <td class="num">0円〜</td>
+          <td class="num">5,500円〜（税込）</td>
+          <td class="num na">—</td>
+          <td class="num">96円/件（税込）</td>
+          <td class="feat">— ● ● ●</td>
+          <td>保育園・こども園・学童向け</td>
+        </tr>
+        <tr>
+          <td><span class="svc">れんらくアプリ<span class="cat">バスキャッチ / VISH</span></span></td>
+          <td class="num">要問合せ</td>
+          <td class="num">要問合せ</td>
+          <td class="num">—</td>
+          <td class="num">オプション</td>
+          <td class="feat">● ● ● △</td>
+          <td>スイミング・体操実績多。欠席振替・バス運行連携が強み</td>
+        </tr>
+        <tr>
+          <td><span class="svc">スマレジ + PAYGATE<span class="cat">POSレジ型</span></span></td>
+          <td class="num">端末費別途</td>
+          <td class="num">プラン制</td>
+          <td class="num">交渉制<span class="note-s">対面1.98〜3.24%水準</span></td>
+          <td class="num na">×</td>
+          <td class="feat">— — — —</td>
+          <td>対面都度決済が中心。月謝の自動集金には非対応</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="legend-feat">機能凡例: ● 標準対応 / △ 一部・オプション対応 / — 非対応（予約=予約・振替管理、出欠=出欠管理、連絡=保護者連絡、自動請求=月謝自動請求）</div>
+  <div class="pageno">のびしろ＋ ｜ 1 / 2</div>
+</div>
+
+<!-- ===== SLIDE 2: 補足 ===== -->
+<div class="slide">
+  <div class="headrow">
+    <div>
+      <div class="eyebrow">のびしろ＋ — 運営レポート</div>
+      <h1>補足: 実質コスト比較と伸び代シミュレーション</h1>
+      <div class="meta">前提: 月謝8,000円 ｜ のびしろ＋はカード2.59%（口座振替の行のみ1.95%）で計算</div>
+    </div>
+    <div class="chips">
+      <span class="chip">生徒300名で 年間 約33〜114万円の差</span>
+    </div>
+  </div>
+
+  <div class="grid2">
+    <div class="card">
+      <h2>月間コスト比較（生徒100名 × 月謝8,000円 = 月商80万円）</h2>
+      <div class="h2sub">決済手数料＋システム固定費の実質月間コスト。手数料非公開のサービス（hacomono・Sgrum・enpay等）は比較対象外。</div>
+      <div class="chart-legend">
+        <span><span class="sw" style="background:var(--bar-own)"></span>のびしろ＋ 決済手数料</span>
+        <span><span class="sw" style="background:var(--bar-other)"></span>他社 決済手数料</span>
+        <span><span class="sw" style="background:var(--bar-other-fix)"></span>システム固定費</span>
+      </div>
+      <div class="bars">
+        <div class="brow own">
+          <div class="bl">のびしろ＋<small>口座振替 1.95%</small></div>
+          <div class="btrack"><div class="bseg fee only" style="width:26.0%;background:var(--bar-own)"></div></div>
+          <div class="bv">15,600円</div>
+        </div>
+        <div class="brow own">
+          <div class="bl">のびしろ＋<small>カード 2.59%</small></div>
+          <div class="btrack"><div class="bseg fee only" style="width:34.5%;background:var(--bar-own)"></div></div>
+          <div class="bv">20,720円</div>
+        </div>
+        <div class="brow">
+          <div class="bl">月謝ペイ<small>カード2.65% ＋ 月額要問合せ</small></div>
+          <div class="btrack"><div class="bseg fee only" style="width:35.3%;background:var(--bar-other)"></div></div>
+          <div class="bv">21,200円+α<small>+480円/月〜</small></div>
+        </div>
+        <div class="brow">
+          <div class="bl">Square<small>継続課金 3.75%</small></div>
+          <div class="btrack"><div class="bseg fee only" style="width:50.0%;background:var(--bar-other)"></div></div>
+          <div class="bv">30,000円<small>+9,280円/月</small></div>
+        </div>
+        <div class="brow">
+          <div class="bl">スクパス<small>カード1.9% ＋ 生徒190円/月</small></div>
+          <div class="btrack">
+            <div class="bseg fee" style="width:25.3%;background:var(--bar-other)"></div>
+            <div class="bseg" style="left:calc(25.3% + 2px);width:31.7%;background:var(--bar-other-fix)"></div>
+          </div>
+          <div class="bv">34,200円<small>+13,480円/月</small></div>
+        </div>
+        <div class="brow">
+          <div class="bl">会費ペイ<small>3.5% + 100円/件</small></div>
+          <div class="btrack"><div class="bseg fee only" style="width:63.3%;background:var(--bar-other)"></div></div>
+          <div class="bv">38,000円<small>+17,280円/月</small></div>
+        </div>
+        <div class="brow">
+          <div class="bl">STORES 予約<small>4.9% + 99円 ＋ スモール月額</small></div>
+          <div class="btrack">
+            <div class="bseg fee" style="width:81.8%;background:var(--bar-other)"></div>
+            <div class="bseg" style="left:calc(81.8% + 2px);width:16.3%;background:var(--bar-other-fix)"></div>
+          </div>
+          <div class="bv">58,890円<small>+38,170円/月</small></div>
+        </div>
+      </div>
+      <div class="chart-note">緑の数値はのびしろ＋（カード2.59%＝20,720円）との月間差額。会費ペイは別途、初回口座登録500円/件（100名で5万円）と売上振込ごとに300円が発生。</div>
+    </div>
+
+    <div>
+      <div class="card">
+        <h2>伸び代シミュレーション — 生徒数が増えるほど差が開く</h2>
+        <div class="h2sub">料率固定のため生徒数が伸びても単価は不変。他社比の年間削減額＝そのまま販促・コーチ増員に回せる伸び代。</div>
+        <table class="sim">
+          <thead>
+            <tr>
+              <th>比較相手（条件）</th>
+              <th class="num">50名</th>
+              <th class="num">100名</th>
+              <th class="num">200名</th>
+              <th class="num">300名</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>vs Square（継続課金3.75%）</td>
+              <td class="num gain">+5.5万</td><td class="num gain">+11.1万</td><td class="num gain">+22.2万</td><td class="num gain">+33.4万</td>
+            </tr>
+            <tr>
+              <td>vs スクパス（1.9%＋生徒190円/月）</td>
+              <td class="num gain">+8.1万</td><td class="num gain">+16.2万</td><td class="num gain">+32.4万</td><td class="num gain">+48.5万</td>
+            </tr>
+            <tr>
+              <td>vs 会費ペイ（3.5%+100円/件）</td>
+              <td class="num gain">+10.3万</td><td class="num gain">+20.7万</td><td class="num gain">+41.4万</td><td class="num gain">+62.2万</td>
+            </tr>
+            <tr>
+              <td>vs STORES 予約（4.9%+99円+月額）</td>
+              <td class="num gain">+28.7万</td><td class="num gain">+45.8万</td><td class="num gain">+79.8万</td><td class="num gain">+113.9万</td>
+            </tr>
+            <tr>
+              <td>口振1.95% vs 会費ペイ口振</td>
+              <td class="num gain">+13.4万</td><td class="num gain">+26.8万</td><td class="num gain">+53.7万</td><td class="num gain">+80.6万</td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="sim-callout">
+          生徒300名規模なら決済コストだけで<strong>年間 約33〜114万円</strong>の差。SaaS型は生徒数に比例して固定費・件数課金が積み上がるのに対し、のびしろ＋は料率のみ＝<strong>スケールメリットがすべて手元に残る</strong>設計。
+        </div>
+      </div>
+      <ul class="points">
+        <li><strong>決済特化型（会費ペイ・月謝ペイ・enpay）</strong>: 初期・月額0円でも実態は3%台後半の料率＋件数課金＋口座登録料・振込手数料の従量構造。</li>
+        <li><strong>スクール管理SaaS（hacomono・Comiru・Sgrum）</strong>: 機能は充実だが料金・手数料が個別見積で不透明。hacomonoは初期16.5万円＋月3.85万円/店舗が起点。</li>
+        <li><strong>汎用型（Square・STORES）</strong>: 導入は最速だが月謝向け料率が最も高い帯。口座振替に非対応でカード離脱時の受け皿がない。</li>
+        <li><strong>スクパス</strong>: カード1.9%は最安級だが「対面学習塾の授業料」限定の条件付き＋生徒数×190〜290円/月の課金が別途。100名なら固定費だけで月1.9万〜2.9万円。</li>
+        <li><strong>定額型口振（Comiru 58〜68円・コドモン96円/件）</strong>: 1件単価は最安だがシステム月額が別途の問合せ制で、塾・保育向け。</li>
+      </ul>
+      <div class="footnote">
+        2026年7月時点の各社公式サイト・公式ヘルプおよび比較メディアの公開情報にもとづく（税込/税別はサービスごとに異なる。導入時は最新の公式見積を確認のこと）。PAY.JPの2.59%はプロプラン（月額10,000円）のVisa/Mastercard料率で、シミュレーション差額に月額は含めていない。<br>
+        出典: hacomono料金 / Comiru料金・口座振替 / コドモン料金・口座振替代行 / Sgrum公式 / STORES予約料金 / Square予約FAQ / 会費ペイ公式ヘルプ / enpay公式 / 月謝ペイ(ROBOT PAYMENT) / スクパス公式・ゼウス / れんらくアプリ / PAY.JP料金 / アスピック・OREND比較記事
+      </div>
+    </div>
+  </div>
+  <div class="pageno">のびしろ＋ ｜ 2 / 2</div>
+</div>
+
+</body>
+</html>
