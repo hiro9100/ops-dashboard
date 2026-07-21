@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>Nobishiro+ 料金表</title>
+<style>
+  :root {
+    --navy:       #1D3461;
+    --navy-2:     #2E4A80;
+    --text:       #1A202C;
+    --text-2:     #4A5568;
+    --text-3:     #718096;
+    --border:     #E4EAF2;
+    --bg-card:    #F7F9FC;
+    --accent:     #38B2F0;
+    --accent-bg:  #EBF6FD;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  @page { size: A4 portrait; margin: 0; }
+  html, body { width: 210mm; height: 297mm; }
+  body {
+    font-family: 'Noto Sans CJK JP', 'Noto Sans JP', 'Hiragino Kaku Gothic ProN', sans-serif;
+    background: #fff;
+    color: var(--text);
+    line-height: 1.55;
+    padding: 14mm 14mm 12mm;
+    display: flex;
+    flex-direction: column;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* ---- Header ---- */
+  .topline {
+    display: flex; align-items: baseline; justify-content: space-between;
+    margin-bottom: 11mm;
+  }
+  .brand {
+    font-size: 24px; font-weight: 900; color: var(--navy);
+    letter-spacing: -0.5px;
+  }
+  .brand .plus { color: var(--accent); }
+  .toplabel {
+    font-size: 10px; font-weight: 700; color: var(--text-3);
+    letter-spacing: 2.5px;
+  }
+  h1 {
+    font-size: 36px; font-weight: 900; color: var(--navy);
+    letter-spacing: 0.5px; margin-bottom: 4mm; line-height: 1.3;
+  }
+  .lead { font-size: 13.5px; color: var(--text-2); margin-bottom: 12mm; }
+
+  /* ---- Plan cards ---- */
+  .plans {
+    display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5mm;
+    margin-bottom: 9mm;
+    flex: 1;
+  }
+  .plan {
+    border: 1px solid var(--border); border-radius: 14px;
+    background: var(--bg-card);
+    padding: 10mm 7mm 9mm;
+    display: flex; flex-direction: column;
+    position: relative;
+  }
+  .plan.featured {
+    background: #fff; border: 2px solid var(--navy);
+    box-shadow: 0 4px 16px rgba(29,52,97,0.10);
+  }
+  .plan-badge {
+    position: absolute; top: -4mm; left: 50%; transform: translateX(-50%);
+    background: var(--navy); color: #fff;
+    font-size: 10px; font-weight: 800; letter-spacing: 1px;
+    padding: 1.2mm 5mm; border-radius: 999px; white-space: nowrap;
+  }
+  .plan-name { font-size: 16px; font-weight: 800; color: var(--navy); margin-bottom: 5mm; min-height: 50px; }
+  .plan-price { margin-bottom: 1.5mm; }
+  .plan-price .num { font-size: 38px; font-weight: 900; color: var(--text); letter-spacing: -1px; }
+  .plan-price .unit { font-size: 12px; font-weight: 700; color: var(--text-2); }
+  .plan-price .per  { font-size: 12px; font-weight: 700; color: var(--text-3); }
+  .plan-price .quote { font-size: 26px; font-weight: 900; color: var(--text); line-height: 38px; display: inline-block; }
+  .plan-sub { font-size: 11.5px; color: var(--text-3); margin-bottom: 6mm; }
+  .plan-feats { list-style: none; margin-top: 2mm; }
+  .plan-feats li {
+    font-size: 12.5px; color: var(--text-2);
+    padding: 2.4mm 0; border-top: 1px solid var(--border);
+    display: flex; gap: 2mm; align-items: flex-start;
+  }
+  .plan-feats li::before { content: '✓'; color: var(--accent); font-weight: 900; flex-shrink: 0; }
+
+  /* ---- Options ---- */
+  .sec-title {
+    font-size: 15px; font-weight: 800; color: var(--navy);
+    margin-bottom: 5mm;
+    display: flex; align-items: center; gap: 3mm;
+  }
+  .sec-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+  .options { display: grid; grid-template-columns: 1fr 1fr; gap: 5mm; margin-bottom: 10mm; }
+  .opt {
+    border: 1px solid var(--border); border-radius: 14px;
+    background: #fff; padding: 7mm 7mm;
+    display: flex; gap: 4mm; align-items: flex-start;
+  }
+  .opt-icon {
+    width: 9mm; height: 9mm; border-radius: 9px; flex-shrink: 0;
+    background: var(--accent-bg);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 15px;
+  }
+  .opt-name { font-size: 13.5px; font-weight: 800; color: var(--text); }
+  .opt-desc { font-size: 11.5px; color: var(--text-3); margin-top: 0.5mm; }
+
+  /* ---- Footer pills ---- */
+  .pills { display: grid; grid-template-columns: 1fr 1fr; gap: 4mm; margin-top: 2mm; }
+  .pill {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: 10px; padding: 5mm;
+    text-align: center; font-size: 13px; font-weight: 800; color: var(--navy);
+  }
+  .foot {
+    margin-top: auto; display: flex; justify-content: space-between;
+    font-size: 9.5px; color: var(--text-3);
+  }
+</style>
+</head>
+<body>
+
+  <div class="topline">
+    <div class="brand">Nobishiro<span class="plus">+</span></div>
+    <div class="toplabel">PRICING</div>
+  </div>
+
+  <h1>シンプルで、はじめやすい料金。</h1>
+  <p class="lead">クラブの規模に合わせて選べる3つのプラン。すべて生徒数に応じた月額制です。</p>
+
+  <div class="plans">
+    <div class="plan">
+      <div class="plan-name">ライトプラン</div>
+      <div class="plan-price"><span class="num">¥200</span><span class="per">/月</span></div>
+      <div class="plan-sub">生徒1人あたり</div>
+      <ul class="plan-feats">
+        <li>最低利用料金なし</li>
+        <li>小規模クラブでも安心のスタート</li>
+      </ul>
+    </div>
+
+    <div class="plan featured">
+      <div class="plan-badge">おすすめ</div>
+      <div class="plan-name">スタンダードプラン</div>
+      <div class="plan-price"><span class="num">¥100</span><span class="per">/月</span></div>
+      <div class="plan-sub">生徒1人あたり</div>
+      <ul class="plan-feats">
+        <li>最低利用料金 9,900円/月</li>
+        <li>生徒が増えるほどおトク</li>
+      </ul>
+    </div>
+
+    <div class="plan">
+      <div class="plan-name">エンタープライズプラン</div>
+      <div class="plan-price"><span class="quote">都度お見積り</span></div>
+      <div class="plan-sub">人数や条件により割引いたします</div>
+      <ul class="plan-feats">
+        <li>全機能利用可能</li>
+        <li>大規模クラブ・複数拠点に最適</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="sec-title">オプション料金</div>
+  <div class="options">
+    <div class="opt">
+      <div class="opt-icon">🎬</div>
+      <div>
+        <div class="opt-name">チームアルバムへの動画保存</div>
+        <div class="opt-desc">写真だけでなく、動画もクラス・イベント単位で保存できます。</div>
+      </div>
+    </div>
+    <div class="opt">
+      <div class="opt-icon">📅</div>
+      <div>
+        <div class="opt-name">チームアルバム・成長カレンダーの永久保存</div>
+        <div class="opt-desc">無料では30日までの保存。オプションで大切な記録をずっと残せます。</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="pills">
+    <div class="pill">初月無料・カード登録不要</div>
+    <div class="pill">CSV取込で最短即日で移行</div>
+  </div>
+
+  <div class="foot">
+    <span>のびしろ+ 料金表</span>
+    <span>※料金・条件の詳細はお気軽にお問い合わせください。</span>
+  </div>
+
+</body>
+</html>
