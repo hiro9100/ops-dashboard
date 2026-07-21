@@ -16,14 +16,15 @@
     --accent-bg:  #EBF6FD;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  @page { size: A4 portrait; margin: 0; }
-  html, body { width: 210mm; height: 297mm; }
+  /* 16:9 スライドサイズ (13.333in x 7.5in) */
+  @page { size: 13.333in 7.5in; margin: 0; }
+  html, body { width: 13.333in; height: 7.5in; }
   body {
     font-family: 'Noto Sans CJK JP', 'Noto Sans JP', 'Hiragino Kaku Gothic ProN', sans-serif;
     background: #fff;
     color: var(--text);
-    line-height: 1.55;
-    padding: 14mm 14mm 12mm;
+    line-height: 1.5;
+    padding: 9mm 14mm 8mm;
     display: flex;
     flex-direction: column;
     -webkit-print-color-adjust: exact;
@@ -33,10 +34,10 @@
   /* ---- Header ---- */
   .topline {
     display: flex; align-items: baseline; justify-content: space-between;
-    margin-bottom: 11mm;
+    margin-bottom: 6mm;
   }
   .brand {
-    font-size: 24px; font-weight: 900; color: var(--navy);
+    font-size: 22px; font-weight: 900; color: var(--navy);
     letter-spacing: -0.5px;
   }
   .brand .plus { color: var(--accent); }
@@ -44,22 +45,23 @@
     font-size: 10px; font-weight: 700; color: var(--text-3);
     letter-spacing: 2.5px;
   }
+  .headrow { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 7mm; }
   h1 {
-    font-size: 36px; font-weight: 900; color: var(--navy);
-    letter-spacing: 0.5px; margin-bottom: 4mm; line-height: 1.3;
+    font-size: 30px; font-weight: 900; color: var(--navy);
+    letter-spacing: 0.5px; line-height: 1.25;
   }
-  .lead { font-size: 13.5px; color: var(--text-2); margin-bottom: 12mm; }
+  .lead { font-size: 12.5px; color: var(--text-2); }
 
   /* ---- Plan cards ---- */
   .plans {
-    display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5mm;
-    margin-bottom: 9mm;
+    display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6mm;
     flex: 1;
+    margin-bottom: 6mm;
   }
   .plan {
     border: 1px solid var(--border); border-radius: 14px;
     background: var(--bg-card);
-    padding: 10mm 7mm 9mm;
+    padding: 7mm 7mm 6mm;
     display: flex; flex-direction: column;
     position: relative;
   }
@@ -68,38 +70,38 @@
     box-shadow: 0 4px 16px rgba(29,52,97,0.10);
   }
   .plan-badge {
-    position: absolute; top: -4mm; left: 50%; transform: translateX(-50%);
+    position: absolute; top: -3.5mm; left: 50%; transform: translateX(-50%);
     background: var(--navy); color: #fff;
     font-size: 10px; font-weight: 800; letter-spacing: 1px;
-    padding: 1.2mm 5mm; border-radius: 999px; white-space: nowrap;
+    padding: 1mm 5mm; border-radius: 999px; white-space: nowrap;
   }
-  .plan-name { font-size: 16px; font-weight: 800; color: var(--navy); margin-bottom: 5mm; min-height: 50px; }
-  .plan-price { margin-bottom: 1.5mm; }
-  .plan-price .num { font-size: 38px; font-weight: 900; color: var(--text); letter-spacing: -1px; }
-  .plan-price .unit { font-size: 12px; font-weight: 700; color: var(--text-2); }
+  .plan-name { font-size: 15px; font-weight: 800; color: var(--navy); margin-bottom: 3.5mm; }
+  .plan-price { margin-bottom: 1mm; }
+  .plan-price .num { font-size: 34px; font-weight: 900; color: var(--text); letter-spacing: -1px; }
   .plan-price .per  { font-size: 12px; font-weight: 700; color: var(--text-3); }
-  .plan-price .quote { font-size: 26px; font-weight: 900; color: var(--text); line-height: 38px; display: inline-block; }
-  .plan-sub { font-size: 11.5px; color: var(--text-3); margin-bottom: 6mm; }
-  .plan-feats { list-style: none; margin-top: 2mm; }
+  .plan-price .quote { font-size: 23px; font-weight: 900; color: var(--text); line-height: 34px; display: inline-block; }
+  .plan-sub { font-size: 11px; color: var(--text-3); margin-bottom: 3.5mm; }
+  .plan-feats { list-style: none; margin-top: auto; }
   .plan-feats li {
-    font-size: 12.5px; color: var(--text-2);
-    padding: 2.4mm 0; border-top: 1px solid var(--border);
+    font-size: 11.5px; color: var(--text-2);
+    padding: 1.9mm 0; border-top: 1px solid var(--border);
     display: flex; gap: 2mm; align-items: flex-start;
   }
   .plan-feats li::before { content: '✓'; color: var(--accent); font-weight: 900; flex-shrink: 0; }
 
-  /* ---- Options ---- */
+  /* ---- Bottom: options + pills ---- */
   .sec-title {
-    font-size: 15px; font-weight: 800; color: var(--navy);
-    margin-bottom: 5mm;
+    font-size: 13.5px; font-weight: 800; color: var(--navy);
+    margin-bottom: 3mm;
     display: flex; align-items: center; gap: 3mm;
   }
   .sec-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
-  .options { display: grid; grid-template-columns: 1fr 1fr; gap: 5mm; margin-bottom: 10mm; }
+  .bottom { display: grid; grid-template-columns: 2fr 1fr; gap: 6mm; align-items: stretch; }
+  .options { display: grid; grid-template-columns: 1fr 1fr; gap: 4mm; }
   .opt {
-    border: 1px solid var(--border); border-radius: 14px;
-    background: #fff; padding: 7mm 7mm;
-    display: flex; gap: 4mm; align-items: flex-start;
+    border: 1px solid var(--border); border-radius: 12px;
+    background: #fff; padding: 4.5mm 5mm;
+    display: flex; gap: 3.5mm; align-items: center;
   }
   .opt-icon {
     width: 9mm; height: 9mm; border-radius: 9px; flex-shrink: 0;
@@ -107,19 +109,19 @@
     display: flex; align-items: center; justify-content: center;
     font-size: 15px;
   }
-  .opt-name { font-size: 13.5px; font-weight: 800; color: var(--text); }
-  .opt-desc { font-size: 11.5px; color: var(--text-3); margin-top: 0.5mm; }
-
-  /* ---- Footer pills ---- */
-  .pills { display: grid; grid-template-columns: 1fr 1fr; gap: 4mm; margin-top: 2mm; }
+  .opt-name { font-size: 12px; font-weight: 800; color: var(--text); line-height: 1.4; }
+  .opt-desc { font-size: 10px; color: var(--text-3); margin-top: 0.5mm; }
+  .opt-price { margin-left: auto; font-size: 16px; font-weight: 900; color: var(--navy); white-space: nowrap; padding-left: 3mm; }
+  .pills { display: flex; flex-direction: column; gap: 4mm; }
   .pill {
     background: var(--bg-card); border: 1px solid var(--border);
-    border-radius: 10px; padding: 5mm;
-    text-align: center; font-size: 13px; font-weight: 800; color: var(--navy);
+    border-radius: 10px; padding: 3mm;
+    text-align: center; font-size: 12px; font-weight: 800; color: var(--navy);
+    flex: 1; display: flex; align-items: center; justify-content: center;
   }
   .foot {
-    margin-top: auto; display: flex; justify-content: space-between;
-    font-size: 9.5px; color: var(--text-3);
+    margin-top: 5mm; display: flex; justify-content: space-between;
+    font-size: 9px; color: var(--text-3);
   }
 </style>
 </head>
@@ -130,8 +132,10 @@
     <div class="toplabel">PRICING</div>
   </div>
 
-  <h1>シンプルで、はじめやすい料金。</h1>
-  <p class="lead">クラブの規模に合わせて選べる3つのプラン。すべて生徒数に応じた月額制です。</p>
+  <div class="headrow">
+    <h1>シンプルで、はじめやすい料金。</h1>
+    <p class="lead">クラブの規模に合わせて選べる3つのプラン。すべて生徒数に応じた月額制です。</p>
+  </div>
 
   <div class="plans">
     <div class="plan">
@@ -167,26 +171,29 @@
   </div>
 
   <div class="sec-title">オプション料金</div>
-  <div class="options">
-    <div class="opt">
-      <div class="opt-icon">🎬</div>
-      <div>
-        <div class="opt-name">チームアルバムへの動画保存</div>
-        <div class="opt-desc">写真だけでなく、動画もクラス・イベント単位で保存できます。</div>
+  <div class="bottom">
+    <div class="options">
+      <div class="opt">
+        <div class="opt-icon">🎬</div>
+        <div>
+          <div class="opt-name">チームアルバムへの動画保存</div>
+          <div class="opt-desc">動画もクラス・イベント単位で保存できます。</div>
+        </div>
+        <div class="opt-price">¥5,000</div>
+      </div>
+      <div class="opt">
+        <div class="opt-icon">📅</div>
+        <div>
+          <div class="opt-name">チームアルバム・成長カレンダーの永久保存</div>
+          <div class="opt-desc">無料では30日までの保存です。</div>
+        </div>
+        <div class="opt-price">¥5,000</div>
       </div>
     </div>
-    <div class="opt">
-      <div class="opt-icon">📅</div>
-      <div>
-        <div class="opt-name">チームアルバム・成長カレンダーの永久保存</div>
-        <div class="opt-desc">無料では30日までの保存。オプションで大切な記録をずっと残せます。</div>
-      </div>
+    <div class="pills">
+      <div class="pill">初月無料・カード登録不要</div>
+      <div class="pill">CSV取込で最短即日で移行</div>
     </div>
-  </div>
-
-  <div class="pills">
-    <div class="pill">初月無料・カード登録不要</div>
-    <div class="pill">CSV取込で最短即日で移行</div>
   </div>
 
   <div class="foot">
