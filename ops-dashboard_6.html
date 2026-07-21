@@ -563,10 +563,11 @@ tr:hover td { background: var(--bg-secondary); }
         <button class="nav-item" onclick="showPage('manual',this)"><span class="ni">📚</span>レッスンマニュアル</button>
         <button class="nav-item" onclick="showPage('report',this)"><span class="ni">📈</span>月次レポート</button>
         <button class="nav-item" onclick="showPage('flyer',this)" style="position:relative;"><span class="ni">🖨</span>チラシ作成<span class="nbadge blue">NEW</span></button>
+        <button class="nav-item" onclick="showPage('payjp',this)" style="position:relative;"><span class="ni">💳</span>決済（PAY.JP）<span class="nbadge blue">NEW</span></button>
       </div>
       <div class="nav-sec">
         <div class="nav-sec-lbl">サポート</div>
-        <button class="nav-item" onclick="showPage('notices',this)"><span class="ni">📣</span>本部からのお知らせ<span class="nbadge blue">2</span></button>
+        <button class="nav-item" onclick="showPage('notices',this)"><span class="ni">📣</span>本部からのお知らせ<span class="nbadge blue">3</span></button>
         <button class="nav-item" onclick="showPage('inquiry',this)"><span class="ni">💬</span>本部への問い合わせ<span class="nbadge">1</span></button>
         <button class="nav-item" onclick="showPage('faq',this)"><span class="ni">❓</span>よくある問い合わせ</button>
       </div>
@@ -1357,6 +1358,15 @@ tr:hover td { background: var(--bg-secondary); }
           <button class="btn btn-ghost btn-sm">全て既読にする</button>
         </div>
         <div class="tbl-wrap">
+          <div class="notice-item" onclick="showPage('payjp', document.querySelector('.nav-item[onclick*=payjp]'))" style="cursor:pointer;">
+            <div class="n-dot"></div>
+            <div style="flex:1;min-width:0;">
+              <div class="n-title">【新機能】PAY.JPカード決済のクーポンコードを配布しました</div>
+              <div class="n-meta">2025年6月18日 <span class="pill pill-blue" style="font-size:10px;">新機能</span></div>
+              <div style="font-size:12px;color:var(--text-2);margin-top:4px;">本部がPAY.JPパートナーに登録されました。「決済（PAY.JP）」ページのクーポンコードを使うと、特典プランで月謝のカード決済を導入できます。</div>
+            </div>
+            <span style="color:var(--text-3);">›</span>
+          </div>
           <div class="notice-item">
             <div class="n-dot"></div>
             <div style="flex:1;min-width:0;">
@@ -1480,6 +1490,10 @@ tr:hover td { background: var(--bg-secondary); }
             <div class="faq-a">値上げは少なくとも3ヶ月前に保護者に通知することをお勧めします。本部にも事前に相談の上、値上げの理由（スタジオ代・人件費の増加など）を丁寧に説明してください。既存会員への据え置き期間を設けると退会を防ぎやすくなります。</div>
           </div>
           <div class="faq-item">
+            <div class="faq-q" onclick="toggleFaq(this)"><span>月謝のクレジットカード決済は導入できますか？</span><span class="faq-arrow">▼</span></div>
+            <div class="faq-a">はい、導入できます。本部がオンライン決済サービス「PAY.JP」の公式パートナーに登録されているため、加盟店専用のクーポンコードを使ってパートナー紹介の特典プランで開始できます。サイドバーの「決済（PAY.JP）」ページにクーポンコードと導入手順（アカウント登録→コード入力→審査完了で利用開始）をまとめていますので、そちらの手順に沿ってお手続きください。</div>
+          </div>
+          <div class="faq-item">
             <div class="faq-q" onclick="toggleFaq(this)"><span>コーチが急に欠席した場合はどう対処すればよいですか？</span><span class="faq-arrow">▼</span></div>
             <div class="faq-a">まずは代替コーチを手配してください。代替が難しい場合は授業を振替または補講として実施します。保護者へはLINEで速やかに連絡し、振替日程を提示してください。緊急時対応マニュアルもご参照ください。</div>
           </div>
@@ -1491,6 +1505,93 @@ tr:hover td { background: var(--bg-secondary); }
             <div class="faq-q" onclick="toggleFaq(this)"><span>生徒が授業中にケガをした場合の対応は？</span><span class="faq-arrow">▼</span></div>
             <div class="faq-a">①直ちに応急処置 ②保護者へ速やかに連絡 ③医療機関の受診を勧める ④本部へ報告 ⑤保険対応の確認（施設賠償保険・傷害保険の適用）の順で対応してください。事故報告書の作成も忘れずに。緊急時対応マニュアルに詳細があります。</div>
           </div>
+        </div>
+      </div>
+
+      <!-- ===================== PAGE: PAYJP ===================== -->
+      <div class="page" id="page-payjp">
+        <div style="max-width:680px;">
+
+          <!-- Hero card -->
+          <div style="background:linear-gradient(135deg,#1A8ED6 0%,#38B2F0 60%,#67D0F5 100%);border-radius:20px;padding:32px;color:white;margin-bottom:20px;position:relative;overflow:hidden;">
+            <div style="position:absolute;top:-40px;right:-40px;width:180px;height:180px;background:rgba(255,255,255,0.06);border-radius:50%;"></div>
+            <div style="position:absolute;bottom:-30px;left:20px;width:120px;height:120px;background:rgba(255,255,255,0.04);border-radius:50%;"></div>
+            <div style="font-size:11px;font-weight:800;letter-spacing:1.2px;opacity:0.8;text-transform:uppercase;margin-bottom:10px;">PAY.JP パートナー特典</div>
+            <div style="font-size:24px;font-weight:900;letter-spacing:-0.5px;margin-bottom:8px;line-height:1.2;">💳 月謝のカード決済を<br>はじめましょう</div>
+            <div style="font-size:13px;opacity:0.85;line-height:1.7;">
+              本部はオンライン決済サービス「PAY.JP」の公式パートナーに登録されています。<br>
+              加盟店専用のクーポンコードを使うと、パートナー紹介の特典プランでカード決済を導入できます。手続きはこのページの手順だけで完結します。
+            </div>
+          </div>
+
+          <!-- Coupon code card -->
+          <div style="background:white;border:1px solid var(--border);border-radius:16px;padding:20px 24px;margin-bottom:16px;">
+            <div style="font-size:13px;font-weight:800;color:var(--text);margin-bottom:14px;">🎟 加盟店専用クーポンコード</div>
+            <div style="background:var(--bg-secondary);border-radius:10px;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+              <div style="min-width:0;">
+                <div style="font-size:10px;font-weight:700;color:var(--text-3);margin-bottom:3px;">クーポンコード（全加盟店共通）</div>
+                <div style="font-size:14px;font-weight:700;color:var(--text);font-family:monospace;word-break:break-all;">6BCA0188-1C26-4378-B1F9-7B313DD613C2</div>
+              </div>
+              <button onclick="copyText('6BCA0188-1C26-4378-B1F9-7B313DD613C2',this)"
+                style="background:var(--primary);color:white;border:none;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;">
+                📋 コピー
+              </button>
+            </div>
+            <div style="font-size:11.5px;color:var(--text-3);margin-top:10px;line-height:1.6;">
+              このコードは本部（パートナー企業）に1つ発行されている共通コードです。各スタジオ（加盟店）はそれぞれ自分のPAY.JPアカウントでこのコードを利用してください。
+            </div>
+          </div>
+
+          <!-- Steps card -->
+          <div style="background:white;border:1px solid var(--border);border-radius:16px;padding:20px 24px;margin-bottom:16px;">
+            <div style="font-size:13px;font-weight:800;color:var(--text);margin-bottom:14px;">📋 導入手順</div>
+            <div style="display:flex;flex-direction:column;gap:10px;">
+              <div style="display:flex;gap:12px;align-items:flex-start;">
+                <div style="width:26px;height:26px;background:var(--primary);color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;flex-shrink:0;">1</div>
+                <div style="font-size:13px;color:var(--text-2);padding-top:3px;">上のクーポンコードを「📋 コピー」ボタンでコピーする</div>
+              </div>
+              <div style="display:flex;gap:12px;align-items:flex-start;">
+                <div style="width:26px;height:26px;background:var(--primary);color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;flex-shrink:0;">2</div>
+                <div style="font-size:13px;color:var(--text-2);padding-top:3px;"><a href="https://pay.jp/" target="_blank" style="color:var(--primary);font-weight:700;text-decoration:underline;">PAY.JP公式サイト ↗</a> でスタジオ用のアカウントを新規登録する（登録済みの場合はログイン）</div>
+              </div>
+              <div style="display:flex;gap:12px;align-items:flex-start;">
+                <div style="width:26px;height:26px;background:var(--primary);color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;flex-shrink:0;">3</div>
+                <div style="font-size:13px;color:var(--text-2);padding-top:3px;">PAY.JPの管理画面（ダッシュボード）でコピーしたクーポンコードを入力して適用する</div>
+              </div>
+              <div style="display:flex;gap:12px;align-items:flex-start;">
+                <div style="width:26px;height:26px;background:var(--primary);color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;flex-shrink:0;">4</div>
+                <div style="font-size:13px;color:var(--text-2);padding-top:3px;">加盟店審査の完了後、特典プランが開始され、月謝などのカード決済が利用できます</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Reference links card -->
+          <div style="background:white;border:1px solid var(--border);border-radius:16px;padding:20px 24px;margin-bottom:16px;">
+            <div style="font-size:13px;font-weight:800;color:var(--text);margin-bottom:14px;">🔗 公式ガイド（詳細を確認したい場合）</div>
+            <div style="display:flex;flex-direction:column;gap:8px;">
+              <a href="https://help.pay.jp/ja/articles/8235226" target="_blank" style="background:var(--bg-secondary);border-radius:10px;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px;">
+                <div>
+                  <div style="font-size:13px;font-weight:700;color:var(--text);">クーポンコードの利用方法（加盟店向け）</div>
+                  <div style="font-size:11px;color:var(--text-3);margin-top:2px;">コードの入力場所・適用方法の公式ヘルプ</div>
+                </div>
+                <span style="color:var(--primary);font-weight:700;flex-shrink:0;">↗</span>
+              </a>
+              <a href="https://help.pay.jp/ja/articles/3652795" target="_blank" style="background:var(--bg-secondary);border-radius:10px;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px;">
+                <div>
+                  <div style="font-size:13px;font-weight:700;color:var(--text);">紹介方法・プランの開始タイミング</div>
+                  <div style="font-size:11px;color:var(--text-3);margin-top:2px;">特典プランがいつから始まるかなどの公式ヘルプ</div>
+                </div>
+                <span style="color:var(--primary);font-weight:700;flex-shrink:0;">↗</span>
+              </a>
+            </div>
+          </div>
+
+          <!-- Note -->
+          <div style="background:var(--warning-light);border:1px solid var(--warning);border-radius:12px;padding:12px 16px;display:flex;gap:10px;align-items:center;font-size:12.5px;color:#92400E;">
+            <span style="font-size:18px;flex-shrink:0;">⚠️</span>
+            <span>クーポンコードの取り扱いにご注意ください。加盟店（スタジオ運営者）以外への共有はお控えください。手順で不明な点があれば「本部への問い合わせ」からご連絡ください。</span>
+          </div>
+
         </div>
       </div>
 
@@ -1598,7 +1699,8 @@ const pageTitles = {
   inquiry: '本部への問い合わせ',
   faq: 'よくある問い合わせ',
   appdemo: 'アスリートスコア — アプリを触ってみる',
-  flyer: 'チラシ作成'
+  flyer: 'チラシ作成',
+  payjp: '決済（PAY.JP）'
 };
 const topbarActions = {
   dashboard: '+ 体験会を追加',
@@ -1614,7 +1716,8 @@ const topbarActions = {
   rules: '💾 保存する',
   annual: '+ イベント追加',
   appdemo: '',
-  flyer: '🖨 PDFで印刷する'
+  flyer: '🖨 PDFで印刷する',
+  payjp: ''
 };
 
 function showPage(id, btn) {
