@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>アプリ体験 3ステップ — ダンス教室向けアプリ</title>
+<style>
+  :root {
+    --ink:        #12110C;
+    --ink-2:      #4A463A;
+    --ink-3:      #7E7869;
+    --paper:      #FFFFFF;
+    --paper-2:    #FBFAF6;
+    --accent:     #FFD100;
+    --accent-2:   #F0B800;
+    --accent-tint:#FFF8D6;
+    --rule:       #E7E3D6;
+    --stage:      #EDEBE4;
+
+    --font-body: 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', 'Noto Sans JP',
+                 'Yu Gothic Medium', 'Yu Gothic', Meiryo, sans-serif;
+    --font-num:  'Helvetica Neue', Helvetica, Arial, sans-serif;
+  }
+
+  @media (prefers-color-scheme: dark) { :root { --stage: #17160F; } }
+  :root[data-theme="dark"]  { --stage: #17160F; }
+  :root[data-theme="light"] { --stage: #EDEBE4; }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--font-body);
+    background: var(--stage);
+    color: var(--ink);
+    line-height: 1.5;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding: 24px;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ===== Slide shell : 16:9, everything scales with the slide ===== */
+  .slide {
+    width: 100%;
+    max-width: 1440px;
+    aspect-ratio: 16 / 9;
+    background: var(--paper);
+    color: var(--ink);
+    container-type: size;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    padding: 3.2cqi 4cqi 2.8cqi;
+    box-shadow: 0 2px 4px rgba(18,17,12,.06), 0 18px 48px rgba(18,17,12,.12);
+  }
+  /* yellow spine — the only decorative flourish */
+  .slide::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0;
+    width: 0.9cqi; height: 100%;
+    background: var(--accent);
+  }
+
+  /* ===== Header ===== */
+  .head {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 4cqi;
+    padding-bottom: 1.6cqi;
+    border-bottom: 0.14cqi solid var(--ink);
+  }
+  .eyebrow {
+    font-family: var(--font-num);
+    font-size: 1.05cqi;
+    font-weight: 700;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    display: flex;
+    align-items: center;
+    gap: 0.9cqi;
+    margin-bottom: 0.9cqi;
+  }
+  .eyebrow::before {
+    content: "";
+    width: 2.4cqi; height: 0.28cqi;
+    background: var(--accent);
+  }
+  h1 {
+    font-size: 2.95cqi;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    line-height: 1.26;
+    text-wrap: balance;
+  }
+  h1 .mark {
+    background: linear-gradient(transparent 62%, var(--accent) 62%);
+    padding: 0 0.15em;
+  }
+  .lede {
+    max-width: 26em;
+    font-size: 1.3cqi;
+    line-height: 1.75;
+    color: var(--ink-2);
+    padding-bottom: 0.6cqi;
+  }
+
+  /* ===== 3 steps ===== */
+  .flow {
+    flex: 1;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2.6cqi;
+    padding: 2.1cqi 0 1.9cqi;
+    min-height: 0;
+  }
+  .step {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    position: relative;
+  }
+  /* arrow between steps — the sequence is real, so show it */
+  .step + .step::before {
+    content: "";
+    position: absolute;
+    left: -1.75cqi;
+    top: 1.15cqi;
+    width: 0.9cqi; height: 0.9cqi;
+    border-top: 0.22cqi solid var(--ink);
+    border-right: 0.22cqi solid var(--ink);
+    transform: rotate(45deg);
+  }
+
+  .step-top {
+    display: flex;
+    align-items: baseline;
+    gap: 1cqi;
+  }
+  .num {
+    font-family: var(--font-num);
+    font-size: 2.8cqi;
+    font-weight: 800;
+    line-height: 1;
+    letter-spacing: -0.04em;
+    color: var(--ink);
+    padding: 0 0.12em;
+    background: linear-gradient(
+      transparent 46%,
+      var(--accent) 46%,
+      var(--accent) 82%,
+      transparent 82%
+    );
+  }
+  .phase {
+    font-size: 1.15cqi;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    color: var(--paper);
+    background: var(--ink);
+    padding: 0.42cqi 0.95cqi;
+  }
+  .phase .en {
+    font-family: var(--font-num);
+    font-size: 0.85cqi;
+    letter-spacing: 0.16em;
+    color: var(--accent);
+    margin-left: 0.6cqi;
+  }
+
+  .step h2 {
+    font-size: 1.62cqi;
+    font-weight: 800;
+    line-height: 1.45;
+    letter-spacing: -0.01em;
+    margin-top: 1.35cqi;
+    text-wrap: balance;
+  }
+  .step > p {
+    font-size: 1.06cqi;
+    line-height: 1.8;
+    color: var(--ink-2);
+    margin-top: 0.8cqi;
+    /* holds 3 lines so all three image slots start on the same line */
+    min-height: 5.8cqi;
+  }
+
+  /* image slot — reserved space for screenshots / photos */
+  .shot {
+    flex: 1;
+    min-height: 5.5cqi;
+    margin-top: 1.2cqi;
+    border: 0.16cqi dashed var(--rule);
+    background: var(--paper-2);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5cqi;
+  }
+  .shot span {
+    font-size: 1cqi;
+    font-weight: 700;
+    color: var(--ink-3);
+  }
+  .shot small {
+    font-family: var(--font-num);
+    font-size: 0.8cqi;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: #B6B0A0;
+  }
+
+  /* ===== Merits ===== */
+  .merits {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2.6cqi;
+    border-top: 0.14cqi solid var(--ink);
+    padding-top: 1.6cqi;
+  }
+  .merit {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    align-items: start;
+    gap: 1.6cqi;
+  }
+  .merit-label {
+    font-size: 1.25cqi;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    padding: 0.5cqi 1cqi;
+    white-space: nowrap;
+  }
+  .merit.coach .merit-label { background: var(--ink); color: var(--accent); }
+  .merit.student .merit-label { background: var(--accent); color: var(--ink); }
+
+  .merit ul { list-style: none; display: grid; gap: 0.55cqi; }
+  .merit li {
+    font-size: 1.04cqi;
+    line-height: 1.6;
+    color: var(--ink-2);
+    padding-left: 1.6cqi;
+    position: relative;
+  }
+  .merit li::before {
+    content: "";
+    position: absolute;
+    left: 0; top: 0.62cqi;
+    width: 0.7cqi; height: 0.7cqi;
+    background: var(--accent-2);
+  }
+  .merit li b { color: var(--ink); font-weight: 800; }
+
+  .foot {
+    position: absolute;
+    right: 4cqi; bottom: 1.3cqi;
+    font-family: var(--font-num);
+    font-size: 0.85cqi;
+    letter-spacing: 0.18em;
+    color: #BDB7A7;
+  }
+
+  @media print {
+    body { padding: 0; background: #fff; }
+    .slide { box-shadow: none; max-width: none; }
+  }
+</style>
+</head>
+<body>
+<main class="slide">
+  <header class="head">
+    <div>
+      <p class="eyebrow">App Experience</p>
+      <h1>レッスンの<span class="mark">前・中・後</span>を、<br>アプリでひと続きにする。</h1>
+    </div>
+    <p class="lede">
+      週1回のレッスンだけで終わらせない。予習・その場のフォロー・自宅復習までを
+      ひとつのアプリでつなぎ、上達のスピードと通い続ける理由をつくります。
+    </p>
+  </header>
+
+  <section class="flow">
+    <article class="step">
+      <div class="step-top">
+        <p class="num">01</p>
+        <p class="phase">レッスン前<span class="en">Before</span></p>
+      </div>
+      <h2>振り付けとポイントを<br>事前に共有</h2>
+      <p>当日の振り付け動画と押さえるポイントを配信。予習した状態でスタジオに入れるので、最初の時間を思い出すことに使わずに済みます。</p>
+      <div class="shot">
+        <span>イメージ</span>
+        <small>Image</small>
+      </div>
+    </article>
+
+    <article class="step">
+      <div class="step-top">
+        <p class="num">02</p>
+        <p class="phase">レッスン中<span class="en">During</span></p>
+      </div>
+      <h2>ついていけない箇所は<br>その場で動画復習</h2>
+      <p>難しいパートはアプリの動画を見返してキャッチアップ。手が止まってしまう生徒も、置いていかれたまま終わりません。</p>
+      <div class="shot">
+        <span>イメージ</span>
+        <small>Image</small>
+      </div>
+    </article>
+
+    <article class="step">
+      <div class="step-top">
+        <p class="num">03</p>
+        <p class="phase">レッスン後<span class="en">After</span></p>
+      </div>
+      <h2>自宅練習と振り返りを<br>フィードバックでつなぐ</h2>
+      <p>お家でできる復習メニューと振り返りを共有。生徒が送った練習動画にコーチがコメントを返し、次回までの伸びをつくります。</p>
+      <div class="shot">
+        <span>イメージ</span>
+        <small>Image</small>
+      </div>
+    </article>
+  </section>
+
+  <section class="merits">
+    <div class="merit coach">
+      <p class="merit-label">コーチのメリット</p>
+      <ul>
+        <li>同じ説明の繰り返しが減り、<b>レッスン時間を指導に使える</b></li>
+        <li>一人ひとりの習熟度が記録に残り、次の指導計画を立てやすい</li>
+        <li>レッスン外の接点が増え、<b>継続率と紹介につながる</b></li>
+      </ul>
+    </div>
+    <div class="merit student">
+      <p class="merit-label">生徒のメリット</p>
+      <ul>
+        <li>予習と復習ができ、<b>同じ回数でも上達が早い</b></li>
+        <li>ついていけない不安が減り、参加のハードルが下がる</li>
+        <li>自宅練習にもコーチの声が届き、<b>一人で迷わない</b></li>
+      </ul>
+    </div>
+  </section>
+
+  <p class="foot">Before / During / After</p>
+</main>
+</body>
+</html>
