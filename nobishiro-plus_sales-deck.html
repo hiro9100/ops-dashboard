@@ -9,7 +9,8 @@
   ATHLETE PLUS / nobishiro-plus.com
   ----------------------------------------------------------------------------
   【デザイン仕様】
-   ・カラー：白ベース ＋ 紺（#0E1D45系）の2色構成。アクセントはオレンジ(#E0691C)のみ
+   ・カラー：白ベース ＋ 紺（#0E1D45系）。主アクセント＝水色(#22A7E8)、
+     強調＝オレンジ(#BE5712)は『ここぞの数字』だけに限定
    ・アクセントは「そのページで一番言いたい数字」「AFTERの印」だけに使用
    ・強調したい数値は .stat クラス（欧文イタリック）で斜体
    ・絵文字は不使用（色数を増やさないため）。番号とタイポグラフィで構成
@@ -33,14 +34,22 @@
   /* ---- 紺から派生したニュートラル（別系統の灰色は使わない）---- */
   --ink:#0E1D45; --ink-2:#485875; --ink-3:#7A88A4; --ink-4:#A9B4C8;
   --line:#DDE3EE; --line-2:#C7D0E0; --tint:#F4F6FB; --tint-2:#EAEEF6;
-  /* ---- アクセント：オレンジのみ ---- */
-  --or:#E0691C; --or-2:#F08B3E; --or-tint:#FDF3EC; --or-line:#F2D3BC;
+  /* ---- 主アクセント：水色 ---- */
+  /* --or  = 塗り・バー・罫（大きい面。白地2.7:1のため小さい文字には使わない）
+     --or-ink = 白地の小さい文字用の濃い水色（4.96:1）
+     --or-2 = 紺地用の明るい水色 */
+  --or:#22A7E8; --or-ink:#0A76B0; --or-2:#5FC4F5; --or-tint:#EAF7FE; --or-line:#BEE6FA;
+  /* 文字に使うアクセント色。白地では濃い水色、紺地では明るい水色に自動で切替わる */
+  --ac-text:#0A76B0;
+  /* ---- 強調アクセント：オレンジ（「ここぞ」の数字だけ）---- */
+  --hot:#BE5712; --hot-hi:#E0691C; --hot-2:#F08B3E; --hot-tint:#FDF3EC; --hot-line:#F2D3BC;
   --white:#fff;
   /* ---- 影：紺を含んだ影で統一 ---- */
   --sh-1:0 1px 2px rgba(14,29,69,.05), 0 2px 5px rgba(14,29,69,.04);
   --sh-2:0 2px 4px rgba(14,29,69,.05), 0 8px 18px rgba(14,29,69,.07);
   --sh-3:0 4px 10px rgba(14,29,69,.06), 0 20px 44px rgba(14,29,69,.11);
-  --sh-or:0 2px 5px rgba(224,105,28,.10), 0 10px 26px rgba(224,105,28,.16);
+  --sh-or:0 2px 5px rgba(34,167,232,.12), 0 10px 26px rgba(34,167,232,.20);
+  --sh-hot:0 2px 5px rgba(224,105,28,.12), 0 10px 26px rgba(224,105,28,.20);
   --sh-in:inset 0 1px 0 rgba(255,255,255,.06);
 }
 *{box-sizing:border-box;margin:0;padding:0}
@@ -53,7 +62,8 @@ body{
 /* ===================== 斜体の強調数値 ===================== */
 .stat{font-family:'Helvetica Neue','Segoe UI',Arial,sans-serif;font-style:italic;font-weight:800;
   letter-spacing:-.035em;font-variant-numeric:tabular-nums;display:inline-block}
-.stat.or{color:var(--or)} .stat.w{color:#fff}
+.stat.or{color:var(--hot)}
+.slide.dark .stat.or{color:var(--hot-2)} .stat.w{color:#fff}
 /* ===================== 骨格 ===================== */
 .deck{padding:24px 16px 92px;max-width:1312px;margin:0 auto}
 .wrap{width:100%;margin:0 auto 22px;position:relative}
@@ -65,7 +75,7 @@ body{
 .slide.dark::after{color:rgba(255,255,255,.38)}
 /* ===================== ロゴ ===================== */
 .logo{font-family:'Helvetica Neue',Arial,sans-serif;font-weight:700;letter-spacing:-.025em;white-space:nowrap;color:var(--navy)}
-.logo .p{color:var(--or)}
+.logo .p{color:var(--ac-text)}
 .slide.dark .logo{color:#fff}
 .logo-img{height:19px;width:auto;display:block}
 /* ===================== ページ枠 ===================== */
@@ -80,14 +90,15 @@ body{
 .body{position:absolute;top:104px;left:56px;right:56px;bottom:58px}
 /* ===================== 文字組み ===================== */
 .eyebrow{display:flex;align-items:center;gap:11px;font-size:10.5px;font-weight:800;
-  letter-spacing:.2em;color:var(--or);margin-bottom:13px}
+  letter-spacing:.2em;color:var(--or-ink);margin-bottom:13px}
 .eyebrow::before{content:'';width:24px;height:2px;background:var(--or);flex:0 0 auto}
 .slide.dark .eyebrow{color:var(--or-2)} .slide.dark .eyebrow::before{background:var(--or-2)}
 h1{font-size:39px;font-weight:900;letter-spacing:-.03em;line-height:1.28}
 h2{font-size:30px;font-weight:900;letter-spacing:-.028em;line-height:1.34}
 .lead{font-size:14.5px;color:var(--ink-2);line-height:1.8;margin-top:13px}
 .slide.dark .lead{color:rgba(255,255,255,.72)}
-.or{color:var(--or)}
+.or{color:var(--hot)}
+.slide.dark .or{color:var(--hot-2)}
 .mark{background:linear-gradient(transparent 60%,var(--or-line) 60%);padding:0 2px}
 .note{font-size:10px;color:var(--ink-4);line-height:1.75}
 .slide.dark .note{color:rgba(255,255,255,.4)}
@@ -95,15 +106,16 @@ h2{font-size:30px;font-weight:900;letter-spacing:-.028em;line-height:1.34}
 .card{background:var(--white);border:1px solid var(--line);border-radius:3px;box-shadow:var(--sh-2)}
 .card.flat{box-shadow:var(--sh-1)}
 .card.acc{border-color:var(--or-line);box-shadow:var(--sh-or)}
+.card.hot{border-color:var(--hot-line);box-shadow:var(--sh-hot)}
 .grid{display:grid;gap:16px}
 .g2{grid-template-columns:repeat(2,1fr)} .g3{grid-template-columns:repeat(3,1fr)} .g4{grid-template-columns:repeat(4,1fr)}
 .chip{display:inline-block;padding:5px 12px;border-radius:2px;font-size:10.5px;font-weight:800;letter-spacing:.04em;
   border:1px solid var(--line-2);color:var(--ink-2);background:var(--white)}
-.chip.o{border-color:var(--or-line);background:var(--or-tint);color:var(--or)}
+.chip.o{border-color:var(--or-line);background:var(--or-tint);color:var(--or-ink)}
 .chip.n{border-color:rgba(255,255,255,.22);background:rgba(255,255,255,.07);color:rgba(255,255,255,.86)}
 /* 章番号マーカー */
 .num-mk{font-family:'Helvetica Neue',Arial,sans-serif;font-style:italic;font-weight:800;
-  font-size:12px;color:var(--or);letter-spacing:.02em}
+  font-size:12px;color:var(--or-ink);letter-spacing:.02em}
 table{width:100%;border-collapse:collapse}
 th,td{text-align:left;padding:9px 14px;font-size:12.5px;border-bottom:1px solid var(--line)}
 th{font-size:9.5px;font-weight:800;color:var(--ink-3);letter-spacing:.13em;background:var(--tint);
@@ -112,13 +124,13 @@ td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
 tr.total td{background:var(--tint);font-weight:900;border-bottom:none;border-top:1px solid var(--line-2)}
 /* ===================== 紺スライド ===================== */
 .slide.dark{background:linear-gradient(158deg,#0B1738 0%,#132352 48%,#1C2F६B 100%);color:#fff}
-.slide.dark{background:linear-gradient(158deg,#0B1738 0%,#132352 48%,#1C2F6B 100%)}
+.slide.dark{background:linear-gradient(158deg,#0B1738 0%,#132352 48%,#1C2F6B 100%);--ac-text:#5FC4F5}
 .slide.dark h1,.slide.dark h2{color:#fff}
 .pane{background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.135);border-radius:3px;box-shadow:var(--sh-in)}
-.pane.acc{background:rgba(224,105,28,.11);border-color:rgba(240,139,62,.42)}
+.pane.acc{background:rgba(34,167,232,.10);border-color:rgba(95,196,245,.42)}
 .orb{position:absolute;border-radius:50%;pointer-events:none;
   background:radial-gradient(circle at 34% 32%,rgba(120,155,225,.20),transparent 66%)}
-.orb.o{background:radial-gradient(circle at 34% 32%,rgba(224,105,28,.20),transparent 66%)}
+.orb.o{background:radial-gradient(circle at 34% 32%,rgba(34,167,232,.22),transparent 66%)}
 /* ===================== スクリーンショット枠 ===================== */
 .shot{display:block;width:100%;border:1px solid var(--line-2);border-radius:2px;
   box-shadow:var(--sh-3);background:#fff}
@@ -140,6 +152,36 @@ tr.total td{background:var(--tint);font-weight:900;border-bottom:none;border-top
 .nav .cnt{color:#fff;font-size:12px;font-weight:800;padding:0 10px;font-variant-numeric:tabular-nums;letter-spacing:.05em}
 .nav .lbl{color:rgba(255,255,255,.5);font-size:10px;font-weight:700;padding-right:8px;max-width:210px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .checkon [data-check]{outline:2px dashed var(--or);outline-offset:2px;background:var(--or-tint)}
+
+/* ===== JSなしでも縮尺が合うようにするフォールバック ===== */
+.wrap{height:720px}
+@media (max-width:1240px){.slide{transform:scale(0.92)}.wrap{height:662px}}
+@media (max-width:1150px){.slide{transform:scale(0.85)}.wrap{height:612px}}
+@media (max-width:1060px){.slide{transform:scale(0.78)}.wrap{height:562px}}
+@media (max-width:980px){.slide{transform:scale(0.72)}.wrap{height:518px}}
+@media (max-width:900px){.slide{transform:scale(0.66)}.wrap{height:475px}}
+@media (max-width:820px){.slide{transform:scale(0.6)}.wrap{height:432px}}
+@media (max-width:740px){.slide{transform:scale(0.54)}.wrap{height:389px}}
+@media (max-width:660px){.slide{transform:scale(0.48)}.wrap{height:346px}}
+@media (max-width:580px){.slide{transform:scale(0.42)}.wrap{height:302px}}
+@media (max-width:500px){.slide{transform:scale(0.36)}.wrap{height:259px}}
+@media (max-width:420px){.slide{transform:scale(0.3)}.wrap{height:216px}}
+@media print{.wrap{height:auto!important}}
+
+/* ===== JSなしでも縮尺が合うようにするフォールバック ===== */
+.wrap{height:720px}
+@media (max-width:1240px){.slide{transform:scale(0.92)}.wrap{height:662px}}
+@media (max-width:1150px){.slide{transform:scale(0.85)}.wrap{height:612px}}
+@media (max-width:1060px){.slide{transform:scale(0.78)}.wrap{height:562px}}
+@media (max-width:980px){.slide{transform:scale(0.72)}.wrap{height:518px}}
+@media (max-width:900px){.slide{transform:scale(0.66)}.wrap{height:475px}}
+@media (max-width:820px){.slide{transform:scale(0.6)}.wrap{height:432px}}
+@media (max-width:740px){.slide{transform:scale(0.54)}.wrap{height:389px}}
+@media (max-width:660px){.slide{transform:scale(0.48)}.wrap{height:346px}}
+@media (max-width:580px){.slide{transform:scale(0.42)}.wrap{height:302px}}
+@media (max-width:500px){.slide{transform:scale(0.36)}.wrap{height:259px}}
+@media (max-width:420px){.slide{transform:scale(0.3)}.wrap{height:216px}}
+@media print{.wrap{height:auto!important}}
 
 /* ===== JSなしでも縮尺が合うようにするフォールバック ===== */
 .wrap{height:720px}
@@ -297,12 +339,12 @@ tr.total td{background:var(--tint);font-weight:900;border-bottom:none;border-top
       <div id="week04" style="margin-top:22px"><div style="font-size:9.5px;font-weight:800;color:rgba(255,255,255,.5);letter-spacing:.15em;margin-bottom:9px">週7日のうち</div>
   <div style="display:flex;gap:5px;margin-bottom:9px">
   <span style="flex:1;height:26px;border-radius:2px;
-     background:var(--or);
-     box-shadow:0 2px 10px rgba(224,105,28,.4)"></span><span style="flex:1;height:26px;border-radius:2px;
-     background:var(--or);
-     box-shadow:0 2px 10px rgba(224,105,28,.4)"></span><span style="flex:1;height:26px;border-radius:2px;
-     background:var(--or);
-     box-shadow:0 2px 10px rgba(224,105,28,.4)"></span><span style="flex:1;height:26px;border-radius:2px;
+     background:var(--hot-2);
+     box-shadow:0 2px 10px rgba(240,139,62,.42)"></span><span style="flex:1;height:26px;border-radius:2px;
+     background:var(--hot-2);
+     box-shadow:0 2px 10px rgba(240,139,62,.42)"></span><span style="flex:1;height:26px;border-radius:2px;
+     background:var(--hot-2);
+     box-shadow:0 2px 10px rgba(240,139,62,.42)"></span><span style="flex:1;height:26px;border-radius:2px;
      background:rgba(255,255,255,.13);
      "></span><span style="flex:1;height:26px;border-radius:2px;
      background:rgba(255,255,255,.13);
@@ -377,7 +419,7 @@ tr.total td{background:var(--tint);font-weight:900;border-bottom:none;border-top
   <div style="font-size:14.5px;font-weight:900;line-height:1.6;margin-bottom:10px">2店舗目に、進めない。</div>
   <div style="font-size:12px;color:var(--ink-2);line-height:1.8">運営がオーナーの頭の中にあるうちは、任せられない。事務に週28時間かかる限り、<strong>「もう1店舗」の余力が生まれない</strong>。</div></div></div>
     <div style="margin-top:24px;padding:26px 32px;background:var(--tint);border-left:3px solid var(--or);box-shadow:var(--sh-1)">
-      <div style="font-size:9.5px;font-weight:800;color:var(--or);letter-spacing:.18em;margin-bottom:11px">つまり</div>
+      <div style="font-size:9.5px;font-weight:800;color:var(--ac-text);letter-spacing:.18em;margin-bottom:11px">つまり</div>
       <div style="font-size:20px;font-weight:900;line-height:1.64;letter-spacing:-.025em">
         「入らない・辞める・増やせない」の3つは、別々の問題に見えて、
         <span class="mark">すべて“事務作業に時間を奪われている”という1つの原因</span>から生まれています。
@@ -594,7 +636,7 @@ tr.total td{background:var(--tint);font-weight:900;border-bottom:none;border-top
     <div style="font-size:9px;font-weight:800;color:var(--ink-3);letter-spacing:.16em;margin-bottom:9px">BEFORE</div>
     <div style="font-size:12px;color:var(--ink-3);line-height:1.82">通帳を見て名簿と突き合わせ → 未納者をExcelに書き出し → 気まずい督促の電話とLINE。<br><strong>毎月5時間</strong>、そして毎月の憂うつ。</div></div>
   <div class="card acc" style="flex:1;padding:14px 16px">
-    <div style="font-size:9px;font-weight:800;color:var(--or);letter-spacing:.16em;margin-bottom:9px">AFTER</div>
+    <div style="font-size:9px;font-weight:800;color:var(--ac-text);letter-spacing:.16em;margin-bottom:9px">AFTER</div>
     <div style="font-size:12px;color:var(--ink-2);line-height:1.82">請求は自動生成、入金は自動消込、未納者は自動で一覧に。督促もアプリから定型文で1タップ。<br><strong class="or">週0.3時間</strong>、お金の会話のストレスがゼロに。</div></div></div>
     </div>
   </div>
@@ -656,7 +698,7 @@ tr.total td{background:var(--tint);font-weight:900;border-bottom:none;border-top
     <div style="font-size:9px;font-weight:800;color:var(--ink-3);letter-spacing:.16em;margin-bottom:9px">BEFORE</div>
     <div style="font-size:12px;color:var(--ink-3);line-height:1.82">欠席連絡は夜22時のLINE。振替希望は電話。質問はDM。プリントは「見てない」で伝達漏れ。<br><strong>週6時間</strong>。</div></div>
   <div class="card acc" style="flex:1;padding:14px 16px">
-    <div style="font-size:9px;font-weight:800;color:var(--or);letter-spacing:.16em;margin-bottom:9px">AFTER</div>
+    <div style="font-size:9px;font-weight:800;color:var(--ac-text);letter-spacing:.16em;margin-bottom:9px">AFTER</div>
     <div style="font-size:12px;color:var(--ink-2);line-height:1.82">欠席・振替は保護者がワンタップ → 自動で出欠に反映。連絡はスレッドで未読・対応状況が見える。<br><strong class="or">週2.1時間</strong>、対話だけが残る。</div></div></div>
     </div>
   </div>
@@ -745,7 +787,7 @@ tr.total td{background:var(--tint);font-weight:900;border-bottom:none;border-top
   <div class="body" style="display:flex;gap:46px">
     <div style="flex:0 0 412px">
       <div class="eyebrow">機能 05</div>
-      <h2 style="font-size:28px">保護者アプリ<br><span style="font-size:17px;color:var(--or)">── 追加料金なし・人数無制限</span></h2>
+      <h2 style="font-size:28px">保護者アプリ<br><span style="font-size:17px;color:var(--ac-text)">── 追加料金なし・人数無制限</span></h2>
       <div class="lead" style="font-size:13.5px">
         のびしろ＋を入れると、保護者にも専用アプリが届きます。
         <strong>クラブ側の負担は増えません</strong>。むしろ、保護者が自分で操作してくれる分だけ、クラブの手間が減ります。
@@ -798,11 +840,11 @@ tr.total td{background:var(--tint);font-weight:900;border-bottom:none;border-top
         <span style="position:absolute;left:0;top:7px;width:5px;height:1px;background:var(--ink-4)"></span>未納の督促は気まずく、後回しになりがち</div>
     </div>
     <div style="flex:1;padding:14px 18px">
-      <div style="font-size:9px;font-weight:800;color:var(--or);letter-spacing:.16em;margin-bottom:9px">AFTER｜のびしろ+導入後</div>
+      <div style="font-size:9px;font-weight:800;color:var(--ac-text);letter-spacing:.16em;margin-bottom:9px">AFTER｜のびしろ+導入後</div>
       <div style="font-size:11px;color:var(--ink-2);line-height:1.6;margin-bottom:6px;padding-left:14px;position:relative">
-        <span style="position:absolute;left:0;color:var(--or);font-weight:900;font-size:10px">✓</span>口座振替0.95%・カード2.78%に一本化</div><div style="font-size:11px;color:var(--ink-2);line-height:1.6;margin-bottom:6px;padding-left:14px;position:relative">
-        <span style="position:absolute;left:0;color:var(--or);font-weight:900;font-size:10px">✓</span>請求も消込も自動。未納は自動で一覧に</div><div style="font-size:11px;color:var(--ink-2);line-height:1.6;margin-bottom:6px;padding-left:14px;position:relative">
-        <span style="position:absolute;left:0;color:var(--or);font-weight:900;font-size:10px">✓</span>督促はアプリから。お金の会話のストレスがゼロに</div>
+        <span style="position:absolute;left:0;color:var(--ac-text);font-weight:900;font-size:10px">✓</span>口座振替0.95%・カード2.78%に一本化</div><div style="font-size:11px;color:var(--ink-2);line-height:1.6;margin-bottom:6px;padding-left:14px;position:relative">
+        <span style="position:absolute;left:0;color:var(--ac-text);font-weight:900;font-size:10px">✓</span>請求も消込も自動。未納は自動で一覧に</div><div style="font-size:11px;color:var(--ink-2);line-height:1.6;margin-bottom:6px;padding-left:14px;position:relative">
+        <span style="position:absolute;left:0;color:var(--ac-text);font-weight:900;font-size:10px">✓</span>督促はアプリから。お金の会話のストレスがゼロに</div>
     </div>
   </div></div><div class="card" style="padding:0;overflow:hidden;display:flex;flex-direction:column">
   <div style="padding:12px 18px;background:var(--tint);border-bottom:1px solid var(--line-2);display:flex;align-items:baseline;gap:10px">
@@ -818,11 +860,11 @@ tr.total td{background:var(--tint);font-weight:900;border-bottom:none;border-top
         <span style="position:absolute;left:0;top:7px;width:5px;height:1px;background:var(--ink-4)"></span>プリント配布→「見てない」で伝達漏れ</div>
     </div>
     <div style="flex:1;padding:14px 18px">
-      <div style="font-size:9px;font-weight:800;color:var(--or);letter-spacing:.16em;margin-bottom:9px">AFTER｜のびしろ+導入後</div>
+      <div style="font-size:9px;font-weight:800;color:var(--ac-text);letter-spacing:.16em;margin-bottom:9px">AFTER｜のびしろ+導入後</div>
       <div style="font-size:11px;color:var(--ink-2);line-height:1.6;margin-bottom:6px;padding-left:14px;position:relative">
-        <span style="position:absolute;left:0;color:var(--or);font-weight:900;font-size:10px">✓</span>欠席・振替は保護者がワンタップ連絡→自動記録</div><div style="font-size:11px;color:var(--ink-2);line-height:1.6;margin-bottom:6px;padding-left:14px;position:relative">
-        <span style="position:absolute;left:0;color:var(--or);font-weight:900;font-size:10px">✓</span>個別トークはスレッド管理。未読・対応状況が見える</div><div style="font-size:11px;color:var(--ink-2);line-height:1.6;margin-bottom:6px;padding-left:14px;position:relative">
-        <span style="position:absolute;left:0;color:var(--or);font-weight:900;font-size:10px">✓</span>お知らせは一斉配信、イベント出欠も自動回収</div>
+        <span style="position:absolute;left:0;color:var(--ac-text);font-weight:900;font-size:10px">✓</span>欠席・振替は保護者がワンタップ連絡→自動記録</div><div style="font-size:11px;color:var(--ink-2);line-height:1.6;margin-bottom:6px;padding-left:14px;position:relative">
+        <span style="position:absolute;left:0;color:var(--ac-text);font-weight:900;font-size:10px">✓</span>個別トークはスレッド管理。未読・対応状況が見える</div><div style="font-size:11px;color:var(--ink-2);line-height:1.6;margin-bottom:6px;padding-left:14px;position:relative">
+        <span style="position:absolute;left:0;color:var(--ac-text);font-weight:900;font-size:10px">✓</span>お知らせは一斉配信、イベント出欠も自動回収</div>
     </div>
   </div></div><div class="card" style="padding:0;overflow:hidden;display:flex;flex-direction:column">
   <div style="padding:12px 18px;background:var(--tint);border-bottom:1px solid var(--line-2);display:flex;align-items:baseline;gap:10px">
@@ -838,11 +880,11 @@ tr.total td{background:var(--tint);font-weight:900;border-bottom:none;border-top
         <span style="position:absolute;left:0;top:7px;width:5px;height:1px;background:var(--ink-4)"></span>成長実感がないまま、静かに退会していく</div>
     </div>
     <div style="flex:1;padding:14px 18px">
-      <div style="font-size:9px;font-weight:800;color:var(--or);letter-spacing:.16em;margin-bottom:9px">AFTER｜のびしろ+導入後</div>
+      <div style="font-size:9px;font-weight:800;color:var(--ac-text);letter-spacing:.16em;margin-bottom:9px">AFTER｜のびしろ+導入後</div>
       <div style="font-size:11px;color:var(--ink-2);line-height:1.6;margin-bottom:6px;padding-left:14px;position:relative">
-        <span style="position:absolute;left:0;color:var(--or);font-weight:900;font-size:10px">✓</span>測定・検定・成長カレンダーで“伸び”が数字と記録に</div><div style="font-size:11px;color:var(--ink-2);line-height:1.6;margin-bottom:6px;padding-left:14px;position:relative">
-        <span style="position:absolute;left:0;color:var(--or);font-weight:900;font-size:10px">✓</span>シール・メダルが子どもの「またやりたい！」をつくる</div><div style="font-size:11px;color:var(--ink-2);line-height:1.6;margin-bottom:6px;padding-left:14px;position:relative">
-        <span style="position:absolute;left:0;color:var(--or);font-weight:900;font-size:10px">✓</span>保護者が成長を実感→継続と口コミにつながる</div>
+        <span style="position:absolute;left:0;color:var(--ac-text);font-weight:900;font-size:10px">✓</span>測定・検定・成長カレンダーで“伸び”が数字と記録に</div><div style="font-size:11px;color:var(--ink-2);line-height:1.6;margin-bottom:6px;padding-left:14px;position:relative">
+        <span style="position:absolute;left:0;color:var(--ac-text);font-weight:900;font-size:10px">✓</span>シール・メダルが子どもの「またやりたい！」をつくる</div><div style="font-size:11px;color:var(--ink-2);line-height:1.6;margin-bottom:6px;padding-left:14px;position:relative">
+        <span style="position:absolute;left:0;color:var(--ac-text);font-weight:900;font-size:10px">✓</span>保護者が成長を実感→継続と口コミにつながる</div>
     </div>
   </div></div><div class="card" style="padding:0;overflow:hidden;display:flex;flex-direction:column">
   <div style="padding:12px 18px;background:var(--tint);border-bottom:1px solid var(--line-2);display:flex;align-items:baseline;gap:10px">
@@ -858,11 +900,11 @@ tr.total td{background:var(--tint);font-weight:900;border-bottom:none;border-top
         <span style="position:absolute;left:0;top:7px;width:5px;height:1px;background:var(--ink-4)"></span>レッスン準備がベテラン頼みで属人化</div>
     </div>
     <div style="flex:1;padding:14px 18px">
-      <div style="font-size:9px;font-weight:800;color:var(--or);letter-spacing:.16em;margin-bottom:9px">AFTER｜のびしろ+導入後</div>
+      <div style="font-size:9px;font-weight:800;color:var(--ac-text);letter-spacing:.16em;margin-bottom:9px">AFTER｜のびしろ+導入後</div>
       <div style="font-size:11px;color:var(--ink-2);line-height:1.6;margin-bottom:6px;padding-left:14px;position:relative">
-        <span style="position:absolute;left:0;color:var(--or);font-weight:900;font-size:10px">✓</span>コーチがアプリで提出→自動集計・不足は自動アラート</div><div style="font-size:11px;color:var(--ink-2);line-height:1.6;margin-bottom:6px;padding-left:14px;position:relative">
-        <span style="position:absolute;left:0;color:var(--or);font-weight:900;font-size:10px">✓</span>代行はアプリで募集→他のコーチがワンタップ受諾</div><div style="font-size:11px;color:var(--ink-2);line-height:1.6;margin-bottom:6px;padding-left:14px;position:relative">
-        <span style="position:absolute;left:0;color:var(--or);font-weight:900;font-size:10px">✓</span>レッスンはテンプレ＋ドリルから数分で完成・共有も</div>
+        <span style="position:absolute;left:0;color:var(--ac-text);font-weight:900;font-size:10px">✓</span>コーチがアプリで提出→自動集計・不足は自動アラート</div><div style="font-size:11px;color:var(--ink-2);line-height:1.6;margin-bottom:6px;padding-left:14px;position:relative">
+        <span style="position:absolute;left:0;color:var(--ac-text);font-weight:900;font-size:10px">✓</span>代行はアプリで募集→他のコーチがワンタップ受諾</div><div style="font-size:11px;color:var(--ink-2);line-height:1.6;margin-bottom:6px;padding-left:14px;position:relative">
+        <span style="position:absolute;left:0;color:var(--ac-text);font-weight:900;font-size:10px">✓</span>レッスンはテンプレ＋ドリルから数分で完成・共有も</div>
     </div>
   </div></div></div>
   </div>
@@ -879,8 +921,8 @@ tr.total td{background:var(--tint);font-weight:900;border-bottom:none;border-top
       <div style="display:flex;align-items:center;gap:16px;background:var(--tint);padding:13px 22px;border:1px solid var(--line);box-shadow:var(--sh-1)">
         <div style="text-align:center"><div class="note" style="font-weight:800">導入前</div>
           <div class="stat" style="font-size:24px;color:var(--navy)">28.0<span style="font-size:12px">h</span></div></div>
-        <div class="stat" style="font-size:17px;color:var(--or)">→</div>
-        <div style="text-align:center"><div class="note" style="font-weight:800;color:var(--or)">導入後</div>
+        <div class="stat" style="font-size:17px;color:var(--ac-text)">→</div>
+        <div style="text-align:center"><div class="note" style="font-weight:800;color:var(--ac-text)">導入後</div>
           <div class="stat or" style="font-size:24px">3.9<span style="font-size:12px">h</span></div></div>
       </div>
     </div>
@@ -956,7 +998,7 @@ tr.total td{background:var(--tint);font-weight:900;border-bottom:none;border-top
             <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:7px">
               <span style="font-size:11.5px;font-weight:700;color:#fff">のびしろ＋（口座振替0.95%）</span>
               <span class="stat" style="font-size:21px;color:var(--or-2)">約27万円</span></div>
-            <div style="height:14px;background:var(--or);width:26.4%;box-shadow:0 0 20px rgba(224,105,28,.5)"></div>
+            <div style="height:14px;background:var(--hot-2);width:26.4%;box-shadow:0 0 20px rgba(240,139,62,.5)"></div>
           </div>
           <div style="margin-top:22px;padding-top:18px;border-top:1px solid rgba(255,255,255,.16);text-align:center">
             <div style="font-size:10.5px;color:rgba(255,255,255,.6);font-weight:700;letter-spacing:.1em">年間の削減額</div>
@@ -1024,16 +1066,16 @@ tr.total td{background:var(--tint);font-weight:900;border-bottom:none;border-top
           <div id="churnflow"><div style="display:flex;align-items:center;gap:11px;margin-bottom:8px">
   <span class="stat" style="width:20px;font-size:11px;color:var(--ink-4);flex:0 0 auto">01</span>
   <span style="font-size:12.5px;font-weight:600;color:var(--ink-2)">レッスンで頑張っている</span></div><div style="display:flex;align-items:center;gap:11px;margin-bottom:8px">
-  <span class="stat" style="width:20px;font-size:11px;color:var(--or);flex:0 0 auto">02</span>
-  <span style="font-size:12.5px;font-weight:900;color:var(--or)">その頑張りが保護者に伝わらない</span></div><div style="display:flex;align-items:center;gap:11px;margin-bottom:8px">
+  <span class="stat" style="width:20px;font-size:11px;color:var(--ac-text);flex:0 0 auto">02</span>
+  <span style="font-size:12.5px;font-weight:900;color:var(--ac-text)">その頑張りが保護者に伝わらない</span></div><div style="display:flex;align-items:center;gap:11px;margin-bottom:8px">
   <span class="stat" style="width:20px;font-size:11px;color:var(--ink-4);flex:0 0 auto">03</span>
   <span style="font-size:12.5px;font-weight:600;color:var(--ink-2)">「成長してる実感がない」</span></div><div style="display:flex;align-items:center;gap:11px;margin-bottom:8px">
   <span class="stat" style="width:20px;font-size:11px;color:var(--ink-4);flex:0 0 auto">04</span>
   <span style="font-size:12.5px;font-weight:600;color:var(--ink-2)">「そろそろ他の習い事も…」</span></div><div style="display:flex;align-items:center;gap:11px;margin-bottom:0">
-  <span class="stat" style="width:20px;font-size:11px;color:var(--or);flex:0 0 auto">05</span>
-  <span style="font-size:12.5px;font-weight:900;color:var(--or)">退会</span></div></div>
+  <span class="stat" style="width:20px;font-size:11px;color:var(--ac-text);flex:0 0 auto">05</span>
+  <span style="font-size:12.5px;font-weight:900;color:var(--ac-text)">退会</span></div></div>
           <div style="margin-top:16px;padding:15px 17px;background:var(--or-tint);border-left:3px solid var(--or)">
-            <div style="font-size:12px;font-weight:800;color:var(--or);margin-bottom:7px">のびしろ＋が断ち切る場所</div>
+            <div style="font-size:12px;font-weight:800;color:var(--ac-text);margin-bottom:7px">のびしろ＋が断ち切る場所</div>
             <div style="font-size:11.5px;color:var(--ink-2);line-height:1.78">
               測定・検定・成長カレンダー・アルバムが、②の「伝わらない」を自動で解決します。
             </div>
@@ -1050,10 +1092,10 @@ tr.total td{background:var(--tint);font-weight:900;border-bottom:none;border-top
   <div class="note" style="font-weight:800;">年間の退会者</div>
   <div style="margin-top:5px"><span class="stat" style="font-size:19px;color:var(--navy)">36名 → 24名</span></div>
   <div class="note" style="margin-top:5px">12名の在籍が積み上がる</div></div><div style="text-align:center;padding:10px 10px;background:var(--or-tint);border:1px solid var(--or-line);box-shadow:var(--sh-or)">
-  <div class="note" style="font-weight:800;color:var(--or)">1年後の月商差</div>
+  <div class="note" style="font-weight:800;color:var(--ac-text)">1年後の月商差</div>
   <div style="margin-top:5px"><span class="stat or" style="font-size:22px;">+9.6万円</span></div>
   <div class="note" style="margin-top:5px">12名 × 8,000円</div></div><div style="text-align:center;padding:10px 10px;background:var(--or-tint);border:1px solid var(--or-line);box-shadow:var(--sh-or)">
-  <div class="note" style="font-weight:800;color:var(--or)">年商インパクト</div>
+  <div class="note" style="font-weight:800;color:var(--ac-text)">年商インパクト</div>
   <div style="margin-top:5px"><span class="stat or" style="font-size:22px;">約+115万円</span></div>
   <div class="note" style="margin-top:5px">積み上がりベース</div></div></div>
           <div style="margin-top:9px;padding:10px 14px;background:var(--tint);border-left:3px solid var(--navy)">
@@ -1067,11 +1109,11 @@ tr.total td{background:var(--tint);font-weight:900;border-bottom:none;border-top
         <div class="card" style="margin-top:8px;padding:11px 16px 8px">
           <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:4px">
             <div style="font-size:11.5px;font-weight:900">在籍数の推移（新規入会 月3名で一定と仮定）</div>
-            <div class="lgd"><span><i style="background:#3D5893"></i>現状（退会 月3名）</span><span><i style="background:#E0691C"></i>のびしろ+導入後（退会 月2名）</span></div>
+            <div class="lgd"><span><i style="background:#3D5893"></i>現状（退会 月3名）</span><span><i style="background:#BE5712"></i>のびしろ+導入後（退会 月2名）</span></div>
           </div>
           <div id="chart16"><svg viewBox="0 0 770 92" style="width:100%;height:auto;overflow:visible" role="img" aria-label="在籍数の推移。現状は12ヶ月後も100名、のびしろ＋導入後は112名。">
     <defs><linearGradient id="gAcc" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#E0691C" stop-opacity=".22"></stop><stop offset="1" stop-color="#E0691C" stop-opacity="0"></stop>
+      <stop offset="0" stop-color="#BE5712" stop-opacity=".22"></stop><stop offset="1" stop-color="#BE5712" stop-opacity="0"></stop>
     </linearGradient></defs>
     <line class="c-grid" x1="30" y1="59.3" x2="724" y2="59.3"></line>
     <text class="c-ax" x="23" y="62.8" text-anchor="end">100</text><line class="c-grid" x1="30" y1="41.0" x2="724" y2="41.0"></line>
@@ -1079,10 +1121,10 @@ tr.total td{background:var(--tint);font-weight:900;border-bottom:none;border-top
     <text class="c-ax" x="23" y="26.2" text-anchor="end">110</text><text class="c-ax" x="30.0" y="86" text-anchor="start">今月</text><text class="c-ax" x="377.0" y="86" text-anchor="middle">6ヶ月後</text><text class="c-ax" x="724.0" y="86" text-anchor="end">12ヶ月後</text>
     <path d="M30.0 59.3 L87.8 55.7 L145.7 52.0 L203.5 48.3 L261.3 44.7 L319.2 41.0 L377.0 37.3 L434.8 33.7 L492.7 30.0 L550.5 26.3 L608.3 22.7 L666.2 19.0 L724.0 15.3 L724.0 74.0 L30.0 74.0 Z" fill="url(#gAcc)"></path>
     <path d="M30.0 59.3 L87.8 59.3 L145.7 59.3 L203.5 59.3 L261.3 59.3 L319.2 59.3 L377.0 59.3 L434.8 59.3 L492.7 59.3 L550.5 59.3 L608.3 59.3 L666.2 59.3 L724.0 59.3" fill="none" stroke="#3D5893" stroke-width="2" stroke-dasharray="5 3" stroke-linecap="round"></path>
-    <path d="M30.0 59.3 L87.8 55.7 L145.7 52.0 L203.5 48.3 L261.3 44.7 L319.2 41.0 L377.0 37.3 L434.8 33.7 L492.7 30.0 L550.5 26.3 L608.3 22.7 L666.2 19.0 L724.0 15.3" fill="none" stroke="#E0691C" stroke-width="2.5" stroke-linecap="round"></path>
-    <circle cx="724.0" cy="15.3" r="4" fill="#E0691C" stroke="#fff" stroke-width="2"></circle>
+    <path d="M30.0 59.3 L87.8 55.7 L145.7 52.0 L203.5 48.3 L261.3 44.7 L319.2 41.0 L377.0 37.3 L434.8 33.7 L492.7 30.0 L550.5 26.3 L608.3 22.7 L666.2 19.0 L724.0 15.3" fill="none" stroke="#BE5712" stroke-width="2.5" stroke-linecap="round"></path>
+    <circle cx="724.0" cy="15.3" r="4" fill="#BE5712" stroke="#fff" stroke-width="2"></circle>
     <circle cx="724.0" cy="59.3" r="4" fill="#3D5893" stroke="#fff" stroke-width="2"></circle>
-    <text class="c-lb" x="732.0" y="18.3" fill="#E0691C">112名</text>
+    <text class="c-lb" x="732.0" y="18.3" fill="#BE5712">112名</text>
     <text class="c-lb" x="732.0" y="62.3" fill="#3D5893">100名</text>
   </svg>
   <div style="font-size:10px;color:var(--ink-3);margin-top:1px;line-height:1.45">
@@ -1147,7 +1189,7 @@ tr.total td{background:var(--tint);font-weight:900;border-bottom:none;border-top
   <span style="flex:0 0 50px;font-size:10px;font-weight:800;color:rgba(255,255,255,.48)">3年後</span>
   <span style="flex:0 0 60px;font-size:13.5px;font-weight:900;color:#fff">5店舗</span>
   <span style="flex:1;height:8px;background:rgba(255,255,255,.09);position:relative">
-    <span style="position:absolute;inset:0 auto 0 0;width:100%;background:var(--or);box-shadow:0 0 16px rgba(224,105,28,.55)"></span></span>
+    <span style="position:absolute;inset:0 auto 0 0;width:100%;background:var(--hot-2);box-shadow:0 0 16px rgba(240,139,62,.55)"></span></span>
   <span class="stat" style="flex:0 0 68px;text-align:right;font-size:17px;color:var(--or-2)">500名</span>
   <span style="flex:0 0 76px;text-align:right;font-size:10.5px;color:rgba(255,255,255,.5);font-weight:700">事務 週19.5h</span></div></div>
         <div style="display:flex;gap:12px;margin-top:12px" id="econ17"><div class="pane" style="flex:1;padding:11px 14px">
@@ -1361,21 +1403,21 @@ tr.total td{background:var(--tint);font-weight:900;border-bottom:none;border-top
  </div><div class="card acc" style="flex:1;padding:0;overflow:hidden;border-top:2px solid var(--or)">
    <div style="padding:11px 13px 9px">
      <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:7px">
-       <span class="stat" style="font-size:19px;color:var(--or)">03</span>
+       <span class="stat" style="font-size:19px;color:var(--ac-text)">03</span>
        <span style="font-size:9.5px;font-weight:800;color:var(--ink-4)">即日〜3日</span></div>
      <div style="font-size:12.5px;font-weight:900;line-height:1.48;margin-bottom:6px;min-height:26px">生徒情報の登録</div>
      <div style="font-size:10.5px;color:var(--ink-2);line-height:1.62;min-height:42px">既存名簿をCSVで取り込み。生徒・保護者・クラス・月謝額を反映します。</div>
    </div>
-   <div style="padding:9px 16px;background:var(--or-tint);border-top:1px solid var(--line);font-size:10px;font-weight:800;color:var(--or);line-height:1.5;min-height:29px;display:flex;align-items:center">★ クラブ様のお手間 ①</div>
+   <div style="padding:9px 16px;background:var(--or-tint);border-top:1px solid var(--line);font-size:10px;font-weight:800;color:var(--ac-text);line-height:1.5;min-height:29px;display:flex;align-items:center">★ クラブ様のお手間 ①</div>
  </div><div class="card acc" style="flex:1;padding:0;overflow:hidden;border-top:2px solid var(--or)">
    <div style="padding:11px 13px 9px">
      <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:7px">
-       <span class="stat" style="font-size:19px;color:var(--or)">04</span>
+       <span class="stat" style="font-size:19px;color:var(--ac-text)">04</span>
        <span style="font-size:9.5px;font-weight:800;color:var(--ink-4)">1〜2週間</span></div>
      <div style="font-size:12.5px;font-weight:900;line-height:1.48;margin-bottom:6px;min-height:26px">保護者へご案内・口座振替の登録</div>
      <div style="font-size:10.5px;color:var(--ink-2);line-height:1.62;min-height:42px">ご案内文を配信 → 保護者がアプリ登録 → 口座振替の設定。未登録者は自動で一覧化。</div>
    </div>
-   <div style="padding:9px 16px;background:var(--or-tint);border-top:1px solid var(--line);font-size:10px;font-weight:800;color:var(--or);line-height:1.5;min-height:29px;display:flex;align-items:center">★ クラブ様のお手間 ②</div>
+   <div style="padding:9px 16px;background:var(--or-tint);border-top:1px solid var(--line);font-size:10px;font-weight:800;color:var(--ac-text);line-height:1.5;min-height:29px;display:flex;align-items:center">★ クラブ様のお手間 ②</div>
  </div><div class="card flat" style="flex:1;padding:0;overflow:hidden;border-top:2px solid var(--navy)">
    <div style="padding:11px 13px 9px">
      <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:7px">
@@ -1387,11 +1429,11 @@ tr.total td{background:var(--tint);font-weight:900;border-bottom:none;border-top
    <div style="padding:9px 16px;background:var(--tint);border-top:1px solid var(--line);font-size:10px;font-weight:800;color:var(--ink-3);line-height:1.5;min-height:29px;display:flex;align-items:center">弊社が伴走サポート</div>
  </div></div></div>
     <div class="card" style="margin-top:10px;padding:9px 16px 8px">
-      <div style="font-size:11.5px;font-weight:900;margin-bottom:1px">導入スケジュールの目安 ─ <span class="or">オレンジがクラブ様・保護者にお願いする作業</span>です</div>
+      <div style="font-size:11.5px;font-weight:900;margin-bottom:1px">導入スケジュールの目安 ─ <span style="color:var(--ac-text)">水色がクラブ様・保護者にお願いする作業</span>です</div>
       <div id="gantt21"><div style="display:flex;gap:10px;align-items:center;margin:6px 0 4px">
       <span style="flex:0 0 168px"></span>
       <span style="flex:1;display:flex"><span style="flex:1;font-size:9px;font-weight:800;color:var(--ink-4);letter-spacing:.08em;border-left:1px solid var(--line);padding-left:6px">1週目</span><span style="flex:1;font-size:9px;font-weight:800;color:var(--ink-4);letter-spacing:.08em;border-left:1px solid var(--line);padding-left:6px">2週目</span><span style="flex:1;font-size:9px;font-weight:800;color:var(--ink-4);letter-spacing:.08em;border-left:1px solid var(--line);padding-left:6px">3週目</span><span style="flex:1;font-size:9px;font-weight:800;color:var(--ink-4);letter-spacing:.08em;border-left:1px solid var(--line);padding-left:6px">4週目</span></span>
-      <span style="flex:0 0 62px;font-size:9px;font-weight:800;color:var(--or);letter-spacing:.06em;text-align:right">運用開始 ▶</span>
+      <span style="flex:0 0 62px;font-size:9px;font-weight:800;color:var(--ac-text);letter-spacing:.06em;text-align:right">運用開始 ▶</span>
     </div><div style="display:flex;gap:10px;align-items:center;margin-bottom:3px">
       <span style="flex:0 0 168px;font-size:10.5px;line-height:1.3">
         <b style="color:var(--ink-3);font-size:9px;letter-spacing:.06em">弊社</b><br>
@@ -1403,30 +1445,30 @@ tr.total td{background:var(--tint);font-weight:900;border-bottom:none;border-top
       <span style="flex:0 0 62px"></span>
     </div><div style="display:flex;gap:10px;align-items:center;margin-bottom:3px">
       <span style="flex:0 0 168px;font-size:10.5px;line-height:1.3">
-        <b style="color:var(--or);font-size:9px;letter-spacing:.06em">クラブ様</b><br>
+        <b style="color:var(--ac-text);font-size:9px;letter-spacing:.06em">クラブ様</b><br>
         <span style="font-weight:700;color:var(--ink-2)">生徒情報のご提供（既存名簿でOK）</span></span>
       <span style="flex:1;position:relative;height:15px;background:linear-gradient(90deg,var(--line) 1px,transparent 1px);background-size:25% 100%">
         <span style="position:absolute;top:0;bottom:0;left:0%;width:25%;
           background:var(--or);border-radius:3px;
-          box-shadow:0 2px 8px rgba(224,105,28,.32)"></span></span>
+          box-shadow:0 2px 8px rgba(34,167,232,.34)"></span></span>
       <span style="flex:0 0 62px"></span>
     </div><div style="display:flex;gap:10px;align-items:center;margin-bottom:3px">
       <span style="flex:0 0 168px;font-size:10.5px;line-height:1.3">
-        <b style="color:var(--or);font-size:9px;letter-spacing:.06em">クラブ様</b><br>
+        <b style="color:var(--ac-text);font-size:9px;letter-spacing:.06em">クラブ様</b><br>
         <span style="font-weight:700;color:var(--ink-2)">保護者へご案内を配信</span></span>
       <span style="flex:1;position:relative;height:15px;background:linear-gradient(90deg,var(--line) 1px,transparent 1px);background-size:25% 100%">
         <span style="position:absolute;top:0;bottom:0;left:25%;width:25%;
           background:var(--or);border-radius:3px;
-          box-shadow:0 2px 8px rgba(224,105,28,.32)"></span></span>
+          box-shadow:0 2px 8px rgba(34,167,232,.34)"></span></span>
       <span style="flex:0 0 62px"></span>
     </div><div style="display:flex;gap:10px;align-items:center;margin-bottom:3px">
       <span style="flex:0 0 168px;font-size:10.5px;line-height:1.3">
-        <b style="color:var(--or);font-size:9px;letter-spacing:.06em">保護者</b><br>
+        <b style="color:var(--ac-text);font-size:9px;letter-spacing:.06em">保護者</b><br>
         <span style="font-weight:700;color:var(--ink-2)">アプリ登録・口座振替の設定</span></span>
       <span style="flex:1;position:relative;height:15px;background:linear-gradient(90deg,var(--line) 1px,transparent 1px);background-size:25% 100%">
         <span style="position:absolute;top:0;bottom:0;left:50%;width:50%;
           background:var(--or);border-radius:3px;
-          box-shadow:0 2px 8px rgba(224,105,28,.32)"></span></span>
+          box-shadow:0 2px 8px rgba(34,167,232,.34)"></span></span>
       <span style="flex:0 0 62px"></span>
     </div></div>
     </div>
@@ -1449,7 +1491,7 @@ tr.total td{background:var(--tint);font-weight:900;border-bottom:none;border-top
         <h2>クラブ様にお願いするのは、<span class="or">この2つだけ</span>です。</h2></div>
       <span class="chip o">これ以外は、すべて弊社で対応します</span>
     </div>
-    <div class="grid g2" style="margin-top:22px" id="ask22"><div class="card acc" style="padding:0;overflow:hidden;border-top:2px solid var(--or)">
+    <div class="grid g2" style="margin-top:22px" id="ask22"><div class="card hot" style="padding:0;overflow:hidden;border-top:2px solid var(--hot)">
   <div style="padding:20px 24px 15px">
     <div style="display:flex;align-items:center;gap:13px;margin-bottom:12px">
       <span class="stat or" style="font-size:26px">01</span>
@@ -1466,9 +1508,9 @@ tr.total td{background:var(--tint);font-weight:900;border-bottom:none;border-top
         <span style="color:var(--ink-3);font-weight:700">弊社のサポート</span>
         <strong>取込用フォーマット提供／取込代行 可</strong></div>
     </div>
-    <div style="margin-top:12px;font-size:11px;color:var(--ink-2);line-height:1.75;padding:11px 14px;background:var(--or-tint);border-left:2px solid var(--or)">
+    <div style="margin-top:12px;font-size:11px;color:var(--ink-2);line-height:1.75;padding:11px 14px;background:var(--hot-tint);border-left:2px solid var(--hot)">
       <span class="or" style="font-weight:900">✓</span> Excel・スプレッドシートの名簿をそのままお送りいただければ、<strong>弊社で整形して取り込みます。</strong>実質のご負担はほぼありません。</div>
-  </div></div><div class="card acc" style="padding:0;overflow:hidden;border-top:2px solid var(--or)">
+  </div></div><div class="card hot" style="padding:0;overflow:hidden;border-top:2px solid var(--hot)">
   <div style="padding:20px 24px 15px">
     <div style="display:flex;align-items:center;gap:13px;margin-bottom:12px">
       <span class="stat or" style="font-size:26px">02</span>
@@ -1485,7 +1527,7 @@ tr.total td{background:var(--tint);font-weight:900;border-bottom:none;border-top
         <span style="color:var(--ink-3);font-weight:700">弊社のサポート</span>
         <strong class="or">案内文・お便り・FAQを全てご用意</strong></div>
     </div>
-    <div style="margin-top:12px;font-size:11px;color:var(--ink-2);line-height:1.75;padding:11px 14px;background:var(--or-tint);border-left:2px solid var(--or)">
+    <div style="margin-top:12px;font-size:11px;color:var(--ink-2);line-height:1.75;padding:11px 14px;background:var(--hot-tint);border-left:2px solid var(--hot)">
       <span class="or" style="font-weight:900">✓</span> 未登録のご家庭は<strong>自動で一覧に表示</strong>され、リマインドもアプリから送れます。「誰がまだか分からない」は起きません。</div>
   </div></div></div>
     <div style="margin-top:18px;padding:15px 24px;background:var(--navy);box-shadow:var(--sh-2);display:flex;align-items:center;gap:22px">
@@ -1532,7 +1574,7 @@ tr.total td{background:var(--tint);font-weight:900;border-bottom:none;border-top
           <strong>「お子さんの成長が見えるアプリを始めます」</strong>とお伝えください。ご案内文もこの形でご用意しています。
         </div>
       </div>
-      <div style="flex:0 0 194px;text-align:center;background:#fff;padding:18px;border:1px solid var(--or-line);box-shadow:var(--sh-or)">
+      <div style="flex:0 0 194px;text-align:center;background:#fff;padding:18px;border:1px solid var(--hot-line);box-shadow:var(--sh-hot)">
         <div style="font-size:10px;color:var(--ink-3);font-weight:800;letter-spacing:.1em">保護者の作業</div>
         <div><span class="stat or" style="font-size:36px">約5分</span></div>
         <div style="font-size:10.5px;color:var(--ink-3);font-weight:700">スマホで完結・一度きり</div>
