@@ -555,6 +555,7 @@ tr:hover td { background: var(--bg-secondary); }
         <button class="nav-item" onclick="showPage('students',this)"><span class="ni">👥</span>生徒名簿</button>
         <button class="nav-item" onclick="showPage('schedule',this)"><span class="ni">📅</span>クラス・スケジュール</button>
         <button class="nav-item" onclick="showPage('annual',this)"><span class="ni">🗓</span>年間スケジュール</button>
+        <button class="nav-item" onclick="showPage('payswitch',this)" style="position:relative;"><span class="ni">💳</span>集金の乗り換え<span class="nbadge blue">NEW</span></button>
       </div>
       <div class="nav-sec">
         <div class="nav-sec-lbl">スタジオ管理</div>
@@ -1590,6 +1591,7 @@ const pageTitles = {
   students: '生徒名簿',
   schedule: 'クラス・スケジュール',
   annual: '年間スケジュール',
+  payswitch: '集金サービス乗り換えスケジュール',
   coaches: 'コーチ情報',
   rules: '会員ルール設定',
   manual: 'レッスンマニュアル',
@@ -1613,6 +1615,7 @@ const topbarActions = {
   faq: '',
   rules: '💾 保存する',
   annual: '+ イベント追加',
+  payswitch: '',
   appdemo: '',
   flyer: '🖨 PDFで印刷する'
 };
@@ -1986,6 +1989,547 @@ function copyText(text, btn) {
 </div>
 `
 ;
+})();
+
+/* ===================== PAGE: 集金サービス乗り換えスケジュール ===================== */
+(function(){
+  const WD = ['日','月','火','水','木','金','土'];
+  const NEW_LABEL = 'アスリートスコア集金（口座振替）';
+
+  /* 現行サービスごとの条件（すべて一般的な目安。契約プランにより異なるため画面上で調整可） */
+  const SERVICES = {
+    cash:     { label:'現金集金（集金袋・手渡し）', group:'アナログ集金',
+                curDay:-1, stopDay:-1, notice:0, regist:'paper', dup:'low',
+                summary:'停止手続きは不要。保護者が初めて口座を登録するため、登録率の確保が最大の山場です。',
+                risks:['保護者にとって初めての口座振替登録になるため、記入ミス・提出漏れが出やすい。用紙は手渡し＋LINEの二重案内が安全です。',
+                       '「現金の方が良い」という声が一定数出ます。切替理由（領収書の自動発行・未納連絡の削減）を先に伝えてください。',
+                       '最終集金月にレッスンを欠席した家庭の回収漏れが起きやすいので、欠席者リストで個別に確認を。'] },
+    transfer: { label:'銀行振込（保護者が毎月振込）', group:'アナログ集金',
+                curDay:-1, stopDay:-1, notice:0, regist:'paper', dup:'low',
+                summary:'停止手続きは不要。振込を止めてもらう告知と、口座振替登録の同時進行が必要です。',
+                risks:['案内後も振込を続けてしまう家庭が出ます。初回引き落とし月は「振込不要」を必ず単独メッセージで告知してください。',
+                       '振込と引き落としが重なった場合は翌月分に充当するか返金するか、事前にルールを決めておくと問い合わせが減ります。',
+                       '振込手数料を保護者が負担していた場合は、切替のメリットとして案内に含めると納得を得やすいです。'] },
+    ricoh:    { label:'口座振替（リコーリース）', group:'口座振替代行サービス',
+                curDay:27, stopDay:20, notice:1, regist:'paper', dup:'high',
+                summary:'解約予告と請求データの締め日が別に存在します。締め日を1日過ぎると1ヶ月分まるごと二重請求になります。',
+                risks:['停止依頼が締め日に間に合わないと、初回引き落とし月に旧・新の両方から引き落とされます。返金対応は保護者の信頼を大きく損ねます。',
+                       '解約後も口座振替依頼書の原本は返却されません。新サービス用に保護者から改めて登録を取り直す必要があります。',
+                       '最低利用期間や解約金の条項が契約書に入っている場合があります。必ず契約書の該当条項を確認してください。'] },
+    smbc:     { label:'口座振替（SMBCファイナンスサービス）', group:'口座振替代行サービス',
+                curDay:27, stopDay:25, notice:1, regist:'paper', dup:'high',
+                summary:'請求データを送った後の取消は原則できません。停止は「データを送らない」形で行うため、社内の締め日管理が重要です。',
+                risks:['月次データ送信後の取消・変更は受け付けられないことが多く、送信してしまうと二重請求が確定します。',
+                       '振替不能（残高不足）の再請求が翌月に繰り越される仕組みの場合、解約後も未収分の回収経路が残ります。最終月の未収リストを必ず出力・保管してください。',
+                       '加盟店番号の廃止処理に時間がかかることがあります。停止依頼は書面で控えを残しましょう。'] },
+    mufgf:    { label:'口座振替（三菱UFJファクター）', group:'口座振替代行サービス',
+                curDay:27, stopDay:20, notice:1, regist:'paper', dup:'high',
+                summary:'金融機関ごとに口座登録の反映期間が異なります。地方銀行・信用金庫の家庭ほど余裕が必要です。',
+                risks:['銀行によって口座振替の登録反映が1〜2ヶ月かかる場合があります。ゆうちょ・信金の家庭は早めに用紙を回収してください。',
+                       '停止依頼の締め日が「振替日の前月20日」など前月中に来るため、初回引き落とし月の2ヶ月前から動く必要があります。',
+                       '未反映のまま初回を迎えた家庭は現金対応になります。予備の集金袋を用意しておくと現場が混乱しません。'] },
+    yucho:    { label:'ゆうちょ銀行 自動払込み', group:'口座振替代行サービス',
+                curDay:27, stopDay:10, notice:1, regist:'paper', dup:'high',
+                summary:'郵送でのやり取りが多く、書面の往復に時間がかかります。日程は最も余裕を持って組んでください。',
+                risks:['廃止（停止）の届出は郵送または窓口が基本です。到着までの日数を見込んで締め日の1週間前に投函してください。',
+                       '払込書の記入不備による返送が発生しやすく、1往復で2週間ロスすることがあります。',
+                       'ゆうちょ口座のみ登録している家庭は、新サービスでも同じ口座が使えるか事前に確認しておくと安心です。'] },
+    jaccs:    { label:'口座振替（JACCS）', group:'口座振替代行サービス',
+                curDay:27, stopDay:20, notice:1, regist:'paper', dup:'high',
+                summary:'解約予告と当月分データの締め日を分けて管理する必要があります。担当営業への連絡は書面で残してください。',
+                risks:['電話連絡だけでは停止処理が進まないことがあります。必ずメールまたは書面で依頼し、受領確認を取ってください。',
+                       '解約月をまたぐ未収金の扱い（継続回収するか打ち切るか）を先に確定しておかないと、保護者への説明がぶれます。',
+                       '契約書に自動更新条項がある場合、更新日を過ぎると次の1年分の縛りが発生します。更新日を必ず確認してください。'] },
+    enpay:    { label:'エンペイ（enpay）', group:'決済・会員管理サービス',
+                curDay:27, stopDay:25, notice:1, regist:'web', dup:'mid',
+                summary:'保護者側の登録がWeb完結のため、切替のスピードは出しやすい構成です。停止は請求作成を止める運用が中心です。',
+                risks:['請求作成後に停止すると保護者に通知が飛んだままになります。請求は「作成しない」ことで止めてください。',
+                       'コンビニ払い・PayPay等を併用していた家庭は、新サービスの支払手段に同じ選択肢があるか確認が必要です。',
+                       '過去の入金履歴はサービス解約後に閲覧できなくなる場合があります。解約前にCSVで全期間をエクスポートしてください。'] },
+    hacomono: { label:'hacomono（会員管理一体型）', group:'決済・会員管理サービス',
+                curDay:27, stopDay:20, notice:2, regist:'web', dup:'high',
+                summary:'年間契約かつ会員データも同居しているため、解約予告・データ移行・決済停止の3点を並行で進めます。',
+                risks:['年間契約で解約予告が2ヶ月前などに設定されているケースが多く、予告漏れは次年度分の費用発生に直結します。',
+                       '月謝以外（入会金・物販・チケット）の請求もサービス内で動いている場合、止め忘れが起きやすいので請求種別を全て洗い出してください。',
+                       '会員情報・予約履歴・決済履歴のエクスポートは解約日までに完了させる必要があります。移行データの項目対応表を先に作ってください。'] },
+    card:     { label:'クレジットカード決済（Square / Stripe 等）', group:'決済・会員管理サービス',
+                curDay:-1, stopDay:25, notice:0, regist:'web', dup:'mid',
+                summary:'サブスクリプション（継続課金）の停止漏れが最大のリスクです。生徒単位で1件ずつ確認して止めてください。',
+                risks:['継続課金は生徒ごとに個別設定されているため、一括停止できず1件ずつの解除漏れが起きます。名簿と課金一覧を1対1で突合してください。',
+                       'カード情報は移行できません。保護者に新サービスで再登録してもらう必要があります。',
+                       '課金日が「登録日から1ヶ月ごと」の場合、生徒ごとに最終課金日が異なります。最終課金日の一覧を作ってから停止日を決めてください。'] },
+    other:    { label:'その他・わからない', group:'決済・会員管理サービス',
+                curDay:27, stopDay:20, notice:1, regist:'paper', dup:'high',
+                summary:'最も余裕のある条件（解約予告1ヶ月・締め日は前月20日）で仮組みしています。契約書を確認して条件を調整してください。',
+                risks:['まずは契約書で「解約予告期間」「停止依頼の締め日」「最低利用期間」の3点を確認し、上の詳細設定に入力してください。',
+                       '契約書が見つからない場合は、現行サービスの担当窓口に「解約する場合の予告期間と最終引き落としの締め日」を書面で照会してください。',
+                       '条件が確定するまでは、初回引き落とし月を1ヶ月後ろに倒しておくと安全です。'] }
+  };
+
+  const DUP_PILL = {
+    high:'<span class="pill pill-red">二重請求リスク 高</span>',
+    mid: '<span class="pill pill-yellow">二重請求リスク 中</span>',
+    low: '<span class="pill pill-green">二重請求リスク 低</span>'
+  };
+
+  /* --------------- 日付ユーティリティ --------------- */
+  const today = (function(){ const d = new Date(); d.setHours(0,0,0,0); return d; })();
+  function mkDate(y,m,day){ return day === 0 ? new Date(y,m,0) : new Date(y,m-1,day); }
+  function shiftMonth(t,d){ const n = t.y*12 + (t.m-1) + d; return { y: Math.floor(n/12), m: n%12 + 1 }; }
+  function isBiz(d){ const w = d.getDay(); return w !== 0 && w !== 6; }
+  function nextBiz(d){ const x = new Date(d); while(!isBiz(x)) x.setDate(x.getDate()+1); return x; }
+  function prevBiz(d){ const x = new Date(d); while(!isBiz(x)) x.setDate(x.getDate()-1); return x; }
+  function minusBiz(d,n){ const x = new Date(d); let c = 0; while(c < n){ x.setDate(x.getDate()-1); if(isBiz(x)) c++; } return x; }
+  function plusBiz(d,n){ const x = new Date(d); let c = 0; while(c < n){ x.setDate(x.getDate()+1); if(isBiz(x)) c++; } return x; }
+  function minusDays(d,n){ const x = new Date(d); x.setDate(x.getDate()-n); return x; }
+  function fmt(d){ return d.getFullYear() + '年' + (d.getMonth()+1) + '月' + d.getDate() + '日(' + WD[d.getDay()] + ')'; }
+  function fmtShort(d){ return (d.getMonth()+1) + '/' + d.getDate() + '(' + WD[d.getDay()] + ')'; }
+  function diffDays(d){ return Math.round((d - today) / 86400000); }
+
+  /* --------------- スケジュール算出 --------------- */
+  /* 初回引き落とし日を起点に、必要な作業日を逆算する */
+  function buildPlan(cfg){
+    const s = SERVICES[cfg.svc];
+    const T = cfg.target;               // 新サービスでの初回引き落とし月
+    const prev = shiftMonth(T,-1);      // 現行サービスでの最終引き落とし月
+    const paper = s.regist === 'paper';
+
+    /* 引き落とし日は休業日なら翌営業日、教室側の作業期限は休業日なら前営業日に寄せる */
+    const newDebit   = nextBiz(mkDate(T.y, T.m, cfg.newDay));       // 初回引き落とし日
+    const dataDue    = minusBiz(newDebit, 10);                      // 請求データ確定・登録期限
+    const bankRegDue = prevBiz(paper ? minusDays(dataDue, 30) : minusBiz(dataDue, 5)); // 口座登録の完了期限
+    const guideStart = prevBiz(minusDays(bankRegDue, 21));          // 保護者への案内配信・登録開始
+    const follow1    = prevBiz(minusDays(bankRegDue, 10));
+    const follow2    = prevBiz(minusDays(bankRegDue, 3));
+    const applyDue   = prevBiz(minusDays(guideStart, 14));          // 新サービスの審査完了・初期設定
+    const applyStart = prevBiz(minusDays(applyDue, 14));            // 新サービスへ申込
+    const contract   = prevBiz(minusDays(applyStart, 7));           // 現行契約の条件確認
+
+    const hasStop    = cfg.stopDay >= 0;
+    const stopDue    = hasStop ? prevBiz(mkDate(prev.y, prev.m, cfg.stopDay)) : null; // 停止依頼の提出期限
+    const noticeM    = shiftMonth(prev, -s.notice);
+    const notice     = s.notice > 0 ? prevBiz(mkDate(noticeM.y, noticeM.m, 5)) : null;
+    const hasCurDay  = cfg.curDay >= 0;
+    const lastDebit  = hasCurDay ? nextBiz(mkDate(prev.y, prev.m, cfg.curDay)) : prevBiz(mkDate(prev.y, prev.m, 0));
+    const dupCheck   = hasCurDay ? plusBiz(mkDate(T.y, T.m, cfg.curDay), 1) : prevBiz(mkDate(T.y, T.m, 5));
+    const resultDay  = plusBiz(newDebit, 3);
+    /* 締めは月末営業日。ただし振替結果の確認より前には来ないようにする */
+    const monthEnd   = prevBiz(mkDate(T.y, T.m, 0));
+    const closeDay   = monthEnd > resultDay ? monthEnd : plusBiz(resultDay, 1);
+
+    const cnt = cfg.count;
+    const rows = [];
+    const add = (date, phase, task, detail, owner, flag) => rows.push({ date, phase, task, detail, owner, flag: flag || '' });
+
+    add(contract, 'A', '現行サービスの契約条件を確認する',
+        '解約予告期間・停止依頼の締め日・最低利用期間の3点を契約書で確認。条件が違えば下の詳細設定を修正してください。', '教室');
+    if (notice) add(notice, 'A', '現行サービスへ解約（停止）を予告する',
+        '解約予告' + s.notice + 'ヶ月の条件に対応。電話ではなくメールまたは書面で連絡し、受領確認を残します。', '教室', 'warn');
+    add(applyStart, 'B', NEW_LABEL + 'を申し込む',
+        '加盟申込書・本人確認書類・振込先口座情報を提出。審査は5〜10営業日が目安です。', '教室');
+    add(applyDue, 'B', '審査完了・管理画面の初期設定を終える',
+        '月謝額・きょうだい割・請求区分（月謝／教材費）を登録し、テスト請求で金額を検算します。', '教室');
+    add(guideStart, 'C', '保護者へ切替案内を配信し、口座登録を開始する',
+        '対象' + cnt + '名へLINE配信' + (paper ? '＋口座振替依頼書を配布（記入例を必ず添付）。' : '＋登録URLを案内（Web登録は数分で完了）。'), '教室');
+    add(follow1, 'C', '登録状況をチェックし、未登録者へ1回目のフォロー',
+        '登録済／未登録を名簿で色分け。この時点で8割（' + Math.ceil(cnt*0.8) + '名）到達が目安です。', '教室');
+    add(follow2, 'C', '未登録者へ2回目のフォロー（電話・レッスン時に直接）',
+        '残っている家庭は「用紙を紛失」「口座を決めかねている」が大半です。予備用紙を持って対面で回収します。', 'コーチ');
+    add(bankRegDue, 'C', '口座登録の完了期限（対象' + cnt + '名）',
+        paper ? '銀行側の口座確認に3〜4週間かかります。この日を過ぎた提出は初回引き落としに間に合いません。'
+              : 'Web登録は反映が早いものの、金融機関メンテナンス日の影響を受けます。前日までの完了を推奨します。', '教室', 'key');
+    if (stopDue) add(stopDue, 'D', '現行サービスへ' + T.m + '月分の停止依頼を提出する',
+        'この締め日を過ぎると' + T.m + '月分が旧サービスからも引き落とされ、二重請求になります。提出後は受領確認を取ってください。', '教室', 'danger');
+    add(lastDebit, 'D', '現行サービスでの最終' + (hasCurDay ? '引き落とし' : '集金') + '（' + prev.m + '月分）',
+        hasCurDay ? '振替不能となった家庭の未収リストを出力・保管します。解約後は再請求できません。'
+                  : '欠席者の回収漏れが出やすいタイミングです。名簿で全員分の受領を確認してください。', '教室');
+    add(dataDue, 'E', T.m + '月分の請求データを確定・登録する',
+        '未登録の家庭は現金対応に切り替え、請求データから除外します。登録件数と請求件数の一致を確認。', '教室', 'key');
+    add(newDebit, 'E', '★ ' + NEW_LABEL + 'で初回引き落とし（' + T.m + '月分）',
+        '毎月' + cfg.newDay + '日が引き落とし日になります（休業日は翌営業日）。', '新サービス', 'key');
+    add(dupCheck, 'D', '二重請求チェック（旧サービスからの引き落としがないか確認）',
+        hasCurDay ? '旧サービスの' + T.m + '月振替日の翌営業日に、通帳・管理画面の両方で引き落としが発生していないか確認します。'
+                  : '旧方式での入金が続いていないか確認し、重複分は翌月充当または返金で処理します。', '教室', 'danger');
+    add(resultDay, 'E', '振替結果を確認し、振替不能の家庭へ再請求案内',
+        '残高不足での振替不能は初回に3〜5%程度発生します。翌月合算か現金かをその場で選んでもらいます。', '教室');
+    add(closeDay, 'E', '入金照合を終え、乗り換え完了',
+        '請求件数・入金件数・未収件数の3点を突合し、翌月から通常運用へ移行します。', '教室');
+
+    rows.sort((a,b) => a.date - b.date);
+    return { rows, s, T, prev, newDebit, dataDue, bankRegDue, guideStart, lastDebit, stopDue,
+             requiredStart: rows[0].date, hasCurDay: hasCurDay };
+  }
+
+  /* --------------- 月の選択肢 --------------- */
+  function monthOptions(){
+    const base = { y: today.getFullYear(), m: today.getMonth()+1 };
+    const out = [];
+    for (let i = 1; i <= 15; i++) out.push(shiftMonth(base, i));
+    return out;
+  }
+
+  function isFeasible(cfg, t){
+    const c = { svc: cfg.svc, target: t, newDay: cfg.newDay, count: cfg.count, curDay: cfg.curDay, stopDay: cfg.stopDay };
+    return buildPlan(c).requiredStart >= today;
+  }
+
+  /* --------------- 描画 --------------- */
+  const PHASES = {
+    A: { name:'① 現行の整理', cls:'pill-gray' },
+    B: { name:'② 新規申込',   cls:'pill-blue' },
+    C: { name:'③ 保護者登録', cls:'pill-purple' },
+    D: { name:'④ 旧サービス停止', cls:'pill-red' },
+    E: { name:'⑤ 初回請求',   cls:'pill-green' }
+  };
+
+  function readCfg(){
+    return {
+      svc:    document.getElementById('ps-svc').value,
+      target: JSON.parse(document.getElementById('ps-month').value),
+      newDay: parseInt(document.getElementById('ps-day').value, 10),
+      count:  Math.max(1, parseInt(document.getElementById('ps-count').value, 10) || 1),
+      curDay:  parseInt(document.getElementById('ps-curday').value, 10),
+      stopDay: parseInt(document.getElementById('ps-stopday').value, 10)
+    };
+  }
+
+  /* サービスを選び直したら、そのサービスの標準条件に戻してから最短月へ自動で合わせる */
+  window.psOnSvc = function(){
+    const s = SERVICES[document.getElementById('ps-svc').value];
+    document.getElementById('ps-curday').value = String(s.curDay);
+    document.getElementById('ps-stopday').value = String(s.stopDay);
+    const cfg = readCfg();
+    const sel = document.getElementById('ps-month');
+    const opts = monthOptions();
+    for (let i = 0; i < opts.length; i++) {
+      if (isFeasible(cfg, opts[i])) { sel.selectedIndex = i; break; }
+    }
+    window.psRender();
+  };
+
+  window.psSetMonth = function(y,m){
+    const sel = document.getElementById('ps-month');
+    const v = JSON.stringify({y:y, m:m});
+    for (let i = 0; i < sel.options.length; i++) if (sel.options[i].value === v) sel.selectedIndex = i;
+    window.psRender();
+  };
+
+  window.psProgress = function(){
+    const all = document.querySelectorAll('.ps-chk');
+    const done = document.querySelectorAll('.ps-chk:checked').length;
+    const pct = all.length ? Math.round(done / all.length * 100) : 0;
+    document.getElementById('ps-prog-bar').style.width = pct + '%';
+    document.getElementById('ps-prog-txt').textContent = done + ' / ' + all.length + ' 完了（' + pct + '%）';
+    document.querySelectorAll('.ps-chk').forEach(c => {
+      c.closest('tr').style.opacity = c.checked ? '0.5' : '';
+    });
+  };
+
+  const psTexts = {};   /* コピー用テキストは描画ごとにここへ保持する */
+
+  window.psCopy = function(key, btn){
+    navigator.clipboard.writeText(psTexts[key] || '').then(() => {
+      const orig = btn.textContent;
+      btn.textContent = '✓ コピーしました';
+      setTimeout(() => { btn.textContent = orig; }, 2000);
+    });
+  };
+
+  function esc(t){
+    return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  window.psPrint = function(){ window.print(); };
+
+  window.psRender = function(){
+    const cfg = readCfg();
+    const p = buildPlan(cfg);
+    const s = p.s;
+    const T = p.T, prev = p.prev;
+
+    /* 月の選択肢ラベルを実現可能性つきで更新 */
+    const sel = document.getElementById('ps-month');
+    monthOptions().forEach((t,i) => {
+      const ok = isFeasible(cfg, t);
+      sel.options[i].textContent = t.y + '年' + t.m + '月' + (ok ? '' : '（準備期間が不足）');
+    });
+
+    /* 間に合わない場合の警告 */
+    let alertHtml = '';
+    if (p.requiredStart < today) {
+      let earliest = null;
+      const opts = monthOptions();
+      for (let i = 0; i < opts.length; i++) if (isFeasible(cfg, opts[i])) { earliest = opts[i]; break; }
+      alertHtml =
+        '<div class="ps-alert danger">' +
+          '<span class="ps-alert-ico">⚠️</span>' +
+          '<div><div class="ps-alert-t">' + T.y + '年' + T.m + '月を初回にするには準備期間が足りません</div>' +
+          '<div class="ps-alert-d">逆算すると準備開始は <strong>' + fmt(p.requiredStart) + '</strong> でした（本日は ' + fmt(today) + '）。' +
+          (earliest ? '間に合う最短は <strong>' + earliest.y + '年' + earliest.m + '月</strong> です。' : '') + '</div>' +
+          (earliest ? '<button class="btn btn-primary btn-sm" style="margin-top:10px;" onclick="psSetMonth(' + earliest.y + ',' + earliest.m + ')">' +
+            earliest.m + '月に切り替える</button>' : '') +
+          '</div></div>';
+    } else {
+      alertHtml =
+        '<div class="ps-alert ok">' +
+          '<span class="ps-alert-ico">✅</span>' +
+          '<div><div class="ps-alert-t">' + T.y + '年' + T.m + '月の初回引き落としに間に合います</div>' +
+          '<div class="ps-alert-d">準備開始は <strong>' + fmt(p.requiredStart) + '</strong>（あと' + diffDays(p.requiredStart) + '日）。下のスケジュール表どおりに進めてください。</div></div>' +
+        '</div>';
+    }
+
+    /* サマリータイル */
+    const tiles =
+      '<div class="ps-tiles">' +
+        '<div class="ps-tile"><div class="ps-tile-l">準備開始</div><div class="ps-tile-v">' + fmtShort(p.requiredStart) + '</div><div class="ps-tile-s">ここから動き出します</div></div>' +
+        '<div class="ps-tile"><div class="ps-tile-l">保護者の登録期限</div><div class="ps-tile-v">' + fmtShort(p.bankRegDue) + '</div><div class="ps-tile-s">対象' + cfg.count + '名の登録完了</div></div>' +
+        '<div class="ps-tile red"><div class="ps-tile-l">現行の最終' + (p.hasCurDay ? '引き落とし' : '集金') + '</div><div class="ps-tile-v">' + fmtShort(p.lastDebit) + '</div><div class="ps-tile-s">' + prev.m + '月分まで</div></div>' +
+        '<div class="ps-tile green"><div class="ps-tile-l">新サービス初回</div><div class="ps-tile-v">' + fmtShort(p.newDebit) + '</div><div class="ps-tile-s">' + T.m + '月分から</div></div>' +
+      '</div>';
+
+    /* 現行サービスの条件 */
+    const cond =
+      '<div class="card" style="margin-bottom:16px;">' +
+        '<div class="card-header"><div><div class="card-title">📋 ' + s.label + ' からの乗り換え条件</div>' +
+        '<div class="card-sub">下記は一般的な目安です。契約書の条件と異なる場合は詳細設定で調整してください</div></div>' + DUP_PILL[s.dup] + '</div>' +
+        '<div class="ps-cond">' +
+          '<div class="ps-cond-i"><div class="ps-cond-l">解約予告</div><div class="ps-cond-v">' + (s.notice > 0 ? s.notice + 'ヶ月前' : '不要') + '</div></div>' +
+          '<div class="ps-cond-i"><div class="ps-cond-l">停止依頼の締め日</div><div class="ps-cond-v">' + (p.stopDue ? '前月' + (cfg.stopDay === 0 ? '末' : cfg.stopDay) + '日ごろ' : '手続き不要') + '</div></div>' +
+          '<div class="ps-cond-i"><div class="ps-cond-l">現行の引き落とし日</div><div class="ps-cond-v">' + (p.hasCurDay ? '毎月' + (cfg.curDay === 0 ? '末' : cfg.curDay) + '日' : '引き落としなし') + '</div></div>' +
+          '<div class="ps-cond-i"><div class="ps-cond-l">保護者の再登録</div><div class="ps-cond-v">' + (s.regist === 'paper' ? '口座振替依頼書（紙）' : 'Web登録') + '</div></div>' +
+          '<div class="ps-cond-i"><div class="ps-cond-l">必要な準備期間</div><div class="ps-cond-v">約' + Math.max(1, Math.round((p.newDebit - p.requiredStart) / 86400000 / 30)) + 'ヶ月</div></div>' +
+        '</div>' +
+        '<div class="ps-summary">' + s.summary + '</div>' +
+      '</div>';
+
+    /* スケジュール表 */
+    let trs = '';
+    p.rows.forEach(r => {
+      const d = diffDays(r.date);
+      const late = d < 0;
+      const badge = late ? '<span class="pill pill-red">' + (-d) + '日超過</span>'
+                         : (d === 0 ? '<span class="pill pill-yellow">本日</span>'
+                                    : '<span class="pill pill-gray">あと' + d + '日</span>');
+      const ph = PHASES[r.phase];
+      trs +=
+        '<tr class="' + (r.flag ? 'ps-' + r.flag : '') + '">' +
+          '<td style="white-space:nowrap;"><input type="checkbox" class="ps-chk" onchange="psProgress()"></td>' +
+          '<td style="white-space:nowrap;"><div class="td-name">' + fmt(r.date) + '</div><div class="td-sub">' + badge + '</div></td>' +
+          '<td style="white-space:nowrap;"><span class="pill ' + ph.cls + '">' + ph.name + '</span></td>' +
+          '<td><div class="td-name">' + r.task + '</div><div class="td-sub" style="line-height:1.6;">' + r.detail + '</div></td>' +
+          '<td style="white-space:nowrap;">' + r.owner + '</td>' +
+        '</tr>';
+    });
+
+    const table =
+      '<div class="card" style="margin-bottom:16px;">' +
+        '<div class="card-header">' +
+          '<div><div class="card-title">🗓 乗り換えスケジュール表</div>' +
+          '<div class="card-sub">' + s.label + ' → ' + NEW_LABEL + '／初回引き落とし ' + fmt(p.newDebit) + '</div></div>' +
+          '<div class="ps-actions" style="display:flex;gap:8px;">' +
+            '<button class="btn btn-ghost btn-sm" onclick="psCopy(\'sched\',this)">📋 表をコピー</button>' +
+            '<button class="btn btn-outline btn-sm" onclick="psPrint()">🖨 印刷</button>' +
+          '</div>' +
+        '</div>' +
+        '<div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">' +
+          '<div class="prog-wrap" style="height:8px;flex:1;"><div class="prog-bar blue" id="ps-prog-bar" style="width:0%;height:8px;"></div></div>' +
+          '<div style="font-size:11.5px;font-weight:700;color:var(--text-3);white-space:nowrap;" id="ps-prog-txt">0 / ' + p.rows.length + ' 完了（0%）</div>' +
+        '</div>' +
+        '<div class="tbl-wrap ps-scroll"><table>' +
+          '<thead><tr><th style="width:36px;">済</th><th>実施日</th><th>フェーズ</th><th>やること</th><th>担当</th></tr></thead>' +
+          '<tbody>' + trs + '</tbody>' +
+        '</table></div>' +
+        '<div class="ps-note">※ 土日は営業日として計算していません（祝日は考慮していないため、期限日が祝日の場合は前営業日に繰り上げてください）。' +
+        '締め日・解約予告期間は契約プランにより異なります。必ず契約書またはサービス窓口でご確認ください。</div>' +
+      '</div>';
+
+    /* 注意点 */
+    let riskLis = '';
+    s.risks.forEach(r => { riskLis += '<li>' + r + '</li>'; });
+    const risks =
+      '<div class="card" style="margin-bottom:16px;">' +
+        '<div class="card-header"><div><div class="card-title">⚠️ ' + s.label + ' 特有の注意点</div>' +
+        '<div class="card-sub">乗り換え時につまずきやすいポイント</div></div></div>' +
+        '<ul class="ps-risks">' + riskLis + '</ul>' +
+      '</div>';
+
+    /* 保護者向け案内文 */
+    const tpl = guideText(p, cfg);
+    psTexts.sched = schedText(p, cfg);
+    psTexts.guide = tpl;
+    const guide =
+      '<div class="card">' +
+        '<div class="card-header">' +
+          '<div><div class="card-title">💬 保護者向け案内文（日付は自動で入っています）</div>' +
+          '<div class="card-sub">LINE公式アカウントでそのまま配信できます</div></div>' +
+          '<div class="ps-actions"><button class="btn btn-primary btn-sm" onclick="psCopy(\'guide\',this)">📋 文章をコピー</button></div>' +
+        '</div>' +
+        '<pre class="ps-tpl">' + esc(tpl) + '</pre>' +
+      '</div>';
+
+    document.getElementById('ps-result').innerHTML = alertHtml + tiles + cond + table + risks + guide;
+    window.psProgress();
+  };
+
+  function schedText(p, cfg){
+    let t = '【集金サービス乗り換えスケジュール】\n' +
+            p.s.label + ' → ' + NEW_LABEL + '\n' +
+            '初回引き落とし：' + fmt(p.newDebit) + '（' + p.T.m + '月分）\n\n';
+    p.rows.forEach(r => { t += '□ ' + fmt(r.date) + '　' + PHASES[r.phase].name + '　' + r.task + '（' + r.owner + '）\n'; });
+    return t;
+  }
+
+  function guideText(p, cfg){
+    const s = p.s;
+    return '【月謝のお支払い方法変更のお知らせ】\n\n' +
+      '保護者の皆さまへ\n' +
+      '日頃より当クラブの運営にご協力いただきありがとうございます。\n' +
+      p.T.y + '年' + p.T.m + '月分の月謝より、お支払い方法を' + NEW_LABEL + 'へ変更いたします。\n\n' +
+      '■ 新しい引き落とし日\n' +
+      '　毎月' + cfg.newDay + '日（金融機関休業日は翌営業日）\n' +
+      '　初回：' + fmt(p.newDebit) + '（' + p.T.m + '月分）\n\n' +
+      '■ ご登録のお願い（' + fmt(p.bankRegDue) + 'まで）\n' +
+      (s.regist === 'paper'
+        ? '　本日お渡しした口座振替依頼書に記入・捺印のうえ、レッスン時にご提出ください。\n　銀行での口座確認に3〜4週間かかるため、お早めのご提出をお願いいたします。\n'
+        : '　下記URLよりお手続きをお願いいたします（3分程で完了します）。\n　▶ 登録URL：（ここに登録リンクを貼り付けてください）\n') + '\n' +
+      '■ 現在のお支払いについて\n' +
+      '　' + p.prev.m + '月分（' + fmt(p.lastDebit) + '）が、' + s.label + 'での最後のお支払いとなります。\n' +
+      '　' + p.T.m + '月以降、これまでの方法でのお支払いは発生いたしません。\n\n' +
+      '■ ご注意\n' +
+      '　' + fmt(p.bankRegDue) + 'までにご登録が確認できない場合、' + p.T.m + '月分は現金でのお預かりとなります。\n' +
+      '　ご登録が完了しているかご不明な場合は、お気軽にお問い合わせください。\n\n' +
+      'ご不便をおかけしますが、ご協力のほどよろしくお願いいたします。';
+  }
+
+  /* --------------- ページ生成 --------------- */
+  let svcOpts = '';
+  const groups = {};
+  Object.keys(SERVICES).forEach(k => {
+    (groups[SERVICES[k].group] = groups[SERVICES[k].group] || []).push(k);
+  });
+  Object.keys(groups).forEach(g => {
+    svcOpts += '<optgroup label="' + g + '">';
+    groups[g].forEach(k => { svcOpts += '<option value="' + k + '">' + SERVICES[k].label + '</option>'; });
+    svcOpts += '</optgroup>';
+  });
+
+  let monthOpts = '';
+  monthOptions().forEach(t => {
+    monthOpts += '<option value="' + JSON.stringify(t).replace(/"/g,'&quot;') + '">' + t.y + '年' + t.m + '月</option>';
+  });
+
+  const dayOpts = [27,21,12,6].map(d => '<option value="' + d + '">毎月' + d + '日</option>').join('');
+  const curDayOpts = ['<option value="-1">引き落としなし（現金・振込など）</option>']
+    .concat([5,10,15,20,25,26,27].map(d => '<option value="' + d + '">毎月' + d + '日</option>'))
+    .concat(['<option value="0">毎月末日</option>']).join('');
+  const stopDayOpts = ['<option value="-1">停止手続きが不要</option>']
+    .concat([5,10,15,20,25].map(d => '<option value="' + d + '">前月' + d + '日</option>'))
+    .concat(['<option value="0">前月末日</option>']).join('');
+
+  const html =
+  '<div class="page" id="page-payswitch"><div class="ps-wrap">' +
+    '<div class="ps-hero">' +
+      '<div class="ps-hero-ico">💳</div>' +
+      '<div><div class="ps-hero-t">今使っている引き落としサービスを選ぶだけ</div>' +
+      '<div class="ps-hero-d">現在の集金方法を選ぶと、解約予告・締め日・保護者の口座登録期間を逆算して、' +
+      '二重請求を避ける乗り換えスケジュールが自動で表示されます。</div></div>' +
+    '</div>' +
+    '<div class="card" style="margin-bottom:16px;">' +
+      '<div class="ps-grid4">' +
+        '<div class="form-row" style="margin:0;"><label class="form-label">現在利用中の引き落としサービス<span class="req">*</span></label>' +
+          '<select class="form-select" id="ps-svc" onchange="psOnSvc()">' + svcOpts + '</select></div>' +
+        '<div class="form-row" style="margin:0;"><label class="form-label">新サービスでの初回引き落とし月</label>' +
+          '<select class="form-select" id="ps-month" onchange="psRender()">' + monthOpts + '</select></div>' +
+        '<div class="form-row" style="margin:0;"><label class="form-label">新サービスの引き落とし日</label>' +
+          '<select class="form-select" id="ps-day" onchange="psRender()">' + dayOpts + '</select></div>' +
+        '<div class="form-row" style="margin:0;"><label class="form-label">対象生徒数</label>' +
+          '<input class="form-input" type="number" id="ps-count" value="12" min="1" oninput="psRender()"></div>' +
+      '</div>' +
+      '<details class="ps-adv"><summary>⚙️ 現行サービスの条件を調整する（契約プランにより異なります）</summary>' +
+        '<div class="ps-grid2" style="margin-top:12px;">' +
+          '<div class="form-row" style="margin:0;"><label class="form-label">現行の引き落とし日</label>' +
+            '<select class="form-select" id="ps-curday" onchange="psRender()">' + curDayOpts + '</select></div>' +
+          '<div class="form-row" style="margin:0;"><label class="form-label">停止依頼の締め日</label>' +
+            '<select class="form-select" id="ps-stopday" onchange="psRender()">' + stopDayOpts + '</select>' +
+            '<div class="form-hint">「1月分を止めるために前年12月20日までに依頼」なら「前月20日」を選択</div></div>' +
+        '</div>' +
+      '</details>' +
+    '</div>' +
+    '<div id="ps-result"></div>' +
+  '</div></div>';
+
+  const style =
+  '<style>' +
+  '.ps-wrap { max-width: 1080px; }' +
+  '.ps-hero { background: linear-gradient(135deg, var(--primary-light) 0%, #F0FFF4 100%); border: 1px solid var(--primary);' +
+  '  border-radius: var(--radius-lg); padding: 18px 22px; margin-bottom: 16px; display: flex; gap: 16px; align-items: flex-start; }' +
+  '.ps-hero-ico { font-size: 32px; flex-shrink: 0; }' +
+  '.ps-hero-t { font-size: 15px; font-weight: 800; color: var(--primary-dark); margin-bottom: 4px; }' +
+  '.ps-hero-d { font-size: 12.5px; color: var(--text-2); line-height: 1.7; }' +
+  '.ps-grid4 { display: grid; grid-template-columns: 1.6fr 1fr 1fr 0.7fr; gap: 14px; }' +
+  '.ps-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }' +
+  /* セレクトの最長オプションでグリッドが広がるのを防ぐ */
+  '.ps-grid4 > *, .ps-grid2 > *, .ps-tiles > *, .ps-cond > * { min-width: 0; }' +
+  '.ps-grid4 select, .ps-grid2 select { max-width: 100%; }' +
+  '.ps-adv { margin-top: 14px; border-top: 1px solid var(--border); padding-top: 12px; }' +
+  '.ps-adv summary { font-size: 12px; font-weight: 700; color: var(--text-2); cursor: pointer; }' +
+  '.ps-adv summary:hover { color: var(--primary); }' +
+  '.ps-alert { display: flex; gap: 12px; align-items: flex-start; border-radius: var(--radius); padding: 14px 16px; margin-bottom: 16px; }' +
+  '.ps-alert.ok { background: var(--success-light); border: 1px solid var(--success); }' +
+  '.ps-alert.danger { background: var(--danger-light); border: 1px solid #FEB2B2; }' +
+  '.ps-alert-ico { font-size: 20px; flex-shrink: 0; }' +
+  '.ps-alert-t { font-size: 13.5px; font-weight: 800; margin-bottom: 3px; }' +
+  '.ps-alert.ok .ps-alert-t { color: #276749; }' +
+  '.ps-alert.danger .ps-alert-t { color: #C53030; }' +
+  '.ps-alert-d { font-size: 12.5px; color: var(--text-2); line-height: 1.7; }' +
+  '.ps-tiles { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; margin-bottom: 16px; }' +
+  '.ps-tile { background: var(--bg); border: 1px solid var(--border); border-left: 3px solid var(--primary);' +
+  '  border-radius: var(--radius); padding: 13px 15px; }' +
+  '.ps-tile.red { border-left-color: var(--danger); }' +
+  '.ps-tile.green { border-left-color: var(--success); }' +
+  '.ps-tile-l { font-size: 10.5px; font-weight: 700; color: var(--text-3); margin-bottom: 4px; }' +
+  '.ps-tile-v { font-size: 19px; font-weight: 900; letter-spacing: -0.5px; color: var(--text); }' +
+  '.ps-tile-s { font-size: 10.5px; color: var(--text-3); margin-top: 3px; }' +
+  '.ps-cond { display: grid; grid-template-columns: repeat(5,1fr); gap: 10px; }' +
+  '.ps-cond-i { background: var(--bg-secondary); border-radius: 9px; padding: 10px 12px; }' +
+  '.ps-cond-l { font-size: 10.5px; color: var(--text-3); font-weight: 700; margin-bottom: 3px; }' +
+  '.ps-cond-v { font-size: 12.5px; font-weight: 800; color: var(--text); }' +
+  '.ps-summary { margin-top: 12px; font-size: 12.5px; color: var(--text-2); line-height: 1.8;' +
+  '  background: var(--warning-light); border-radius: 9px; padding: 11px 14px; }' +
+  '#page-payswitch tr.ps-danger td { background: var(--danger-light); }' +
+  '#page-payswitch tr.ps-danger:hover td { background: #FFECEC; }' +
+  '#page-payswitch tr.ps-key td { background: var(--primary-light); }' +
+  '#page-payswitch tr.ps-key:hover td { background: #E1F2FD; }' +
+  '#page-payswitch tr.ps-warn td { background: var(--warning-light); }' +
+  '#page-payswitch .ps-chk { width: 16px; height: 16px; accent-color: var(--primary); cursor: pointer; }' +
+  /* 表は自身の中で横スクロールさせ、ページ全体を横に広げない（contain でカードの最小幅を切り離す） */
+  '.ps-scroll { overflow-x: auto; contain: inline-size; }' +
+  '.ps-scroll table { min-width: 640px; }' +
+  '.ps-note { font-size: 11px; color: var(--text-3); line-height: 1.7; margin-top: 12px; }' +
+  '.ps-risks { margin: 0; padding-left: 20px; }' +
+  '.ps-risks li { font-size: 12.5px; color: var(--text-2); line-height: 1.8; margin-bottom: 8px; }' +
+  '.ps-risks li:last-child { margin-bottom: 0; }' +
+  '.ps-tpl { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px;' +
+  '  font-family: inherit; font-size: 12.5px; color: var(--text-2); line-height: 1.9; white-space: pre-wrap; margin: 0; }' +
+  '@media (max-width: 900px) {' +
+  '  .ps-grid4, .ps-tiles { grid-template-columns: 1fr 1fr; }' +
+  '  .ps-cond { grid-template-columns: 1fr 1fr; }' +
+  '  .ps-grid2 { grid-template-columns: 1fr; }' +
+  '}' +
+  '@media (max-width: 600px) {' +
+  '  .ps-grid4, .ps-cond { grid-template-columns: 1fr; }' +
+  '  .ps-hero { padding: 14px 16px; }' +
+  '  .ps-tile-v { font-size: 17px; }' +
+  '}' +
+  '@media print {' +
+  '  .sidebar, .topbar, .ps-hero, .ps-actions, #page-payswitch .ps-adv { display: none !important; }' +
+  '  .content { margin: 0 !important; padding: 0 !important; }' +
+  '  .card { box-shadow: none !important; break-inside: avoid; }' +
+  '}' +
+  '</style>';
+
+  document.querySelector('.content').insertAdjacentHTML('beforeend', style + html);
+  window.psOnSvc();
 })();
 
 /* ===================== FAQ ===================== */
