@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>かんたんHP作成ツール</title>
+<link rel="stylesheet" href="assets/builder.css">
+</head>
+<body>
+
+<div class="app">
+  <!-- ================= 上部バー ================= -->
+  <header class="topbar">
+    <div class="brand">かんたんHP作成ツール</div>
+
+    <button class="tb-btn" id="btnTemplates">テンプレートを選ぶ</button>
+    <span class="saved" id="saved"></span>
+
+    <div class="devices" id="devices">
+      <button data-w="100%" class="on">PC</button>
+      <button data-w="820px">タブレット</button>
+      <button data-w="390px">スマホ</button>
+    </div>
+
+    <button class="tb-btn" id="btnCode">HTMLを見る</button>
+    <button class="tb-btn danger" id="btnReset">最初から</button>
+    <button class="tb-btn primary" id="btnExport">HTMLを書き出す</button>
+  </header>
+
+  <!-- ================= 左：ブロック一覧 ================= -->
+  <aside class="panel left">
+    <div class="panel-h">ページの構成</div>
+    <div id="blockList" class="blocklist"></div>
+    <div class="add-wrap">
+      <button class="add-btn" id="btnAdd">＋ ブロックを追加</button>
+      <div class="add-menu" id="addMenu" hidden></div>
+    </div>
+  </aside>
+
+  <!-- ================= 中央：プレビュー ================= -->
+  <main class="stage">
+    <div class="frame" id="frame">
+      <iframe id="preview" title="プレビュー"></iframe>
+    </div>
+  </main>
+
+  <!-- ================= 右：編集 ================= -->
+  <aside class="panel right">
+    <div class="tabs">
+      <button class="on" data-tab="edit">ブロック編集</button>
+      <button data-tab="design">デザイン</button>
+      <button data-tab="page">ページ設定</button>
+    </div>
+    <div class="panel-body" id="tab-edit"></div>
+    <div class="panel-body" id="tab-design" hidden></div>
+    <div class="panel-body" id="tab-page" hidden></div>
+  </aside>
+</div>
+
+<!-- ================= テンプレート選択 ================= -->
+<div class="modal" id="tplModal" hidden>
+  <div class="modal-box">
+    <h2>テンプレートを選ぶ</h2>
+    <p class="modal-sub">選ぶと、いまの内容は置きかわります。あとから中身は自由に変えられます。</p>
+    <div class="tpl-grid" id="tplGrid"></div>
+    <div class="modal-foot"><button class="tb-btn" id="tplClose">閉じる</button></div>
+  </div>
+</div>
+
+<!-- ================= HTML表示 ================= -->
+<div class="modal" id="codeModal" hidden>
+  <div class="modal-box wide">
+    <h2>書き出されるHTML</h2>
+    <p class="modal-sub">このまま1ファイルで動きます。サーバーにアップすれば公開できます。</p>
+    <textarea id="codeArea" readonly spellcheck="false"></textarea>
+    <div class="modal-foot">
+      <button class="tb-btn" id="codeCopy">コピー</button>
+      <button class="tb-btn" id="codeClose">閉じる</button>
+    </div>
+  </div>
+</div>
+
+<script src="assets/site-css.js"></script>
+<script src="assets/blocks.js"></script>
+<script src="assets/templates.js"></script>
+<script src="assets/app.js"></script>
+</body>
+</html>
