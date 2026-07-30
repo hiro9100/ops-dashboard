@@ -1994,7 +1994,7 @@ function copyText(text, btn) {
 /* ===================== PAGE: 集金サービス乗り換えスケジュール ===================== */
 (function(){
   const WD = ['日','月','火','水','木','金','土'];
-  const NEW_LABEL = 'アスリートスコア集金（口座振替）';
+  const NEW_LABEL = 'のびしろ＋（口座振替）';   /* 乗り換え先の集金サービス https://nobishiro-plus.com */
 
   /* 現行サービスごとの条件（すべて一般的な目安。契約プランにより異なるため画面上で調整可） */
   const SERVICES = {
@@ -2146,7 +2146,7 @@ function copyText(text, btn) {
     add(dataDue, 'E', T.m + '月分の請求データを確定・登録する',
         '未登録の家庭は現金対応に切り替え、請求データから除外します。登録件数と請求件数の一致を確認。', '教室', 'key');
     add(newDebit, 'E', '★ ' + NEW_LABEL + 'で初回引き落とし（' + T.m + '月分）',
-        '毎月' + cfg.newDay + '日が引き落とし日になります（休業日は翌営業日）。', '新サービス', 'key');
+        '毎月' + cfg.newDay + '日が引き落とし日になります（休業日は翌営業日）。', 'のびしろ＋', 'key');
     add(dupCheck, 'D', '二重請求チェック（旧サービスからの引き落としがないか確認）',
         hasCurDay ? '旧サービスの' + T.m + '月振替日の翌営業日に、通帳・管理画面の両方で引き落としが発生していないか確認します。'
                   : '旧方式での入金が続いていないか確認し、重複分は翌月充当または返金で処理します。', '教室', 'danger');
@@ -2284,7 +2284,7 @@ function copyText(text, btn) {
         '<div class="ps-tile"><div class="ps-tile-l">準備開始</div><div class="ps-tile-v">' + fmtShort(p.requiredStart) + '</div><div class="ps-tile-s">ここから動き出します</div></div>' +
         '<div class="ps-tile"><div class="ps-tile-l">保護者の登録期限</div><div class="ps-tile-v">' + fmtShort(p.bankRegDue) + '</div><div class="ps-tile-s">対象' + cfg.count + '名の登録完了</div></div>' +
         '<div class="ps-tile red"><div class="ps-tile-l">現行の最終' + (p.hasCurDay ? '引き落とし' : '集金') + '</div><div class="ps-tile-v">' + fmtShort(p.lastDebit) + '</div><div class="ps-tile-s">' + prev.m + '月分まで</div></div>' +
-        '<div class="ps-tile green"><div class="ps-tile-l">新サービス初回</div><div class="ps-tile-v">' + fmtShort(p.newDebit) + '</div><div class="ps-tile-s">' + T.m + '月分から</div></div>' +
+        '<div class="ps-tile green"><div class="ps-tile-l">のびしろ＋ 初回</div><div class="ps-tile-v">' + fmtShort(p.newDebit) + '</div><div class="ps-tile-s">' + T.m + '月分から</div></div>' +
       '</div>';
 
     /* 現行サービスの条件 */
@@ -2432,15 +2432,17 @@ function copyText(text, btn) {
       '<div class="ps-hero-ico">💳</div>' +
       '<div><div class="ps-hero-t">今使っている引き落としサービスを選ぶだけ</div>' +
       '<div class="ps-hero-d">現在の集金方法を選ぶと、解約予告・締め日・保護者の口座登録期間を逆算して、' +
-      '二重請求を避ける乗り換えスケジュールが自動で表示されます。</div></div>' +
+      'のびしろ＋への乗り換えスケジュールが自動で表示されます（二重請求を避ける日程で組まれます）。<br>' +
+      '<a href="https://nobishiro-plus.com" target="_blank" style="color:var(--primary-dark);font-weight:700;">のびしろ＋について ↗</a>' +
+      '</div></div>' +
     '</div>' +
     '<div class="card" style="margin-bottom:16px;">' +
       '<div class="ps-grid4">' +
         '<div class="form-row" style="margin:0;"><label class="form-label">現在利用中の引き落としサービス<span class="req">*</span></label>' +
           '<select class="form-select" id="ps-svc" onchange="psOnSvc()">' + svcOpts + '</select></div>' +
-        '<div class="form-row" style="margin:0;"><label class="form-label">新サービスでの初回引き落とし月</label>' +
+        '<div class="form-row" style="margin:0;"><label class="form-label">のびしろ＋での初回引き落とし月</label>' +
           '<select class="form-select" id="ps-month" onchange="psRender()">' + monthOpts + '</select></div>' +
-        '<div class="form-row" style="margin:0;"><label class="form-label">新サービスの引き落とし日</label>' +
+        '<div class="form-row" style="margin:0;"><label class="form-label">のびしろ＋の引き落とし日</label>' +
           '<select class="form-select" id="ps-day" onchange="psRender()">' + dayOpts + '</select></div>' +
         '<div class="form-row" style="margin:0;"><label class="form-label">対象生徒数</label>' +
           '<input class="form-input" type="number" id="ps-count" value="12" min="1" oninput="psRender()"></div>' +
