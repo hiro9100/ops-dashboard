@@ -223,37 +223,37 @@ p:last-child{margin-bottom:0}
 [data-ta].ta-none .ch{opacity:1}
 
 @keyframes ta-fadeup{from{opacity:0;transform:translateY(.65em)}to{opacity:1;transform:none}}
-[data-ta].ta-fadeup.in .ch{animation:ta-fadeup var(--ta-dur) var(--ta-ease) calc(var(--i)*var(--ta-stagger)) both}
+[data-ta].ta-fadeup.in .ch{animation:ta-fadeup var(--ta-dur) var(--ta-ease) calc(var(--ta-delay,0s) + var(--i)*var(--ta-stagger)) both}
 
 [data-ta].ta-maskline .ln{overflow:hidden;padding-bottom:.08em}
 @keyframes ta-maskline{from{transform:translateY(110%)}to{transform:none}}
-[data-ta].ta-maskline.in .ch{animation:ta-maskline var(--ta-dur) var(--ta-ease) calc(var(--i)*var(--ta-stagger)) both}
+[data-ta].ta-maskline.in .ch{animation:ta-maskline var(--ta-dur) var(--ta-ease) calc(var(--ta-delay,0s) + var(--i)*var(--ta-stagger)) both}
 
 @keyframes ta-blur{from{opacity:0;filter:blur(18px);transform:scale(1.18)}to{opacity:1;filter:blur(0);transform:none}}
-[data-ta].ta-blur.in .ch{animation:ta-blur var(--ta-dur) var(--ta-ease) calc(var(--i)*var(--ta-stagger)) both}
+[data-ta].ta-blur.in .ch{animation:ta-blur var(--ta-dur) var(--ta-ease) calc(var(--ta-delay,0s) + var(--i)*var(--ta-stagger)) both}
 
 [data-ta].ta-flip3d .ln{perspective:700px}
 @keyframes ta-flip3d{from{opacity:0;transform:rotateX(-95deg)}to{opacity:1;transform:none}}
 [data-ta].ta-flip3d.in .ch{transform-origin:50% 100%;
-  animation:ta-flip3d var(--ta-dur) var(--ta-ease) calc(var(--i)*var(--ta-stagger)) both}
+  animation:ta-flip3d var(--ta-dur) var(--ta-ease) calc(var(--ta-delay,0s) + var(--i)*var(--ta-stagger)) both}
 
 @keyframes ta-drop{from{opacity:0;transform:translateY(-.9em) rotate(-26deg)}to{opacity:1;transform:none}}
-[data-ta].ta-drop.in .ch{animation:ta-drop var(--ta-dur) var(--ta-ease) calc(var(--i)*var(--ta-stagger)) both}
+[data-ta].ta-drop.in .ch{animation:ta-drop var(--ta-dur) var(--ta-ease) calc(var(--ta-delay,0s) + var(--i)*var(--ta-stagger)) both}
 
 @keyframes ta-bounce{
   0%{opacity:0;transform:translateY(-1.3em) scale(.55)}
   55%{opacity:1;transform:translateY(.14em) scale(1.08)}
   75%{transform:translateY(-.06em) scale(.97)}
   100%{opacity:1;transform:none}}
-[data-ta].ta-bounce.in .ch{animation:ta-bounce var(--ta-dur) var(--ta-ease) calc(var(--i)*var(--ta-stagger)) both}
+[data-ta].ta-bounce.in .ch{animation:ta-bounce var(--ta-dur) var(--ta-ease) calc(var(--ta-delay,0s) + var(--i)*var(--ta-stagger)) both}
 
 @keyframes ta-slidealt{from{opacity:0;transform:translateX(var(--dir,-.8em))}to{opacity:1;transform:none}}
-[data-ta].ta-slidealt.in .ch{animation:ta-slidealt var(--ta-dur) var(--ta-ease) calc(var(--i)*var(--ta-stagger)) both}
+[data-ta].ta-slidealt.in .ch{animation:ta-slidealt var(--ta-dur) var(--ta-ease) calc(var(--ta-delay,0s) + var(--i)*var(--ta-stagger)) both}
 
 @keyframes ta-scatter{
   from{opacity:0;transform:translate(var(--x,0),var(--y,0)) rotate(var(--r,0deg)) scale(.35)}
   to{opacity:1;transform:none}}
-[data-ta].ta-scatter.in .ch{animation:ta-scatter var(--ta-dur) var(--ta-ease) calc(var(--i)*var(--ta-stagger)) both}
+[data-ta].ta-scatter.in .ch{animation:ta-scatter var(--ta-dur) var(--ta-ease) calc(var(--ta-delay,0s) + var(--i)*var(--ta-stagger)) both}
 
 @keyframes ta-neon{
   0%{opacity:.15;text-shadow:none}
@@ -262,7 +262,7 @@ p:last-child{margin-bottom:0}
   22%{opacity:1;text-shadow:0 0 6px var(--c-primary),0 0 18px var(--c-primary)}
   28%{opacity:.4;text-shadow:none}
   36%,100%{opacity:1;text-shadow:0 0 8px var(--c-primary),0 0 26px var(--c-primary),0 0 48px var(--c-primary)}}
-[data-ta].ta-neon.in .ch{animation:ta-neon var(--ta-dur) linear calc(var(--i)*var(--ta-stagger)) both}
+[data-ta].ta-neon.in .ch{animation:ta-neon var(--ta-dur) linear calc(var(--ta-delay,0s) + var(--i)*var(--ta-stagger)) both}
 
 [data-ta].ta-fillgrad{
   background:linear-gradient(100deg,var(--c-primary),var(--c-accent)) 0 0/0% 100% no-repeat,
@@ -270,7 +270,7 @@ p:last-child{margin-bottom:0}
   -webkit-background-clip:text;background-clip:text;
   color:transparent;-webkit-text-fill-color:transparent}
 @keyframes ta-fillgrad{from{background-size:0% 100%,100% 100%}to{background-size:100% 100%,100% 100%}}
-[data-ta].ta-fillgrad.in{animation:ta-fillgrad var(--ta-dur) var(--ta-ease) both}
+[data-ta].ta-fillgrad.in{animation:ta-fillgrad var(--ta-dur) var(--ta-ease) var(--ta-delay,0s) both}
 
 /* スクランブル・タイプライターはJSで動かす */
 [data-ta].ta-type .ch{visibility:hidden}
@@ -278,6 +278,56 @@ p:last-child{margin-bottom:0}
 .ta-cursor{display:inline-block;width:.06em;height:1em;background:currentColor;
   vertical-align:-.12em;margin-left:.04em;animation:ta-blink .9s steps(1) infinite}
 @keyframes ta-blink{0%,49%{opacity:1}50%,100%{opacity:0}}
+
+/* ==========================================================
+   画像・要素のアニメーション
+   [data-ia] が付いた要素に、JSが ia-on と ia-<種類> を付ける。
+   （JSが動かない環境では何も隠さない＝そのまま表示される）
+   ========================================================== */
+.ia-on:not(.in){opacity:0}
+
+@keyframes ia-zoomin{from{opacity:0;transform:scale(1.16)}to{opacity:1;transform:none}}
+.ia-zoomin.in{animation:ia-zoomin var(--ta-dur) var(--ta-ease) var(--ia-delay,0s) both}
+
+@keyframes ia-zoomout{from{opacity:0;transform:scale(.84)}to{opacity:1;transform:none}}
+.ia-zoomout.in{animation:ia-zoomout var(--ta-dur) var(--ta-ease) var(--ia-delay,0s) both}
+
+@keyframes ia-slideleft{from{opacity:0;transform:translateX(-9%)}to{opacity:1;transform:none}}
+.ia-slideleft.in{animation:ia-slideleft var(--ta-dur) var(--ta-ease) var(--ia-delay,0s) both}
+
+@keyframes ia-slideright{from{opacity:0;transform:translateX(9%)}to{opacity:1;transform:none}}
+.ia-slideright.in{animation:ia-slideright var(--ta-dur) var(--ta-ease) var(--ia-delay,0s) both}
+
+@keyframes ia-slideup{from{opacity:0;transform:translateY(11%)}to{opacity:1;transform:none}}
+.ia-slideup.in{animation:ia-slideup var(--ta-dur) var(--ta-ease) var(--ia-delay,0s) both}
+
+@keyframes ia-wipe{from{clip-path:inset(100% 0 0 0)}to{clip-path:inset(0 0 0 0)}}
+.ia-wipe{overflow:hidden}
+.ia-wipe.in{opacity:1;animation:ia-wipe var(--ta-dur) cubic-bezier(.76,0,.24,1) var(--ia-delay,0s) both}
+
+@keyframes ia-circle{from{clip-path:circle(0% at 50% 50%)}to{clip-path:circle(78% at 50% 50%)}}
+.ia-circle.in{opacity:1;animation:ia-circle var(--ta-dur) cubic-bezier(.76,0,.24,1) var(--ia-delay,0s) both}
+
+@keyframes ia-blurin{from{opacity:0;filter:blur(22px);transform:scale(1.06)}to{opacity:1;filter:blur(0);transform:none}}
+.ia-blurin.in{animation:ia-blurin var(--ta-dur) var(--ta-ease) var(--ia-delay,0s) both}
+
+@keyframes ia-tilt3d{from{opacity:0;transform:perspective(1100px) rotateY(-22deg) translateX(-4%)}
+  to{opacity:1;transform:none}}
+.ia-tilt3d.in{transform-origin:0% 50%;
+  animation:ia-tilt3d var(--ta-dur) var(--ta-ease) var(--ia-delay,0s) both}
+
+@keyframes ia-flipup{from{opacity:0;transform:perspective(1100px) rotateX(-52deg)}to{opacity:1;transform:none}}
+.ia-flipup.in{transform-origin:50% 100%;
+  animation:ia-flipup var(--ta-dur) var(--ta-ease) var(--ia-delay,0s) both}
+
+/* ループするもの */
+@keyframes ia-kenburns{0%{transform:scale(1) translate(0,0)}100%{transform:scale(1.12) translate(-1.5%,-1.5%)}}
+.ia-kenburns{overflow:hidden}
+.ia-kenburns.in{opacity:1}
+.ia-kenburns.in > img{animation:ia-kenburns 14s ease-in-out infinite alternate}
+
+@keyframes ia-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
+.ia-float.in{opacity:1;animation:ia-float 4.5s ease-in-out infinite}
 
 /* ---------- ブロックの出現 ---------- */
 .rv{opacity:0;transform:translateY(34px);
@@ -315,6 +365,7 @@ p:last-child{margin-bottom:0}
     transition-duration:.001ms!important;scroll-behavior:auto!important}
   [data-ta] .ch{opacity:1!important;transform:none!important;filter:none!important;visibility:visible!important}
   [data-ta].ta-fillgrad{background-size:100% 100%,100% 100%!important}
+  .ia-on{opacity:1!important;transform:none!important;filter:none!important;clip-path:none!important}
   .rv{opacity:1!important;transform:none!important}
 }
 `;
@@ -408,12 +459,25 @@ const SITE_JS = `
     if(a !== 'fillgrad') split(el, a);
   });
 
+  /* 画像・要素のアニメーション */
+  [].slice.call(d.querySelectorAll('[data-ia]')).forEach(function(el){
+    var a = el.getAttribute('data-anim');
+    if(!a || a === 'none' || reduce) return;
+    el.classList.add('ia-on', 'ia-' + a);
+  });
+
+  /* 個別の「開始までの待ち」（style属性がぶつからないよう data 属性から反映する） */
+  [].slice.call(d.querySelectorAll('[data-delay]')).forEach(function(el){
+    var v = el.getAttribute('data-delay') + 'ms';
+    el.style.setProperty(el.hasAttribute('data-ia') ? '--ia-delay' : '--ta-delay', v);
+  });
+
   if(body.getAttribute('data-reveal') === '1' && !reduce){
     [].slice.call(d.querySelectorAll('.sec, .hero')).forEach(function(s){ s.classList.add('rv'); });
   }
 
   /* ---------- 画面に入ったら再生 ---------- */
-  var watch = [].slice.call(d.querySelectorAll('[data-ta]:not(.in), .rv'));
+  var watch = [].slice.call(d.querySelectorAll('[data-ta]:not(.in), .ia-on, .rv'));
   if(!('IntersectionObserver' in window) || reduce){
     watch.forEach(function(el){ el.classList.add('in'); });
   }else{

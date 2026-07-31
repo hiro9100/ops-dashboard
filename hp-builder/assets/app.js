@@ -9,6 +9,7 @@ const STORE_KEY = 'hp-builder-v1';
 
 let state = null;      // { template, meta, theme, blocks:[{id,type,props}] }
 let selected = null;   // 編集中のブロックID
+let selectedEl = null; // 編集中の要素 {role, kind, name}
 let uidSeq = 0;
 const DEFAULT_MOTION = { anim: 'fadeup', dur: 900, stagger: 40, ease: 'cubic-bezier(.2,.7,.3,1)', reveal: true };
 const uid = () => `b${Date.now().toString(36)}${(uidSeq++).toString(36)}`;
@@ -101,6 +102,9 @@ function themeCSS(t) {
 
 const bodyHTML = () => state.blocks.map((b) => BLOCKS[b.type].render(b.props)).join('\n\n');
 
+/* 書き出し時は編集画面専用の属性を取り除く（動作に必要な data-ta/-ia/-anim/-delay は残す） */
+const exportBody = () => bodyHTML().replace(/ data-el(?:name|kind)?="[^"]*"/g, '');
+
 /* 書き出し用の完成HTML（1ファイルで動く） */
 function fullHTML() {
   const m = state.meta;
@@ -121,7 +125,7 @@ ${SITE_CSS}
 </head>
 <body class="tpl-${esc(state.template)}" data-anim="${esc(state.motion.anim)}" data-reveal="${state.motion.reveal ? 1 : 0}">
 
-${bodyHTML()}
+${exportBody()}
 
 <script>${SITE_JS}<\/script>
 </body>
@@ -136,6 +140,19 @@ const PREVIEW_CSS = `
 [data-bid]{outline:2px solid transparent;outline-offset:-2px}
 [data-bid]:hover{outline-color:rgba(76,141,255,.45);cursor:pointer}
 [data-bid].__sel{outline-color:#4c8dff}
+
+/* クリックできる要素 */
+[data-el]{position:relative;outline:1px dashed transparent;outline-offset:3px;
+  transition:outline-color .12s}
+[data-el]:hover{outline-color:rgba(76,141,255,.85);cursor:pointer}
+[data-el].__elsel{outline:2px solid #4c8dff;outline-style:solid}
+[data-el]:hover::after,[data-el].__elsel::after{
+  content:attr(data-elname);position:absolute;top:2px;left:2px;z-index:20;
+  background:#4c8dff;color:#fff;border-radius:4px;padding:1px 7px;pointer-events:none;
+  font:700 10px/1.7 -apple-system,"Hiragino Sans",sans-serif;letter-spacing:.04em;white-space:nowrap}
+[data-elkind="ia"]:hover::after,[data-elkind="ia"].__elsel::after{background:#8b5cf6}
+[data-elkind="ia"]:hover{outline-color:rgba(139,92,246,.85)}
+[data-elkind="ia"].__elsel{outline-color:#8b5cf6}
 `;
 
 let pdoc = null;
@@ -147,10 +164,12 @@ function initPreview() {
       pdoc.getElementById('s-base').textContent = SITE_CSS;
       pdoc.getElementById('s-edit').textContent = PREVIEW_CSS;
       pdoc.addEventListener('click', (e) => {
-        const el = e.target.closest('[data-bid]');
-        if (el) { e.preventDefault(); select(el.dataset.bid); }
-        const a = e.target.closest('a');
-        if (a && !el) e.preventDefault();
+        e.preventDefault();
+        const blk = e.target.closest('[data-bid]');
+        if (!blk) return;
+        const elt = e.target.closest('[data-el]');
+        if (elt) selectEl(blk.dataset.bid, elt.dataset.el, elt.dataset.elkind, elt.dataset.elname);
+        else { selectedEl = null; select(blk.dataset.bid); }
       });
       res();
     }, { once: true });
@@ -181,6 +200,7 @@ function renderPreview(now = false) {
     const s = pdoc.createElement('script');
     s.textContent = SITE_JS;
     pdoc.body.appendChild(s);
+    markSelectedEl();
   };
   now ? run() : (pvTimer = setTimeout(run, 160));
 }
@@ -188,6 +208,23 @@ function renderPreview(now = false) {
 function highlight() {
   if (!pdoc) return;
   $$('[data-bid]', pdoc).forEach((el) => el.classList.toggle('__sel', el.dataset.bid === selected));
+  markSelectedEl();
+}
+
+/* 選択中の要素に枠を戻す（プレビューを作り直すと消えるため） */
+function markSelectedEl() {
+  if (!pdoc) return;
+  $$('[data-el].__elsel', pdoc).forEach((el) => el.classList.remove('__elsel'));
+  if (!selectedEl || !selected) return;
+  const blk = pdoc.querySelector(`[data-bid="${selected}"]`);
+  const el = blk && blk.querySelector(`[data-el="${selectedEl.role}"]`);
+  if (el) el.classList.add('__elsel');
+}
+
+function selectEl(blockId, role, kind, name) {
+  selected = blockId;
+  selectedEl = { role, kind, name };
+  renderList(); renderEditor(); highlight();
 }
 function scrollToBlock(id) {
   const el = pdoc && pdoc.querySelector(`[data-bid="${id}"]`);
@@ -202,7 +239,10 @@ function renderList() {
   wrap.innerHTML = state.blocks.map((b, i) => {
     const def = BLOCKS[b.type];
     const label = b.props.title || b.props.logo || def.label;
-    return `<div class="bl-item${b.id === selected ? ' on' : ''}" data-id="${b.id}">
+    const fixed = def.unique;   // ヘッダー・フッターは位置が決まっているので動かさない
+    return `<div class="bl-item${b.id === selected ? ' on' : ''}" data-id="${b.id}"
+        draggable="${fixed ? 'false' : 'true'}">
+      <span class="bl-grip">${fixed ? '&nbsp;' : '⠿'}</span>
       <span class="bl-ic">${def.icon}</span>
       <span class="bl-name">${esc(label)}<br><span class="bl-sub">${def.label}</span></span>
       <span class="bl-ops">
@@ -222,7 +262,7 @@ $('#blockList').addEventListener('click', (e) => {
   const i = state.blocks.findIndex((b) => b.id === id);
   const act = e.target.closest('button')?.dataset.act;
 
-  if (!act) { select(id); scrollToBlock(id); return; }
+  if (!act) { selectedEl = null; select(id); scrollToBlock(id); return; }
   if (act === 'up' && i > 0) state.blocks.splice(i - 1, 0, state.blocks.splice(i, 1)[0]);
   if (act === 'down' && i < state.blocks.length - 1) state.blocks.splice(i + 1, 0, state.blocks.splice(i, 1)[0]);
   if (act === 'dup') {
@@ -237,6 +277,93 @@ $('#blockList').addEventListener('click', (e) => {
   refresh();
 });
 
+/* ================================================================
+   ドラッグ&ドロップ（並べ替え / 位置を指定して追加）
+   ================================================================ */
+const listEl = $('#blockList');
+let drag = null;   // {mode:'move', id} または {mode:'add', type}
+
+/* ヘッダーは先頭、フッターは末尾に固定されるので、その内側に収める */
+function clampIdx(i) {
+  const lo = state.blocks[0] && state.blocks[0].type === 'header' ? 1 : 0;
+  const fi = state.blocks.findIndex((b) => b.type === 'footer');
+  const hi = fi >= 0 ? fi : state.blocks.length;
+  return Math.min(Math.max(i, lo), hi);
+}
+
+/* マウス位置から挿入先を求める（各項目の上半分なら手前） */
+function dropIndex(y) {
+  const items = $$('.bl-item', listEl);
+  for (let i = 0; i < items.length; i++) {
+    const r = items[i].getBoundingClientRect();
+    if (y < r.top + r.height / 2) return i;
+  }
+  return items.length;
+}
+
+function showLine(idx) {
+  const items = $$('.bl-item', listEl);
+  items.forEach((it) => it.classList.remove('over-top', 'over-bottom'));
+  if (!items.length) return;
+  if (idx < items.length) items[idx].classList.add('over-top');
+  else items[items.length - 1].classList.add('over-bottom');
+}
+function clearDrag() {
+  drag = null;
+  listEl.classList.remove('dropping');
+  $$('.bl-item', listEl).forEach((it) => it.classList.remove('over-top', 'over-bottom', 'dragging'));
+}
+
+listEl.addEventListener('dragstart', (e) => {
+  const it = e.target.closest('.bl-item');
+  if (!it || it.getAttribute('draggable') === 'false') return;
+  drag = { mode: 'move', id: it.dataset.id };
+  it.classList.add('dragging');
+  e.dataTransfer.effectAllowed = 'move';
+  e.dataTransfer.setData('text/plain', it.dataset.id);
+});
+listEl.addEventListener('dragend', clearDrag);
+
+listEl.addEventListener('dragover', (e) => {
+  if (!drag) return;
+  e.preventDefault();
+  e.dataTransfer.dropEffect = drag.mode === 'add' ? 'copy' : 'move';
+  listEl.classList.add('dropping');
+  showLine(clampIdx(dropIndex(e.clientY)));
+});
+listEl.addEventListener('dragleave', (e) => {
+  if (!listEl.contains(e.relatedTarget)) {
+    $$('.bl-item', listEl).forEach((it) => it.classList.remove('over-top', 'over-bottom'));
+    listEl.classList.remove('dropping');
+  }
+});
+
+listEl.addEventListener('drop', (e) => {
+  if (!drag) return;
+  e.preventDefault();
+  let at = clampIdx(dropIndex(e.clientY));
+
+  if (drag.mode === 'move') {
+    const from = state.blocks.findIndex((b) => b.id === drag.id);
+    if (from < 0) return clearDrag();
+    if (at > from) at--;                       // 自分を抜いた分だけ詰まる
+    if (at !== from) {
+      state.blocks.splice(at, 0, state.blocks.splice(from, 1)[0]);
+    }
+    selected = drag.id;
+  } else {
+    const nb = makeBlock(drag.type);
+    state.blocks.splice(at, 0, nb);
+    selected = nb.id;
+    selectedEl = null;
+    $('#addMenu').hidden = true;
+  }
+  clearDrag();
+  refresh();
+  const id = selected;
+  setTimeout(() => scrollToBlock(id), 220);
+});
+
 /* ---- ブロック追加メニュー ---- */
 function renderAddMenu() {
   const exists = new Set(state.blocks.map((b) => b.type));
@@ -244,7 +371,8 @@ function renderAddMenu() {
   const order = Object.keys(BLOCKS).filter((t) => BLOCKS[t].unique).concat(ADDABLE);
   const types = order.filter((t) => !(BLOCKS[t].unique && exists.has(t)));
   $('#addMenu').innerHTML = types.map((t) =>
-    `<button data-type="${t}"><span class="bl-ic">${BLOCKS[t].icon}</span>${BLOCKS[t].label}</button>`).join('');
+    `<button data-type="${t}" draggable="true" title="ドラッグして位置を指定できます">
+      <span class="bl-ic">${BLOCKS[t].icon}</span>${BLOCKS[t].label}</button>`).join('');
 }
 $('#btnAdd').addEventListener('click', (e) => {
   e.stopPropagation();
@@ -254,6 +382,15 @@ $('#btnAdd').addEventListener('click', (e) => {
 document.addEventListener('click', (e) => {
   if (!e.target.closest('.add-wrap')) $('#addMenu').hidden = true;
 });
+$('#addMenu').addEventListener('dragstart', (e) => {
+  const t = e.target.closest('button')?.dataset.type;
+  if (!t) return;
+  drag = { mode: 'add', type: t };
+  e.dataTransfer.effectAllowed = 'copy';
+  e.dataTransfer.setData('text/plain', 'add:' + t);
+});
+$('#addMenu').addEventListener('dragend', clearDrag);
+
 $('#addMenu').addEventListener('click', (e) => {
   const t = e.target.closest('button')?.dataset.type;
   if (!t) return;
@@ -354,9 +491,61 @@ function renderEditor() {
   const def = BLOCKS[b.type];
   const keep = box.scrollTop;
   box.innerHTML = `<div class="edit-head"><span class="bl-ic">${def.icon}</span>${esc(def.label)}</div>`
+    + elementPanel(b)
     + def.fields.map((f) => fieldHTML(f, b.props, 'props')).join('');
   box.scrollTop = keep;
 }
+
+/* 選択中の要素にアニメーションを付けるパネル */
+function elementPanel(b) {
+  if (!selectedEl) {
+    return `<div class="el-hint">
+      プレビューの<b>文字や画像をクリック</b>すると、そこにアニメーションを付けられます。<br>
+      テキストは文字アニメ12種、画像・カードは動き12種から選べます。
+    </div>`;
+  }
+  const isText = selectedEl.kind === 'ta';
+  const cfg = (b.props.anims || {})[selectedEl.role] || {};
+  const list = isText ? TEXT_ANIMS : IMAGE_ANIMS;
+  const cur = cfg.a || 'none';
+  const delay = cfg.d || 0;
+  return `<div class="el-panel">
+    <div class="eh">
+      <span class="badge">${isText ? 'テキスト' : '画像・要素'}</span>
+      <span class="en">${esc(selectedEl.name)}</span>
+      <button class="ex" data-elclose title="選択を解除">✕</button>
+    </div>
+    <div class="f"><label>アニメーション</label>
+      <select data-elk="a">${list.map(([v, l]) =>
+        `<option value="${v}"${cur === v ? ' selected' : ''}>${esc(l)}</option>`).join('')}</select>
+    </div>
+    <div class="f"><label>開始までの待ち</label>
+      <div class="f-row">
+        <input type="range" data-elk="d" min="0" max="1500" step="50" value="${delay}" data-suffix="ms">
+        <span class="f-val">${delay}ms</span>
+      </div>
+    </div>
+  </div>`;
+}
+
+/* 要素パネルの操作 */
+$('#tab-edit').addEventListener('click', (e) => {
+  if (e.target.closest('[data-elclose]')) { selectedEl = null; renderEditor(); highlight(); }
+});
+$('#tab-edit').addEventListener('input', (e) => {
+  const key = e.target.dataset.elk;
+  if (!key || !selectedEl) return;
+  const b = state.blocks.find((x) => x.id === selected);
+  if (!b) return;
+  b.props.anims = b.props.anims || {};
+  const cur = Object.assign({}, b.props.anims[selectedEl.role]);
+  cur[key] = key === 'd' ? Number(e.target.value) : e.target.value;
+  if ((!cur.a || cur.a === 'none') && !cur.d) delete b.props.anims[selectedEl.role];
+  else b.props.anims[selectedEl.role] = cur;
+  if (e.target.type === 'range') e.target.parentElement.querySelector('.f-val').textContent = e.target.value + 'ms';
+  renderPreview(true);  // 付けた動きをすぐ確認できるよう作り直す
+  save();
+});
 
 /* ---- 値の書き込み ---- */
 function setPath(root, path, val) {
@@ -373,7 +562,7 @@ function readEl(el) {
 
 $('#tab-edit').addEventListener('input', (e) => {
   const el = e.target;
-  if (!el.dataset.path) return;
+  if (!el.dataset.path) return;   // 要素パネル（data-elk）は別のハンドラが処理する
   const b = state.blocks.find((x) => x.id === selected);
   if (!b) return;
   setPath(b, el.dataset.path, readEl(el));

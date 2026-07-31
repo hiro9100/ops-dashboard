@@ -82,6 +82,39 @@ input,select,textarea{font:inherit}
 .bl-ops button:hover{background:#39404f;color:var(--tx)}
 .bl-fixed{font-size:10px;color:var(--tx2);padding:0 4px}
 
+/* ドラッグ&ドロップ */
+.bl-item{cursor:grab}
+.bl-item:active{cursor:grabbing}
+.bl-item.dragging{opacity:.4}
+.bl-item.over-top{box-shadow:0 -2px 0 0 var(--pri)}
+.bl-item.over-bottom{box-shadow:0 2px 0 0 var(--pri)}
+.blocklist.dropping{background:#151a24}
+.bl-grip{color:#4a5464;font-size:12px;line-height:1;cursor:grab;flex:none}
+.bl-item:hover .bl-grip{color:var(--tx2)}
+.add-menu button{cursor:grab}
+.add-menu button:active{cursor:grabbing}
+
+/* 要素アニメのパネル */
+.el-panel{
+  border:1px solid var(--pri);border-radius:var(--r);background:#18202e;
+  padding:12px;margin:-2px 0 16px
+}
+.el-panel .eh{display:flex;align-items:center;gap:8px;margin-bottom:11px}
+.el-panel .badge{
+  background:var(--pri);color:#fff;font-size:10.5px;font-weight:800;
+  border-radius:4px;padding:2px 7px;flex:none
+}
+.el-panel .en{flex:1;font-size:12.5px;font-weight:700;overflow:hidden;
+  text-overflow:ellipsis;white-space:nowrap}
+.el-panel .ex{background:transparent;border:0;color:var(--tx2);padding:2px 5px;border-radius:4px;font-size:12px}
+.el-panel .ex:hover{background:#39404f;color:var(--tx)}
+.el-panel .f{margin-bottom:10px}
+.el-panel .f:last-child{margin-bottom:0}
+.el-hint{
+  font-size:11.5px;color:var(--tx2);background:#13161d;border:1px dashed var(--line);
+  border-radius:var(--r);padding:11px 12px;margin:-2px 0 16px;line-height:1.75
+}
+
 .add-wrap{position:relative;padding:10px;border-top:1px solid var(--line)}
 .add-btn{
   width:100%;background:var(--panel2);border:1px dashed var(--line);border-radius:var(--r);

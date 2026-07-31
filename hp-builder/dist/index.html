@@ -89,6 +89,39 @@ input,select,textarea{font:inherit}
 .bl-ops button:hover{background:#39404f;color:var(--tx)}
 .bl-fixed{font-size:10px;color:var(--tx2);padding:0 4px}
 
+/* ドラッグ&ドロップ */
+.bl-item{cursor:grab}
+.bl-item:active{cursor:grabbing}
+.bl-item.dragging{opacity:.4}
+.bl-item.over-top{box-shadow:0 -2px 0 0 var(--pri)}
+.bl-item.over-bottom{box-shadow:0 2px 0 0 var(--pri)}
+.blocklist.dropping{background:#151a24}
+.bl-grip{color:#4a5464;font-size:12px;line-height:1;cursor:grab;flex:none}
+.bl-item:hover .bl-grip{color:var(--tx2)}
+.add-menu button{cursor:grab}
+.add-menu button:active{cursor:grabbing}
+
+/* 要素アニメのパネル */
+.el-panel{
+  border:1px solid var(--pri);border-radius:var(--r);background:#18202e;
+  padding:12px;margin:-2px 0 16px
+}
+.el-panel .eh{display:flex;align-items:center;gap:8px;margin-bottom:11px}
+.el-panel .badge{
+  background:var(--pri);color:#fff;font-size:10.5px;font-weight:800;
+  border-radius:4px;padding:2px 7px;flex:none
+}
+.el-panel .en{flex:1;font-size:12.5px;font-weight:700;overflow:hidden;
+  text-overflow:ellipsis;white-space:nowrap}
+.el-panel .ex{background:transparent;border:0;color:var(--tx2);padding:2px 5px;border-radius:4px;font-size:12px}
+.el-panel .ex:hover{background:#39404f;color:var(--tx)}
+.el-panel .f{margin-bottom:10px}
+.el-panel .f:last-child{margin-bottom:0}
+.el-hint{
+  font-size:11.5px;color:var(--tx2);background:#13161d;border:1px dashed var(--line);
+  border-radius:var(--r);padding:11px 12px;margin:-2px 0 16px;line-height:1.75
+}
+
 .add-wrap{position:relative;padding:10px;border-top:1px solid var(--line)}
 .add-btn{
   width:100%;background:var(--panel2);border:1px dashed var(--line);border-radius:var(--r);
@@ -520,37 +553,37 @@ p:last-child{margin-bottom:0}
 [data-ta].ta-none .ch{opacity:1}
 
 @keyframes ta-fadeup{from{opacity:0;transform:translateY(.65em)}to{opacity:1;transform:none}}
-[data-ta].ta-fadeup.in .ch{animation:ta-fadeup var(--ta-dur) var(--ta-ease) calc(var(--i)*var(--ta-stagger)) both}
+[data-ta].ta-fadeup.in .ch{animation:ta-fadeup var(--ta-dur) var(--ta-ease) calc(var(--ta-delay,0s) + var(--i)*var(--ta-stagger)) both}
 
 [data-ta].ta-maskline .ln{overflow:hidden;padding-bottom:.08em}
 @keyframes ta-maskline{from{transform:translateY(110%)}to{transform:none}}
-[data-ta].ta-maskline.in .ch{animation:ta-maskline var(--ta-dur) var(--ta-ease) calc(var(--i)*var(--ta-stagger)) both}
+[data-ta].ta-maskline.in .ch{animation:ta-maskline var(--ta-dur) var(--ta-ease) calc(var(--ta-delay,0s) + var(--i)*var(--ta-stagger)) both}
 
 @keyframes ta-blur{from{opacity:0;filter:blur(18px);transform:scale(1.18)}to{opacity:1;filter:blur(0);transform:none}}
-[data-ta].ta-blur.in .ch{animation:ta-blur var(--ta-dur) var(--ta-ease) calc(var(--i)*var(--ta-stagger)) both}
+[data-ta].ta-blur.in .ch{animation:ta-blur var(--ta-dur) var(--ta-ease) calc(var(--ta-delay,0s) + var(--i)*var(--ta-stagger)) both}
 
 [data-ta].ta-flip3d .ln{perspective:700px}
 @keyframes ta-flip3d{from{opacity:0;transform:rotateX(-95deg)}to{opacity:1;transform:none}}
 [data-ta].ta-flip3d.in .ch{transform-origin:50% 100%;
-  animation:ta-flip3d var(--ta-dur) var(--ta-ease) calc(var(--i)*var(--ta-stagger)) both}
+  animation:ta-flip3d var(--ta-dur) var(--ta-ease) calc(var(--ta-delay,0s) + var(--i)*var(--ta-stagger)) both}
 
 @keyframes ta-drop{from{opacity:0;transform:translateY(-.9em) rotate(-26deg)}to{opacity:1;transform:none}}
-[data-ta].ta-drop.in .ch{animation:ta-drop var(--ta-dur) var(--ta-ease) calc(var(--i)*var(--ta-stagger)) both}
+[data-ta].ta-drop.in .ch{animation:ta-drop var(--ta-dur) var(--ta-ease) calc(var(--ta-delay,0s) + var(--i)*var(--ta-stagger)) both}
 
 @keyframes ta-bounce{
   0%{opacity:0;transform:translateY(-1.3em) scale(.55)}
   55%{opacity:1;transform:translateY(.14em) scale(1.08)}
   75%{transform:translateY(-.06em) scale(.97)}
   100%{opacity:1;transform:none}}
-[data-ta].ta-bounce.in .ch{animation:ta-bounce var(--ta-dur) var(--ta-ease) calc(var(--i)*var(--ta-stagger)) both}
+[data-ta].ta-bounce.in .ch{animation:ta-bounce var(--ta-dur) var(--ta-ease) calc(var(--ta-delay,0s) + var(--i)*var(--ta-stagger)) both}
 
 @keyframes ta-slidealt{from{opacity:0;transform:translateX(var(--dir,-.8em))}to{opacity:1;transform:none}}
-[data-ta].ta-slidealt.in .ch{animation:ta-slidealt var(--ta-dur) var(--ta-ease) calc(var(--i)*var(--ta-stagger)) both}
+[data-ta].ta-slidealt.in .ch{animation:ta-slidealt var(--ta-dur) var(--ta-ease) calc(var(--ta-delay,0s) + var(--i)*var(--ta-stagger)) both}
 
 @keyframes ta-scatter{
   from{opacity:0;transform:translate(var(--x,0),var(--y,0)) rotate(var(--r,0deg)) scale(.35)}
   to{opacity:1;transform:none}}
-[data-ta].ta-scatter.in .ch{animation:ta-scatter var(--ta-dur) var(--ta-ease) calc(var(--i)*var(--ta-stagger)) both}
+[data-ta].ta-scatter.in .ch{animation:ta-scatter var(--ta-dur) var(--ta-ease) calc(var(--ta-delay,0s) + var(--i)*var(--ta-stagger)) both}
 
 @keyframes ta-neon{
   0%{opacity:.15;text-shadow:none}
@@ -559,7 +592,7 @@ p:last-child{margin-bottom:0}
   22%{opacity:1;text-shadow:0 0 6px var(--c-primary),0 0 18px var(--c-primary)}
   28%{opacity:.4;text-shadow:none}
   36%,100%{opacity:1;text-shadow:0 0 8px var(--c-primary),0 0 26px var(--c-primary),0 0 48px var(--c-primary)}}
-[data-ta].ta-neon.in .ch{animation:ta-neon var(--ta-dur) linear calc(var(--i)*var(--ta-stagger)) both}
+[data-ta].ta-neon.in .ch{animation:ta-neon var(--ta-dur) linear calc(var(--ta-delay,0s) + var(--i)*var(--ta-stagger)) both}
 
 [data-ta].ta-fillgrad{
   background:linear-gradient(100deg,var(--c-primary),var(--c-accent)) 0 0/0% 100% no-repeat,
@@ -567,7 +600,7 @@ p:last-child{margin-bottom:0}
   -webkit-background-clip:text;background-clip:text;
   color:transparent;-webkit-text-fill-color:transparent}
 @keyframes ta-fillgrad{from{background-size:0% 100%,100% 100%}to{background-size:100% 100%,100% 100%}}
-[data-ta].ta-fillgrad.in{animation:ta-fillgrad var(--ta-dur) var(--ta-ease) both}
+[data-ta].ta-fillgrad.in{animation:ta-fillgrad var(--ta-dur) var(--ta-ease) var(--ta-delay,0s) both}
 
 /* スクランブル・タイプライターはJSで動かす */
 [data-ta].ta-type .ch{visibility:hidden}
@@ -575,6 +608,56 @@ p:last-child{margin-bottom:0}
 .ta-cursor{display:inline-block;width:.06em;height:1em;background:currentColor;
   vertical-align:-.12em;margin-left:.04em;animation:ta-blink .9s steps(1) infinite}
 @keyframes ta-blink{0%,49%{opacity:1}50%,100%{opacity:0}}
+
+/* ==========================================================
+   画像・要素のアニメーション
+   [data-ia] が付いた要素に、JSが ia-on と ia-<種類> を付ける。
+   （JSが動かない環境では何も隠さない＝そのまま表示される）
+   ========================================================== */
+.ia-on:not(.in){opacity:0}
+
+@keyframes ia-zoomin{from{opacity:0;transform:scale(1.16)}to{opacity:1;transform:none}}
+.ia-zoomin.in{animation:ia-zoomin var(--ta-dur) var(--ta-ease) var(--ia-delay,0s) both}
+
+@keyframes ia-zoomout{from{opacity:0;transform:scale(.84)}to{opacity:1;transform:none}}
+.ia-zoomout.in{animation:ia-zoomout var(--ta-dur) var(--ta-ease) var(--ia-delay,0s) both}
+
+@keyframes ia-slideleft{from{opacity:0;transform:translateX(-9%)}to{opacity:1;transform:none}}
+.ia-slideleft.in{animation:ia-slideleft var(--ta-dur) var(--ta-ease) var(--ia-delay,0s) both}
+
+@keyframes ia-slideright{from{opacity:0;transform:translateX(9%)}to{opacity:1;transform:none}}
+.ia-slideright.in{animation:ia-slideright var(--ta-dur) var(--ta-ease) var(--ia-delay,0s) both}
+
+@keyframes ia-slideup{from{opacity:0;transform:translateY(11%)}to{opacity:1;transform:none}}
+.ia-slideup.in{animation:ia-slideup var(--ta-dur) var(--ta-ease) var(--ia-delay,0s) both}
+
+@keyframes ia-wipe{from{clip-path:inset(100% 0 0 0)}to{clip-path:inset(0 0 0 0)}}
+.ia-wipe{overflow:hidden}
+.ia-wipe.in{opacity:1;animation:ia-wipe var(--ta-dur) cubic-bezier(.76,0,.24,1) var(--ia-delay,0s) both}
+
+@keyframes ia-circle{from{clip-path:circle(0% at 50% 50%)}to{clip-path:circle(78% at 50% 50%)}}
+.ia-circle.in{opacity:1;animation:ia-circle var(--ta-dur) cubic-bezier(.76,0,.24,1) var(--ia-delay,0s) both}
+
+@keyframes ia-blurin{from{opacity:0;filter:blur(22px);transform:scale(1.06)}to{opacity:1;filter:blur(0);transform:none}}
+.ia-blurin.in{animation:ia-blurin var(--ta-dur) var(--ta-ease) var(--ia-delay,0s) both}
+
+@keyframes ia-tilt3d{from{opacity:0;transform:perspective(1100px) rotateY(-22deg) translateX(-4%)}
+  to{opacity:1;transform:none}}
+.ia-tilt3d.in{transform-origin:0% 50%;
+  animation:ia-tilt3d var(--ta-dur) var(--ta-ease) var(--ia-delay,0s) both}
+
+@keyframes ia-flipup{from{opacity:0;transform:perspective(1100px) rotateX(-52deg)}to{opacity:1;transform:none}}
+.ia-flipup.in{transform-origin:50% 100%;
+  animation:ia-flipup var(--ta-dur) var(--ta-ease) var(--ia-delay,0s) both}
+
+/* ループするもの */
+@keyframes ia-kenburns{0%{transform:scale(1) translate(0,0)}100%{transform:scale(1.12) translate(-1.5%,-1.5%)}}
+.ia-kenburns{overflow:hidden}
+.ia-kenburns.in{opacity:1}
+.ia-kenburns.in > img{animation:ia-kenburns 14s ease-in-out infinite alternate}
+
+@keyframes ia-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
+.ia-float.in{opacity:1;animation:ia-float 4.5s ease-in-out infinite}
 
 /* ---------- ブロックの出現 ---------- */
 .rv{opacity:0;transform:translateY(34px);
@@ -612,6 +695,7 @@ p:last-child{margin-bottom:0}
     transition-duration:.001ms!important;scroll-behavior:auto!important}
   [data-ta] .ch{opacity:1!important;transform:none!important;filter:none!important;visibility:visible!important}
   [data-ta].ta-fillgrad{background-size:100% 100%,100% 100%!important}
+  .ia-on{opacity:1!important;transform:none!important;filter:none!important;clip-path:none!important}
   .rv{opacity:1!important;transform:none!important}
 }
 `;
@@ -705,12 +789,25 @@ const SITE_JS = `
     if(a !== 'fillgrad') split(el, a);
   });
 
+  /* 画像・要素のアニメーション */
+  [].slice.call(d.querySelectorAll('[data-ia]')).forEach(function(el){
+    var a = el.getAttribute('data-anim');
+    if(!a || a === 'none' || reduce) return;
+    el.classList.add('ia-on', 'ia-' + a);
+  });
+
+  /* 個別の「開始までの待ち」（style属性がぶつからないよう data 属性から反映する） */
+  [].slice.call(d.querySelectorAll('[data-delay]')).forEach(function(el){
+    var v = el.getAttribute('data-delay') + 'ms';
+    el.style.setProperty(el.hasAttribute('data-ia') ? '--ia-delay' : '--ta-delay', v);
+  });
+
   if(body.getAttribute('data-reveal') === '1' && !reduce){
     [].slice.call(d.querySelectorAll('.sec, .hero')).forEach(function(s){ s.classList.add('rv'); });
   }
 
   /* ---------- 画面に入ったら再生 ---------- */
-  var watch = [].slice.call(d.querySelectorAll('[data-ta]:not(.in), .rv'));
+  var watch = [].slice.call(d.querySelectorAll('[data-ta]:not(.in), .ia-on, .rv'));
   if(!('IntersectionObserver' in window) || reduce){
     watch.forEach(function(el){ el.classList.add('in'); });
   }else{
@@ -758,7 +855,7 @@ function sec(type, p, inner, extraClass = '') {
 function head(p, align = 'center') {
   if (!p.eyebrow && !p.title && !p.text) return '';
   return `    <div class="sec-head${align === 'left' ? ' left' : ''}">
-${p.eyebrow ? `      <span class="eyebrow">${esc(p.eyebrow)}</span>\n` : ''}${p.title ? `      <h2 class="sec-title" data-ta>${nl2br(p.title)}</h2>\n` : ''}${p.text ? `      <p class="sec-sub">${nl2br(p.text)}</p>\n` : ''}    </div>`;
+${p.eyebrow ? `      <span class="eyebrow"${el(p, 'eyebrow', 'ta', '小見出し')}>${esc(p.eyebrow)}</span>\n` : ''}${p.title ? `      <h2 class="sec-title"${el(p, 'title', 'ta', '見出し')}>${nl2br(p.title)}</h2>\n` : ''}${p.text ? `      <p class="sec-sub"${el(p, 'text', 'ta', '説明文')}>${nl2br(p.text)}</p>\n` : ''}    </div>`;
 }
 
 /* ボタン群 */
@@ -788,6 +885,36 @@ const TEXT_ANIMS = [
   ['type', 'タイプライター'],
 ];
 const TEXT_ANIMS_WITH_DEFAULT = [['', '全体設定に従う']].concat(TEXT_ANIMS);
+
+/* 画像・要素アニメーションの一覧（サイト側CSSの ia-* と対応） */
+const IMAGE_ANIMS = [
+  ['none', 'なし'],
+  ['zoomin', 'ズームイン'],
+  ['zoomout', 'ズームアウト'],
+  ['slideleft', '左から入る'],
+  ['slideright', '右から入る'],
+  ['slideup', '下から入る'],
+  ['wipe', '下から開く（ワイプ）'],
+  ['circle', '円形に開く'],
+  ['blurin', 'ぼかし解除'],
+  ['tilt3d', '3Dで起き上がる'],
+  ['flipup', 'めくれて立つ'],
+  ['kenburns', 'ゆっくりズーム（ループ）'],
+  ['float', 'ふわふわ浮遊（ループ）'],
+];
+
+/* 要素にアニメーション用の目印を付ける。
+   role  : props.anims のキー
+   kind  : 'ta'（文字）/ 'ia'（画像・要素）
+   label : 編集画面に表示する名前
+   ※ 遅延は style ではなく data-delay で渡す（既存の style 属性とぶつからないように） */
+function el(p, role, kind, label) {
+  const cfg = (p.anims || {})[role] || {};
+  let out = ` data-el="${esc(role)}" data-elname="${esc(label)}" data-elkind="${kind}" data-${kind}`;
+  if (cfg.a) out += ` data-anim="${esc(cfg.a)}"`;
+  if (cfg.d) out += ` data-delay="${parseInt(cfg.d, 10) || 0}"`;
+  return out;
+}
 
 /* よく使う共通フィールド */
 const FIELD = {
@@ -863,8 +990,6 @@ const BLOCKS = {
       { key: 'title', label: 'キャッチコピー', type: 'text' },
       { key: 'text', label: '説明文', type: 'textarea' },
       { key: 'image', label: '画像URL', type: 'image' },
-      { key: 'anim', label: 'キャッチコピーの文字アニメ', type: 'select', options: TEXT_ANIMS_WITH_DEFAULT,
-        hint: '「全体設定に従う」以外を選ぶと、このブロックだけ別の動きになります' },
       { key: 'overlay', label: '背景画像の暗さ', type: 'range', min: 0, max: 90, suffix: '%',
         showIf: (p) => p.layout === 'cover' },
       { key: 'buttons', label: 'ボタン', type: 'list', addLabel: 'ボタンを追加', titleKey: 'label', item: FIELD.btnItem },
@@ -874,7 +999,7 @@ const BLOCKS = {
       layout: 'center', eyebrow: 'WELCOME',
       title: 'ここにいちばん伝えたい\nキャッチコピーを',
       text: 'サービスの魅力を1〜2行で。訪れた人が「自分に関係ある」と感じる言葉を置きましょう。',
-      image: '', anim: '', overlay: 55, bg: '', anchor: 'top',
+      image: '', overlay: 55, bg: '', anchor: 'top',
       buttons: [
         { label: '無料で相談する', href: '#contact', style: 'primary' },
         { label: 'くわしく見る', href: '#features', style: 'ghost' },
@@ -883,9 +1008,9 @@ const BLOCKS = {
     render: (p) => {
       const cover = p.layout === 'cover';
       const cls = ['hero', cover ? 'cover center' : p.layout, p.bg ? `bg-${p.bg}` : ''].filter(Boolean).join(' ');
-      const body = `      ${p.eyebrow ? `<span class="eyebrow">${esc(p.eyebrow)}</span>` : ''}
-      ${p.title ? `<h1 class="hero-title" data-ta${attr('data-anim', p.anim)}>${nl2br(p.title)}</h1>` : ''}
-      ${p.text ? `<p class="hero-text">${nl2br(p.text)}</p>` : ''}
+      const body = `      ${p.eyebrow ? `<span class="eyebrow"${el(p, 'eyebrow', 'ta', '小見出し')}>${esc(p.eyebrow)}</span>` : ''}
+      ${p.title ? `<h1 class="hero-title"${el(p, 'title', 'ta', 'キャッチコピー')}>${nl2br(p.title)}</h1>` : ''}
+      ${p.text ? `<p class="hero-text"${el(p, 'text', 'ta', '説明文')}>${nl2br(p.text)}</p>` : ''}
 ${buttons(p.buttons)}`;
       const bg = cover
         ? `  <div class="hero-bg" style="--hero-overlay:rgba(15,23,42,${(p.overlay ?? 55) / 100})">${img(p.image, '')}</div>\n`
@@ -893,7 +1018,7 @@ ${buttons(p.buttons)}`;
       const inner = p.layout === 'split'
         ? `    <div class="hero-in">
       <div>\n${body}\n      </div>
-      <div class="hero-media">${media(p.image, p.title)}</div>
+      <div class="hero-media"${el(p, 'image', 'ia', '画像')}>${media(p.image, p.title)}</div>
     </div>`
         : `    <div class="hero-in">\n${body}\n    </div>`;
       return `<section class="${cls}"${attr('id', p.anchor)}>
@@ -933,7 +1058,7 @@ ${inner}
     render: (p) => sec('features', p,
       `${head(p)}
     <div class="grid ${p.cols || 'c3'}">
-${(p.items || []).map((it, i) => `      <div class="card">
+${(p.items || []).map((it, i) => `      <div class="card"${el(p, `card${i}`, 'ia', `カード${i + 1}`)}>
         ${p.style === 'image' ? `<div class="hero-media" style="aspect-ratio:16/10;margin-bottom:18px">${media(it.image, it.title)}</div>` : ''}
         ${p.style === 'num' ? `<span class="num">${i + 1}</span>` : p.style === 'image' ? '' : `<span class="ic">${esc(it.icon || '◆')}</span>`}
         ${it.title ? `<h3>${esc(it.title)}</h3>` : ''}
@@ -962,10 +1087,10 @@ ${(p.items || []).map((it, i) => `      <div class="card">
     },
     render: (p) => sec('about', p,
       `    <div class="about-in${p.reverse ? ' rev' : ''}">
-      <div class="about-media">${media(p.image, p.title)}</div>
+      <div class="about-media"${el(p, 'image', 'ia', '画像')}>${media(p.image, p.title)}</div>
       <div class="about-body">
-        ${p.eyebrow ? `<span class="eyebrow">${esc(p.eyebrow)}</span>` : ''}
-        ${p.title ? `<h2 class="sec-title" data-ta>${nl2br(p.title)}</h2>` : ''}
+        ${p.eyebrow ? `<span class="eyebrow"${el(p, 'eyebrow', 'ta', '小見出し')}>${esc(p.eyebrow)}</span>` : ''}
+        ${p.title ? `<h2 class="sec-title"${el(p, 'title', 'ta', '見出し')}>${nl2br(p.title)}</h2>` : ''}
         ${(p.body || '').split(/\n{2,}/).filter(Boolean).map((t) => `<p>${nl2br(t)}</p>`).join('\n        ')}
 ${buttons(p.buttons)}
       </div>
@@ -994,7 +1119,7 @@ ${buttons(p.buttons)}
     render: (p) => sec('gallery', p,
       `${head(p)}
     <div class="gal">
-${(p.items || []).map((it) => `      <figure>${media(it.src, it.alt)}</figure>`).join('\n')}
+${(p.items || []).map((it, i) => `      <figure${el(p, `img${i}`, 'ia', `画像${i + 1}`)}>${media(it.src, it.alt)}</figure>`).join('\n')}
     </div>`),
   },
 
@@ -1029,7 +1154,7 @@ ${(p.items || []).map((it) => `      <figure>${media(it.src, it.alt)}</figure>`)
     render: (p) => sec('pricing', p,
       `${head(p)}
     <div class="grid ${p.cols || 'c3'}">
-${(p.items || []).map((it) => `      <div class="plan${it.featured ? ' feat' : ''}">
+${(p.items || []).map((it, i) => `      <div class="plan${it.featured ? ' feat' : ''}"${el(p, `plan${i}`, 'ia', `プラン${i + 1}`)}>
         ${it.featured && it.tag ? `<span class="tag">${esc(it.tag)}</span>` : ''}
         <h3>${esc(it.name)}</h3>
         <div class="price">${esc(it.price)}${it.unit ? `<span>${esc(it.unit)}</span>` : ''}</div>
@@ -1088,8 +1213,8 @@ ${(p.items || []).map((it) => `      <details${it.open ? ' open' : ''}>
     },
     render: (p) => sec('cta', p,
       `    <div class="cta-in">
-      ${p.title ? `<h2 class="sec-title" data-ta>${nl2br(p.title)}</h2>` : ''}
-      ${p.text ? `<p>${nl2br(p.text)}</p>` : ''}
+      ${p.title ? `<h2 class="sec-title"${el(p, 'title', 'ta', '見出し')}>${nl2br(p.title)}</h2>` : ''}
+      ${p.text ? `<p${el(p, 'text', 'ta', '本文')}>${nl2br(p.text)}</p>` : ''}
 ${buttons(p.buttons, 'center')}
     </div>`),
   },
@@ -1152,7 +1277,7 @@ ${form}
     },
     render: (p) => sec('rich', p,
       `    <div class="rich${p.align === 'left' ? ' left' : ''}">
-      ${p.title ? `<h2 class="sec-title" style="text-align:${p.align === 'left' ? 'left' : 'center'}">${nl2br(p.title)}</h2>` : ''}
+      ${p.title ? `<h2 class="sec-title" style="text-align:${p.align === 'left' ? 'left' : 'center'}"${el(p, 'title', 'ta', '見出し')}>${nl2br(p.title)}</h2>` : ''}
       ${(p.body || '').split(/\n{2,}/).filter(Boolean).map((t) => `<p>${nl2br(t)}</p>`).join('\n      ')}
     </div>`),
   },
@@ -1353,6 +1478,7 @@ const STORE_KEY = 'hp-builder-v1';
 
 let state = null;      // { template, meta, theme, blocks:[{id,type,props}] }
 let selected = null;   // 編集中のブロックID
+let selectedEl = null; // 編集中の要素 {role, kind, name}
 let uidSeq = 0;
 const DEFAULT_MOTION = { anim: 'fadeup', dur: 900, stagger: 40, ease: 'cubic-bezier(.2,.7,.3,1)', reveal: true };
 const uid = () => `b${Date.now().toString(36)}${(uidSeq++).toString(36)}`;
@@ -1445,6 +1571,9 @@ function themeCSS(t) {
 
 const bodyHTML = () => state.blocks.map((b) => BLOCKS[b.type].render(b.props)).join('\n\n');
 
+/* 書き出し時は編集画面専用の属性を取り除く（動作に必要な data-ta/-ia/-anim/-delay は残す） */
+const exportBody = () => bodyHTML().replace(/ data-el(?:name|kind)?="[^"]*"/g, '');
+
 /* 書き出し用の完成HTML（1ファイルで動く） */
 function fullHTML() {
   const m = state.meta;
@@ -1465,7 +1594,7 @@ ${SITE_CSS}
 </head>
 <body class="tpl-${esc(state.template)}" data-anim="${esc(state.motion.anim)}" data-reveal="${state.motion.reveal ? 1 : 0}">
 
-${bodyHTML()}
+${exportBody()}
 
 <script>${SITE_JS}<\/script>
 </body>
@@ -1480,6 +1609,19 @@ const PREVIEW_CSS = `
 [data-bid]{outline:2px solid transparent;outline-offset:-2px}
 [data-bid]:hover{outline-color:rgba(76,141,255,.45);cursor:pointer}
 [data-bid].__sel{outline-color:#4c8dff}
+
+/* クリックできる要素 */
+[data-el]{position:relative;outline:1px dashed transparent;outline-offset:3px;
+  transition:outline-color .12s}
+[data-el]:hover{outline-color:rgba(76,141,255,.85);cursor:pointer}
+[data-el].__elsel{outline:2px solid #4c8dff;outline-style:solid}
+[data-el]:hover::after,[data-el].__elsel::after{
+  content:attr(data-elname);position:absolute;top:2px;left:2px;z-index:20;
+  background:#4c8dff;color:#fff;border-radius:4px;padding:1px 7px;pointer-events:none;
+  font:700 10px/1.7 -apple-system,"Hiragino Sans",sans-serif;letter-spacing:.04em;white-space:nowrap}
+[data-elkind="ia"]:hover::after,[data-elkind="ia"].__elsel::after{background:#8b5cf6}
+[data-elkind="ia"]:hover{outline-color:rgba(139,92,246,.85)}
+[data-elkind="ia"].__elsel{outline-color:#8b5cf6}
 `;
 
 let pdoc = null;
@@ -1491,10 +1633,12 @@ function initPreview() {
       pdoc.getElementById('s-base').textContent = SITE_CSS;
       pdoc.getElementById('s-edit').textContent = PREVIEW_CSS;
       pdoc.addEventListener('click', (e) => {
-        const el = e.target.closest('[data-bid]');
-        if (el) { e.preventDefault(); select(el.dataset.bid); }
-        const a = e.target.closest('a');
-        if (a && !el) e.preventDefault();
+        e.preventDefault();
+        const blk = e.target.closest('[data-bid]');
+        if (!blk) return;
+        const elt = e.target.closest('[data-el]');
+        if (elt) selectEl(blk.dataset.bid, elt.dataset.el, elt.dataset.elkind, elt.dataset.elname);
+        else { selectedEl = null; select(blk.dataset.bid); }
       });
       res();
     }, { once: true });
@@ -1525,6 +1669,7 @@ function renderPreview(now = false) {
     const s = pdoc.createElement('script');
     s.textContent = SITE_JS;
     pdoc.body.appendChild(s);
+    markSelectedEl();
   };
   now ? run() : (pvTimer = setTimeout(run, 160));
 }
@@ -1532,6 +1677,23 @@ function renderPreview(now = false) {
 function highlight() {
   if (!pdoc) return;
   $$('[data-bid]', pdoc).forEach((el) => el.classList.toggle('__sel', el.dataset.bid === selected));
+  markSelectedEl();
+}
+
+/* 選択中の要素に枠を戻す（プレビューを作り直すと消えるため） */
+function markSelectedEl() {
+  if (!pdoc) return;
+  $$('[data-el].__elsel', pdoc).forEach((el) => el.classList.remove('__elsel'));
+  if (!selectedEl || !selected) return;
+  const blk = pdoc.querySelector(`[data-bid="${selected}"]`);
+  const el = blk && blk.querySelector(`[data-el="${selectedEl.role}"]`);
+  if (el) el.classList.add('__elsel');
+}
+
+function selectEl(blockId, role, kind, name) {
+  selected = blockId;
+  selectedEl = { role, kind, name };
+  renderList(); renderEditor(); highlight();
 }
 function scrollToBlock(id) {
   const el = pdoc && pdoc.querySelector(`[data-bid="${id}"]`);
@@ -1546,7 +1708,10 @@ function renderList() {
   wrap.innerHTML = state.blocks.map((b, i) => {
     const def = BLOCKS[b.type];
     const label = b.props.title || b.props.logo || def.label;
-    return `<div class="bl-item${b.id === selected ? ' on' : ''}" data-id="${b.id}">
+    const fixed = def.unique;   // ヘッダー・フッターは位置が決まっているので動かさない
+    return `<div class="bl-item${b.id === selected ? ' on' : ''}" data-id="${b.id}"
+        draggable="${fixed ? 'false' : 'true'}">
+      <span class="bl-grip">${fixed ? '&nbsp;' : '⠿'}</span>
       <span class="bl-ic">${def.icon}</span>
       <span class="bl-name">${esc(label)}<br><span class="bl-sub">${def.label}</span></span>
       <span class="bl-ops">
@@ -1566,7 +1731,7 @@ $('#blockList').addEventListener('click', (e) => {
   const i = state.blocks.findIndex((b) => b.id === id);
   const act = e.target.closest('button')?.dataset.act;
 
-  if (!act) { select(id); scrollToBlock(id); return; }
+  if (!act) { selectedEl = null; select(id); scrollToBlock(id); return; }
   if (act === 'up' && i > 0) state.blocks.splice(i - 1, 0, state.blocks.splice(i, 1)[0]);
   if (act === 'down' && i < state.blocks.length - 1) state.blocks.splice(i + 1, 0, state.blocks.splice(i, 1)[0]);
   if (act === 'dup') {
@@ -1581,6 +1746,93 @@ $('#blockList').addEventListener('click', (e) => {
   refresh();
 });
 
+/* ================================================================
+   ドラッグ&ドロップ（並べ替え / 位置を指定して追加）
+   ================================================================ */
+const listEl = $('#blockList');
+let drag = null;   // {mode:'move', id} または {mode:'add', type}
+
+/* ヘッダーは先頭、フッターは末尾に固定されるので、その内側に収める */
+function clampIdx(i) {
+  const lo = state.blocks[0] && state.blocks[0].type === 'header' ? 1 : 0;
+  const fi = state.blocks.findIndex((b) => b.type === 'footer');
+  const hi = fi >= 0 ? fi : state.blocks.length;
+  return Math.min(Math.max(i, lo), hi);
+}
+
+/* マウス位置から挿入先を求める（各項目の上半分なら手前） */
+function dropIndex(y) {
+  const items = $$('.bl-item', listEl);
+  for (let i = 0; i < items.length; i++) {
+    const r = items[i].getBoundingClientRect();
+    if (y < r.top + r.height / 2) return i;
+  }
+  return items.length;
+}
+
+function showLine(idx) {
+  const items = $$('.bl-item', listEl);
+  items.forEach((it) => it.classList.remove('over-top', 'over-bottom'));
+  if (!items.length) return;
+  if (idx < items.length) items[idx].classList.add('over-top');
+  else items[items.length - 1].classList.add('over-bottom');
+}
+function clearDrag() {
+  drag = null;
+  listEl.classList.remove('dropping');
+  $$('.bl-item', listEl).forEach((it) => it.classList.remove('over-top', 'over-bottom', 'dragging'));
+}
+
+listEl.addEventListener('dragstart', (e) => {
+  const it = e.target.closest('.bl-item');
+  if (!it || it.getAttribute('draggable') === 'false') return;
+  drag = { mode: 'move', id: it.dataset.id };
+  it.classList.add('dragging');
+  e.dataTransfer.effectAllowed = 'move';
+  e.dataTransfer.setData('text/plain', it.dataset.id);
+});
+listEl.addEventListener('dragend', clearDrag);
+
+listEl.addEventListener('dragover', (e) => {
+  if (!drag) return;
+  e.preventDefault();
+  e.dataTransfer.dropEffect = drag.mode === 'add' ? 'copy' : 'move';
+  listEl.classList.add('dropping');
+  showLine(clampIdx(dropIndex(e.clientY)));
+});
+listEl.addEventListener('dragleave', (e) => {
+  if (!listEl.contains(e.relatedTarget)) {
+    $$('.bl-item', listEl).forEach((it) => it.classList.remove('over-top', 'over-bottom'));
+    listEl.classList.remove('dropping');
+  }
+});
+
+listEl.addEventListener('drop', (e) => {
+  if (!drag) return;
+  e.preventDefault();
+  let at = clampIdx(dropIndex(e.clientY));
+
+  if (drag.mode === 'move') {
+    const from = state.blocks.findIndex((b) => b.id === drag.id);
+    if (from < 0) return clearDrag();
+    if (at > from) at--;                       // 自分を抜いた分だけ詰まる
+    if (at !== from) {
+      state.blocks.splice(at, 0, state.blocks.splice(from, 1)[0]);
+    }
+    selected = drag.id;
+  } else {
+    const nb = makeBlock(drag.type);
+    state.blocks.splice(at, 0, nb);
+    selected = nb.id;
+    selectedEl = null;
+    $('#addMenu').hidden = true;
+  }
+  clearDrag();
+  refresh();
+  const id = selected;
+  setTimeout(() => scrollToBlock(id), 220);
+});
+
 /* ---- ブロック追加メニュー ---- */
 function renderAddMenu() {
   const exists = new Set(state.blocks.map((b) => b.type));
@@ -1588,7 +1840,8 @@ function renderAddMenu() {
   const order = Object.keys(BLOCKS).filter((t) => BLOCKS[t].unique).concat(ADDABLE);
   const types = order.filter((t) => !(BLOCKS[t].unique && exists.has(t)));
   $('#addMenu').innerHTML = types.map((t) =>
-    `<button data-type="${t}"><span class="bl-ic">${BLOCKS[t].icon}</span>${BLOCKS[t].label}</button>`).join('');
+    `<button data-type="${t}" draggable="true" title="ドラッグして位置を指定できます">
+      <span class="bl-ic">${BLOCKS[t].icon}</span>${BLOCKS[t].label}</button>`).join('');
 }
 $('#btnAdd').addEventListener('click', (e) => {
   e.stopPropagation();
@@ -1598,6 +1851,15 @@ $('#btnAdd').addEventListener('click', (e) => {
 document.addEventListener('click', (e) => {
   if (!e.target.closest('.add-wrap')) $('#addMenu').hidden = true;
 });
+$('#addMenu').addEventListener('dragstart', (e) => {
+  const t = e.target.closest('button')?.dataset.type;
+  if (!t) return;
+  drag = { mode: 'add', type: t };
+  e.dataTransfer.effectAllowed = 'copy';
+  e.dataTransfer.setData('text/plain', 'add:' + t);
+});
+$('#addMenu').addEventListener('dragend', clearDrag);
+
 $('#addMenu').addEventListener('click', (e) => {
   const t = e.target.closest('button')?.dataset.type;
   if (!t) return;
@@ -1698,9 +1960,61 @@ function renderEditor() {
   const def = BLOCKS[b.type];
   const keep = box.scrollTop;
   box.innerHTML = `<div class="edit-head"><span class="bl-ic">${def.icon}</span>${esc(def.label)}</div>`
+    + elementPanel(b)
     + def.fields.map((f) => fieldHTML(f, b.props, 'props')).join('');
   box.scrollTop = keep;
 }
+
+/* 選択中の要素にアニメーションを付けるパネル */
+function elementPanel(b) {
+  if (!selectedEl) {
+    return `<div class="el-hint">
+      プレビューの<b>文字や画像をクリック</b>すると、そこにアニメーションを付けられます。<br>
+      テキストは文字アニメ12種、画像・カードは動き12種から選べます。
+    </div>`;
+  }
+  const isText = selectedEl.kind === 'ta';
+  const cfg = (b.props.anims || {})[selectedEl.role] || {};
+  const list = isText ? TEXT_ANIMS : IMAGE_ANIMS;
+  const cur = cfg.a || 'none';
+  const delay = cfg.d || 0;
+  return `<div class="el-panel">
+    <div class="eh">
+      <span class="badge">${isText ? 'テキスト' : '画像・要素'}</span>
+      <span class="en">${esc(selectedEl.name)}</span>
+      <button class="ex" data-elclose title="選択を解除">✕</button>
+    </div>
+    <div class="f"><label>アニメーション</label>
+      <select data-elk="a">${list.map(([v, l]) =>
+        `<option value="${v}"${cur === v ? ' selected' : ''}>${esc(l)}</option>`).join('')}</select>
+    </div>
+    <div class="f"><label>開始までの待ち</label>
+      <div class="f-row">
+        <input type="range" data-elk="d" min="0" max="1500" step="50" value="${delay}" data-suffix="ms">
+        <span class="f-val">${delay}ms</span>
+      </div>
+    </div>
+  </div>`;
+}
+
+/* 要素パネルの操作 */
+$('#tab-edit').addEventListener('click', (e) => {
+  if (e.target.closest('[data-elclose]')) { selectedEl = null; renderEditor(); highlight(); }
+});
+$('#tab-edit').addEventListener('input', (e) => {
+  const key = e.target.dataset.elk;
+  if (!key || !selectedEl) return;
+  const b = state.blocks.find((x) => x.id === selected);
+  if (!b) return;
+  b.props.anims = b.props.anims || {};
+  const cur = Object.assign({}, b.props.anims[selectedEl.role]);
+  cur[key] = key === 'd' ? Number(e.target.value) : e.target.value;
+  if ((!cur.a || cur.a === 'none') && !cur.d) delete b.props.anims[selectedEl.role];
+  else b.props.anims[selectedEl.role] = cur;
+  if (e.target.type === 'range') e.target.parentElement.querySelector('.f-val').textContent = e.target.value + 'ms';
+  renderPreview(true);  // 付けた動きをすぐ確認できるよう作り直す
+  save();
+});
 
 /* ---- 値の書き込み ---- */
 function setPath(root, path, val) {
@@ -1717,7 +2031,7 @@ function readEl(el) {
 
 $('#tab-edit').addEventListener('input', (e) => {
   const el = e.target;
-  if (!el.dataset.path) return;
+  if (!el.dataset.path) return;   // 要素パネル（data-elk）は別のハンドラが処理する
   const b = state.blocks.find((x) => x.id === selected);
   if (!b) return;
   setPath(b, el.dataset.path, readEl(el));
