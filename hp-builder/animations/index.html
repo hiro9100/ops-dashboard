@@ -1,0 +1,966 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>スクロールアニメーション集 — HP作成ツール</title>
+<style>
+/* ==========================================================
+   共通トークン
+   ========================================================== */
+*,*::before,*::after{box-sizing:border-box}
+:root{
+  --bg:#07090d; --bg2:#0d1117; --line:#1e2732;
+  --tx:#e8eef6; --tx2:#8b9bb0;
+  --pri:#22d3ee; --acc:#a78bfa; --warm:#fb7185;
+  --max:1080px;
+  --font:"Helvetica Neue",Arial,"Hiragino Kaku Gothic ProN","Hiragino Sans",Meiryo,sans-serif;
+}
+html{scroll-behavior:smooth}
+body{
+  margin:0;background:var(--bg);color:var(--tx);font-family:var(--font);
+  line-height:1.9;-webkit-font-smoothing:antialiased;overflow-x:hidden
+}
+img{max-width:100%;display:block}
+a{color:inherit;text-decoration:none}
+.wrap{width:100%;max-width:var(--max);margin:0 auto;padding:0 24px}
+
+.sec{padding:120px 0;position:relative}
+.sec-h{margin-bottom:56px}
+.tag{
+  display:inline-flex;align-items:center;gap:9px;font-size:11px;font-weight:800;
+  letter-spacing:.2em;color:var(--pri);margin-bottom:14px
+}
+.tag::before{content:"";width:26px;height:1px;background:var(--pri)}
+h2{margin:0 0 12px;font-size:clamp(24px,3.4vw,34px);line-height:1.4;letter-spacing:.01em}
+.lead{margin:0;color:var(--tx2);font-size:14.5px;max-width:640px}
+.note{
+  margin-top:14px;font-size:12.5px;color:var(--tx2);
+  border-left:2px solid var(--line);padding-left:14px
+}
+code{font-family:Menlo,Consolas,monospace;font-size:.92em;color:var(--pri)}
+
+/* コード表示 */
+details.code{margin-top:22px;border:1px solid var(--line);border-radius:10px;background:#0a0e13}
+details.code summary{
+  padding:12px 16px;cursor:pointer;font-size:12.5px;font-weight:700;color:var(--tx2);
+  list-style:none;display:flex;align-items:center;gap:8px
+}
+details.code summary::-webkit-details-marker{display:none}
+details.code summary::before{content:"▸";color:var(--pri);transition:transform .2s}
+details.code[open] summary::before{transform:rotate(90deg)}
+details.code pre{
+  margin:0;padding:0 16px 16px;overflow-x:auto;font-family:Menlo,Consolas,monospace;
+  font-size:11.5px;line-height:1.75;color:#a9b8cc
+}
+
+/* ==========================================================
+   進捗バー / カーソル / ナビ
+   ========================================================== */
+#bar{
+  position:fixed;top:0;left:0;height:2px;width:100%;background:linear-gradient(90deg,var(--pri),var(--acc));
+  transform:scaleX(0);transform-origin:0 50%;z-index:100
+}
+#cursor{
+  position:fixed;top:0;left:0;width:26px;height:26px;border:1px solid var(--pri);border-radius:50%;
+  pointer-events:none;z-index:99;transform:translate(-50%,-50%);opacity:0;
+  transition:width .2s,height .2s,opacity .25s,background .2s;mix-blend-mode:difference
+}
+#cursor.on{opacity:.85}
+#cursor.hot{width:52px;height:52px;background:rgba(34,211,238,.15)}
+#toc{
+  position:fixed;right:22px;top:50%;transform:translateY(-50%);z-index:90;
+  display:flex;flex-direction:column;gap:11px
+}
+#toc a{width:7px;height:7px;border-radius:50%;background:#2b3644;transition:all .25s}
+#toc a.on{background:var(--pri);transform:scale(1.5)}
+@media(max-width:900px){#toc,#cursor{display:none}}
+
+/* ==========================================================
+   ヒーロー
+   ========================================================== */
+.hero{min-height:100vh;display:grid;place-items:center;text-align:center;position:relative;overflow:hidden}
+.hero .glow{
+  position:absolute;width:900px;height:900px;border-radius:50%;filter:blur(120px);opacity:.2;
+  background:radial-gradient(circle,var(--pri),transparent 62%);top:-25%;left:50%;transform:translateX(-50%)
+}
+.hero h1{
+  margin:0 0 20px;font-size:clamp(34px,7vw,76px);line-height:1.18;letter-spacing:-.01em;font-weight:800
+}
+.hero p{color:var(--tx2);margin:0;font-size:15px}
+.scroll-hint{
+  position:absolute;bottom:38px;left:50%;transform:translateX(-50%);
+  font-size:10.5px;letter-spacing:.24em;color:var(--tx2)
+}
+.scroll-hint::after{
+  content:"";display:block;width:1px;height:44px;margin:12px auto 0;
+  background:linear-gradient(var(--pri),transparent);animation:drop 1.9s ease-in-out infinite
+}
+@keyframes drop{0%{transform:scaleY(0);transform-origin:0 0}
+  45%{transform:scaleY(1);transform-origin:0 0}
+  55%{transform:scaleY(1);transform-origin:0 100%}
+  100%{transform:scaleY(0);transform-origin:0 100%}}
+
+/* 1文字ずつ出す */
+.chars span{display:inline-block;white-space:pre;
+  opacity:0;transform:translateY(0.5em) rotateX(-40deg);transform-origin:50% 100%;
+  transition:opacity .5s cubic-bezier(.2,.7,.3,1),transform .5s cubic-bezier(.2,.7,.3,1)}
+.chars.in span{opacity:1;transform:none}
+
+/* ==========================================================
+   01 スクロールで3D回転
+   ========================================================== */
+.pin{position:relative}
+.pin-in{position:sticky;top:0;height:100vh;overflow:hidden;display:grid;place-items:center}
+.stage3d{position:relative;display:grid;place-items:center;width:100%;height:100%}
+#prod{width:min(78vmin,620px);height:min(78vmin,620px);display:block}
+.stage3d .cap{
+  position:absolute;bottom:9vh;left:50%;transform:translateX(-50%);text-align:center;width:90%
+}
+.stage3d .cap b{display:block;font-size:clamp(18px,2.6vw,26px);letter-spacing:.02em}
+.stage3d .cap small{color:var(--tx2);font-size:12px}
+.deg{
+  position:absolute;top:9vh;left:50%;transform:translateX(-50%);
+  font-family:Menlo,monospace;font-size:12px;color:var(--pri);letter-spacing:.14em
+}
+.specs{position:absolute;inset:0;pointer-events:none}
+.spec{
+  position:absolute;font-size:11.5px;color:var(--tx2);opacity:0;transform:translateY(10px);
+  transition:opacity .5s,transform .5s
+}
+.spec.on{opacity:1;transform:none}
+.spec b{display:block;color:var(--tx);font-size:16px;font-family:Menlo,monospace}
+.spec:nth-child(1){top:26%;left:8%}
+.spec:nth-child(2){top:46%;right:8%;text-align:right}
+.spec:nth-child(3){bottom:28%;left:11%}
+@media(max-width:760px){.spec{display:none}}
+
+/* ==========================================================
+   02 出現アニメのバリエーション
+   ========================================================== */
+.grid{display:grid;gap:18px;grid-template-columns:repeat(4,1fr)}
+.demo{
+  border:1px solid var(--line);border-radius:14px;padding:26px 22px;background:var(--bg2);
+  min-height:150px;display:flex;flex-direction:column;justify-content:flex-end
+}
+.demo b{font-size:14px}
+.demo small{color:var(--tx2);font-size:11.5px;font-family:Menlo,monospace}
+
+/* 出現の型（.rv + data-rv で切替） */
+.rv{opacity:0;transition:opacity .8s cubic-bezier(.2,.7,.3,1),transform .8s cubic-bezier(.2,.7,.3,1),filter .8s}
+.rv[data-rv=up]{transform:translateY(38px)}
+.rv[data-rv=scale]{transform:scale(.86)}
+.rv[data-rv=blur]{filter:blur(14px);transform:translateY(16px)}
+.rv[data-rv=flip]{transform:perspective(800px) rotateX(-52deg);transform-origin:50% 100%}
+.rv[data-rv=slide]{transform:translateX(-46px)}
+.rv[data-rv=skew]{transform:translateY(30px) skewY(5deg)}
+.rv.in{opacity:1;transform:none;filter:none}
+
+/* 線が伸びる */
+.line-draw{height:1px;background:var(--line);position:relative;margin:44px 0}
+.line-draw::after{
+  content:"";position:absolute;inset:0;background:linear-gradient(90deg,var(--pri),var(--acc));
+  transform:scaleX(0);transform-origin:0 50%;transition:transform 1.1s cubic-bezier(.2,.7,.3,1)
+}
+.line-draw.in::after{transform:scaleX(1)}
+
+/* ==========================================================
+   03 テキスト演出
+   ========================================================== */
+.mask-line{overflow:hidden;display:block}
+.mask-line > span{
+  display:block;transform:translateY(110%);
+  transition:transform .9s cubic-bezier(.16,1,.3,1)
+}
+.mask.in .mask-line > span{transform:none}
+.big-copy{font-size:clamp(26px,4.6vw,52px);font-weight:800;line-height:1.3;letter-spacing:.01em}
+
+/* 文字がグラデで塗られていく */
+.fill-text{
+  font-size:clamp(22px,3.4vw,38px);font-weight:800;line-height:1.6;
+  background:linear-gradient(90deg,var(--pri),var(--acc)) 0 0/0% 100% no-repeat,
+             linear-gradient(#3a4658,#3a4658);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  transition:background-size 1.4s cubic-bezier(.2,.7,.3,1)
+}
+.fill-text.in{background-size:100% 100%,100% 100%}
+
+/* ==========================================================
+   04 横に流れるギャラリー
+   ========================================================== */
+.htrack{display:flex;gap:22px;will-change:transform;padding-left:6vw}
+.hcard{
+  flex:none;width:clamp(230px,26vw,340px);aspect-ratio:3/4;border-radius:16px;
+  border:1px solid var(--line);position:relative;overflow:hidden;
+  background:linear-gradient(150deg,#141b24,#0b1017)
+}
+.hcard i{
+  position:absolute;inset:0;background:linear-gradient(140deg,var(--pri),var(--acc));
+  opacity:.16;transition:opacity .4s
+}
+.hcard:hover i{opacity:.3}
+.hcard span{position:absolute;left:20px;bottom:18px;font-size:13px;font-weight:700}
+.hcard em{position:absolute;left:20px;top:18px;font-family:Menlo,monospace;font-size:11px;color:var(--pri);font-style:normal}
+.hhead{position:absolute;top:12vh;left:0;width:100%}
+
+/* ==========================================================
+   05 マウス追従3Dチルト
+   ========================================================== */
+.tilt-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;perspective:1200px}
+.tilt{
+  border:1px solid var(--line);border-radius:16px;padding:30px 26px;background:var(--bg2);
+  position:relative;overflow:hidden;transform-style:preserve-3d;
+  transition:transform .4s cubic-bezier(.2,.7,.3,1),border-color .3s
+}
+.tilt:hover{border-color:#2f3d4e}
+.tilt .glare{
+  position:absolute;inset:-40%;opacity:0;transition:opacity .3s;pointer-events:none;
+  background:radial-gradient(circle at var(--mx,50%) var(--my,50%),rgba(34,211,238,.28),transparent 45%)
+}
+.tilt:hover .glare{opacity:1}
+.tilt .ic{
+  width:44px;height:44px;border-radius:11px;display:grid;place-items:center;font-size:19px;
+  background:linear-gradient(140deg,var(--pri),var(--acc));color:#04070a;font-weight:800;margin-bottom:16px;
+  transform:translateZ(38px)
+}
+.tilt b{display:block;font-size:15px;margin-bottom:6px;transform:translateZ(22px)}
+.tilt p{margin:0;color:var(--tx2);font-size:12.5px;transform:translateZ(12px)}
+
+/* ==========================================================
+   06 パララックス
+   ========================================================== */
+.plx{position:relative;height:82vh;overflow:hidden;border-radius:20px;border:1px solid var(--line);
+  display:grid;place-items:center;background:linear-gradient(180deg,#0a1119,#070a0e)}
+.plx .layer{position:absolute;inset:-12%;will-change:transform}
+.plx .l1{background:radial-gradient(circle at 22% 32%,rgba(34,211,238,.30),transparent 42%)}
+.plx .l2{background:radial-gradient(circle at 76% 62%,rgba(167,139,250,.28),transparent 44%)}
+.plx .l3{background:radial-gradient(circle at 50% 88%,rgba(251,113,133,.20),transparent 46%)}
+.plx .dots{background-image:radial-gradient(#22d3ee55 1px,transparent 1px);background-size:34px 34px;opacity:.5}
+.plx h3{position:relative;margin:0;font-size:clamp(26px,5vw,58px);font-weight:800;letter-spacing:.02em;text-align:center}
+.plx p{position:relative;color:var(--tx2);margin:10px 0 0;text-align:center;font-size:13px}
+
+/* ==========================================================
+   07 カウントアップ / 無限マーキー
+   ========================================================== */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:20px;text-align:center}
+.stat b{display:block;font-size:clamp(30px,5vw,52px);font-weight:800;font-family:Menlo,monospace;
+  background:linear-gradient(140deg,var(--pri),var(--acc));-webkit-background-clip:text;background-clip:text;color:transparent}
+.stat small{color:var(--tx2);font-size:12px}
+.marquee{overflow:hidden;display:flex;gap:26px;margin-top:64px;
+  -webkit-mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent);
+  mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent)}
+.marquee div{display:flex;gap:26px;flex:none;animation:mq 26s linear infinite}
+.marquee:hover div{animation-play-state:paused}
+.marquee span{
+  flex:none;border:1px solid var(--line);border-radius:999px;padding:9px 22px;
+  font-size:13px;color:var(--tx2);white-space:nowrap
+}
+@keyframes mq{to{transform:translateX(-100%)}}
+
+/* ==========================================================
+   08 マグネティックボタン
+   ========================================================== */
+.mag-wrap{display:flex;gap:22px;flex-wrap:wrap;align-items:center;justify-content:center;padding:60px 0}
+.mag{
+  position:relative;border:0;border-radius:999px;padding:19px 44px;font-size:15px;font-weight:800;
+  background:linear-gradient(120deg,var(--pri),var(--acc));color:#04070a;cursor:pointer;
+  transition:transform .35s cubic-bezier(.2,.7,.3,1);will-change:transform
+}
+.mag.ghost{background:transparent;border:1px solid var(--line);color:var(--tx)}
+.mag .lbl{display:inline-block;transition:transform .35s cubic-bezier(.2,.7,.3,1)}
+
+/* 塗りつぶしホバー */
+.fillbtn{
+  position:relative;overflow:hidden;border:1px solid var(--line);border-radius:999px;
+  padding:19px 44px;font-size:15px;font-weight:800;background:transparent;color:var(--tx);cursor:pointer
+}
+.fillbtn::before{
+  content:"";position:absolute;inset:0;background:linear-gradient(120deg,var(--pri),var(--acc));
+  transform:translateY(101%);transition:transform .45s cubic-bezier(.16,1,.3,1);z-index:0
+}
+.fillbtn:hover::before{transform:translateY(0)}
+.fillbtn span{position:relative;z-index:1;transition:color .3s}
+.fillbtn:hover span{color:#04070a}
+
+.foot{padding:80px 0 60px;border-top:1px solid var(--line);color:var(--tx2);font-size:12.5px;text-align:center}
+
+@media(max-width:900px){
+  .grid,.tilt-grid,.stats{grid-template-columns:repeat(2,1fr)}
+  .sec{padding:84px 0}
+}
+@media(max-width:560px){
+  .grid,.tilt-grid{grid-template-columns:1fr}
+}
+
+/* ==========================================================
+   動きを減らす設定への配慮（必須）
+   ========================================================== */
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;
+    transition-duration:.001ms!important;scroll-behavior:auto!important}
+  .rv,.chars span,.mask-line > span{opacity:1!important;transform:none!important;filter:none!important}
+  .fill-text{background-size:100% 100%,100% 100%!important}
+}
+</style>
+</head>
+<body>
+
+<div id="bar"></div>
+<div id="cursor"></div>
+<nav id="toc"></nav>
+
+<!-- ============ ヒーロー ============ -->
+<header class="hero" id="s0">
+  <div class="glow"></div>
+  <div class="wrap">
+    <h1 class="chars" data-split>目を引く、を<br>部品にする。</h1>
+    <p class="rv" data-rv="up">スクロール連動アニメーション集 — 依存ライブラリなし・コピペで使える8種</p>
+  </div>
+  <div class="scroll-hint">SCROLL</div>
+</header>
+
+<!-- ============ 01 3D回転 ============ -->
+<section class="pin" id="s1" style="height:420vh">
+  <div class="pin-in">
+    <div class="stage3d">
+      <div class="deg" id="degTxt">000°</div>
+      <canvas id="prod"></canvas>
+      <div class="specs">
+        <div class="spec" data-at="0.2"><b>0.38 kg</b>アルミ削り出し筐体</div>
+        <div class="spec" data-at="0.45"><b>6.7 inch</b>有機ELディスプレイ</div>
+        <div class="spec" data-at="0.7"><b>72 h</b>連続駆動バッテリー</div>
+      </div>
+      <div class="cap">
+        <b>スクロールで、360°。</b>
+        <small>Canvasによるソフトウェア3Dレンダリング / 外部ライブラリなし</small>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="wrap">
+    <div class="sec-h">
+      <span class="tag">01 / SCROLL-DRIVEN 3D</span>
+      <h2 class="rv" data-rv="up">スクロールで製品が3D回転する</h2>
+      <p class="lead rv" data-rv="up">
+        セクションを <code>position:sticky</code> で画面に固定し、そのセクション内をどこまで
+        スクロールしたか（0→1）を回転角に変換します。上の立体はCanvasに面を1枚ずつ描いた本物の3Dで、
+        画像でも動画でもありません。だからどの角度で止めても輪郭が潰れず、色や質感をコードから変えられます。
+      </p>
+      <div class="note">
+        実案件では手法が3つあります。<b>① 連番画像スクラブ</b>（Apple方式・レンダリング済み画像を36〜120枚用意して切り替え／最も高品質・容量大）、
+        <b>② Canvasソフトウェア3D</b>（上の方式・画像不要・軽い・単純な形状向き）、
+        <b>③ three.jsで .glb を読み込む</b>（実モデル・質感も反射も自由・要ライブラリ）。
+        商品写真がある案件は①、素材がない・自動生成したい場合は②、本気の製品サイトは③が向きます。
+      </div>
+    </div>
+
+    <details class="code">
+      <summary>スクロール進捗を取り出す中核（この10行がすべての土台）</summary>
+<pre>// セクションのどこまでスクロールしたかを 0→1 で得る
+function progress(el){
+  const r = el.getBoundingClientRect();
+  const total = r.height - innerHeight;      // 動ける距離
+  return Math.min(1, Math.max(0, -r.top / total));
+}
+
+// 使い方：進捗をそのまま角度・移動量・不透明度に変換する
+addEventListener('scroll', () =&gt; {
+  const p = progress(document.querySelector('.pin'));
+  target = p * Math.PI * 4;                  // 0→720°回転
+}, {passive:true});
+
+// 描画は rAF で。scroll の中で重い処理をしないのがコツ
+function loop(){
+  angle += (target - angle) * 0.12;          // 慣性をつけて滑らかに
+  draw(angle);
+  requestAnimationFrame(loop);
+}</pre>
+    </details>
+  </div>
+</section>
+
+<!-- ============ 02 出現 ============ -->
+<section class="sec" id="s2">
+  <div class="wrap">
+    <div class="sec-h">
+      <span class="tag">02 / REVEAL</span>
+      <h2 class="rv" data-rv="up">出現アニメ 6種（土台になる型）</h2>
+      <p class="lead rv" data-rv="up">
+        画面に入ったら <code>.in</code> を付けるだけ。動きの違いはCSSの1行だけで作ります。
+        <b>ずらして（stagger）出す</b>のが効く演出の9割です。
+      </p>
+    </div>
+    <div class="grid" data-stagger="90">
+      <div class="demo rv" data-rv="up"><b>フェードアップ</b><small>translateY(38px)</small></div>
+      <div class="demo rv" data-rv="scale"><b>スケールイン</b><small>scale(.86)</small></div>
+      <div class="demo rv" data-rv="blur"><b>ぼかし解除</b><small>blur(14px)</small></div>
+      <div class="demo rv" data-rv="flip"><b>めくれ</b><small>rotateX(-52deg)</small></div>
+      <div class="demo rv" data-rv="slide"><b>横スライド</b><small>translateX(-46px)</small></div>
+      <div class="demo rv" data-rv="skew"><b>スキュー</b><small>skewY(5deg)</small></div>
+      <div class="demo rv" data-rv="up"><b>+ 遅延</b><small>transition-delay</small></div>
+      <div class="demo rv" data-rv="scale"><b>+ イージング</b><small>cubic-bezier(.2,.7,.3,1)</small></div>
+    </div>
+    <div class="line-draw rv"></div>
+
+    <details class="code">
+      <summary>出現の仕組み（IntersectionObserver 8行）</summary>
+<pre>const io = new IntersectionObserver((es) =&gt; {
+  es.forEach(e =&gt; {
+    if(!e.isIntersecting) return;
+    const d = [...e.target.parentElement.children].indexOf(e.target);
+    e.target.style.transitionDelay = (d * 90) + 'ms';   // ずらして出す
+    e.target.classList.add('in');
+    io.unobserve(e.target);                             // 一度きり
+  });
+}, {threshold:.18, rootMargin:'0px 0px -8% 0px'});
+document.querySelectorAll('.rv').forEach(el =&gt; io.observe(el));</pre>
+    </details>
+  </div>
+</section>
+
+<!-- ============ 03 テキスト ============ -->
+<section class="sec" id="s3">
+  <div class="wrap">
+    <div class="sec-h">
+      <span class="tag">03 / TYPOGRAPHY</span>
+      <h2 class="rv" data-rv="up">文字の見せ方 3種</h2>
+    </div>
+
+    <div class="mask big-copy" data-mask>
+      <span class="mask-line"><span>下から せり上がる。</span></span>
+      <span class="mask-line"><span>行ごとに、時間差で。</span></span>
+    </div>
+
+    <div class="line-draw rv"></div>
+
+    <p class="fill-text rv">スクロールに合わせて、文字が左から塗られていく演出。読ませたい一文に一度だけ使うと効きます。</p>
+
+    <div class="line-draw rv"></div>
+
+    <p class="big-copy chars" data-split>1文字ずつ、立ち上がる。</p>
+
+    <details class="code">
+      <summary>行マスク・文字分割のコード</summary>
+<pre>&lt;!-- 行マスク：外側で切り取り、内側を押し上げる --&gt;
+&lt;span class="mask-line"&gt;&lt;span&gt;下から せり上がる。&lt;/span&gt;&lt;/span&gt;
+
+.mask-line{overflow:hidden;display:block}
+.mask-line &gt; span{transform:translateY(110%);
+  transition:transform .9s cubic-bezier(.16,1,.3,1)}
+.mask.in .mask-line &gt; span{transform:none}
+
+// 文字分割：1文字ずつ span で包んで遅延をずらす
+el.innerHTML = [...el.textContent].map((c,i) =&gt;
+  `&lt;span style="transition-delay:${i*32}ms"&gt;${c}&lt;/span&gt;`).join('');
+
+/* 塗られる文字：背景を文字で切り抜いて幅を 0%→100% */
+.fill-text{background:linear-gradient(90deg,#22d3ee,#a78bfa) 0 0/0% 100% no-repeat,
+                      linear-gradient(#3a4658,#3a4658);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  transition:background-size 1.4s}
+.fill-text.in{background-size:100% 100%,100% 100%}</pre>
+    </details>
+  </div>
+</section>
+
+<!-- ============ 04 横スクロール ============ -->
+<section class="pin" id="s4" style="height:340vh">
+  <div class="pin-in">
+    <div class="wrap hhead">
+      <span class="tag">04 / HORIZONTAL</span>
+      <h2 style="margin:0">縦にスクロールすると、横に流れる。</h2>
+    </div>
+    <div class="htrack" id="htrack">
+      <div class="hcard"><i></i><em>01</em><span>ブランドサイト</span></div>
+      <div class="hcard"><i></i><em>02</em><span>プロダクト紹介</span></div>
+      <div class="hcard"><i></i><em>03</em><span>採用ページ</span></div>
+      <div class="hcard"><i></i><em>04</em><span>イベントLP</span></div>
+      <div class="hcard"><i></i><em>05</em><span>ポートフォリオ</span></div>
+      <div class="hcard"><i></i><em>06</em><span>店舗サイト</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="wrap">
+    <details class="code" open>
+      <summary>横スクロールギャラリーのコード</summary>
+<pre>&lt;section class="pin" style="height:340vh"&gt;   &lt;!-- 縦の余白が横移動の距離になる --&gt;
+  &lt;div class="pin-in"&gt;                       &lt;!-- position:sticky; height:100vh --&gt;
+    &lt;div class="htrack"&gt; ...カード... &lt;/div&gt;
+  &lt;/div&gt;
+&lt;/section&gt;
+
+const p = progress(section);                  // 0→1
+const dist = track.scrollWidth - innerWidth;  // 動かす距離
+track.style.transform = `translateX(${-dist * p}px)`;</pre>
+    </details>
+    <div class="note">
+      よくある失敗：<b>セクションの高さ＝横移動の距離</b>ではありません。高さを増やすほど「ゆっくり」流れます。
+      カード6枚なら 300〜400vh が目安。スマホでは無効化して普通の横スワイプに戻すのが親切です。
+    </div>
+  </div>
+</section>
+
+<!-- ============ 05 チルト ============ -->
+<section class="sec" id="s5">
+  <div class="wrap">
+    <div class="sec-h">
+      <span class="tag">05 / POINTER</span>
+      <h2 class="rv" data-rv="up">マウスに反応して立体的に傾くカード</h2>
+      <p class="lead rv" data-rv="up">カード内でのマウス位置を <code>rotateX / rotateY</code> に変換。
+        中の要素に <code>translateZ</code> を付けると、奥行きが生まれて一気に「高そう」に見えます。</p>
+    </div>
+    <div class="tilt-grid">
+      <div class="tilt rv" data-rv="up"><div class="glare"></div><div class="ic">◆</div><b>浮かぶアイコン</b><p>translateZ(38px) で手前に飛び出させています。</p></div>
+      <div class="tilt rv" data-rv="up"><div class="glare"></div><div class="ic">✦</div><b>光沢の追従</b><p>カーソル位置に光を置くと質感が出ます。</p></div>
+      <div class="tilt rv" data-rv="up"><div class="glare"></div><div class="ic">▲</div><b>離すと戻る</b><p>transition を戻り側だけ効かせるのがコツ。</p></div>
+    </div>
+
+    <details class="code">
+      <summary>チルトのコード</summary>
+<pre>card.addEventListener('pointermove', e =&gt; {
+  const r = card.getBoundingClientRect();
+  const x = (e.clientX - r.left) / r.width  - .5;   // -0.5 〜 0.5
+  const y = (e.clientY - r.top ) / r.height - .5;
+  card.style.transition = 'none';                   // 追従中は無効に
+  card.style.transform =
+    `perspective(1000px) rotateY(${x*14}deg) rotateX(${-y*14}deg) translateZ(12px)`;
+  card.style.setProperty('--mx', (x+.5)*100 + '%'); // 光沢の位置
+  card.style.setProperty('--my', (y+.5)*100 + '%');
+});
+card.addEventListener('pointerleave', () =&gt; {
+  card.style.transition = 'transform .5s cubic-bezier(.2,.7,.3,1)'; // 戻りだけ滑らかに
+  card.style.transform = '';
+});</pre>
+    </details>
+  </div>
+</section>
+
+<!-- ============ 06 パララックス ============ -->
+<section class="sec" id="s6">
+  <div class="wrap">
+    <div class="sec-h">
+      <span class="tag">06 / PARALLAX</span>
+      <h2 class="rv" data-rv="up">奥行きが出るパララックス</h2>
+      <p class="lead rv" data-rv="up">レイヤーごとに動く量を変えるだけ。手前を速く、奥をゆっくり。</p>
+    </div>
+    <div class="plx" data-plx>
+      <div class="layer dots" data-speed="0.06"></div>
+      <div class="layer l1" data-speed="0.20"></div>
+      <div class="layer l2" data-speed="0.34"></div>
+      <div class="layer l3" data-speed="0.12"></div>
+      <div>
+        <h3>奥行きは、速度差でつくる</h3>
+        <p>3枚のレイヤーを別々の速さで動かしています</p>
+      </div>
+    </div>
+    <details class="code">
+      <summary>パララックスのコード</summary>
+<pre>const box = document.querySelector('[data-plx]');
+addEventListener('scroll', () =&gt; {
+  const r = box.getBoundingClientRect();
+  const c = (r.top + r.height/2 - innerHeight/2) / innerHeight;  // 画面中央からのズレ
+  box.querySelectorAll('.layer').forEach(l =&gt; {
+    l.style.transform = `translate3d(0,${c * l.dataset.speed * -260}px,0)`;
+  });
+}, {passive:true});</pre>
+    </details>
+  </div>
+</section>
+
+<!-- ============ 07 数字・マーキー ============ -->
+<section class="sec" id="s7">
+  <div class="wrap">
+    <div class="sec-h">
+      <span class="tag">07 / NUMBERS</span>
+      <h2 class="rv" data-rv="up">数字のカウントアップと、無限に流れる帯</h2>
+    </div>
+    <div class="stats">
+      <div class="stat rv" data-rv="up"><b data-count="1284">0</b><small>導入実績</small></div>
+      <div class="stat rv" data-rv="up"><b data-count="99.9" data-dec="1">0</b><small>稼働率 %</small></div>
+      <div class="stat rv" data-rv="up"><b data-count="48">0</b><small>対応言語</small></div>
+      <div class="stat rv" data-rv="up"><b data-count="12" data-suffix="年">0</b><small>運営年数</small></div>
+    </div>
+    <div class="marquee" aria-hidden="true">
+      <div id="mq1"></div><div id="mq2"></div>
+    </div>
+    <details class="code">
+      <summary>カウントアップのコード</summary>
+<pre>function countUp(el){
+  const to = +el.dataset.count, dec = +(el.dataset.dec||0), dur = 1600;
+  let t0;
+  const step = (t) =&gt; {
+    t0 ??= t;
+    const p = Math.min(1, (t - t0) / dur);
+    const e = 1 - Math.pow(1 - p, 3);              // ease-out-cubic
+    el.textContent = (to * e).toFixed(dec) + (el.dataset.suffix||'');
+    if(p &lt; 1) requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+}
+/* 無限マーキーは中身を2つ並べて -100% まで動かすだけ（CSSのみ） */</pre>
+    </details>
+  </div>
+</section>
+
+<!-- ============ 08 ボタン ============ -->
+<section class="sec" id="s8">
+  <div class="wrap">
+    <div class="sec-h">
+      <span class="tag">08 / INTERACTION</span>
+      <h2 class="rv" data-rv="up">吸い寄せられるボタン</h2>
+      <p class="lead rv" data-rv="up">カーソルが近づくとボタンが寄っていきます。押し心地の印象が変わる、費用対効果の高い演出です。</p>
+    </div>
+    <div class="mag-wrap">
+      <button class="mag" data-mag><span class="lbl">資料をダウンロード</span></button>
+      <button class="mag ghost" data-mag><span class="lbl">お問い合わせ</span></button>
+      <button class="fillbtn"><span>下から塗る</span></button>
+    </div>
+    <details class="code">
+      <summary>マグネティックボタンのコード</summary>
+<pre>const R = 90;                                   // 反応する距離
+addEventListener('pointermove', e =&gt; {
+  document.querySelectorAll('[data-mag]').forEach(b =&gt; {
+    const r = b.getBoundingClientRect();
+    const dx = e.clientX - (r.left + r.width/2);
+    const dy = e.clientY - (r.top  + r.height/2);
+    const d  = Math.hypot(dx, dy);
+    const on = d &lt; r.width/2 + R;
+    b.style.transform  = on ? `translate(${dx*.28}px,${dy*.34}px)` : '';
+    b.querySelector('.lbl').style.transform = on ? `translate(${dx*.12}px,${dy*.14}px)` : '';
+  });
+}, {passive:true});</pre>
+    </details>
+  </div>
+</section>
+
+<footer class="foot">
+  <div class="wrap">
+    すべて依存ライブラリなし・このHTML1枚で動いています。<br>
+    <span style="opacity:.6">動きを減らす設定（prefers-reduced-motion）にも対応済み。</span>
+  </div>
+</footer>
+
+<script>
+/* ==========================================================
+   共通ユーティリティ
+   ========================================================== */
+const $  = (s,r=document)=>r.querySelector(s);
+const $$ = (s,r=document)=>[...r.querySelectorAll(s)];
+const clamp = (v,a=0,b=1)=>Math.min(b,Math.max(a,v));
+const REDUCE = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* セクションのスクロール進捗 0→1 */
+function progress(el){
+  const r = el.getBoundingClientRect();
+  const total = r.height - innerHeight;
+  return total <= 0 ? 0 : clamp(-r.top / total);
+}
+
+/* scroll は集約して1本の rAF で回す（重要：個別に addEventListener しない） */
+const onScroll = [];
+let ticking = false;
+addEventListener('scroll', () => {
+  if(ticking) return;
+  ticking = true;
+  requestAnimationFrame(() => { onScroll.forEach(f => f()); ticking = false; });
+}, {passive:true});
+addEventListener('resize', () => onScroll.forEach(f => f()), {passive:true});
+
+/* ==========================================================
+   進捗バー・目次ドット
+   ========================================================== */
+const bar = $('#bar');
+const secs = $$('section[id],header[id]');
+$('#toc').innerHTML = secs.map((s,i)=>`<a href="#${s.id}" title="${i}"></a>`).join('');
+const dots = $$('#toc a');
+onScroll.push(() => {
+  const h = document.documentElement;
+  bar.style.transform = `scaleX(${clamp(h.scrollTop / (h.scrollHeight - innerHeight))})`;
+  let cur = 0;
+  secs.forEach((s,i)=>{ if(s.getBoundingClientRect().top <= innerHeight*0.45) cur = i; });
+  dots.forEach((d,i)=>d.classList.toggle('on', i===cur));
+});
+
+/* ==========================================================
+   カスタムカーソル
+   ========================================================== */
+const cur = $('#cursor');
+let cx=innerWidth/2, cy=innerHeight/2, tx=cx, ty=cy;
+if(matchMedia('(pointer:fine)').matches){
+  addEventListener('pointermove', e => { tx=e.clientX; ty=e.clientY; cur.classList.add('on'); }, {passive:true});
+  (function ride(){
+    cx += (tx-cx)*.18; cy += (ty-cy)*.18;
+    cur.style.transform = `translate(${cx}px,${cy}px) translate(-50%,-50%)`;
+    requestAnimationFrame(ride);
+  })();
+  $$('button,a,.tilt,.hcard').forEach(el=>{
+    el.addEventListener('pointerenter',()=>cur.classList.add('hot'));
+    el.addEventListener('pointerleave',()=>cur.classList.remove('hot'));
+  });
+}
+
+/* ==========================================================
+   出現アニメ（IntersectionObserver）
+   ========================================================== */
+const io = new IntersectionObserver((es)=>{
+  es.forEach(e=>{
+    if(!e.isIntersecting) return;
+    const el = e.target;
+    const parent = el.parentElement;
+    const gap = +(parent?.dataset.stagger || 0);
+    if(gap){
+      const i = [...parent.children].indexOf(el);
+      el.style.transitionDelay = (i*gap) + 'ms';
+    }
+    el.classList.add('in');
+    if(el.dataset.count !== undefined) countUp(el);
+    io.unobserve(el);
+  });
+},{threshold:.18, rootMargin:'0px 0px -8% 0px'});
+$$('.rv, .line-draw, [data-mask], .fill-text').forEach(el=>io.observe(el));
+$$('[data-count]').forEach(el=>io.observe(el));
+
+/* 文字分割 */
+$$('[data-split]').forEach(el=>{
+  const html = el.innerHTML.split('<br>');
+  let n = 0;
+  el.innerHTML = html.map(line =>
+    [...line].map(c => `<span style="transition-delay:${(n++)*34}ms">${c===' '?'&nbsp;':c}</span>`).join('')
+  ).join('<br>');
+  io.observe(el);
+  // ヒーローは即再生
+  if(el.closest('.hero')) setTimeout(()=>el.classList.add('in'), 120);
+});
+
+/* カウントアップ */
+function countUp(el){
+  const to = +el.dataset.count, dec = +(el.dataset.dec||0), sfx = el.dataset.suffix||'', dur = 1600;
+  if(REDUCE){ el.textContent = to.toFixed(dec)+sfx; return; }
+  let t0 = null;
+  const step = (t)=>{
+    if(t0===null) t0 = t;
+    const p = clamp((t-t0)/dur);
+    const e = 1 - Math.pow(1-p, 3);
+    el.textContent = (to*e).toFixed(dec) + sfx;
+    if(p<1) requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+}
+
+/* ==========================================================
+   01 Canvas ソフトウェア3D（スクロールで回転）
+   ========================================================== */
+(function product(){
+  const cv = $('#prod'); if(!cv) return;
+  const ctx = cv.getContext('2d');
+  const sec = $('#s1');
+  const degTxt = $('#degTxt');
+  const specs = $$('.spec');
+
+  /* --- 角丸スラブ（製品らしい塊）を生成 --- */
+  const SEG = 40, E = 0.30, SX = 0.74, SY = 1.36, SZ = 0.28;
+  const sgn = (t)=> (t<0?-1:1) * Math.pow(Math.abs(t), E);
+  const verts = [], faces = [];
+  for(let i=0;i<=SEG;i++){
+    const v = Math.PI*i/SEG;
+    for(let j=0;j<=SEG;j++){
+      const u = 2*Math.PI*j/SEG;
+      const x = Math.sin(v)*Math.cos(u), y = Math.cos(v), z = Math.sin(v)*Math.sin(u);
+      verts.push([sgn(x)*SX, sgn(y)*SY, sgn(z)*SZ]);
+    }
+  }
+  const sub=(a,b)=>[a[0]-b[0],a[1]-b[1],a[2]-b[2]];
+  const cross=(a,b)=>[a[1]*b[2]-a[2]*b[1], a[2]*b[0]-a[0]*b[2], a[0]*b[1]-a[1]*b[0]];
+  const norm=(a)=>{const l=Math.hypot(...a)||1;return [a[0]/l,a[1]/l,a[2]/l]};
+  const dot=(a,b)=>a[0]*b[0]+a[1]*b[1]+a[2]*b[2];
+
+  for(let i=0;i<SEG;i++) for(let j=0;j<SEG;j++){
+    const a=i*(SEG+1)+j, b=a+1, c=a+SEG+1, d=c+1;
+    const n = norm(cross(sub(verts[b],verts[a]), sub(verts[c],verts[a])));
+    const ctr = [0,1,2].map(k=>(verts[a][k]+verts[b][k]+verts[c][k]+verts[d][k])/4);
+    faces.push({ i:[a,b,d,c], n, ctr, screen: n[2] > 0.86 });   // 正面＝画面パネル
+  }
+
+  const L1 = norm([ 0.45, 0.75, 0.85]);   // メインライト
+  const L2 = norm([-0.7 , 0.15, 0.45]);   // 補助ライト
+  let W=0, H=0, DPR=1;
+  function size(){
+    DPR = Math.min(devicePixelRatio||1, 2);
+    const r = cv.getBoundingClientRect();
+    W = Math.round(r.width); H = Math.round(r.height);
+    cv.width = W*DPR; cv.height = H*DPR;
+    ctx.setTransform(DPR,0,0,DPR,0,0);
+  }
+
+  const CAM = 4.0;
+  function draw(ay, ax){
+    ctx.clearRect(0,0,W,H);
+    const cy=Math.cos(ay), sy=Math.sin(ay), cx2=Math.cos(ax), sx2=Math.sin(ax);
+    const rot = (p)=>{
+      let X = p[0]*cy + p[2]*sy, Z = -p[0]*sy + p[2]*cy, Y = p[1];
+      const Y2 = Y*cx2 - Z*sx2; Z = Y*sx2 + Z*cx2;
+      return [X, Y2, Z];
+    };
+    const f = W*0.84;
+    const P = verts.map(v=>{
+      const q = rot(v), d = CAM - q[2];
+      return [W/2 + f*q[0]/d, H/2 - f*q[1]/d, q[2]];
+    });
+
+    /* 影 */
+    const sh = ctx.createRadialGradient(W/2, H*0.86, 0, W/2, H*0.86, W*0.34);
+    sh.addColorStop(0,'rgba(34,211,238,.20)'); sh.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.fillStyle = sh; ctx.beginPath();
+    ctx.ellipse(W/2, H*0.86, W*0.30, H*0.045, 0, 0, 7); ctx.fill();
+
+    /* 面を奥から描く */
+    const list = [];
+    for(const fc of faces){
+      const n = rot(fc.n), c = rot(fc.ctr);
+      const view = norm([-c[0], -c[1], CAM-c[2]]);
+      if(dot(n, view) <= 0.02) continue;                 // 裏面を捨てる
+      list.push({fc, n, z:c[2], view});
+    }
+    list.sort((a,b)=>a.z-b.z);
+
+    for(const o of list){
+      const n = o.n;
+      const d1 = Math.max(0, dot(n,L1)), d2 = Math.max(0, dot(n,L2));
+      const rim = Math.pow(1 - Math.max(0, dot(n, o.view)), 2.4);
+      const spec = Math.pow(Math.max(0, dot(norm([n[0]*2*d1-L1[0], n[1]*2*d1-L1[1], n[2]*2*d1-L1[2]]), o.view)), 22);
+      let r,g,b;
+      if(o.fc.screen){                                    // 正面パネル：暗い画面＋発色
+        r = 10 + d1*26 + rim*40;
+        g = 22 + d1*70 + rim*150 + spec*180;
+        b = 32 + d1*95 + rim*180 + spec*200;
+      }else{                                              // 筐体：アルミ
+        r = 30 + d1*128 + d2*34 + rim*46 + spec*190;
+        g = 38 + d1*140 + d2*40 + rim*72 + spec*200;
+        b = 48 + d1*152 + d2*52 + rim*104 + spec*210;
+      }
+      const [a,b2,c2,d] = o.fc.i;
+      const col = `rgb(${r|0},${g|0},${b|0})`;
+      ctx.fillStyle = col;
+      ctx.strokeStyle = col;      // 面と面のすき間（アンチエイリアスの継ぎ目）を埋める
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(P[a][0],P[a][1]); ctx.lineTo(P[b2][0],P[b2][1]);
+      ctx.lineTo(P[c2][0],P[c2][1]); ctx.lineTo(P[d][0],P[d][1]);
+      ctx.closePath(); ctx.fill(); ctx.stroke();
+    }
+  }
+
+  let target = 0, angle = 0, tilt = 0, tTilt = 0, running = false, dirty = true;
+  onScroll.push(()=>{
+    const p = progress(sec);
+    target = p * Math.PI * 2;                 // 1周
+    tTilt  = Math.sin(p * Math.PI) * 0.30;    // 途中で少し傾ける
+    degTxt.textContent = String(Math.round((p*360)%360)).padStart(3,'0') + '°';
+    specs.forEach(s=>s.classList.toggle('on', p > +s.dataset.at && p < +s.dataset.at + 0.22));
+    dirty = true;
+  });
+
+  function loop(){
+    if(dirty || Math.abs(target-angle) > 0.0006){
+      angle += (target-angle) * (REDUCE ? 1 : 0.14);
+      tilt  += (tTilt -tilt ) * (REDUCE ? 1 : 0.14);
+      draw(angle, tilt);
+      dirty = false;
+    }
+    requestAnimationFrame(loop);
+  }
+  /* 画面内にある間だけ回す */
+  new IntersectionObserver(es=>{
+    es.forEach(e=>{ running = e.isIntersecting; if(running) dirty = true; });
+  },{threshold:0}).observe(sec);
+
+  size(); addEventListener('resize',()=>{size();dirty=true;},{passive:true});
+  draw(0,0); loop();
+})();
+
+/* ==========================================================
+   04 横スクロールギャラリー
+   ========================================================== */
+(function horizontal(){
+  const sec = $('#s4'), track = $('#htrack');
+  if(!sec||!track) return;
+  onScroll.push(()=>{
+    const dist = track.scrollWidth - innerWidth + innerWidth*0.12;
+    if(dist <= 0) { track.style.transform=''; return; }
+    track.style.transform = `translate3d(${-dist * progress(sec)}px,0,0)`;
+  });
+})();
+
+/* ==========================================================
+   05 チルトカード
+   ========================================================== */
+$$('.tilt').forEach(card=>{
+  if(REDUCE) return;
+  card.addEventListener('pointermove', e=>{
+    const r = card.getBoundingClientRect();
+    const x = (e.clientX-r.left)/r.width - .5;
+    const y = (e.clientY-r.top )/r.height - .5;
+    card.style.transition = 'none';
+    card.style.transform = `rotateY(${x*14}deg) rotateX(${-y*14}deg) translateZ(14px)`;
+    card.style.setProperty('--mx', (x+.5)*100+'%');
+    card.style.setProperty('--my', (y+.5)*100+'%');
+  });
+  card.addEventListener('pointerleave', ()=>{
+    card.style.transition = 'transform .5s cubic-bezier(.2,.7,.3,1), border-color .3s';
+    card.style.transform = '';
+  });
+});
+
+/* ==========================================================
+   06 パララックス
+   ========================================================== */
+(function parallax(){
+  const box = $('[data-plx]'); if(!box) return;
+  const layers = $$('.layer', box);
+  onScroll.push(()=>{
+    const r = box.getBoundingClientRect();
+    if(r.bottom < 0 || r.top > innerHeight) return;
+    const c = (r.top + r.height/2 - innerHeight/2)/innerHeight;
+    layers.forEach(l=>{
+      l.style.transform = `translate3d(0,${c * (+l.dataset.speed) * -260}px,0)`;
+    });
+  });
+})();
+
+/* ==========================================================
+   07 マーキー（中身を2つ並べて無限化）
+   ========================================================== */
+(function marquee(){
+  const words = ['スクロール連動','3Dトランスフォーム','IntersectionObserver','sticky固定',
+                 'パララックス','文字分割','カウントアップ','マグネティック','クリップパス','ライブラリ不要'];
+  const html = words.map(w=>`<span>${w}</span>`).join('');
+  $('#mq1').innerHTML = html; $('#mq2').innerHTML = html;
+})();
+
+/* ==========================================================
+   08 マグネティックボタン
+   ========================================================== */
+(function magnetic(){
+  const btns = $$('[data-mag]'); if(!btns.length || REDUCE) return;
+  const R = 90;
+  addEventListener('pointermove', e=>{
+    btns.forEach(b=>{
+      const r = b.getBoundingClientRect();
+      const dx = e.clientX-(r.left+r.width/2), dy = e.clientY-(r.top+r.height/2);
+      const on = Math.hypot(dx,dy) < r.width/2 + R;
+      b.style.transform = on ? `translate(${dx*.28}px,${dy*.34}px)` : '';
+      const l = b.querySelector('.lbl');
+      if(l) l.style.transform = on ? `translate(${dx*.12}px,${dy*.14}px)` : '';
+    });
+  }, {passive:true});
+})();
+
+/* 初期化 */
+onScroll.forEach(f=>f());
+</script>
+</body>
+</html>
