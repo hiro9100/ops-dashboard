@@ -330,3 +330,11 @@ input,select,textarea{font:inherit}
 
 .edit-now{width:100%;margin-bottom:8px;background:#243149;border-color:#3a4f74}
 .edit-now:hover{background:#2b3b58;border-color:var(--pri)}
+
+/* 取り消し / やり直し */
+.tb-btn.ico{padding:6px 11px;font-size:15px;line-height:1.2}
+.tb-btn:disabled{opacity:.3;cursor:default}
+.tb-btn:disabled:hover{background:var(--panel2);border-color:var(--line)}
+@media(max-width:820px){
+  .tb-btn.ico{padding:6px 9px;font-size:16px}
+}

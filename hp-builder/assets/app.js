@@ -46,9 +46,98 @@ const MOTION_EASES = [
   ['linear', '等速'],
 ];
 
+/* ================================================================
+   取り消し / やり直し
+   state をまるごと JSON にして積む。
+   画像をデータURLで持てるので、件数と合計サイズの両方に上限を設ける。
+   ================================================================ */
+const hist = { stack: [], idx: -1, lastKey: null, lastAt: 0 };
+const HIST_MAX = 40;
+const HIST_BYTES = 12e6;
+let applyingHistory = false;
+
+function pushHistory(key) {
+  if (applyingHistory || !state) return;
+  const json = JSON.stringify(state);
+  if (hist.stack[hist.idx] === json) return;          // 中身が変わっていない
+
+  const now = Date.now();
+  const sameRun = key && key === hist.lastKey && now - hist.lastAt < 800;
+  if (sameRun && hist.idx === hist.stack.length - 1 && hist.idx > 0) {
+    hist.stack[hist.idx] = json;                      // 連続した入力はひとまとめ
+  } else {
+    hist.stack.length = hist.idx + 1;                 // やり直し分は捨てる
+    hist.stack.push(json);
+    hist.idx = hist.stack.length - 1;
+  }
+  hist.lastKey = key || null;
+  hist.lastAt = now;
+  trimHistory();
+  updateHistoryButtons();
+}
+
+function trimHistory() {
+  while (hist.stack.length > HIST_MAX) { hist.stack.shift(); hist.idx--; }
+  let total = hist.stack.reduce((n, j) => n + j.length, 0);
+  while (total > HIST_BYTES && hist.stack.length > 2) {
+    total -= hist.stack.shift().length;
+    hist.idx--;
+  }
+  if (hist.idx < 0) hist.idx = 0;
+}
+
+function resetHistory() {
+  hist.stack = [JSON.stringify(state)];
+  hist.idx = 0;
+  hist.lastKey = null;
+  updateHistoryButtons();
+}
+
+function applyHistory(step) {
+  const next = hist.idx + step;
+  if (next < 0 || next >= hist.stack.length) return;
+  if (editing) commitEdit();
+  hist.idx = next;
+  hist.lastKey = null;
+
+  applyingHistory = true;
+  state = JSON.parse(hist.stack[hist.idx]);
+  selectedEl = null;
+  if (!state.blocks.some((b) => b.id === selected)) {
+    selected = state.blocks[1]?.id || state.blocks[0]?.id || null;
+  }
+  renderList(); renderEditor(); renderDesign(); renderPage(); renderPreview(true);
+  try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); } catch (e) { /* 容量超過は無視 */ }
+  applyingHistory = false;
+
+  updateHistoryButtons();
+  flash(step < 0 ? '元に戻しました' : 'やり直しました');
+}
+const undo = () => applyHistory(-1);
+const redo = () => applyHistory(1);
+
+function updateHistoryButtons() {
+  $('#btnUndo').disabled = hist.idx <= 0;
+  $('#btnRedo').disabled = hist.idx >= hist.stack.length - 1;
+}
+$('#btnUndo').addEventListener('click', undo);
+$('#btnRedo').addEventListener('click', redo);
+
+/* キーボード。文字入力中はブラウザ本来の取り消しに任せる */
+function historyKey(e) {
+  if (!(e.metaKey || e.ctrlKey) || e.key.toLowerCase() !== 'z') return;
+  const a = (e.target.ownerDocument || document).activeElement;
+  const typing = a && (a.tagName === 'INPUT' || a.tagName === 'TEXTAREA' || a.isContentEditable);
+  if (typing || editing) return;
+  e.preventDefault();
+  e.shiftKey ? redo() : undo();
+}
+document.addEventListener('keydown', historyKey);
+
 /* ---------------- 保存 / 読み込み ---------------- */
 let saveTimer;
-function save() {
+function save(key) {
+  pushHistory(key);
   clearTimeout(saveTimer);
   saveTimer = setTimeout(() => {
     try {
@@ -199,6 +288,7 @@ function initPreview() {
         startEdit(t, blk.dataset.bid, t.dataset.prop);
       });
 
+      pdoc.addEventListener('keydown', historyKey);
       pdoc.addEventListener('keydown', (e) => {
         if (!editing) return;
         if (e.key === 'Escape') { e.preventDefault(); commitEdit(true); }
@@ -297,7 +387,7 @@ function commitEdit(cancel = false) {
   const val = cancel ? raw : typed;
   if (b && val !== raw) {
     setPath(b.props, prop, val);
-    renderList(); renderEditor(); save();
+    renderList(); renderEditor(); save(`i:${prop}:${blockId}`);
   }
   renderPreview(true);
 }
@@ -693,7 +783,7 @@ $('#tab-edit').addEventListener('input', (e) => {
   else b.props.anims[selectedEl.role] = cur;
   if (e.target.type === 'range') e.target.parentElement.querySelector('.f-val').textContent = e.target.value + 'ms';
   renderPreview(true);  // 付けた動きをすぐ確認できるよう作り直す
-  save();
+  save(`a:${selectedEl.role}:${key}:${selected}`);
 });
 
 /* ---- 値の書き込み ---- */
@@ -718,7 +808,7 @@ $('#tab-edit').addEventListener('input', (e) => {
   if (el.type === 'range') el.parentElement.querySelector('.f-val').textContent = el.value + (el.dataset.suffix || '');
   renderList();
   renderPreview();
-  save();
+  save(`p:${el.dataset.path}:${selected}`);
 });
 
 /* select / checkbox は showIf の出し分けがあるのでフォームごと作り直す */
@@ -884,7 +974,7 @@ function themeInput(e) {
     const c = el.parentElement.querySelector('input[type=color]');
     if (c) c.value = el.value;
   }
-  renderPreview(); save();
+  renderPreview(); save(`t:${path}`);
 }
 $('#tab-design').addEventListener('input', themeInput);
 $('#tab-design').addEventListener('click', (e) => {
@@ -936,6 +1026,7 @@ $('#tplGrid').addEventListener('click', (e) => {
   closed.clear();
   closeModal('#tplModal');
   refresh();
+  resetHistory();     // テンプレートを選び直したらそこを起点にする
 });
 
 /* ================================================================
@@ -1032,11 +1123,13 @@ addEventListener('resize', () => { if (!isMobile()) closeSheets(); });
     state = saved;
     selected = state.blocks[1]?.id || state.blocks[0]?.id;
     refresh();
+    resetHistory();
   } else {
     renderTplGrid();
     openModal('#tplModal');
     state = buildState('corporate');
     selected = state.blocks[1].id;
     refresh();
+    resetHistory();
   }
 })();
