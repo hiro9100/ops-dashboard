@@ -28,7 +28,8 @@
   </header>
 
   <!-- ================= 左：ブロック一覧 ================= -->
-  <aside class="panel left">
+  <aside class="panel left" id="panelLeft">
+    <button class="sheet-close" data-closesheet aria-label="閉じる"></button>
     <div class="panel-h">ページの構成</div>
     <div id="blockList" class="blocklist"></div>
     <div class="add-wrap">
@@ -45,7 +46,8 @@
   </main>
 
   <!-- ================= 右：編集 ================= -->
-  <aside class="panel right">
+  <aside class="panel right" id="panelRight">
+    <button class="sheet-close" data-closesheet aria-label="閉じる"></button>
     <div class="tabs">
       <button class="on" data-tab="edit">ブロック編集</button>
       <button data-tab="design">デザイン</button>
@@ -55,7 +57,17 @@
     <div class="panel-body" id="tab-design" hidden></div>
     <div class="panel-body" id="tab-page" hidden></div>
   </aside>
+  <!-- ================= スマホ用の下部ナビ ================= -->
+  <nav class="mnav" id="mnav">
+    <button data-sheet="left"><span>▤</span>構成</button>
+    <button data-sheet="right" data-tab-to="edit"><span>✎</span>編集</button>
+    <button data-sheet="right" data-tab-to="design"><span>◐</span>デザイン</button>
+    <button id="mAdd"><span>＋</span>追加</button>
+    <button id="mExport"><span>↓</span>書き出す</button>
+  </nav>
 </div>
+
+<div class="sheet-veil" id="veil" hidden></div>
 
 <!-- ================= テンプレート選択 ================= -->
 <div class="modal" id="tplModal" hidden>

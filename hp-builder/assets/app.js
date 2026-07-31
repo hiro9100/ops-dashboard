@@ -187,7 +187,7 @@ function initPreview() {
         const blk = e.target.closest('[data-bid]');
         if (!blk) return;
         const elt = e.target.closest('[data-el]');
-        if (elt) selectEl(blk.dataset.bid, elt.dataset.el, elt.dataset.elkind, elt.dataset.elname);
+        if (elt) selectEl(blk.dataset.bid, elt.dataset.el, elt.dataset.elkind, elt.dataset.elname, elt.dataset.prop);
         else { selectedEl = null; select(blk.dataset.bid); }
       });
 
@@ -302,10 +302,19 @@ function commitEdit(cancel = false) {
   renderPreview(true);
 }
 
-function selectEl(blockId, role, kind, name) {
+function selectEl(blockId, role, kind, name, prop) {
   selected = blockId;
-  selectedEl = { role, kind, name };
+  selectedEl = { role, kind, name, prop };
   renderList(); renderEditor(); highlight();
+  if (isMobile()) openSheetForEdit();
+}
+/* スマホで要素を選んだとき、編集シートが閉じていれば開く。
+   シートで下半分が隠れるので、選んだ要素を上のほうへ寄せておく。 */
+function openSheetForEdit() {
+  switchTab('edit');
+  if (!$('#panelRight').classList.contains('open')) openSheet('right', 'edit');
+  const el = pdoc && pdoc.querySelector('[data-el].__elsel');
+  if (el) setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'start' }), 60);
 }
 function scrollToBlock(id) {
   const el = pdoc && pdoc.querySelector(`[data-bid="${id}"]`);
@@ -419,10 +428,9 @@ listEl.addEventListener('dragleave', (e) => {
   }
 });
 
-listEl.addEventListener('drop', (e) => {
+function performDrop(y) {
   if (!drag) return;
-  e.preventDefault();
-  let at = clampIdx(dropIndex(e.clientY));
+  let at = clampIdx(dropIndex(y));
 
   if (drag.mode === 'move') {
     const from = state.blocks.findIndex((b) => b.id === drag.id);
@@ -443,6 +451,54 @@ listEl.addEventListener('drop', (e) => {
   refresh();
   const id = selected;
   setTimeout(() => scrollToBlock(id), 220);
+}
+
+listEl.addEventListener('drop', (e) => {
+  if (!drag) return;
+  e.preventDefault();
+  performDrop(e.clientY);
+});
+
+/* ---- タッチでの並べ替え（HTML5のドラッグ&ドロップは指では動かないため） ----
+   移動・終了は document で受ける。setPointerCapture が使えない環境でも
+   確実に最後まで追えるようにするため。 */
+let touchDrag = false;
+
+function onTouchMove(e) {
+  if (!touchDrag || !drag) return;
+  e.preventDefault();
+  showLine(clampIdx(dropIndex(e.clientY)));
+  const r = listEl.getBoundingClientRect();          // 端に寄ったら自動スクロール
+  if (e.clientY < r.top + 40) listEl.scrollTop -= 8;
+  else if (e.clientY > r.bottom - 40) listEl.scrollTop += 8;
+}
+function stopTouchDrag() {
+  touchDrag = false;
+  document.removeEventListener('pointermove', onTouchMove);
+  document.removeEventListener('pointerup', onTouchEnd);
+  document.removeEventListener('pointercancel', onTouchCancel);
+}
+function onTouchEnd(e) {
+  if (!touchDrag) return;
+  stopTouchDrag();
+  performDrop(e.clientY);
+}
+function onTouchCancel() { stopTouchDrag(); clearDrag(); }
+
+listEl.addEventListener('pointerdown', (e) => {
+  if (e.pointerType === 'mouse') return;             // マウスは標準のD&Dに任せる
+  const it = e.target.closest('.bl-item');
+  if (!it || it.getAttribute('draggable') === 'false') return;
+  if (!e.target.closest('.bl-grip')) return;         // 掴む場所からだけ始める
+  e.preventDefault();
+  touchDrag = true;
+  drag = { mode: 'move', id: it.dataset.id };
+  it.classList.add('dragging');
+  listEl.classList.add('dropping');
+  try { listEl.setPointerCapture(e.pointerId); } catch (err) { /* 使えなくても続行 */ }
+  document.addEventListener('pointermove', onTouchMove, { passive: false });
+  document.addEventListener('pointerup', onTouchEnd);
+  document.addEventListener('pointercancel', onTouchCancel);
 });
 
 /* ---- ブロック追加メニュー ---- */
@@ -597,7 +653,8 @@ function elementPanel(b) {
       <span class="en">${esc(selectedEl.name)}</span>
       <button class="ex" data-elclose title="選択を解除">✕</button>
     </div>
-    ${selectedEl.kind === 'ta' ? '<div class="el-tip">ダブルクリックすると文字を直接書き換えられます</div>' : ''}
+    ${selectedEl.prop ? `<button class="tb-btn edit-now" data-editnow>✎ 文字を編集</button>
+      <div class="el-tip">プレビューをダブルタップしても編集できます</div>` : ''}
     <div class="f"><label>アニメーション</label>
       <select data-elk="a">${list.map(([v, l]) =>
         `<option value="${v}"${cur === v ? ' selected' : ''}>${esc(l)}</option>`).join('')}</select>
@@ -613,7 +670,16 @@ function elementPanel(b) {
 
 /* 要素パネルの操作 */
 $('#tab-edit').addEventListener('click', (e) => {
-  if (e.target.closest('[data-elclose]')) { selectedEl = null; renderEditor(); highlight(); }
+  if (e.target.closest('[data-elclose]')) { selectedEl = null; renderEditor(); highlight(); return; }
+  if (e.target.closest('[data-editnow]')) {
+    if (!selectedEl || !selectedEl.prop || !pdoc) return;
+    const blk = pdoc.querySelector(`[data-bid="${selected}"]`);
+    const el = blk && blk.querySelector(`[data-prop="${selectedEl.prop}"]`);
+    if (!el) return;
+    if (isMobile()) closeSheets();     // キーボードで隠れるのでシートは閉じる
+    el.scrollIntoView({ block: 'center' });
+    startEdit(el, selected, selectedEl.prop);
+  }
 });
 $('#tab-edit').addEventListener('input', (e) => {
   const key = e.target.dataset.elk;
@@ -832,10 +898,7 @@ $('#tab-design').addEventListener('change', (e) => {
 $('#tab-page').addEventListener('input', themeInput);
 
 /* ---- タブ切り替え ---- */
-$$('.tabs button').forEach((b) => b.addEventListener('click', () => {
-  $$('.tabs button').forEach((x) => x.classList.toggle('on', x === b));
-  ['edit', 'design', 'page'].forEach((t) => { $(`#tab-${t}`).hidden = t !== b.dataset.tab; });
-}));
+$$('.tabs button').forEach((b) => b.addEventListener('click', () => switchTab(b.dataset.tab)));
 
 /* ================================================================
    テンプレート選択
@@ -913,6 +976,53 @@ document.addEventListener('keydown', (e) => { if (e.key === 'Escape') $$('.modal
    ================================================================ */
 function select(id) { selected = id; renderList(); renderEditor(); highlight(); }
 function refresh() { renderList(); renderEditor(); renderDesign(); renderPage(); renderPreview(true); save(); }
+
+/* ================================================================
+   スマホ表示（下から出るシート＋下部ナビ）
+   ================================================================ */
+const isMobile = () => matchMedia('(max-width:820px)').matches;
+
+function openSheet(which, tabTo) {
+  if (!isMobile()) { if (tabTo) switchTab(tabTo); return; }
+  const target = which === 'left' ? $('#panelLeft') : $('#panelRight');
+  const other = which === 'left' ? $('#panelRight') : $('#panelLeft');
+  other.classList.remove('open');
+  if (tabTo) switchTab(tabTo);
+
+  const already = target.classList.contains('open');
+  target.classList.toggle('open', !already);
+  toggleVeil(!already);
+  $$('#mnav button[data-sheet]').forEach((b) =>
+    b.classList.toggle('on', !already && b.dataset.sheet === which &&
+      (!b.dataset.tabTo || b.dataset.tabTo === tabTo)));
+}
+function closeSheets() {
+  $('#panelLeft').classList.remove('open');
+  $('#panelRight').classList.remove('open');
+  $('#addMenu').hidden = true;
+  toggleVeil(false);
+  $$('#mnav button').forEach((b) => b.classList.remove('on'));
+}
+function toggleVeil(show) {
+  const v = $('#veil');
+  if (show) { v.hidden = false; requestAnimationFrame(() => v.classList.add('show')); }
+  else { v.classList.remove('show'); setTimeout(() => { v.hidden = true; }, 220); }
+}
+function switchTab(name) {
+  $$('.tabs button').forEach((x) => x.classList.toggle('on', x.dataset.tab === name));
+  ['edit', 'design', 'page'].forEach((t) => { $(`#tab-${t}`).hidden = t !== name; });
+}
+
+$('#mnav').addEventListener('click', (e) => {
+  const b = e.target.closest('button');
+  if (!b) return;
+  if (b.dataset.sheet) openSheet(b.dataset.sheet, b.dataset.tabTo);
+  else if (b.id === 'mAdd') { openSheet('left'); setTimeout(() => $('#btnAdd').click(), 260); }
+  else if (b.id === 'mExport') $('#btnExport').click();
+});
+$('#veil').addEventListener('click', closeSheets);
+$$('[data-closesheet]').forEach((b) => b.addEventListener('click', closeSheets));
+addEventListener('resize', () => { if (!isMobile()) closeSheets(); });
 
 /* ---------------- 起動 ---------------- */
 (async function start() {
