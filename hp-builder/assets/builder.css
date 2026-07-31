@@ -360,3 +360,10 @@ input,select,textarea{font:inherit}
   .gal-wrap iframe{min-height:52vh}
   .modal-box.wide{max-width:100%}
 }
+
+/* アニメーションのサンプル一覧を開くボタン */
+.anim-gal{
+  width:100%;margin-top:7px;background:#243149;border:1px solid #3a4f74;border-radius:6px;
+  padding:8px;font-size:12px;font-weight:700;color:var(--tx)
+}
+.anim-gal:hover{background:#2b3b58;border-color:var(--pri)}

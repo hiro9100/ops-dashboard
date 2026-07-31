@@ -363,12 +363,20 @@ input,select,textarea{font:inherit}
   .modal-box.wide{max-width:100%}
 }
 
+/* アニメーションのサンプル一覧を開くボタン */
+.anim-gal{
+  width:100%;margin-top:7px;background:#243149;border:1px solid #3a4f74;border-radius:6px;
+  padding:8px;font-size:12px;font-weight:700;color:var(--tx)
+}
+.anim-gal:hover{background:#2b3b58;border-color:var(--pri)}
+
 </style>
 <style>
 ${themeCSS(state.theme)}
 ${SITE_CSS}
 </style>
 <style>${themeCSS(state.theme)}\n${SITE_CSS}\n${GALLERY_CSS}</style>
+<style>${themeCSS(state.theme)}\n${SITE_CSS}\n${ANIM_GAL_CSS}</style>
 <div class="app">
   <!-- ================= 上部バー ================= -->
   <header class="topbar">
@@ -449,6 +457,16 @@ ${SITE_CSS}
     <div class="cat-bar" id="catBar"></div>
     <div class="gal-wrap"><iframe id="galFrame" title="ブロックのサンプル"></iframe></div>
     <div class="modal-foot"><button class="tb-btn" id="addClose">閉じる</button></div>
+  </div>
+</div>
+
+<!-- ================= アニメーションのサンプル一覧 ================= -->
+<div class="modal" id="animModal" hidden>
+  <div class="modal-box wide">
+    <h2 id="animTitle">アニメーションを選ぶ</h2>
+    <p class="modal-sub">くり返し再生されます。カードにマウスを乗せる（タップする）とすぐ再生します。</p>
+    <div class="gal-wrap"><iframe id="animFrame" title="アニメーションのサンプル"></iframe></div>
+    <div class="modal-foot"><button class="tb-btn" id="animClose">閉じる</button></div>
   </div>
 </div>
 
@@ -794,6 +812,7 @@ p:last-child{margin-bottom:0}
 .ia-kenburns{overflow:hidden}
 .ia-kenburns.in{opacity:1}
 .ia-kenburns.in > img{animation:ia-kenburns 14s ease-in-out infinite alternate}
+.ia-kenburns.in:not(:has(img)){animation:ia-kenburns 14s ease-in-out infinite alternate}
 
 @keyframes ia-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
 .ia-float.in{opacity:1;animation:ia-float 4.5s ease-in-out infinite}
@@ -3153,6 +3172,132 @@ function renderGallery() {
   }, { once: true });
 }
 
+/* ================================================================
+   アニメーションのサンプル一覧
+   動きは静止画では伝わらないので、実際にくり返し再生して見せる。
+   ================================================================ */
+let animPick = null;   // 選ばれたときに呼ぶ処理
+
+const ANIM_GAL_CSS = `
+body{margin:0;background:#0d1016;padding:14px;
+  font-family:"Helvetica Neue",Arial,"Hiragino Sans",Meiryo,sans-serif}
+.ag{display:grid;grid-template-columns:repeat(auto-fill,minmax(164px,1fr));gap:10px}
+.ag-card{display:block;width:100%;padding:0;cursor:pointer;color:#e7ebf0;font:inherit;
+  background:#171a21;border:1px solid #2a2f3a;border-radius:10px;overflow:hidden;
+  transition:border-color .15s,transform .15s;position:relative}
+/* 再生のたびに中身を作り替えるので、クリックは動かない層で受ける
+   （作り替えた瞬間に押すとクリックが消えるため） */
+.ag-hit{position:absolute;inset:0;z-index:5;background:transparent}
+.ag-card:hover{border-color:#4c8dff;transform:translateY(-2px)}
+.ag-card.on{border-color:#4c8dff;box-shadow:0 0 0 1px #4c8dff inset}
+.ag-stage{height:88px;display:grid;place-items:center;overflow:hidden;
+  background:var(--c-bg);border-bottom:1px solid #2a2f3a;padding:8px}
+.ag-txt{font-size:18px;font-weight:800;color:var(--c-text);font-family:var(--font-head);
+  --ta-dur:.9s;--ta-stagger:.05s;--ta-ease:cubic-bezier(.2,.7,.3,1);--ta-delay:0s}
+.ag-img{width:96px;height:62px;border-radius:8px;
+  background:linear-gradient(140deg,var(--c-primary),var(--c-accent));
+  --ta-dur:.9s;--ta-ease:cubic-bezier(.2,.7,.3,1)}
+.ag-meta{padding:8px 9px;font-size:11.5px;font-weight:700;text-align:center;line-height:1.4}
+.ag-card.on .ag-meta{color:#9db4ff}
+`;
+
+const ANIM_GAL_JS = `
+var CH='ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789#$%&@';
+function split(el){
+  var t = el.getAttribute('data-txt') || '';
+  var mask = el.classList.contains('ta-maskline');
+  el.textContent = '';
+  var ln = document.createElement('span'); ln.className = 'ln';
+  if(mask){
+    var c = document.createElement('span'); c.className = 'ch';
+    c.style.setProperty('--i', 0); c.textContent = t; ln.appendChild(c);
+  } else {
+    Array.from(t).forEach(function(ch, i){
+      var s = document.createElement('span'); s.className = 'ch';
+      s.style.setProperty('--i', i); s.textContent = ch; s.setAttribute('data-c', ch);
+      if(el.classList.contains('ta-slidealt')) s.style.setProperty('--dir', i % 2 ? '-.9em' : '.9em');
+      if(el.classList.contains('ta-scatter')){
+        s.style.setProperty('--x', ((Math.random()*2-1)*2.2).toFixed(2)+'em');
+        s.style.setProperty('--y', ((Math.random()*2-1)*1.4).toFixed(2)+'em');
+        s.style.setProperty('--r', ((Math.random()*2-1)*90).toFixed(0)+'deg');
+      }
+      ln.appendChild(s);
+    });
+  }
+  el.appendChild(ln);
+}
+function play(card){
+  var el = card.querySelector('.ag-txt, .ag-img');
+  if(!el) return;
+  el.classList.remove('in');
+  if(el.classList.contains('ag-txt') && !el.classList.contains('ta-fillgrad') && !el.classList.contains('ta-none')) split(el);
+  void el.offsetWidth;                       /* いったんリフローさせて再生し直す */
+  el.classList.add('in');
+  if(el.classList.contains('ta-scramble')) scramble(el);
+  if(el.classList.contains('ta-type')) type(el);
+}
+function scramble(el){
+  var chs = [].slice.call(el.querySelectorAll('.ch')), f = 0;
+  chs.forEach(function(c){ c.dataset.final = c.textContent; c.style.opacity = 1; });
+  (function tick(){
+    chs.forEach(function(c, i){
+      var st = i*3;
+      if(f >= st+40) c.textContent = c.dataset.final;
+      else if(f >= st) c.textContent = CH[Math.floor(Math.random()*CH.length)];
+    });
+    if(f++ < chs.length*3+40) requestAnimationFrame(tick);
+    else chs.forEach(function(c){ c.textContent = c.dataset.final; });
+  })();
+}
+function type(el){
+  var chs = [].slice.call(el.querySelectorAll('.ch'));
+  chs.forEach(function(c, i){ c.style.opacity = 1; c.classList.remove('show');
+    setTimeout(function(){ c.classList.add('show'); }, i*70); });
+}
+var cards = [].slice.call(document.querySelectorAll('.ag-card'));
+function playAll(){ cards.forEach(function(c, i){ setTimeout(function(){ play(c); }, i*70); }); }
+cards.forEach(function(c){
+  c.addEventListener('pointerenter', function(){ play(c); });
+  c.querySelector('.ag-hit').addEventListener('click', function(e){
+    e.stopPropagation();
+    parent.pickAnim(c.dataset.k);
+  });
+});
+playAll();
+setInterval(playAll, 3600);
+`;
+
+function openAnimGallery(kind, current, onPick) {
+  animPick = onPick;
+  const list = kind === 'ta' ? TEXT_ANIMS : IMAGE_ANIMS;
+  $('#animTitle').textContent = kind === 'ta' ? '文字のアニメーションを選ぶ' : '画像・要素のアニメーションを選ぶ';
+
+  const cards = list.map(([k, label]) => {
+    const inner = kind === 'ta'
+      ? `<span class="ag-txt ta-${k}" data-ta data-txt="動きを見る">動きを見る</span>`
+      : `<div class="ag-img ia-${k}${k === 'none' ? '' : ' ia-on'}"></div>`;
+    return `<button class="ag-card${k === current ? ' on' : ''}" data-k="${k}">
+      <span class="ag-hit"></span>
+      <div class="ag-stage">${inner}</div>
+      <div class="ag-meta">${esc(label)}</div>
+    </button>`;
+  }).join('');
+
+  $('#animFrame').srcdoc = `<!DOCTYPE html><html lang="ja"><head><meta charset="utf-8">
+<style>${themeCSS(state.theme)}\n${SITE_CSS}\n${ANIM_GAL_CSS}</style></head>
+<body class="tpl-${esc(state.template)}"><div class="ag">${cards}</div>
+<script>${ANIM_GAL_JS}<\/script></body></html>`;
+  openModal('#animModal');
+}
+
+/* サンプル一覧（iframe）から呼ばれる */
+window.pickAnim = (key) => {
+  closeModal('#animModal');
+  if (animPick) animPick(key);
+  animPick = null;
+};
+$('#animClose').addEventListener('click', () => closeModal('#animModal'));
+
 function addBlock(type) {
   const nb = makeBlock(type);
   let at = state.blocks.findIndex((b) => b.id === selected) + 1;
@@ -3300,6 +3445,7 @@ function elementPanel(b) {
     <div class="f"><label>アニメーション</label>
       <select data-elk="a">${list.map(([v, l]) =>
         `<option value="${v}"${cur === v ? ' selected' : ''}>${esc(l)}</option>`).join('')}</select>
+      <button class="anim-gal" data-animgal="${isText ? 'ta' : 'ia'}">▦ サンプルを見ながら選ぶ</button>
     </div>
     <div class="f"><label>開始までの待ち</label>
       <div class="f-row">
@@ -3313,6 +3459,22 @@ function elementPanel(b) {
 /* 要素パネルの操作 */
 $('#tab-edit').addEventListener('click', (e) => {
   if (e.target.closest('[data-elclose]')) { selectedEl = null; renderEditor(); highlight(); return; }
+  const ag = e.target.closest('[data-animgal]');
+  if (ag && selectedEl) {
+    const b0 = state.blocks.find((x) => x.id === selected);
+    const cur0 = ((b0 && b0.props.anims) || {})[selectedEl.role] || {};
+    openAnimGallery(ag.dataset.animgal, cur0.a || 'none', (key) => {
+      const bb = state.blocks.find((x) => x.id === selected);
+      if (!bb) return;
+      bb.props.anims = bb.props.anims || {};
+      const c = Object.assign({}, bb.props.anims[selectedEl.role]);
+      c.a = key;
+      if (key === 'none' && !c.d) delete bb.props.anims[selectedEl.role];
+      else bb.props.anims[selectedEl.role] = c;
+      renderEditor(); renderPreview(true); save(`a:${selectedEl.role}:gal:${selected}`);
+    });
+    return;
+  }
   if (e.target.closest('[data-editnow]')) {
     if (!selectedEl || !selectedEl.prop || !pdoc) return;
     const blk = pdoc.querySelector(`[data-bid="${selected}"]`);
@@ -3554,7 +3716,8 @@ function renderDesign() {
         return `<div class="f"><label>${esc(f.label)}</label>${inputHTML(f, val, path)}
           ${f.hint ? `<div class="hint">${esc(f.hint)}</div>` : ''}</div>`;
       }).join('')
-    + `<button class="add-btn" id="btnReplayAnim" style="margin-top:6px">▶ プレビューで再生</button>`;
+    + `<button class="anim-gal" id="btnAnimGal" style="margin-top:0">▦ サンプルを見ながら選ぶ</button>`
+    + `<button class="add-btn" id="btnReplayAnim" style="margin-top:8px">▶ プレビューで再生</button>`;
 }
 function renderPage() {
   $('#tab-page').innerHTML = `
@@ -3594,6 +3757,12 @@ function themeInput(e) {
 $('#tab-design').addEventListener('input', themeInput);
 $('#tab-design').addEventListener('click', (e) => {
   if (e.target.id === 'btnReplayAnim') renderPreview(true);
+  if (e.target.id === 'btnAnimGal') {
+    openAnimGallery('ta', state.motion.anim, (key) => {
+      state.motion.anim = key;
+      renderDesign(); renderPreview(true); save('t:motion.anim');
+    });
+  }
 });
 /* select や toggle を変えたら、すぐ動きを確認できるよう作り直す */
 $('#tab-design').addEventListener('change', (e) => {

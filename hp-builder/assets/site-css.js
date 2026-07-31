@@ -325,6 +325,7 @@ p:last-child{margin-bottom:0}
 .ia-kenburns{overflow:hidden}
 .ia-kenburns.in{opacity:1}
 .ia-kenburns.in > img{animation:ia-kenburns 14s ease-in-out infinite alternate}
+.ia-kenburns.in:not(:has(img)){animation:ia-kenburns 14s ease-in-out infinite alternate}
 
 @keyframes ia-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
 .ia-float.in{opacity:1;animation:ia-float 4.5s ease-in-out infinite}
