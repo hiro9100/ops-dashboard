@@ -343,11 +343,32 @@ input,select,textarea{font:inherit}
   .tb-btn.ico{padding:6px 9px;font-size:16px}
 }
 
+/* ==========================================================
+   ブロック追加ギャラリー
+   ========================================================== */
+.cat-bar{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:14px}
+.cat-bar button{
+  background:var(--panel2);border:1px solid var(--line);border-radius:999px;
+  padding:6px 15px;font-size:12px;font-weight:700;color:var(--tx2);transition:.15s
+}
+.cat-bar button:hover{color:var(--tx);border-color:#3a4150}
+.cat-bar button.on{background:var(--pri);border-color:var(--pri);color:#fff}
+.gal-wrap{
+  flex:1;min-height:0;border:1px solid var(--line);border-radius:10px;
+  overflow:hidden;background:#0d1016
+}
+.gal-wrap iframe{width:100%;height:100%;min-height:56vh;border:0;display:block}
+@media(max-width:820px){
+  .gal-wrap iframe{min-height:52vh}
+  .modal-box.wide{max-width:100%}
+}
+
 </style>
 <style>
 ${themeCSS(state.theme)}
 ${SITE_CSS}
 </style>
+<style>${themeCSS(state.theme)}\n${SITE_CSS}\n${GALLERY_CSS}</style>
 <div class="app">
   <!-- ================= 上部バー ================= -->
   <header class="topbar">
@@ -376,7 +397,6 @@ ${SITE_CSS}
     <div id="blockList" class="blocklist"></div>
     <div class="add-wrap">
       <button class="add-btn" id="btnAdd">＋ ブロックを追加</button>
-      <div class="add-menu" id="addMenu" hidden></div>
     </div>
   </aside>
 
@@ -418,6 +438,17 @@ ${SITE_CSS}
     <p class="modal-sub">選ぶと、いまの内容は置きかわります。あとから中身は自由に変えられます。</p>
     <div class="tpl-grid" id="tplGrid"></div>
     <div class="modal-foot"><button class="tb-btn" id="tplClose">閉じる</button></div>
+  </div>
+</div>
+
+<!-- ================= ブロックを追加（サンプル付き一覧） ================= -->
+<div class="modal" id="addModal" hidden>
+  <div class="modal-box wide">
+    <h2>ブロックを追加</h2>
+    <p class="modal-sub">実物のサンプルから選べます。選ぶと、いま選択中のブロックのすぐ下に追加されます（あとから並べ替えできます）。</p>
+    <div class="cat-bar" id="catBar"></div>
+    <div class="gal-wrap"><iframe id="galFrame" title="ブロックのサンプル"></iframe></div>
+    <div class="modal-foot"><button class="tb-btn" id="addClose">閉じる</button></div>
   </div>
 </div>
 
@@ -767,6 +798,153 @@ p:last-child{margin-bottom:0}
 @keyframes ia-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
 .ia-float.in{opacity:1;animation:ia-float 4.5s ease-in-out infinite}
 
+/* ==========================================================
+   スクロールに連動する特別なブロック
+   ========================================================== */
+.pinsec{position:relative}
+.pin-in{position:sticky;top:0;height:100vh;overflow:hidden;display:grid;place-items:center}
+.pin-cap{position:absolute;bottom:7vh;left:50%;transform:translateX(-50%);text-align:center;width:90%;z-index:3}
+.pin-cap b{display:block;font-size:clamp(18px,2.6vw,28px);font-family:var(--font-head);line-height:1.4}
+.pin-cap small{color:var(--c-muted);font-size:12.5px}
+.bg-dark .pin-cap small,.bg-primary .pin-cap small{color:rgba(255,255,255,.72)}
+
+/* ---------- 3D製品ビュー ---------- */
+.p3d{width:min(74vmin,560px);height:min(74vmin,560px);display:block}
+.p3d-deg{position:absolute;top:7vh;left:50%;transform:translateX(-50%);
+  font-family:Menlo,monospace;font-size:12px;letter-spacing:.14em;color:var(--c-primary)}
+.p3d-spec{position:absolute;inset:0;pointer-events:none}
+.p3d-spec div{position:absolute;font-size:12px;color:var(--c-muted);opacity:0;transform:translateY(10px);
+  transition:opacity .5s,transform .5s;max-width:34%}
+.p3d-spec div.on{opacity:1;transform:none}
+.p3d-spec b{display:block;color:var(--c-text);font-size:17px;font-family:Menlo,monospace}
+.bg-dark .p3d-spec b,.bg-primary .p3d-spec b{color:#fff}
+.p3d-spec div:nth-child(1){top:24%;left:6%}
+.p3d-spec div:nth-child(2){top:46%;right:6%;text-align:right}
+.p3d-spec div:nth-child(3){bottom:26%;left:8%}
+@media(max-width:760px){.p3d-spec{display:none}}
+
+/* ---------- 分解図 ---------- */
+.exp{perspective:1400px;width:min(72vmin,440px);height:min(72vmin,440px);position:relative}
+.exp-in{position:absolute;inset:0;transform-style:preserve-3d}
+.exp-l{
+  position:absolute;left:50%;top:50%;width:64%;height:44%;margin:-22% 0 0 -32%;
+  border-radius:14px;border:1px solid rgba(255,255,255,.22);overflow:hidden;
+  display:grid;place-items:center;font-family:Menlo,monospace;font-size:11px;
+  letter-spacing:.14em;color:#fff;text-align:center;padding:6px
+}
+.exp-l img{width:100%;height:100%;object-fit:cover;position:absolute;inset:0}
+.exp-l span{position:relative;text-shadow:0 1px 6px rgba(0,0,0,.5)}
+
+/* ---------- 横に流れるギャラリー ---------- */
+.hs-head{position:absolute;top:10vh;left:0;width:100%;z-index:3}
+.hs-track{display:flex;gap:20px;padding-left:6vw;will-change:transform}
+.hs-card{
+  flex:none;width:clamp(220px,25vw,330px);aspect-ratio:3/4;border-radius:var(--radius);
+  overflow:hidden;position:relative;border:1px solid var(--c-border);background:var(--c-surface);
+  display:flex;flex-direction:column;justify-content:flex-end;padding:20px
+}
+.hs-card img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.hs-card em{position:absolute;top:16px;left:20px;font-style:normal;font-family:Menlo,monospace;
+  font-size:11px;color:var(--c-primary);z-index:2}
+.hs-card b{position:relative;z-index:2;font-size:15px}
+.hs-card::after{content:"";position:absolute;inset:0;
+  background:linear-gradient(transparent 45%,rgba(0,0,0,.55));opacity:0}
+.hs-card:has(img)::after{opacity:1}
+.hs-card:has(img) b,.hs-card:has(img) em{color:#fff}
+
+/* ---------- 積み重なるカード ---------- */
+.stack{display:grid;gap:24px}
+.stackcard{
+  position:sticky;height:56vh;border-radius:calc(var(--radius) * 1.6);padding:clamp(24px,4vw,44px);
+  overflow:hidden;border:1px solid var(--c-border);background:var(--c-surface);
+  display:flex;flex-direction:column;justify-content:space-between;
+  will-change:transform;transform-origin:50% 0%
+}
+.stackcard .no{font-family:Menlo,monospace;font-size:12px;letter-spacing:.2em;color:var(--c-primary)}
+.stackcard h3{margin:0 0 8px;font-size:clamp(20px,3vw,30px);font-family:var(--font-head)}
+.stackcard p{margin:0;max-width:520px;font-size:14px;color:var(--c-muted)}
+.stackcard:nth-child(1){top:11vh}.stackcard:nth-child(2){top:14vh}
+.stackcard:nth-child(3){top:17vh}.stackcard:nth-child(4){top:20vh}
+.stackcard:nth-child(5){top:23vh}.stackcard:nth-child(6){top:26vh}
+
+/* ---------- タイムライン ---------- */
+.tl{position:relative;padding-left:46px;max-width:760px;margin:0 auto}
+.tl-rail{position:absolute;left:13px;top:6px;bottom:6px;width:2px;background:var(--c-border)}
+.tl-rail::after{content:"";position:absolute;inset:0;
+  background:linear-gradient(var(--c-primary),var(--c-accent));
+  transform:scaleY(var(--p,0));transform-origin:50% 0}
+.tl-item{position:relative;padding:0 0 46px}
+.tl-item:last-child{padding-bottom:0}
+.tl-item::before{content:"";position:absolute;left:-40px;top:7px;width:12px;height:12px;
+  border-radius:50%;background:var(--c-bg);border:2px solid var(--c-border);transition:.35s}
+.tl-item.on::before{border-color:var(--c-primary);background:var(--c-primary);
+  box-shadow:0 0 0 6px color-mix(in srgb,var(--c-primary) 18%,transparent)}
+.tl-item small{font-family:Menlo,monospace;font-size:11px;letter-spacing:.14em;color:var(--c-primary)}
+.tl-item b{display:block;font-size:17px;margin:2px 0 4px;font-family:var(--font-head)}
+.tl-item p{margin:0;color:var(--c-muted);font-size:14px}
+
+/* ---------- 円形マスクで切り替え ---------- */
+.clip-box{position:relative;height:100vh;overflow:hidden}
+.clip-side{position:absolute;inset:0;display:grid;place-items:center;text-align:center;padding:0 24px}
+.clip-a{background:var(--c-surface)}
+.clip-b{background:linear-gradient(140deg,var(--c-primary),var(--c-accent));color:#fff;
+  clip-path:circle(var(--r,0%) at 50% 50%)}
+.clip-side img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.clip-side .in-txt{position:relative;z-index:2}
+.clip-box h3{font-size:clamp(24px,4.6vw,50px);font-weight:800;margin:0;font-family:var(--font-head)}
+.clip-box p{margin:10px 0 0;font-size:14.5px;opacity:.85}
+
+/* ---------- 3Dカルーセル ---------- */
+.car{perspective:1300px;height:400px;display:grid;place-items:center;cursor:grab;touch-action:pan-y}
+.car:active{cursor:grabbing}
+.car-in{position:relative;width:220px;height:300px;transform-style:preserve-3d}
+.car-it{
+  position:absolute;inset:0;border-radius:var(--radius);overflow:hidden;
+  border:1px solid var(--c-border);backface-visibility:hidden;
+  background:linear-gradient(155deg,color-mix(in srgb,var(--c-primary) 22%,var(--c-bg)),var(--c-surface));
+  display:flex;flex-direction:column;justify-content:flex-end;padding:20px
+}
+.car-it img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.car-it b{position:relative;z-index:2;font-size:15px}
+.car-it small{position:relative;z-index:2;font-family:Menlo,monospace;font-size:11px;color:var(--c-muted)}
+.car-it:has(img)::after{content:"";position:absolute;inset:0;
+  background:linear-gradient(transparent 50%,rgba(0,0,0,.6))}
+.car-it:has(img) b,.car-it:has(img) small{color:#fff}
+
+/* ---------- スロット式カウンター ---------- */
+.slots{display:grid;gap:24px;text-align:center}
+.slot{display:inline-flex;font-family:Menlo,monospace;font-weight:800;
+  font-size:clamp(30px,5.4vw,56px);line-height:1.1;overflow:hidden;
+  background:linear-gradient(140deg,var(--c-primary),var(--c-accent));
+  -webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent}
+.slot .col{height:1.1em;overflow:hidden}
+.slot .col u{display:block;text-decoration:none;transition:transform 1.6s cubic-bezier(.16,1,.3,1)}
+.slot .fix{opacity:.6}
+.slots small{display:block;color:var(--c-muted);font-size:12.5px;margin-top:6px}
+
+/* ---------- SVG線画 ---------- */
+.draw-wrap{max-width:720px;margin:0 auto}
+.draw-wrap svg{width:100%;height:auto;overflow:visible}
+.draw-wrap path,.draw-wrap line,.draw-wrap rect,.draw-wrap polyline,.draw-wrap circle{
+  stroke-dasharray:var(--len);stroke-dashoffset:var(--len);
+  transition:stroke-dashoffset 1.6s cubic-bezier(.4,0,.2,1)}
+.draw-wrap.in path,.draw-wrap.in line,.draw-wrap.in rect,
+.draw-wrap.in polyline,.draw-wrap.in circle{stroke-dashoffset:0}
+.draw-lbl{display:flex;justify-content:space-around;margin-top:14px;font-size:12px;color:var(--c-muted)}
+
+/* ---------- 全画面メッセージ（背景色が変わる） ---------- */
+.shift-pane{min-height:100vh;display:grid;place-items:center;text-align:center;padding:0 24px;
+  transition:background .8s ease,color .8s ease}
+.shift-pane h3{font-size:clamp(24px,4.8vw,52px);margin:0;font-weight:800;font-family:var(--font-head)}
+.shift-pane p{margin:12px 0 0;opacity:.72;font-size:14.5px}
+
+@media(max-width:640px){
+  .stackcard{height:64vh}
+  .tl{padding-left:38px}
+  .tl-item::before{left:-32px}
+  .car{height:340px}
+}
+
 /* ---------- ブロックの出現 ---------- */
 .rv{opacity:0;transform:translateY(34px);
   transition:opacity .85s cubic-bezier(.2,.7,.3,1),transform .85s cubic-bezier(.2,.7,.3,1)}
@@ -914,10 +1092,279 @@ const SITE_JS = `
     [].slice.call(d.querySelectorAll('.sec, .hero')).forEach(function(s){ s.classList.add('rv'); });
   }
 
+  /* ==========================================================
+     スクロールに連動するブロック
+     ========================================================== */
+  var clamp = function(v){ return Math.min(1, Math.max(0, v)); };
+  function progress(el){
+    var r = el.getBoundingClientRect(), t = r.height - innerHeight;
+    return t <= 0 ? 0 : clamp(-r.top / t);
+  }
+  /* scroll は1本の rAF にまとめる（個々に addEventListener しない） */
+  var onScroll = [], ticking = false;
+  function scrollTick(){
+    if(ticking) return; ticking = true;
+    requestAnimationFrame(function(){ for(var i=0;i<onScroll.length;i++) onScroll[i](); ticking = false; });
+  }
+  function watchScroll(fn){ onScroll.push(fn); }
+
+  var css = function(name, fb){
+    var v = getComputedStyle(d.documentElement).getPropertyValue(name).trim();
+    return v || fb;
+  };
+
+  /* ---------- 3D製品ビュー（Canvasに面を1枚ずつ描く） ---------- */
+  [].slice.call(d.querySelectorAll('[data-p3d]')).forEach(function(sec){
+    var cv = sec.querySelector('canvas'); if(!cv) return;
+    var ctx = cv.getContext('2d');
+    var degEl = sec.querySelector('.p3d-deg');
+    var specs = [].slice.call(sec.querySelectorAll('.p3d-spec div'));
+    var turns = parseFloat(sec.getAttribute('data-turns')) || 1;
+    var shape = sec.getAttribute('data-shape') || 'slab';
+    var dims = shape === 'box' ? [0.95,0.95,0.72] : shape === 'tall' ? [0.62,1.5,0.5] : [0.74,1.36,0.28];
+    var edge = shape === 'box' ? 0.22 : 0.30;
+
+    var SEG = 34;
+    var sgn = function(t){ return (t<0?-1:1) * Math.pow(Math.abs(t), edge); };
+    var verts = [], faces = [];
+    for(var i=0;i<=SEG;i++){
+      var v = Math.PI*i/SEG;
+      for(var j=0;j<=SEG;j++){
+        var u = 2*Math.PI*j/SEG;
+        verts.push([sgn(Math.sin(v)*Math.cos(u))*dims[0], sgn(Math.cos(v))*dims[1], sgn(Math.sin(v)*Math.sin(u))*dims[2]]);
+      }
+    }
+    var sub=function(a,b){return [a[0]-b[0],a[1]-b[1],a[2]-b[2]];};
+    var cross=function(a,b){return [a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]];};
+    var norm=function(a){var l=Math.hypot(a[0],a[1],a[2])||1;return [a[0]/l,a[1]/l,a[2]/l];};
+    var dot=function(a,b){return a[0]*b[0]+a[1]*b[1]+a[2]*b[2];};
+    for(var i2=0;i2<SEG;i2++) for(var j2=0;j2<SEG;j2++){
+      var a=i2*(SEG+1)+j2, b2=a+1, c2=a+SEG+1, d2=c2+1;
+      var n = norm(cross(sub(verts[b2],verts[a]), sub(verts[c2],verts[a])));
+      faces.push({ i:[a,b2,d2,c2], n:n,
+        ctr:[0,1,2].map(function(k){return (verts[a][k]+verts[b2][k]+verts[c2][k]+verts[d2][k])/4;}),
+        screen: n[2] > 0.86 });
+    }
+
+    function hex2rgb(h){
+      h = (h||'').replace('#','');
+      if(h.length === 3) h = h[0]+h[0]+h[1]+h[1]+h[2]+h[2];
+      var n = parseInt(h,16);
+      return isNaN(n) ? [90,110,140] : [(n>>16)&255,(n>>8)&255,n&255];
+    }
+    var L1 = norm([0.45,0.75,0.85]), L2 = norm([-0.7,0.15,0.45]), CAM = 4.0;
+    var W=0,H=0;
+    function size(){
+      var dpr = Math.min(devicePixelRatio||1, 2), r = cv.getBoundingClientRect();
+      W = Math.round(r.width); H = Math.round(r.height);
+      cv.width = W*dpr; cv.height = H*dpr;
+      ctx.setTransform(dpr,0,0,dpr,0,0);
+    }
+    function draw(ay, ax){
+      if(!W) return;
+      var body = hex2rgb(sec.getAttribute('data-body') || css('--c-muted','#64748b'));
+      var face = hex2rgb(sec.getAttribute('data-face') || css('--c-primary','#2563eb'));
+      ctx.clearRect(0,0,W,H);
+      var cy=Math.cos(ay), sy=Math.sin(ay), cx=Math.cos(ax), sx=Math.sin(ax);
+      var rot = function(p){
+        var X = p[0]*cy + p[2]*sy, Z = -p[0]*sy + p[2]*cy;
+        return [X, p[1]*cx - Z*sx, p[1]*sx + Z*cx];
+      };
+      var f = W*0.84;
+      var P = verts.map(function(v){ var q=rot(v), dd=CAM-q[2];
+        return [W/2 + f*q[0]/dd, H/2 - f*q[1]/dd]; });
+
+      var sh = ctx.createRadialGradient(W/2,H*0.87,0,W/2,H*0.87,W*0.34);
+      sh.addColorStop(0,'rgba(0,0,0,.18)'); sh.addColorStop(1,'rgba(0,0,0,0)');
+      ctx.fillStyle = sh; ctx.beginPath();
+      ctx.ellipse(W/2,H*0.87,W*0.30,H*0.045,0,0,7); ctx.fill();
+
+      var list = [];
+      for(var k=0;k<faces.length;k++){
+        var fc = faces[k], n = rot(fc.n), c = rot(fc.ctr);
+        var view = norm([-c[0],-c[1],CAM-c[2]]);
+        if(dot(n,view) <= 0.02) continue;
+        list.push({fc:fc, n:n, z:c[2], view:view});
+      }
+      list.sort(function(a,b){ return a.z-b.z; });
+      for(var m=0;m<list.length;m++){
+        var o=list[m], n2=o.n;
+        var d1 = Math.max(0, dot(n2,L1)), dd2 = Math.max(0, dot(n2,L2));
+        var rim = Math.pow(1 - Math.max(0, dot(n2,o.view)), 2.4);
+        var base = o.fc.screen ? face : body;
+        var lit = 0.28 + d1*0.85 + dd2*0.22 + rim*0.5;
+        var col = 'rgb(' + Math.min(255, base[0]*lit|0) + ',' + Math.min(255, base[1]*lit|0) + ',' + Math.min(255, base[2]*lit|0) + ')';
+        var idx = o.fc.i;
+        ctx.fillStyle = col; ctx.strokeStyle = col; ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(P[idx[0]][0],P[idx[0]][1]); ctx.lineTo(P[idx[1]][0],P[idx[1]][1]);
+        ctx.lineTo(P[idx[2]][0],P[idx[2]][1]); ctx.lineTo(P[idx[3]][0],P[idx[3]][1]);
+        ctx.closePath(); ctx.fill(); ctx.stroke();
+      }
+    }
+    var target=0, angle=0, tilt=0, tTilt=0, dirty=true, visible=false;
+    watchScroll(function(){
+      var p = progress(sec);
+      target = p * Math.PI * 2 * turns;
+      tTilt = Math.sin(p*Math.PI) * 0.3;
+      if(degEl) degEl.textContent = String(Math.round((p*360*turns)%360)).padStart(3,'0') + '°';
+      specs.forEach(function(el){
+        var at = parseFloat(el.getAttribute('data-at')) || 0;
+        el.classList.toggle('on', p > at && p < at + 0.24);
+      });
+      dirty = true;
+    });
+    if('IntersectionObserver' in window)
+      new IntersectionObserver(function(es){ es.forEach(function(e){ visible = e.isIntersecting; dirty = true; }); },
+        {threshold:0}).observe(sec);
+    else visible = true;
+    (function loop(){
+      if(visible && (dirty || Math.abs(target-angle) > 0.0006)){
+        angle += (target-angle) * (reduce ? 1 : 0.14);
+        tilt  += (tTilt-tilt) * (reduce ? 1 : 0.14);
+        draw(angle, tilt); dirty = false;
+      }
+      requestAnimationFrame(loop);
+    })();
+    size(); addEventListener('resize', function(){ size(); dirty = true; }, {passive:true});
+    draw(0,0);
+  });
+
+  /* ---------- 分解図 ---------- */
+  [].slice.call(d.querySelectorAll('[data-exploded]')).forEach(function(sec){
+    var inner = sec.querySelector('.exp-in'); if(!inner) return;
+    var plates = [].slice.call(inner.querySelectorAll('.exp-l'));
+    watchScroll(function(){
+      var r = sec.getBoundingClientRect();
+      if(r.bottom < -200 || r.top > innerHeight + 200) return;
+      var p = progress(sec), gap = (1-p) * 150;
+      plates.forEach(function(el, i){
+        var k = i - (plates.length-1)/2;
+        el.style.transform = 'translateZ(' + (k*(30+gap)) + 'px) translateY(' + (k*gap*0.34) + 'px)';
+        el.style.opacity = 0.6 + p*0.4;
+      });
+      inner.style.transform = 'rotateX(' + (58 - p*46) + 'deg) rotateZ(' + (-28 + p*28) + 'deg)';
+    });
+  });
+
+  /* ---------- 横に流れるギャラリー ---------- */
+  [].slice.call(d.querySelectorAll('[data-hscroll]')).forEach(function(sec){
+    var track = sec.querySelector('.hs-track'); if(!track) return;
+    watchScroll(function(){
+      var dist = track.scrollWidth - innerWidth + innerWidth*0.12;
+      track.style.transform = dist <= 0 ? '' : 'translate3d(' + (-dist * progress(sec)) + 'px,0,0)';
+    });
+  });
+
+  /* ---------- 積み重なるカード ---------- */
+  [].slice.call(d.querySelectorAll('[data-stack]')).forEach(function(sec){
+    var cards = [].slice.call(sec.querySelectorAll('.stackcard'));
+    watchScroll(function(){
+      cards.forEach(function(c, i){
+        var next = cards[i+1];
+        if(!next){ c.style.transform=''; c.style.filter=''; return; }
+        /* sticky で止まった要素は自分の top が動かないので、
+           次のカードがどれだけ覆ってきたかで測る */
+        var passed = clamp(1 - (next.getBoundingClientRect().top - c.getBoundingClientRect().top) / c.offsetHeight);
+        c.style.transform = 'scale(' + (1 - passed*0.1) + ')';
+        c.style.filter = 'brightness(' + (1 - passed*0.3) + ')';
+      });
+    });
+  });
+
+  /* ---------- タイムライン ---------- */
+  [].slice.call(d.querySelectorAll('[data-timeline]')).forEach(function(sec){
+    var rail = sec.querySelector('.tl-rail');
+    var items = [].slice.call(sec.querySelectorAll('.tl-item'));
+    if(!rail) return;
+    watchScroll(function(){
+      var r = rail.getBoundingClientRect();
+      rail.style.setProperty('--p', clamp((innerHeight*0.55 - r.top) / r.height));
+      items.forEach(function(it){
+        it.classList.toggle('on', it.getBoundingClientRect().top < innerHeight*0.62);
+      });
+    });
+  });
+
+  /* ---------- 円形マスク ---------- */
+  [].slice.call(d.querySelectorAll('[data-clip]')).forEach(function(sec){
+    var b2 = sec.querySelector('.clip-b'); if(!b2) return;
+    watchScroll(function(){ b2.style.setProperty('--r', (progress(sec)*82) + '%'); });
+  });
+
+  /* ---------- 3Dカルーセル ---------- */
+  [].slice.call(d.querySelectorAll('.car')).forEach(function(box){
+    var inner = box.querySelector('.car-in'); if(!inner) return;
+    var items = [].slice.call(inner.children), N = items.length;
+    if(!N) return;
+    var R = Math.round(130 / Math.tan(Math.PI / N)) || 300;
+    items.forEach(function(el, i){
+      el.style.transform = 'rotateY(' + (i*360/N) + 'deg) translateZ(' + R + 'px)';
+    });
+    var angle = 0, vel = 0.12, dragging = false, last = 0, idle = true, visible = false;
+    var apply = function(){ inner.style.transform = 'rotateY(' + angle + 'deg)'; };
+    box.addEventListener('pointerdown', function(e){
+      dragging = true; idle = false; last = e.clientX; vel = 0;
+      try{ box.setPointerCapture(e.pointerId); }catch(err){}
+    });
+    box.addEventListener('pointermove', function(e){
+      if(!dragging) return;
+      vel = (e.clientX - last) * 0.28; angle += vel; last = e.clientX; apply();
+    });
+    var up = function(){ dragging = false; setTimeout(function(){ idle = true; }, 1400); };
+    box.addEventListener('pointerup', up); box.addEventListener('pointercancel', up);
+    if('IntersectionObserver' in window)
+      new IntersectionObserver(function(es){ es.forEach(function(e){ visible = e.isIntersecting; }); },
+        {threshold:0}).observe(box);
+    else visible = true;
+    (function spin(){
+      if(visible && !reduce && !dragging){
+        if(Math.abs(vel) > 0.02){ vel *= 0.94; angle += vel; apply(); }
+        else if(idle){ angle += 0.12; apply(); }
+      }
+      requestAnimationFrame(spin);
+    })();
+    apply();
+  });
+
+  /* ---------- スロット式カウンター ---------- */
+  function runSlot(el){
+    if(el.dataset.done) return;
+    el.dataset.done = '1';
+    var text = el.getAttribute('data-slot') || '';
+    var html = '';
+    Array.from(text).forEach(function(c, i){
+      if(!/[0-9]/.test(c)){ html += '<span class="fix">' + c + '</span>'; return; }
+      var col = '';
+      for(var n=0;n<=9;n++) col += n + (n<9 ? '<br>' : '');
+      html += '<span class="col"><u data-d="' + c + '" style="transition-delay:' + (i*90) + 'ms">' + col + '</u></span>';
+    });
+    el.innerHTML = html;
+    requestAnimationFrame(function(){
+      [].slice.call(el.querySelectorAll('u')).forEach(function(u){
+        u.style.transform = reduce ? 'translateY(' + (-(+u.dataset.d)*1.1) + 'em)'
+                                   : 'translateY(' + (-(+u.dataset.d)*1.1) + 'em)';
+      });
+    });
+  }
+
+  /* ---------- SVG線画（線の長さを測る） ---------- */
+  [].slice.call(d.querySelectorAll('.draw-wrap')).forEach(function(w){
+    [].slice.call(w.querySelectorAll('path,line,rect,polyline,circle')).forEach(function(el){
+      try{ el.style.setProperty('--len', Math.ceil(el.getTotalLength())); }catch(e){}
+    });
+  });
+
+  if(onScroll.length){
+    addEventListener('scroll', scrollTick, {passive:true});
+    addEventListener('resize', scrollTick, {passive:true});
+    scrollTick();
+  }
+
   /* ---------- 画面に入ったら再生 ---------- */
-  var watch = [].slice.call(d.querySelectorAll('[data-ta]:not(.in), .ia-on, .rv'));
+  var watch = [].slice.call(d.querySelectorAll('[data-ta]:not(.in), .ia-on, .rv, .draw-wrap, [data-slot]'));
   if(!('IntersectionObserver' in window) || reduce){
-    watch.forEach(function(el){ el.classList.add('in'); });
+    watch.forEach(function(el){ el.classList.add('in'); if(el.hasAttribute('data-slot')) runSlot(el); });
   }else{
     var io = new IntersectionObserver(function(es){
       es.forEach(function(e){
@@ -926,6 +1373,7 @@ const SITE_JS = `
         el.classList.add('in');
         if(el.classList.contains('ta-scramble')) runScramble(el);
         if(el.classList.contains('ta-type'))     runType(el);
+        if(el.hasAttribute('data-slot'))         runSlot(el);
         io.unobserve(el);
       });
     }, {threshold:.15, rootMargin:'0px 0px -6% 0px'});
@@ -1432,10 +1880,412 @@ ${form}
   </div>
 </footer>`,
   },
+  /* ================================================================
+     ここから下は「スクロールに連動する」特別なブロック
+     ================================================================ */
+
+  /* ---------------- 3D製品ビュー ---------------- */
+  product3d: {
+    label: '3D製品ビュー',
+    icon: '◉',
+    tag: '3D',
+    about: 'スクロールに合わせて立体が360°回転します。画像は不要で、形と色だけで作られます。',
+    tall: true,
+    fields: [
+      { key: 'title', label: '見出し', type: 'text' },
+      { key: 'text', label: '補足', type: 'text' },
+      { key: 'shape', label: '形', type: 'select',
+        options: [['slab', '板（スマホ・タブレット風）'], ['box', '箱（パッケージ風）'], ['tall', '縦長（ボトル・缶風）']] },
+      { key: 'turns', label: '回転する回数', type: 'range', min: 1, max: 3, suffix: '周' },
+      { key: 'height', label: 'スクロールの長さ', type: 'range', min: 200, max: 600, suffix: 'vh' },
+      { key: 'body', label: '本体の色', type: 'color' },
+      { key: 'face', label: '正面の色', type: 'color' },
+      { key: 'items', label: '途中で出す説明', type: 'list', addLabel: '説明を追加', titleKey: 'value',
+        item: [
+          { key: 'value', label: '数値・見出し', type: 'text' },
+          { key: 'label', label: '説明', type: 'text' },
+          { key: 'at', label: '出すタイミング（0〜100%）', type: 'range', min: 0, max: 95, suffix: '%' },
+        ] },
+      FIELD.bg, FIELD.anchor,
+    ],
+    defaults: {
+      title: 'スクロールで、360°。', text: 'あらゆる角度から確かめてください。',
+      shape: 'slab', turns: 1, height: 400, body: '#8a93a3', face: '#2563eb',
+      bg: 'dark', anchor: 'product',
+      items: [
+        { value: '0.38 kg', label: 'アルミ削り出し筐体', at: 15 },
+        { value: '6.7 inch', label: '有機ELディスプレイ', at: 42 },
+        { value: '72 h', label: '連続駆動バッテリー', at: 68 },
+      ],
+    },
+    render: (p) => `<section class="pinsec${p.bg ? ` bg-${p.bg}` : ''}" data-p3d
+  data-shape="${esc(p.shape || 'slab')}" data-turns="${+p.turns || 1}"
+  data-body="${esc(p.body)}" data-face="${esc(p.face)}"
+  style="height:${+p.height || 400}vh"${attr('id', p.anchor)}>
+  <div class="pin-in">
+    <div class="p3d-deg">000°</div>
+    <canvas class="p3d"></canvas>
+    <div class="p3d-spec">
+${(p.items || []).map((it) => `      <div data-at="${(+it.at || 0) / 100}"><b>${esc(it.value)}</b>${esc(it.label)}</div>`).join('\n')}
+    </div>
+    <div class="pin-cap">
+      ${p.title ? `<b${el(p, 'title', 'ta', '見出し', 'title')}>${nl2br(p.title)}</b>` : ''}
+      ${p.text ? `<small${ed('text', '補足')}>${esc(p.text)}</small>` : ''}
+    </div>
+  </div>
+</section>`,
+  },
+
+  /* ---------------- 分解図 ---------------- */
+  exploded: {
+    label: '分解図が組み上がる',
+    icon: '▤',
+    tag: '3D',
+    about: 'バラバラの層がスクロールで合体します。各層に画像を入れれば実物の構造説明になります。',
+    tall: true,
+    fields: [
+      { key: 'title', label: '見出し', type: 'text' },
+      { key: 'text', label: '補足', type: 'text' },
+      { key: 'height', label: 'スクロールの長さ', type: 'range', min: 200, max: 600, suffix: 'vh' },
+      { key: 'items', label: '層（上から順）', type: 'list', addLabel: '層を追加', titleKey: 'label',
+        item: [
+          { key: 'label', label: '層の名前', type: 'text' },
+          { key: 'image', label: '画像URL', type: 'image' },
+          { key: 'color', label: '色（画像がないとき）', type: 'color' },
+        ] },
+      FIELD.bg, FIELD.anchor,
+    ],
+    defaults: {
+      title: 'バラバラの部品が、組み上がる。', text: '4つの層でできています。',
+      height: 380, bg: 'dark', anchor: 'structure',
+      items: [
+        { label: 'DISPLAY', image: '', color: '#22d3ee' },
+        { label: 'LOGIC BOARD', image: '', color: '#a78bfa' },
+        { label: 'BATTERY', image: '', color: '#fb7185' },
+        { label: 'CHASSIS', image: '', color: '#a3e635' },
+      ],
+    },
+    render: (p) => `<section class="pinsec${p.bg ? ` bg-${p.bg}` : ''}" data-exploded
+  style="height:${+p.height || 380}vh"${attr('id', p.anchor)}>
+  <div class="pin-in">
+    <div class="exp"><div class="exp-in">
+${(p.items || []).map((it, i) => `      <div class="exp-l" style="background:${esc(it.color || '#64748b')}"${imgSlot(`items.${i}.image`)} data-elname="層${i + 1}">${it.image ? img(it.image, it.label) : ''}<span>${esc(it.label)}</span></div>`).join('\n')}
+    </div></div>
+    <div class="pin-cap">
+      ${p.title ? `<b${el(p, 'title', 'ta', '見出し', 'title')}>${nl2br(p.title)}</b>` : ''}
+      ${p.text ? `<small${ed('text', '補足')}>${esc(p.text)}</small>` : ''}
+    </div>
+  </div>
+</section>`,
+  },
+
+  /* ---------------- 横に流れるギャラリー ---------------- */
+  hscroll: {
+    label: '横に流れるギャラリー',
+    icon: '⇥',
+    tag: 'スクロール',
+    about: '縦にスクロールすると、カードが横に流れていきます。実績一覧に向いています。',
+    tall: true,
+    fields: [
+      FIELD.eyebrow, { key: 'title', label: '見出し', type: 'text' },
+      { key: 'height', label: 'スクロールの長さ', type: 'range', min: 200, max: 600, suffix: 'vh' },
+      { key: 'items', label: 'カード', type: 'list', addLabel: 'カードを追加', titleKey: 'title',
+        item: [
+          { key: 'no', label: '番号', type: 'text' },
+          { key: 'title', label: 'タイトル', type: 'text' },
+          { key: 'image', label: '画像URL', type: 'image' },
+        ] },
+      FIELD.bg, FIELD.anchor,
+    ],
+    defaults: {
+      eyebrow: 'WORKS', title: '縦にスクロールすると、横に流れる。', height: 340,
+      bg: '', anchor: 'works',
+      items: [
+        { no: '01', title: 'ブランドサイト', image: '' },
+        { no: '02', title: 'プロダクト紹介', image: '' },
+        { no: '03', title: '採用ページ', image: '' },
+        { no: '04', title: 'イベントLP', image: '' },
+        { no: '05', title: 'ポートフォリオ', image: '' },
+        { no: '06', title: '店舗サイト', image: '' },
+      ],
+    },
+    render: (p) => `<section class="pinsec${p.bg ? ` bg-${p.bg}` : ''}" data-hscroll
+  style="height:${+p.height || 340}vh"${attr('id', p.anchor)}>
+  <div class="pin-in">
+    <div class="hs-head"><div class="wrap">
+      ${p.eyebrow ? `<span class="eyebrow"${el(p, 'eyebrow', 'ta', '小見出し', 'eyebrow')}>${esc(p.eyebrow)}</span>` : ''}
+      ${p.title ? `<h2 class="sec-title" style="margin:0"${el(p, 'title', 'ta', '見出し', 'title')}>${nl2br(p.title)}</h2>` : ''}
+    </div></div>
+    <div class="hs-track">
+${(p.items || []).map((it, i) => `      <div class="hs-card"${imgSlot(`items.${i}.image`)} data-elname="カード${i + 1}">${it.image ? img(it.image, it.title) : ''}<em>${esc(it.no)}</em><b${ed(`items.${i}.title`, 'カード名')}>${esc(it.title)}</b></div>`).join('\n')}
+    </div>
+  </div>
+</section>`,
+  },
+
+  /* ---------------- 積み重なるカード ---------------- */
+  stackcards: {
+    label: '積み重なるカード',
+    icon: '▥',
+    tag: 'スクロール',
+    about: 'カードが重なりながら積み上がります。制作フローやサービス紹介に。',
+    fields: [
+      FIELD.eyebrow, FIELD.title,
+      { key: 'items', label: 'カード', type: 'list', addLabel: 'カードを追加', titleKey: 'title',
+        item: [
+          { key: 'no', label: '番号・ラベル', type: 'text' },
+          { key: 'title', label: '見出し', type: 'text' },
+          { key: 'text', label: '説明', type: 'textarea' },
+        ] },
+      FIELD.bg, FIELD.anchor,
+    ],
+    defaults: {
+      eyebrow: 'FLOW', title: '制作の流れ', bg: 'surface', anchor: 'flow',
+      items: [
+        { no: '01 / DISCOVER', title: 'まず、目的を言葉にする', text: '誰に何を届けたいのか。ここが曖昧なままだと、どれだけ綺麗に作っても刺さりません。' },
+        { no: '02 / DESIGN', title: '迷わない導線を設計する', text: '読む順番と、押してほしいボタンを決める。装飾はそのあとです。' },
+        { no: '03 / BUILD', title: '速く、軽く、実装する', text: '表示速度は離脱率に直結します。動きは目的があるところにだけ。' },
+        { no: '04 / GROW', title: '公開してからが本番', text: '数字を見て、直す。作りっぱなしにしない仕組みまで用意します。' },
+      ],
+    },
+    render: (p) => sec('stackcards', p,
+      `${head(p)}
+    <div class="stack" data-stack>
+${(p.items || []).map((it, i) => `      <div class="stackcard">
+        <span class="no"${ed(`items.${i}.no`, 'ラベル')}>${esc(it.no)}</span>
+        <div>
+          <h3${el(p, `card${i}.title`, 'ta', 'カード見出し', `items.${i}.title`)}>${esc(it.title)}</h3>
+          <p${ed(`items.${i}.text`, 'カード説明')}>${nl2br(it.text)}</p>
+        </div>
+      </div>`).join('\n')}
+    </div>`),
+  },
+
+  /* ---------------- タイムライン ---------------- */
+  timeline: {
+    label: 'タイムライン',
+    icon: '⌇',
+    tag: 'スクロール',
+    about: 'スクロールに合わせて線が伸び、通過した項目が点灯します。沿革や導入ステップに。',
+    fields: [
+      FIELD.eyebrow, FIELD.title, FIELD.text,
+      { key: 'items', label: '項目', type: 'list', addLabel: '項目を追加', titleKey: 'title',
+        item: [
+          { key: 'label', label: 'ラベル（STEP 01 など）', type: 'text' },
+          { key: 'title', label: '見出し', type: 'text' },
+          { key: 'text', label: '説明', type: 'textarea' },
+        ] },
+      FIELD.bg, FIELD.anchor,
+    ],
+    defaults: {
+      eyebrow: 'FLOW', title: 'ご依頼から公開まで', text: '', bg: '', anchor: 'steps',
+      items: [
+        { label: 'STEP 01', title: 'お問い合わせ', text: 'フォームからご連絡ください。2営業日以内にご返信します。' },
+        { label: 'STEP 02', title: 'ヒアリング', text: 'オンラインで30分ほど。目的・期日・予算感をすり合わせます。' },
+        { label: 'STEP 03', title: 'ご提案・お見積り', text: '構成案とデザインの方向性、金額をまとめてお出しします。' },
+        { label: 'STEP 04', title: '制作', text: '途中経過を共有しながら進めます。修正は2回まで無料です。' },
+        { label: 'STEP 05', title: '公開・運用', text: '公開後1ヶ月は無償サポート。更新方法もレクチャーします。' },
+      ],
+    },
+    render: (p) => sec('timeline', p,
+      `${head(p)}
+    <div class="tl" data-timeline>
+      <div class="tl-rail"></div>
+${(p.items || []).map((it, i) => `      <div class="tl-item">
+        <small${ed(`items.${i}.label`, 'ラベル')}>${esc(it.label)}</small>
+        <b${el(p, `tl${i}.title`, 'ta', '項目見出し', `items.${i}.title`)}>${esc(it.title)}</b>
+        <p${ed(`items.${i}.text`, '項目説明')}>${nl2br(it.text)}</p>
+      </div>`).join('\n')}
+    </div>`),
+  },
+
+  /* ---------------- 円形マスクで切り替え ---------------- */
+  clipreveal: {
+    label: '円形マスクで切り替え',
+    icon: '◍',
+    tag: 'スクロール',
+    about: 'スクロールすると円が開いて、下の世界に入れ替わります。ビフォーアフターや転換に。',
+    tall: true,
+    fields: [
+      { key: 'height', label: 'スクロールの長さ', type: 'range', min: 150, max: 500, suffix: 'vh' },
+      { key: 'titleA', label: '手前の見出し', type: 'text' },
+      { key: 'textA', label: '手前の説明', type: 'text' },
+      { key: 'imageA', label: '手前の画像URL', type: 'image' },
+      { key: 'titleB', label: '奥の見出し', type: 'text' },
+      { key: 'textB', label: '奥の説明', type: 'text' },
+      { key: 'imageB', label: '奥の画像URL', type: 'image' },
+      FIELD.anchor,
+    ],
+    defaults: {
+      height: 260, anchor: 'change',
+      titleA: 'これまでの当たり前を、', textA: 'そのままにしていませんか', imageA: '',
+      titleB: '塗り替える。', textB: 'ここから、新しい体験がはじまります', imageB: '',
+    },
+    render: (p) => `<section class="pinsec" data-clip style="height:${+p.height || 260}vh"${attr('id', p.anchor)}>
+  <div class="pin-in">
+    <div class="clip-box">
+      <div class="clip-side clip-a"${imgSlot('imageA')} data-elname="手前の画像">
+        ${p.imageA ? img(p.imageA, p.titleA) : ''}
+        <div class="in-txt">
+          <h3${el(p, 'titleA', 'ta', '手前の見出し', 'titleA')}>${nl2br(p.titleA)}</h3>
+          <p${ed('textA', '手前の説明')}>${esc(p.textA)}</p>
+        </div>
+      </div>
+      <div class="clip-side clip-b"${imgSlot('imageB')} data-elname="奥の画像">
+        ${p.imageB ? img(p.imageB, p.titleB) : ''}
+        <div class="in-txt">
+          <h3${ed('titleB', '奥の見出し')}>${nl2br(p.titleB)}</h3>
+          <p${ed('textB', '奥の説明')}>${esc(p.textB)}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>`,
+  },
+
+  /* ---------------- 3Dカルーセル ---------------- */
+  carousel3d: {
+    label: '3Dカルーセル',
+    icon: '◎',
+    tag: '3D',
+    about: '円環に並んだカードがゆっくり回ります。ドラッグで手動でも回せます。',
+    fields: [
+      FIELD.eyebrow, FIELD.title, FIELD.text,
+      { key: 'items', label: 'カード', type: 'list', addLabel: 'カードを追加', titleKey: 'title',
+        item: [
+          { key: 'title', label: 'タイトル', type: 'text' },
+          { key: 'sub', label: '小さい文字', type: 'text' },
+          { key: 'image', label: '画像URL', type: 'image' },
+        ] },
+      FIELD.bg, FIELD.anchor,
+    ],
+    defaults: {
+      eyebrow: 'WORKS', title: '制作実績', text: 'ドラッグすると回せます。',
+      bg: 'surface', anchor: 'carousel',
+      items: [
+        { title: 'ブランドサイト', sub: 'PROJECT 01', image: '' },
+        { title: 'ECサイト', sub: 'PROJECT 02', image: '' },
+        { title: '採用ページ', sub: 'PROJECT 03', image: '' },
+        { title: 'コーポレート', sub: 'PROJECT 04', image: '' },
+        { title: 'イベントLP', sub: 'PROJECT 05', image: '' },
+        { title: 'ポートフォリオ', sub: 'PROJECT 06', image: '' },
+      ],
+    },
+    render: (p) => sec('carousel', p,
+      `${head(p)}
+    <div class="car"><div class="car-in">
+${(p.items || []).map((it, i) => `      <div class="car-it"${imgSlot(`items.${i}.image`)} data-elname="カード${i + 1}">${it.image ? img(it.image, it.title) : ''}<b${ed(`items.${i}.title`, 'カード名')}>${esc(it.title)}</b><small>${esc(it.sub)}</small></div>`).join('\n')}
+    </div></div>`),
+  },
+
+  /* ---------------- スロット式カウンター ---------------- */
+  slotstats: {
+    label: '数字カウンター',
+    icon: '＃',
+    tag: '数字',
+    about: '桁ごとに数字が縦に回って止まります。実績数値を見せるときに。',
+    fields: [
+      FIELD.eyebrow, FIELD.title, FIELD.text, FIELD.cols,
+      { key: 'items', label: '数値', type: 'list', addLabel: '数値を追加', titleKey: 'value',
+        item: [
+          { key: 'value', label: '数値（記号もOK）', type: 'text' },
+          { key: 'label', label: '説明', type: 'text' },
+        ] },
+      FIELD.bg, FIELD.anchor,
+    ],
+    defaults: {
+      eyebrow: 'NUMBERS', title: '数字で見る私たち', text: '', cols: 'c3',
+      bg: 'surface', anchor: 'numbers',
+      items: [
+        { value: '128,400', label: '累計ダウンロード' },
+        { value: '99.8%', label: '稼働率' },
+        { value: '2,140', label: '導入企業' },
+      ],
+    },
+    render: (p) => sec('slotstats', p,
+      `${head(p)}
+    <div class="slots grid ${p.cols || 'c3'}">
+${(p.items || []).map((it, i) => `      <div><span class="slot" data-slot="${esc(it.value)}"></span><small${ed(`items.${i}.label`, '説明')}>${esc(it.label)}</small></div>`).join('\n')}
+    </div>`),
+  },
+
+  /* ---------------- SVG線画のグラフ ---------------- */
+  svgdraw: {
+    label: '線が引かれるグラフ',
+    icon: '⌁',
+    tag: '図解',
+    about: '棒グラフと折れ線が、線を引くように現れます。実績の推移や比較に。',
+    fields: [
+      FIELD.eyebrow, FIELD.title, FIELD.text,
+      { key: 'items', label: '棒（最大6本）', type: 'list', addLabel: '棒を追加', titleKey: 'label',
+        item: [
+          { key: 'label', label: 'ラベル', type: 'text' },
+          { key: 'value', label: '高さ（0〜100）', type: 'range', min: 5, max: 100, suffix: '' },
+        ] },
+      { key: 'line', label: '折れ線も引く', type: 'toggle' },
+      FIELD.bg, FIELD.anchor,
+    ],
+    defaults: {
+      eyebrow: 'GROWTH', title: '数字は伸びています', text: '導入社数の推移',
+      line: true, bg: '', anchor: 'graph',
+      items: [
+        { label: '2021', value: 22 }, { label: '2022', value: 38 },
+        { label: '2023', value: 55 }, { label: '2024', value: 74 },
+        { label: '2025', value: 92 },
+      ],
+    },
+    render: (p) => {
+      const items = (p.items || []).slice(0, 6);
+      const n = items.length || 1;
+      const W = 600, H = 260, pad = 20;
+      const bw = (W - pad * 2) / n * 0.56;
+      const x = (i) => pad + (W - pad * 2) / n * (i + 0.5);
+      const y = (v) => H - 24 - (H - 60) * (Math.max(5, Math.min(100, +v || 0)) / 100);
+      return sec('svgdraw', p,
+        `${head(p)}
+    <div class="draw-wrap">
+      <svg viewBox="0 0 ${W} ${H}" fill="none" stroke-width="2">
+${items.map((it, i) => `        <rect x="${(x(i) - bw / 2).toFixed(1)}" y="${y(it.value).toFixed(1)}" width="${bw.toFixed(1)}" height="${(H - 24 - y(it.value)).toFixed(1)}" rx="4" stroke="var(--c-primary)"/>`).join('\n')}
+${p.line ? `        <polyline points="${items.map((it, i) => `${x(i).toFixed(1)},${(y(it.value) - 10).toFixed(1)}`).join(' ')}" stroke="var(--c-accent)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>` : ''}
+        <line x1="${pad}" y1="${H - 24}" x2="${W - pad}" y2="${H - 24}" stroke="var(--c-border)"/>
+      </svg>
+      <div class="draw-lbl">${items.map((it, i) => `<span${ed(`items.${i}.label`, 'ラベル')}>${esc(it.label)}</span>`).join('')}</div>
+    </div>`);
+    },
+  },
+
+  /* ---------------- 全画面メッセージ ---------------- */
+  shift: {
+    label: '全画面メッセージ',
+    icon: '◧',
+    tag: '演出',
+    about: '画面いっぱいに1つの言葉だけを置きます。色を変えると空気が切り替わります。',
+    fields: [
+      { key: 'title', label: '見出し', type: 'textarea', rows: 2 },
+      { key: 'text', label: '説明', type: 'text' },
+      { key: 'bgColor', label: '背景色', type: 'color' },
+      { key: 'fgColor', label: '文字色', type: 'color' },
+      FIELD.anchor,
+    ],
+    defaults: {
+      title: '白に、なる。', text: '色が変わると、空気が変わります。',
+      bgColor: '#f4f1ea', fgColor: '#1a1a17', anchor: '',
+    },
+    render: (p) => `<section class="shift-pane" style="background:${esc(p.bgColor)};color:${esc(p.fgColor)}"${attr('id', p.anchor)}>
+  <div class="wrap">
+    ${p.title ? `<h3${el(p, 'title', 'ta', '見出し', 'title')}>${nl2br(p.title)}</h3>` : ''}
+    ${p.text ? `<p${ed('text', '説明')}>${esc(p.text)}</p>` : ''}
+  </div>
+</section>`,
+  },
 };
 
 /* 追加メニューに出す順番（ヘッダー・フッターは常設なので除く） */
-const ADDABLE = ['hero', 'features', 'about', 'gallery', 'pricing', 'faq', 'cta', 'contact', 'rich'];
+const ADDABLE = [
+  'hero', 'features', 'about', 'gallery', 'pricing', 'faq', 'cta', 'contact', 'rich',
+  'product3d', 'exploded', 'hscroll', 'stackcards', 'timeline', 'clipreveal',
+  'carousel3d', 'slotstats', 'svgdraw', 'shift',
+];
 
 </script>
 <script>
@@ -2165,7 +3015,6 @@ function performDrop(y) {
     state.blocks.splice(at, 0, nb);
     selected = nb.id;
     selectedEl = null;
-    $('#addMenu').hidden = true;
   }
   clearDrag();
   refresh();
@@ -2221,49 +3070,120 @@ listEl.addEventListener('pointerdown', (e) => {
   document.addEventListener('pointercancel', onTouchCancel);
 });
 
-/* ---- ブロック追加メニュー ---- */
-function renderAddMenu() {
-  const exists = new Set(state.blocks.map((b) => b.type));
-  // 常設ブロック（消してしまった場合のみ出る）→ 通常ブロックの順に並べる
-  const order = Object.keys(BLOCKS).filter((t) => BLOCKS[t].unique).concat(ADDABLE);
-  const types = order.filter((t) => !(BLOCKS[t].unique && exists.has(t)));
-  $('#addMenu').innerHTML = types.map((t) =>
-    `<button data-type="${t}" draggable="true" title="ドラッグして位置を指定できます">
-      <span class="bl-ic">${BLOCKS[t].icon}</span>${BLOCKS[t].label}</button>`).join('');
-}
-$('#btnAdd').addEventListener('click', (e) => {
-  e.stopPropagation();
-  renderAddMenu();
-  $('#addMenu').hidden = !$('#addMenu').hidden;
-});
-document.addEventListener('click', (e) => {
-  if (!e.target.closest('.add-wrap')) $('#addMenu').hidden = true;
-});
-$('#addMenu').addEventListener('dragstart', (e) => {
-  const t = e.target.closest('button')?.dataset.type;
-  if (!t) return;
-  drag = { mode: 'add', type: t };
-  e.dataTransfer.effectAllowed = 'copy';
-  e.dataTransfer.setData('text/plain', 'add:' + t);
-});
-$('#addMenu').addEventListener('dragend', clearDrag);
+/* ================================================================
+   ブロックを追加（実物サンプル付きの一覧）
+   サンプルは iframe の中に、生成サイトと同じCSSで縮小して描く。
+   ================================================================ */
+const CATS = [['all', 'すべて'], ['基本', '基本'], ['スクロール', 'スクロール連動'],
+              ['3D', '3D'], ['図解', '数字・図解'], ['演出', '演出']];
+const catOf = (def) => (def.tag === '数字' ? '図解' : def.tag || '基本');
+let addCat = 'all';
 
-$('#addMenu').addEventListener('click', (e) => {
-  const t = e.target.closest('button')?.dataset.type;
-  if (!t) return;
-  const nb = makeBlock(t);
+/* サンプル用のCSS。スクロール連動のブロックは動かないので、
+   代表的な瞬間で止めて見えるようにする。 */
+const GALLERY_CSS = `
+body{margin:0;background:#0d1016;padding:14px;
+  font-family:"Helvetica Neue",Arial,"Hiragino Sans",Meiryo,sans-serif}
+.gg{display:grid;grid-template-columns:repeat(auto-fill,minmax(268px,1fr));gap:14px}
+.gc{display:block;width:100%;padding:0;text-align:left;cursor:pointer;
+  background:#171a21;border:1px solid #2a2f3a;border-radius:12px;overflow:hidden;
+  transition:border-color .15s,transform .15s;color:#e7ebf0;font:inherit}
+.gc:hover{border-color:#4c8dff;transform:translateY(-3px)}
+.gc-prev{height:176px;overflow:hidden;position:relative;background:var(--c-bg);
+  border-bottom:1px solid #2a2f3a}
+.gc-scale{width:1180px;transform:scale(.226);transform-origin:top left;
+  pointer-events:none}
+.gc-meta{padding:11px 13px 13px}
+.gc-meta b{font-size:13px;display:inline-block;margin-right:7px}
+.gc-meta i{font-style:normal;font-size:10px;font-weight:800;color:#9db4ff;
+  border:1px solid #33436b;border-radius:4px;padding:1px 6px;vertical-align:1px}
+.gc-meta small{display:block;color:#98a2b3;font-size:11px;line-height:1.6;margin-top:5px}
+
+/* --- サンプルの中で、動く前提の見た目を止める --- */
+.gc-scale .pinsec{height:auto!important}
+.gc-scale .pin-in{position:static;height:640px}
+.gc-scale .stackcard{position:static;height:auto;min-height:150px}
+.gc-scale .stack{gap:14px}
+.gc-scale .clip-box{height:640px}
+.gc-scale .clip-b{clip-path:circle(34% at 50% 50%)}
+.gc-scale .shift-pane{min-height:640px}
+.gc-scale .tl-rail::after{transform:scaleY(.55)}
+.gc-scale .tl-item::before{border-color:var(--c-primary);background:var(--c-primary)}
+.gc-scale .hs-track{transform:translateX(-40px)}
+.gc-scale .sec{padding:44px 0}
+.gc-scale .slot{font-size:44px}
+.gc-scale [data-ta] .ch,.gc-scale .rv{opacity:1!important;transform:none!important}
+`;
+
+function galleryTypes() {
+  const exists = new Set(state.blocks.map((b) => b.type));
+  const order = Object.keys(BLOCKS).filter((t) => BLOCKS[t].unique).concat(ADDABLE);
+  return order.filter((t) => !(BLOCKS[t].unique && exists.has(t)))
+    .filter((t) => addCat === 'all' || catOf(BLOCKS[t]) === addCat);
+}
+
+function renderCatBar() {
+  $('#catBar').innerHTML = CATS.map(([k, l]) =>
+    `<button data-cat="${k}" class="${addCat === k ? 'on' : ''}">${l}</button>`).join('');
+}
+
+function renderGallery() {
+  const f = $('#galFrame');
+  const cards = galleryTypes().map((t) => {
+    const def = BLOCKS[t];
+    const sample = def.render(clone(def.defaults));
+    return `<button class="gc" data-type="${t}">
+      <div class="gc-prev"><div class="gc-scale">${sample}</div></div>
+      <div class="gc-meta"><b>${esc(def.label)}</b>${def.tag ? `<i>${esc(def.tag)}</i>` : ''}
+        <small>${esc(def.about || '')}</small></div>
+    </button>`;
+  }).join('');
+
+  f.srcdoc = `<!DOCTYPE html><html lang="ja"><head><meta charset="utf-8">
+<style>${themeCSS(state.theme)}\n${SITE_CSS}\n${GALLERY_CSS}</style></head>
+<body class="tpl-${esc(state.template)}"><div class="gg">${cards}</div>
+<script>${SITE_JS}<\/script></body></html>`;
+
+  f.addEventListener('load', () => {
+    const gdoc = f.contentDocument;
+    gdoc.addEventListener('click', (e) => {
+      const t = e.target.closest('.gc')?.dataset.type;
+      if (t) addBlock(t);
+    });
+  }, { once: true });
+}
+
+function addBlock(type) {
+  const nb = makeBlock(type);
   let at = state.blocks.findIndex((b) => b.id === selected) + 1;
   if (!at) at = state.blocks.length;
-  // フッターより下には入れない
   const fi = state.blocks.findIndex((b) => b.type === 'footer');
-  if (t !== 'footer' && fi >= 0 && at > fi) at = fi;
-  if (t === 'header') at = 0;
-  if (t === 'footer') at = state.blocks.length;
+  if (type !== 'footer' && fi >= 0 && at > fi) at = fi;   // フッターより下には入れない
+  if (type === 'header') at = 0;
+  if (type === 'footer') at = state.blocks.length;
   state.blocks.splice(at, 0, nb);
   selected = nb.id;
-  $('#addMenu').hidden = true;
+  selectedEl = null;
+  closeModal('#addModal');
+  if (isMobile()) closeSheets();
   refresh();
-  setTimeout(() => scrollToBlock(nb.id), 220);
+  setTimeout(() => scrollToBlock(nb.id), 240);
+  flash(`「${BLOCKS[type].label}」を追加しました`);
+}
+
+function openAddGallery() {
+  renderCatBar();
+  renderGallery();
+  openModal('#addModal');
+}
+$('#btnAdd').addEventListener('click', openAddGallery);
+$('#addClose').addEventListener('click', () => closeModal('#addModal'));
+$('#catBar').addEventListener('click', (e) => {
+  const c = e.target.closest('button')?.dataset.cat;
+  if (!c) return;
+  addCat = c;
+  renderCatBar();
+  renderGallery();
 });
 
 /* ================================================================
@@ -2785,7 +3705,6 @@ function openSheet(which, tabTo) {
 function closeSheets() {
   $('#panelLeft').classList.remove('open');
   $('#panelRight').classList.remove('open');
-  $('#addMenu').hidden = true;
   toggleVeil(false);
   $$('#mnav button').forEach((b) => b.classList.remove('on'));
 }
@@ -2803,7 +3722,7 @@ $('#mnav').addEventListener('click', (e) => {
   const b = e.target.closest('button');
   if (!b) return;
   if (b.dataset.sheet) openSheet(b.dataset.sheet, b.dataset.tabTo);
-  else if (b.id === 'mAdd') { openSheet('left'); setTimeout(() => $('#btnAdd').click(), 260); }
+  else if (b.id === 'mAdd') { closeSheets(); openAddGallery(); }
   else if (b.id === 'mExport') $('#btnExport').click();
 });
 $('#veil').addEventListener('click', closeSheets);

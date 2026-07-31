@@ -579,7 +579,6 @@ function performDrop(y) {
     state.blocks.splice(at, 0, nb);
     selected = nb.id;
     selectedEl = null;
-    $('#addMenu').hidden = true;
   }
   clearDrag();
   refresh();
@@ -635,49 +634,120 @@ listEl.addEventListener('pointerdown', (e) => {
   document.addEventListener('pointercancel', onTouchCancel);
 });
 
-/* ---- ブロック追加メニュー ---- */
-function renderAddMenu() {
-  const exists = new Set(state.blocks.map((b) => b.type));
-  // 常設ブロック（消してしまった場合のみ出る）→ 通常ブロックの順に並べる
-  const order = Object.keys(BLOCKS).filter((t) => BLOCKS[t].unique).concat(ADDABLE);
-  const types = order.filter((t) => !(BLOCKS[t].unique && exists.has(t)));
-  $('#addMenu').innerHTML = types.map((t) =>
-    `<button data-type="${t}" draggable="true" title="ドラッグして位置を指定できます">
-      <span class="bl-ic">${BLOCKS[t].icon}</span>${BLOCKS[t].label}</button>`).join('');
-}
-$('#btnAdd').addEventListener('click', (e) => {
-  e.stopPropagation();
-  renderAddMenu();
-  $('#addMenu').hidden = !$('#addMenu').hidden;
-});
-document.addEventListener('click', (e) => {
-  if (!e.target.closest('.add-wrap')) $('#addMenu').hidden = true;
-});
-$('#addMenu').addEventListener('dragstart', (e) => {
-  const t = e.target.closest('button')?.dataset.type;
-  if (!t) return;
-  drag = { mode: 'add', type: t };
-  e.dataTransfer.effectAllowed = 'copy';
-  e.dataTransfer.setData('text/plain', 'add:' + t);
-});
-$('#addMenu').addEventListener('dragend', clearDrag);
+/* ================================================================
+   ブロックを追加（実物サンプル付きの一覧）
+   サンプルは iframe の中に、生成サイトと同じCSSで縮小して描く。
+   ================================================================ */
+const CATS = [['all', 'すべて'], ['基本', '基本'], ['スクロール', 'スクロール連動'],
+              ['3D', '3D'], ['図解', '数字・図解'], ['演出', '演出']];
+const catOf = (def) => (def.tag === '数字' ? '図解' : def.tag || '基本');
+let addCat = 'all';
 
-$('#addMenu').addEventListener('click', (e) => {
-  const t = e.target.closest('button')?.dataset.type;
-  if (!t) return;
-  const nb = makeBlock(t);
+/* サンプル用のCSS。スクロール連動のブロックは動かないので、
+   代表的な瞬間で止めて見えるようにする。 */
+const GALLERY_CSS = `
+body{margin:0;background:#0d1016;padding:14px;
+  font-family:"Helvetica Neue",Arial,"Hiragino Sans",Meiryo,sans-serif}
+.gg{display:grid;grid-template-columns:repeat(auto-fill,minmax(268px,1fr));gap:14px}
+.gc{display:block;width:100%;padding:0;text-align:left;cursor:pointer;
+  background:#171a21;border:1px solid #2a2f3a;border-radius:12px;overflow:hidden;
+  transition:border-color .15s,transform .15s;color:#e7ebf0;font:inherit}
+.gc:hover{border-color:#4c8dff;transform:translateY(-3px)}
+.gc-prev{height:176px;overflow:hidden;position:relative;background:var(--c-bg);
+  border-bottom:1px solid #2a2f3a}
+.gc-scale{width:1180px;transform:scale(.226);transform-origin:top left;
+  pointer-events:none}
+.gc-meta{padding:11px 13px 13px}
+.gc-meta b{font-size:13px;display:inline-block;margin-right:7px}
+.gc-meta i{font-style:normal;font-size:10px;font-weight:800;color:#9db4ff;
+  border:1px solid #33436b;border-radius:4px;padding:1px 6px;vertical-align:1px}
+.gc-meta small{display:block;color:#98a2b3;font-size:11px;line-height:1.6;margin-top:5px}
+
+/* --- サンプルの中で、動く前提の見た目を止める --- */
+.gc-scale .pinsec{height:auto!important}
+.gc-scale .pin-in{position:static;height:640px}
+.gc-scale .stackcard{position:static;height:auto;min-height:150px}
+.gc-scale .stack{gap:14px}
+.gc-scale .clip-box{height:640px}
+.gc-scale .clip-b{clip-path:circle(34% at 50% 50%)}
+.gc-scale .shift-pane{min-height:640px}
+.gc-scale .tl-rail::after{transform:scaleY(.55)}
+.gc-scale .tl-item::before{border-color:var(--c-primary);background:var(--c-primary)}
+.gc-scale .hs-track{transform:translateX(-40px)}
+.gc-scale .sec{padding:44px 0}
+.gc-scale .slot{font-size:44px}
+.gc-scale [data-ta] .ch,.gc-scale .rv{opacity:1!important;transform:none!important}
+`;
+
+function galleryTypes() {
+  const exists = new Set(state.blocks.map((b) => b.type));
+  const order = Object.keys(BLOCKS).filter((t) => BLOCKS[t].unique).concat(ADDABLE);
+  return order.filter((t) => !(BLOCKS[t].unique && exists.has(t)))
+    .filter((t) => addCat === 'all' || catOf(BLOCKS[t]) === addCat);
+}
+
+function renderCatBar() {
+  $('#catBar').innerHTML = CATS.map(([k, l]) =>
+    `<button data-cat="${k}" class="${addCat === k ? 'on' : ''}">${l}</button>`).join('');
+}
+
+function renderGallery() {
+  const f = $('#galFrame');
+  const cards = galleryTypes().map((t) => {
+    const def = BLOCKS[t];
+    const sample = def.render(clone(def.defaults));
+    return `<button class="gc" data-type="${t}">
+      <div class="gc-prev"><div class="gc-scale">${sample}</div></div>
+      <div class="gc-meta"><b>${esc(def.label)}</b>${def.tag ? `<i>${esc(def.tag)}</i>` : ''}
+        <small>${esc(def.about || '')}</small></div>
+    </button>`;
+  }).join('');
+
+  f.srcdoc = `<!DOCTYPE html><html lang="ja"><head><meta charset="utf-8">
+<style>${themeCSS(state.theme)}\n${SITE_CSS}\n${GALLERY_CSS}</style></head>
+<body class="tpl-${esc(state.template)}"><div class="gg">${cards}</div>
+<script>${SITE_JS}<\/script></body></html>`;
+
+  f.addEventListener('load', () => {
+    const gdoc = f.contentDocument;
+    gdoc.addEventListener('click', (e) => {
+      const t = e.target.closest('.gc')?.dataset.type;
+      if (t) addBlock(t);
+    });
+  }, { once: true });
+}
+
+function addBlock(type) {
+  const nb = makeBlock(type);
   let at = state.blocks.findIndex((b) => b.id === selected) + 1;
   if (!at) at = state.blocks.length;
-  // フッターより下には入れない
   const fi = state.blocks.findIndex((b) => b.type === 'footer');
-  if (t !== 'footer' && fi >= 0 && at > fi) at = fi;
-  if (t === 'header') at = 0;
-  if (t === 'footer') at = state.blocks.length;
+  if (type !== 'footer' && fi >= 0 && at > fi) at = fi;   // フッターより下には入れない
+  if (type === 'header') at = 0;
+  if (type === 'footer') at = state.blocks.length;
   state.blocks.splice(at, 0, nb);
   selected = nb.id;
-  $('#addMenu').hidden = true;
+  selectedEl = null;
+  closeModal('#addModal');
+  if (isMobile()) closeSheets();
   refresh();
-  setTimeout(() => scrollToBlock(nb.id), 220);
+  setTimeout(() => scrollToBlock(nb.id), 240);
+  flash(`「${BLOCKS[type].label}」を追加しました`);
+}
+
+function openAddGallery() {
+  renderCatBar();
+  renderGallery();
+  openModal('#addModal');
+}
+$('#btnAdd').addEventListener('click', openAddGallery);
+$('#addClose').addEventListener('click', () => closeModal('#addModal'));
+$('#catBar').addEventListener('click', (e) => {
+  const c = e.target.closest('button')?.dataset.cat;
+  if (!c) return;
+  addCat = c;
+  renderCatBar();
+  renderGallery();
 });
 
 /* ================================================================
@@ -1199,7 +1269,6 @@ function openSheet(which, tabTo) {
 function closeSheets() {
   $('#panelLeft').classList.remove('open');
   $('#panelRight').classList.remove('open');
-  $('#addMenu').hidden = true;
   toggleVeil(false);
   $$('#mnav button').forEach((b) => b.classList.remove('on'));
 }
@@ -1217,7 +1286,7 @@ $('#mnav').addEventListener('click', (e) => {
   const b = e.target.closest('button');
   if (!b) return;
   if (b.dataset.sheet) openSheet(b.dataset.sheet, b.dataset.tabTo);
-  else if (b.id === 'mAdd') { openSheet('left'); setTimeout(() => $('#btnAdd').click(), 260); }
+  else if (b.id === 'mAdd') { closeSheets(); openAddGallery(); }
   else if (b.id === 'mExport') $('#btnExport').click();
 });
 $('#veil').addEventListener('click', closeSheets);

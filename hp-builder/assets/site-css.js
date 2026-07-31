@@ -329,6 +329,153 @@ p:last-child{margin-bottom:0}
 @keyframes ia-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
 .ia-float.in{opacity:1;animation:ia-float 4.5s ease-in-out infinite}
 
+/* ==========================================================
+   スクロールに連動する特別なブロック
+   ========================================================== */
+.pinsec{position:relative}
+.pin-in{position:sticky;top:0;height:100vh;overflow:hidden;display:grid;place-items:center}
+.pin-cap{position:absolute;bottom:7vh;left:50%;transform:translateX(-50%);text-align:center;width:90%;z-index:3}
+.pin-cap b{display:block;font-size:clamp(18px,2.6vw,28px);font-family:var(--font-head);line-height:1.4}
+.pin-cap small{color:var(--c-muted);font-size:12.5px}
+.bg-dark .pin-cap small,.bg-primary .pin-cap small{color:rgba(255,255,255,.72)}
+
+/* ---------- 3D製品ビュー ---------- */
+.p3d{width:min(74vmin,560px);height:min(74vmin,560px);display:block}
+.p3d-deg{position:absolute;top:7vh;left:50%;transform:translateX(-50%);
+  font-family:Menlo,monospace;font-size:12px;letter-spacing:.14em;color:var(--c-primary)}
+.p3d-spec{position:absolute;inset:0;pointer-events:none}
+.p3d-spec div{position:absolute;font-size:12px;color:var(--c-muted);opacity:0;transform:translateY(10px);
+  transition:opacity .5s,transform .5s;max-width:34%}
+.p3d-spec div.on{opacity:1;transform:none}
+.p3d-spec b{display:block;color:var(--c-text);font-size:17px;font-family:Menlo,monospace}
+.bg-dark .p3d-spec b,.bg-primary .p3d-spec b{color:#fff}
+.p3d-spec div:nth-child(1){top:24%;left:6%}
+.p3d-spec div:nth-child(2){top:46%;right:6%;text-align:right}
+.p3d-spec div:nth-child(3){bottom:26%;left:8%}
+@media(max-width:760px){.p3d-spec{display:none}}
+
+/* ---------- 分解図 ---------- */
+.exp{perspective:1400px;width:min(72vmin,440px);height:min(72vmin,440px);position:relative}
+.exp-in{position:absolute;inset:0;transform-style:preserve-3d}
+.exp-l{
+  position:absolute;left:50%;top:50%;width:64%;height:44%;margin:-22% 0 0 -32%;
+  border-radius:14px;border:1px solid rgba(255,255,255,.22);overflow:hidden;
+  display:grid;place-items:center;font-family:Menlo,monospace;font-size:11px;
+  letter-spacing:.14em;color:#fff;text-align:center;padding:6px
+}
+.exp-l img{width:100%;height:100%;object-fit:cover;position:absolute;inset:0}
+.exp-l span{position:relative;text-shadow:0 1px 6px rgba(0,0,0,.5)}
+
+/* ---------- 横に流れるギャラリー ---------- */
+.hs-head{position:absolute;top:10vh;left:0;width:100%;z-index:3}
+.hs-track{display:flex;gap:20px;padding-left:6vw;will-change:transform}
+.hs-card{
+  flex:none;width:clamp(220px,25vw,330px);aspect-ratio:3/4;border-radius:var(--radius);
+  overflow:hidden;position:relative;border:1px solid var(--c-border);background:var(--c-surface);
+  display:flex;flex-direction:column;justify-content:flex-end;padding:20px
+}
+.hs-card img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.hs-card em{position:absolute;top:16px;left:20px;font-style:normal;font-family:Menlo,monospace;
+  font-size:11px;color:var(--c-primary);z-index:2}
+.hs-card b{position:relative;z-index:2;font-size:15px}
+.hs-card::after{content:"";position:absolute;inset:0;
+  background:linear-gradient(transparent 45%,rgba(0,0,0,.55));opacity:0}
+.hs-card:has(img)::after{opacity:1}
+.hs-card:has(img) b,.hs-card:has(img) em{color:#fff}
+
+/* ---------- 積み重なるカード ---------- */
+.stack{display:grid;gap:24px}
+.stackcard{
+  position:sticky;height:56vh;border-radius:calc(var(--radius) * 1.6);padding:clamp(24px,4vw,44px);
+  overflow:hidden;border:1px solid var(--c-border);background:var(--c-surface);
+  display:flex;flex-direction:column;justify-content:space-between;
+  will-change:transform;transform-origin:50% 0%
+}
+.stackcard .no{font-family:Menlo,monospace;font-size:12px;letter-spacing:.2em;color:var(--c-primary)}
+.stackcard h3{margin:0 0 8px;font-size:clamp(20px,3vw,30px);font-family:var(--font-head)}
+.stackcard p{margin:0;max-width:520px;font-size:14px;color:var(--c-muted)}
+.stackcard:nth-child(1){top:11vh}.stackcard:nth-child(2){top:14vh}
+.stackcard:nth-child(3){top:17vh}.stackcard:nth-child(4){top:20vh}
+.stackcard:nth-child(5){top:23vh}.stackcard:nth-child(6){top:26vh}
+
+/* ---------- タイムライン ---------- */
+.tl{position:relative;padding-left:46px;max-width:760px;margin:0 auto}
+.tl-rail{position:absolute;left:13px;top:6px;bottom:6px;width:2px;background:var(--c-border)}
+.tl-rail::after{content:"";position:absolute;inset:0;
+  background:linear-gradient(var(--c-primary),var(--c-accent));
+  transform:scaleY(var(--p,0));transform-origin:50% 0}
+.tl-item{position:relative;padding:0 0 46px}
+.tl-item:last-child{padding-bottom:0}
+.tl-item::before{content:"";position:absolute;left:-40px;top:7px;width:12px;height:12px;
+  border-radius:50%;background:var(--c-bg);border:2px solid var(--c-border);transition:.35s}
+.tl-item.on::before{border-color:var(--c-primary);background:var(--c-primary);
+  box-shadow:0 0 0 6px color-mix(in srgb,var(--c-primary) 18%,transparent)}
+.tl-item small{font-family:Menlo,monospace;font-size:11px;letter-spacing:.14em;color:var(--c-primary)}
+.tl-item b{display:block;font-size:17px;margin:2px 0 4px;font-family:var(--font-head)}
+.tl-item p{margin:0;color:var(--c-muted);font-size:14px}
+
+/* ---------- 円形マスクで切り替え ---------- */
+.clip-box{position:relative;height:100vh;overflow:hidden}
+.clip-side{position:absolute;inset:0;display:grid;place-items:center;text-align:center;padding:0 24px}
+.clip-a{background:var(--c-surface)}
+.clip-b{background:linear-gradient(140deg,var(--c-primary),var(--c-accent));color:#fff;
+  clip-path:circle(var(--r,0%) at 50% 50%)}
+.clip-side img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.clip-side .in-txt{position:relative;z-index:2}
+.clip-box h3{font-size:clamp(24px,4.6vw,50px);font-weight:800;margin:0;font-family:var(--font-head)}
+.clip-box p{margin:10px 0 0;font-size:14.5px;opacity:.85}
+
+/* ---------- 3Dカルーセル ---------- */
+.car{perspective:1300px;height:400px;display:grid;place-items:center;cursor:grab;touch-action:pan-y}
+.car:active{cursor:grabbing}
+.car-in{position:relative;width:220px;height:300px;transform-style:preserve-3d}
+.car-it{
+  position:absolute;inset:0;border-radius:var(--radius);overflow:hidden;
+  border:1px solid var(--c-border);backface-visibility:hidden;
+  background:linear-gradient(155deg,color-mix(in srgb,var(--c-primary) 22%,var(--c-bg)),var(--c-surface));
+  display:flex;flex-direction:column;justify-content:flex-end;padding:20px
+}
+.car-it img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.car-it b{position:relative;z-index:2;font-size:15px}
+.car-it small{position:relative;z-index:2;font-family:Menlo,monospace;font-size:11px;color:var(--c-muted)}
+.car-it:has(img)::after{content:"";position:absolute;inset:0;
+  background:linear-gradient(transparent 50%,rgba(0,0,0,.6))}
+.car-it:has(img) b,.car-it:has(img) small{color:#fff}
+
+/* ---------- スロット式カウンター ---------- */
+.slots{display:grid;gap:24px;text-align:center}
+.slot{display:inline-flex;font-family:Menlo,monospace;font-weight:800;
+  font-size:clamp(30px,5.4vw,56px);line-height:1.1;overflow:hidden;
+  background:linear-gradient(140deg,var(--c-primary),var(--c-accent));
+  -webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent}
+.slot .col{height:1.1em;overflow:hidden}
+.slot .col u{display:block;text-decoration:none;transition:transform 1.6s cubic-bezier(.16,1,.3,1)}
+.slot .fix{opacity:.6}
+.slots small{display:block;color:var(--c-muted);font-size:12.5px;margin-top:6px}
+
+/* ---------- SVG線画 ---------- */
+.draw-wrap{max-width:720px;margin:0 auto}
+.draw-wrap svg{width:100%;height:auto;overflow:visible}
+.draw-wrap path,.draw-wrap line,.draw-wrap rect,.draw-wrap polyline,.draw-wrap circle{
+  stroke-dasharray:var(--len);stroke-dashoffset:var(--len);
+  transition:stroke-dashoffset 1.6s cubic-bezier(.4,0,.2,1)}
+.draw-wrap.in path,.draw-wrap.in line,.draw-wrap.in rect,
+.draw-wrap.in polyline,.draw-wrap.in circle{stroke-dashoffset:0}
+.draw-lbl{display:flex;justify-content:space-around;margin-top:14px;font-size:12px;color:var(--c-muted)}
+
+/* ---------- 全画面メッセージ（背景色が変わる） ---------- */
+.shift-pane{min-height:100vh;display:grid;place-items:center;text-align:center;padding:0 24px;
+  transition:background .8s ease,color .8s ease}
+.shift-pane h3{font-size:clamp(24px,4.8vw,52px);margin:0;font-weight:800;font-family:var(--font-head)}
+.shift-pane p{margin:12px 0 0;opacity:.72;font-size:14.5px}
+
+@media(max-width:640px){
+  .stackcard{height:64vh}
+  .tl{padding-left:38px}
+  .tl-item::before{left:-32px}
+  .car{height:340px}
+}
+
 /* ---------- ブロックの出現 ---------- */
 .rv{opacity:0;transform:translateY(34px);
   transition:opacity .85s cubic-bezier(.2,.7,.3,1),transform .85s cubic-bezier(.2,.7,.3,1)}
@@ -476,10 +623,279 @@ const SITE_JS = `
     [].slice.call(d.querySelectorAll('.sec, .hero')).forEach(function(s){ s.classList.add('rv'); });
   }
 
+  /* ==========================================================
+     スクロールに連動するブロック
+     ========================================================== */
+  var clamp = function(v){ return Math.min(1, Math.max(0, v)); };
+  function progress(el){
+    var r = el.getBoundingClientRect(), t = r.height - innerHeight;
+    return t <= 0 ? 0 : clamp(-r.top / t);
+  }
+  /* scroll は1本の rAF にまとめる（個々に addEventListener しない） */
+  var onScroll = [], ticking = false;
+  function scrollTick(){
+    if(ticking) return; ticking = true;
+    requestAnimationFrame(function(){ for(var i=0;i<onScroll.length;i++) onScroll[i](); ticking = false; });
+  }
+  function watchScroll(fn){ onScroll.push(fn); }
+
+  var css = function(name, fb){
+    var v = getComputedStyle(d.documentElement).getPropertyValue(name).trim();
+    return v || fb;
+  };
+
+  /* ---------- 3D製品ビュー（Canvasに面を1枚ずつ描く） ---------- */
+  [].slice.call(d.querySelectorAll('[data-p3d]')).forEach(function(sec){
+    var cv = sec.querySelector('canvas'); if(!cv) return;
+    var ctx = cv.getContext('2d');
+    var degEl = sec.querySelector('.p3d-deg');
+    var specs = [].slice.call(sec.querySelectorAll('.p3d-spec div'));
+    var turns = parseFloat(sec.getAttribute('data-turns')) || 1;
+    var shape = sec.getAttribute('data-shape') || 'slab';
+    var dims = shape === 'box' ? [0.95,0.95,0.72] : shape === 'tall' ? [0.62,1.5,0.5] : [0.74,1.36,0.28];
+    var edge = shape === 'box' ? 0.22 : 0.30;
+
+    var SEG = 34;
+    var sgn = function(t){ return (t<0?-1:1) * Math.pow(Math.abs(t), edge); };
+    var verts = [], faces = [];
+    for(var i=0;i<=SEG;i++){
+      var v = Math.PI*i/SEG;
+      for(var j=0;j<=SEG;j++){
+        var u = 2*Math.PI*j/SEG;
+        verts.push([sgn(Math.sin(v)*Math.cos(u))*dims[0], sgn(Math.cos(v))*dims[1], sgn(Math.sin(v)*Math.sin(u))*dims[2]]);
+      }
+    }
+    var sub=function(a,b){return [a[0]-b[0],a[1]-b[1],a[2]-b[2]];};
+    var cross=function(a,b){return [a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]];};
+    var norm=function(a){var l=Math.hypot(a[0],a[1],a[2])||1;return [a[0]/l,a[1]/l,a[2]/l];};
+    var dot=function(a,b){return a[0]*b[0]+a[1]*b[1]+a[2]*b[2];};
+    for(var i2=0;i2<SEG;i2++) for(var j2=0;j2<SEG;j2++){
+      var a=i2*(SEG+1)+j2, b2=a+1, c2=a+SEG+1, d2=c2+1;
+      var n = norm(cross(sub(verts[b2],verts[a]), sub(verts[c2],verts[a])));
+      faces.push({ i:[a,b2,d2,c2], n:n,
+        ctr:[0,1,2].map(function(k){return (verts[a][k]+verts[b2][k]+verts[c2][k]+verts[d2][k])/4;}),
+        screen: n[2] > 0.86 });
+    }
+
+    function hex2rgb(h){
+      h = (h||'').replace('#','');
+      if(h.length === 3) h = h[0]+h[0]+h[1]+h[1]+h[2]+h[2];
+      var n = parseInt(h,16);
+      return isNaN(n) ? [90,110,140] : [(n>>16)&255,(n>>8)&255,n&255];
+    }
+    var L1 = norm([0.45,0.75,0.85]), L2 = norm([-0.7,0.15,0.45]), CAM = 4.0;
+    var W=0,H=0;
+    function size(){
+      var dpr = Math.min(devicePixelRatio||1, 2), r = cv.getBoundingClientRect();
+      W = Math.round(r.width); H = Math.round(r.height);
+      cv.width = W*dpr; cv.height = H*dpr;
+      ctx.setTransform(dpr,0,0,dpr,0,0);
+    }
+    function draw(ay, ax){
+      if(!W) return;
+      var body = hex2rgb(sec.getAttribute('data-body') || css('--c-muted','#64748b'));
+      var face = hex2rgb(sec.getAttribute('data-face') || css('--c-primary','#2563eb'));
+      ctx.clearRect(0,0,W,H);
+      var cy=Math.cos(ay), sy=Math.sin(ay), cx=Math.cos(ax), sx=Math.sin(ax);
+      var rot = function(p){
+        var X = p[0]*cy + p[2]*sy, Z = -p[0]*sy + p[2]*cy;
+        return [X, p[1]*cx - Z*sx, p[1]*sx + Z*cx];
+      };
+      var f = W*0.84;
+      var P = verts.map(function(v){ var q=rot(v), dd=CAM-q[2];
+        return [W/2 + f*q[0]/dd, H/2 - f*q[1]/dd]; });
+
+      var sh = ctx.createRadialGradient(W/2,H*0.87,0,W/2,H*0.87,W*0.34);
+      sh.addColorStop(0,'rgba(0,0,0,.18)'); sh.addColorStop(1,'rgba(0,0,0,0)');
+      ctx.fillStyle = sh; ctx.beginPath();
+      ctx.ellipse(W/2,H*0.87,W*0.30,H*0.045,0,0,7); ctx.fill();
+
+      var list = [];
+      for(var k=0;k<faces.length;k++){
+        var fc = faces[k], n = rot(fc.n), c = rot(fc.ctr);
+        var view = norm([-c[0],-c[1],CAM-c[2]]);
+        if(dot(n,view) <= 0.02) continue;
+        list.push({fc:fc, n:n, z:c[2], view:view});
+      }
+      list.sort(function(a,b){ return a.z-b.z; });
+      for(var m=0;m<list.length;m++){
+        var o=list[m], n2=o.n;
+        var d1 = Math.max(0, dot(n2,L1)), dd2 = Math.max(0, dot(n2,L2));
+        var rim = Math.pow(1 - Math.max(0, dot(n2,o.view)), 2.4);
+        var base = o.fc.screen ? face : body;
+        var lit = 0.28 + d1*0.85 + dd2*0.22 + rim*0.5;
+        var col = 'rgb(' + Math.min(255, base[0]*lit|0) + ',' + Math.min(255, base[1]*lit|0) + ',' + Math.min(255, base[2]*lit|0) + ')';
+        var idx = o.fc.i;
+        ctx.fillStyle = col; ctx.strokeStyle = col; ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(P[idx[0]][0],P[idx[0]][1]); ctx.lineTo(P[idx[1]][0],P[idx[1]][1]);
+        ctx.lineTo(P[idx[2]][0],P[idx[2]][1]); ctx.lineTo(P[idx[3]][0],P[idx[3]][1]);
+        ctx.closePath(); ctx.fill(); ctx.stroke();
+      }
+    }
+    var target=0, angle=0, tilt=0, tTilt=0, dirty=true, visible=false;
+    watchScroll(function(){
+      var p = progress(sec);
+      target = p * Math.PI * 2 * turns;
+      tTilt = Math.sin(p*Math.PI) * 0.3;
+      if(degEl) degEl.textContent = String(Math.round((p*360*turns)%360)).padStart(3,'0') + '°';
+      specs.forEach(function(el){
+        var at = parseFloat(el.getAttribute('data-at')) || 0;
+        el.classList.toggle('on', p > at && p < at + 0.24);
+      });
+      dirty = true;
+    });
+    if('IntersectionObserver' in window)
+      new IntersectionObserver(function(es){ es.forEach(function(e){ visible = e.isIntersecting; dirty = true; }); },
+        {threshold:0}).observe(sec);
+    else visible = true;
+    (function loop(){
+      if(visible && (dirty || Math.abs(target-angle) > 0.0006)){
+        angle += (target-angle) * (reduce ? 1 : 0.14);
+        tilt  += (tTilt-tilt) * (reduce ? 1 : 0.14);
+        draw(angle, tilt); dirty = false;
+      }
+      requestAnimationFrame(loop);
+    })();
+    size(); addEventListener('resize', function(){ size(); dirty = true; }, {passive:true});
+    draw(0,0);
+  });
+
+  /* ---------- 分解図 ---------- */
+  [].slice.call(d.querySelectorAll('[data-exploded]')).forEach(function(sec){
+    var inner = sec.querySelector('.exp-in'); if(!inner) return;
+    var plates = [].slice.call(inner.querySelectorAll('.exp-l'));
+    watchScroll(function(){
+      var r = sec.getBoundingClientRect();
+      if(r.bottom < -200 || r.top > innerHeight + 200) return;
+      var p = progress(sec), gap = (1-p) * 150;
+      plates.forEach(function(el, i){
+        var k = i - (plates.length-1)/2;
+        el.style.transform = 'translateZ(' + (k*(30+gap)) + 'px) translateY(' + (k*gap*0.34) + 'px)';
+        el.style.opacity = 0.6 + p*0.4;
+      });
+      inner.style.transform = 'rotateX(' + (58 - p*46) + 'deg) rotateZ(' + (-28 + p*28) + 'deg)';
+    });
+  });
+
+  /* ---------- 横に流れるギャラリー ---------- */
+  [].slice.call(d.querySelectorAll('[data-hscroll]')).forEach(function(sec){
+    var track = sec.querySelector('.hs-track'); if(!track) return;
+    watchScroll(function(){
+      var dist = track.scrollWidth - innerWidth + innerWidth*0.12;
+      track.style.transform = dist <= 0 ? '' : 'translate3d(' + (-dist * progress(sec)) + 'px,0,0)';
+    });
+  });
+
+  /* ---------- 積み重なるカード ---------- */
+  [].slice.call(d.querySelectorAll('[data-stack]')).forEach(function(sec){
+    var cards = [].slice.call(sec.querySelectorAll('.stackcard'));
+    watchScroll(function(){
+      cards.forEach(function(c, i){
+        var next = cards[i+1];
+        if(!next){ c.style.transform=''; c.style.filter=''; return; }
+        /* sticky で止まった要素は自分の top が動かないので、
+           次のカードがどれだけ覆ってきたかで測る */
+        var passed = clamp(1 - (next.getBoundingClientRect().top - c.getBoundingClientRect().top) / c.offsetHeight);
+        c.style.transform = 'scale(' + (1 - passed*0.1) + ')';
+        c.style.filter = 'brightness(' + (1 - passed*0.3) + ')';
+      });
+    });
+  });
+
+  /* ---------- タイムライン ---------- */
+  [].slice.call(d.querySelectorAll('[data-timeline]')).forEach(function(sec){
+    var rail = sec.querySelector('.tl-rail');
+    var items = [].slice.call(sec.querySelectorAll('.tl-item'));
+    if(!rail) return;
+    watchScroll(function(){
+      var r = rail.getBoundingClientRect();
+      rail.style.setProperty('--p', clamp((innerHeight*0.55 - r.top) / r.height));
+      items.forEach(function(it){
+        it.classList.toggle('on', it.getBoundingClientRect().top < innerHeight*0.62);
+      });
+    });
+  });
+
+  /* ---------- 円形マスク ---------- */
+  [].slice.call(d.querySelectorAll('[data-clip]')).forEach(function(sec){
+    var b2 = sec.querySelector('.clip-b'); if(!b2) return;
+    watchScroll(function(){ b2.style.setProperty('--r', (progress(sec)*82) + '%'); });
+  });
+
+  /* ---------- 3Dカルーセル ---------- */
+  [].slice.call(d.querySelectorAll('.car')).forEach(function(box){
+    var inner = box.querySelector('.car-in'); if(!inner) return;
+    var items = [].slice.call(inner.children), N = items.length;
+    if(!N) return;
+    var R = Math.round(130 / Math.tan(Math.PI / N)) || 300;
+    items.forEach(function(el, i){
+      el.style.transform = 'rotateY(' + (i*360/N) + 'deg) translateZ(' + R + 'px)';
+    });
+    var angle = 0, vel = 0.12, dragging = false, last = 0, idle = true, visible = false;
+    var apply = function(){ inner.style.transform = 'rotateY(' + angle + 'deg)'; };
+    box.addEventListener('pointerdown', function(e){
+      dragging = true; idle = false; last = e.clientX; vel = 0;
+      try{ box.setPointerCapture(e.pointerId); }catch(err){}
+    });
+    box.addEventListener('pointermove', function(e){
+      if(!dragging) return;
+      vel = (e.clientX - last) * 0.28; angle += vel; last = e.clientX; apply();
+    });
+    var up = function(){ dragging = false; setTimeout(function(){ idle = true; }, 1400); };
+    box.addEventListener('pointerup', up); box.addEventListener('pointercancel', up);
+    if('IntersectionObserver' in window)
+      new IntersectionObserver(function(es){ es.forEach(function(e){ visible = e.isIntersecting; }); },
+        {threshold:0}).observe(box);
+    else visible = true;
+    (function spin(){
+      if(visible && !reduce && !dragging){
+        if(Math.abs(vel) > 0.02){ vel *= 0.94; angle += vel; apply(); }
+        else if(idle){ angle += 0.12; apply(); }
+      }
+      requestAnimationFrame(spin);
+    })();
+    apply();
+  });
+
+  /* ---------- スロット式カウンター ---------- */
+  function runSlot(el){
+    if(el.dataset.done) return;
+    el.dataset.done = '1';
+    var text = el.getAttribute('data-slot') || '';
+    var html = '';
+    Array.from(text).forEach(function(c, i){
+      if(!/[0-9]/.test(c)){ html += '<span class="fix">' + c + '</span>'; return; }
+      var col = '';
+      for(var n=0;n<=9;n++) col += n + (n<9 ? '<br>' : '');
+      html += '<span class="col"><u data-d="' + c + '" style="transition-delay:' + (i*90) + 'ms">' + col + '</u></span>';
+    });
+    el.innerHTML = html;
+    requestAnimationFrame(function(){
+      [].slice.call(el.querySelectorAll('u')).forEach(function(u){
+        u.style.transform = reduce ? 'translateY(' + (-(+u.dataset.d)*1.1) + 'em)'
+                                   : 'translateY(' + (-(+u.dataset.d)*1.1) + 'em)';
+      });
+    });
+  }
+
+  /* ---------- SVG線画（線の長さを測る） ---------- */
+  [].slice.call(d.querySelectorAll('.draw-wrap')).forEach(function(w){
+    [].slice.call(w.querySelectorAll('path,line,rect,polyline,circle')).forEach(function(el){
+      try{ el.style.setProperty('--len', Math.ceil(el.getTotalLength())); }catch(e){}
+    });
+  });
+
+  if(onScroll.length){
+    addEventListener('scroll', scrollTick, {passive:true});
+    addEventListener('resize', scrollTick, {passive:true});
+    scrollTick();
+  }
+
   /* ---------- 画面に入ったら再生 ---------- */
-  var watch = [].slice.call(d.querySelectorAll('[data-ta]:not(.in), .ia-on, .rv'));
+  var watch = [].slice.call(d.querySelectorAll('[data-ta]:not(.in), .ia-on, .rv, .draw-wrap, [data-slot]'));
   if(!('IntersectionObserver' in window) || reduce){
-    watch.forEach(function(el){ el.classList.add('in'); });
+    watch.forEach(function(el){ el.classList.add('in'); if(el.hasAttribute('data-slot')) runSlot(el); });
   }else{
     var io = new IntersectionObserver(function(es){
       es.forEach(function(e){
@@ -488,6 +904,7 @@ const SITE_JS = `
         el.classList.add('in');
         if(el.classList.contains('ta-scramble')) runScramble(el);
         if(el.classList.contains('ta-type'))     runType(el);
+        if(el.hasAttribute('data-slot'))         runSlot(el);
         io.unobserve(el);
       });
     }, {threshold:.15, rootMargin:'0px 0px -6% 0px'});

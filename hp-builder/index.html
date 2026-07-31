@@ -36,7 +36,6 @@
     <div id="blockList" class="blocklist"></div>
     <div class="add-wrap">
       <button class="add-btn" id="btnAdd">＋ ブロックを追加</button>
-      <div class="add-menu" id="addMenu" hidden></div>
     </div>
   </aside>
 
@@ -78,6 +77,17 @@
     <p class="modal-sub">選ぶと、いまの内容は置きかわります。あとから中身は自由に変えられます。</p>
     <div class="tpl-grid" id="tplGrid"></div>
     <div class="modal-foot"><button class="tb-btn" id="tplClose">閉じる</button></div>
+  </div>
+</div>
+
+<!-- ================= ブロックを追加（サンプル付き一覧） ================= -->
+<div class="modal" id="addModal" hidden>
+  <div class="modal-box wide">
+    <h2>ブロックを追加</h2>
+    <p class="modal-sub">実物のサンプルから選べます。選ぶと、いま選択中のブロックのすぐ下に追加されます（あとから並べ替えできます）。</p>
+    <div class="cat-bar" id="catBar"></div>
+    <div class="gal-wrap"><iframe id="galFrame" title="ブロックのサンプル"></iframe></div>
+    <div class="modal-foot"><button class="tb-btn" id="addClose">閉じる</button></div>
   </div>
 </div>
 

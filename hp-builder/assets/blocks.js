@@ -493,7 +493,409 @@ ${form}
   </div>
 </footer>`,
   },
+  /* ================================================================
+     ここから下は「スクロールに連動する」特別なブロック
+     ================================================================ */
+
+  /* ---------------- 3D製品ビュー ---------------- */
+  product3d: {
+    label: '3D製品ビュー',
+    icon: '◉',
+    tag: '3D',
+    about: 'スクロールに合わせて立体が360°回転します。画像は不要で、形と色だけで作られます。',
+    tall: true,
+    fields: [
+      { key: 'title', label: '見出し', type: 'text' },
+      { key: 'text', label: '補足', type: 'text' },
+      { key: 'shape', label: '形', type: 'select',
+        options: [['slab', '板（スマホ・タブレット風）'], ['box', '箱（パッケージ風）'], ['tall', '縦長（ボトル・缶風）']] },
+      { key: 'turns', label: '回転する回数', type: 'range', min: 1, max: 3, suffix: '周' },
+      { key: 'height', label: 'スクロールの長さ', type: 'range', min: 200, max: 600, suffix: 'vh' },
+      { key: 'body', label: '本体の色', type: 'color' },
+      { key: 'face', label: '正面の色', type: 'color' },
+      { key: 'items', label: '途中で出す説明', type: 'list', addLabel: '説明を追加', titleKey: 'value',
+        item: [
+          { key: 'value', label: '数値・見出し', type: 'text' },
+          { key: 'label', label: '説明', type: 'text' },
+          { key: 'at', label: '出すタイミング（0〜100%）', type: 'range', min: 0, max: 95, suffix: '%' },
+        ] },
+      FIELD.bg, FIELD.anchor,
+    ],
+    defaults: {
+      title: 'スクロールで、360°。', text: 'あらゆる角度から確かめてください。',
+      shape: 'slab', turns: 1, height: 400, body: '#8a93a3', face: '#2563eb',
+      bg: 'dark', anchor: 'product',
+      items: [
+        { value: '0.38 kg', label: 'アルミ削り出し筐体', at: 15 },
+        { value: '6.7 inch', label: '有機ELディスプレイ', at: 42 },
+        { value: '72 h', label: '連続駆動バッテリー', at: 68 },
+      ],
+    },
+    render: (p) => `<section class="pinsec${p.bg ? ` bg-${p.bg}` : ''}" data-p3d
+  data-shape="${esc(p.shape || 'slab')}" data-turns="${+p.turns || 1}"
+  data-body="${esc(p.body)}" data-face="${esc(p.face)}"
+  style="height:${+p.height || 400}vh"${attr('id', p.anchor)}>
+  <div class="pin-in">
+    <div class="p3d-deg">000°</div>
+    <canvas class="p3d"></canvas>
+    <div class="p3d-spec">
+${(p.items || []).map((it) => `      <div data-at="${(+it.at || 0) / 100}"><b>${esc(it.value)}</b>${esc(it.label)}</div>`).join('\n')}
+    </div>
+    <div class="pin-cap">
+      ${p.title ? `<b${el(p, 'title', 'ta', '見出し', 'title')}>${nl2br(p.title)}</b>` : ''}
+      ${p.text ? `<small${ed('text', '補足')}>${esc(p.text)}</small>` : ''}
+    </div>
+  </div>
+</section>`,
+  },
+
+  /* ---------------- 分解図 ---------------- */
+  exploded: {
+    label: '分解図が組み上がる',
+    icon: '▤',
+    tag: '3D',
+    about: 'バラバラの層がスクロールで合体します。各層に画像を入れれば実物の構造説明になります。',
+    tall: true,
+    fields: [
+      { key: 'title', label: '見出し', type: 'text' },
+      { key: 'text', label: '補足', type: 'text' },
+      { key: 'height', label: 'スクロールの長さ', type: 'range', min: 200, max: 600, suffix: 'vh' },
+      { key: 'items', label: '層（上から順）', type: 'list', addLabel: '層を追加', titleKey: 'label',
+        item: [
+          { key: 'label', label: '層の名前', type: 'text' },
+          { key: 'image', label: '画像URL', type: 'image' },
+          { key: 'color', label: '色（画像がないとき）', type: 'color' },
+        ] },
+      FIELD.bg, FIELD.anchor,
+    ],
+    defaults: {
+      title: 'バラバラの部品が、組み上がる。', text: '4つの層でできています。',
+      height: 380, bg: 'dark', anchor: 'structure',
+      items: [
+        { label: 'DISPLAY', image: '', color: '#22d3ee' },
+        { label: 'LOGIC BOARD', image: '', color: '#a78bfa' },
+        { label: 'BATTERY', image: '', color: '#fb7185' },
+        { label: 'CHASSIS', image: '', color: '#a3e635' },
+      ],
+    },
+    render: (p) => `<section class="pinsec${p.bg ? ` bg-${p.bg}` : ''}" data-exploded
+  style="height:${+p.height || 380}vh"${attr('id', p.anchor)}>
+  <div class="pin-in">
+    <div class="exp"><div class="exp-in">
+${(p.items || []).map((it, i) => `      <div class="exp-l" style="background:${esc(it.color || '#64748b')}"${imgSlot(`items.${i}.image`)} data-elname="層${i + 1}">${it.image ? img(it.image, it.label) : ''}<span>${esc(it.label)}</span></div>`).join('\n')}
+    </div></div>
+    <div class="pin-cap">
+      ${p.title ? `<b${el(p, 'title', 'ta', '見出し', 'title')}>${nl2br(p.title)}</b>` : ''}
+      ${p.text ? `<small${ed('text', '補足')}>${esc(p.text)}</small>` : ''}
+    </div>
+  </div>
+</section>`,
+  },
+
+  /* ---------------- 横に流れるギャラリー ---------------- */
+  hscroll: {
+    label: '横に流れるギャラリー',
+    icon: '⇥',
+    tag: 'スクロール',
+    about: '縦にスクロールすると、カードが横に流れていきます。実績一覧に向いています。',
+    tall: true,
+    fields: [
+      FIELD.eyebrow, { key: 'title', label: '見出し', type: 'text' },
+      { key: 'height', label: 'スクロールの長さ', type: 'range', min: 200, max: 600, suffix: 'vh' },
+      { key: 'items', label: 'カード', type: 'list', addLabel: 'カードを追加', titleKey: 'title',
+        item: [
+          { key: 'no', label: '番号', type: 'text' },
+          { key: 'title', label: 'タイトル', type: 'text' },
+          { key: 'image', label: '画像URL', type: 'image' },
+        ] },
+      FIELD.bg, FIELD.anchor,
+    ],
+    defaults: {
+      eyebrow: 'WORKS', title: '縦にスクロールすると、横に流れる。', height: 340,
+      bg: '', anchor: 'works',
+      items: [
+        { no: '01', title: 'ブランドサイト', image: '' },
+        { no: '02', title: 'プロダクト紹介', image: '' },
+        { no: '03', title: '採用ページ', image: '' },
+        { no: '04', title: 'イベントLP', image: '' },
+        { no: '05', title: 'ポートフォリオ', image: '' },
+        { no: '06', title: '店舗サイト', image: '' },
+      ],
+    },
+    render: (p) => `<section class="pinsec${p.bg ? ` bg-${p.bg}` : ''}" data-hscroll
+  style="height:${+p.height || 340}vh"${attr('id', p.anchor)}>
+  <div class="pin-in">
+    <div class="hs-head"><div class="wrap">
+      ${p.eyebrow ? `<span class="eyebrow"${el(p, 'eyebrow', 'ta', '小見出し', 'eyebrow')}>${esc(p.eyebrow)}</span>` : ''}
+      ${p.title ? `<h2 class="sec-title" style="margin:0"${el(p, 'title', 'ta', '見出し', 'title')}>${nl2br(p.title)}</h2>` : ''}
+    </div></div>
+    <div class="hs-track">
+${(p.items || []).map((it, i) => `      <div class="hs-card"${imgSlot(`items.${i}.image`)} data-elname="カード${i + 1}">${it.image ? img(it.image, it.title) : ''}<em>${esc(it.no)}</em><b${ed(`items.${i}.title`, 'カード名')}>${esc(it.title)}</b></div>`).join('\n')}
+    </div>
+  </div>
+</section>`,
+  },
+
+  /* ---------------- 積み重なるカード ---------------- */
+  stackcards: {
+    label: '積み重なるカード',
+    icon: '▥',
+    tag: 'スクロール',
+    about: 'カードが重なりながら積み上がります。制作フローやサービス紹介に。',
+    fields: [
+      FIELD.eyebrow, FIELD.title,
+      { key: 'items', label: 'カード', type: 'list', addLabel: 'カードを追加', titleKey: 'title',
+        item: [
+          { key: 'no', label: '番号・ラベル', type: 'text' },
+          { key: 'title', label: '見出し', type: 'text' },
+          { key: 'text', label: '説明', type: 'textarea' },
+        ] },
+      FIELD.bg, FIELD.anchor,
+    ],
+    defaults: {
+      eyebrow: 'FLOW', title: '制作の流れ', bg: 'surface', anchor: 'flow',
+      items: [
+        { no: '01 / DISCOVER', title: 'まず、目的を言葉にする', text: '誰に何を届けたいのか。ここが曖昧なままだと、どれだけ綺麗に作っても刺さりません。' },
+        { no: '02 / DESIGN', title: '迷わない導線を設計する', text: '読む順番と、押してほしいボタンを決める。装飾はそのあとです。' },
+        { no: '03 / BUILD', title: '速く、軽く、実装する', text: '表示速度は離脱率に直結します。動きは目的があるところにだけ。' },
+        { no: '04 / GROW', title: '公開してからが本番', text: '数字を見て、直す。作りっぱなしにしない仕組みまで用意します。' },
+      ],
+    },
+    render: (p) => sec('stackcards', p,
+      `${head(p)}
+    <div class="stack" data-stack>
+${(p.items || []).map((it, i) => `      <div class="stackcard">
+        <span class="no"${ed(`items.${i}.no`, 'ラベル')}>${esc(it.no)}</span>
+        <div>
+          <h3${el(p, `card${i}.title`, 'ta', 'カード見出し', `items.${i}.title`)}>${esc(it.title)}</h3>
+          <p${ed(`items.${i}.text`, 'カード説明')}>${nl2br(it.text)}</p>
+        </div>
+      </div>`).join('\n')}
+    </div>`),
+  },
+
+  /* ---------------- タイムライン ---------------- */
+  timeline: {
+    label: 'タイムライン',
+    icon: '⌇',
+    tag: 'スクロール',
+    about: 'スクロールに合わせて線が伸び、通過した項目が点灯します。沿革や導入ステップに。',
+    fields: [
+      FIELD.eyebrow, FIELD.title, FIELD.text,
+      { key: 'items', label: '項目', type: 'list', addLabel: '項目を追加', titleKey: 'title',
+        item: [
+          { key: 'label', label: 'ラベル（STEP 01 など）', type: 'text' },
+          { key: 'title', label: '見出し', type: 'text' },
+          { key: 'text', label: '説明', type: 'textarea' },
+        ] },
+      FIELD.bg, FIELD.anchor,
+    ],
+    defaults: {
+      eyebrow: 'FLOW', title: 'ご依頼から公開まで', text: '', bg: '', anchor: 'steps',
+      items: [
+        { label: 'STEP 01', title: 'お問い合わせ', text: 'フォームからご連絡ください。2営業日以内にご返信します。' },
+        { label: 'STEP 02', title: 'ヒアリング', text: 'オンラインで30分ほど。目的・期日・予算感をすり合わせます。' },
+        { label: 'STEP 03', title: 'ご提案・お見積り', text: '構成案とデザインの方向性、金額をまとめてお出しします。' },
+        { label: 'STEP 04', title: '制作', text: '途中経過を共有しながら進めます。修正は2回まで無料です。' },
+        { label: 'STEP 05', title: '公開・運用', text: '公開後1ヶ月は無償サポート。更新方法もレクチャーします。' },
+      ],
+    },
+    render: (p) => sec('timeline', p,
+      `${head(p)}
+    <div class="tl" data-timeline>
+      <div class="tl-rail"></div>
+${(p.items || []).map((it, i) => `      <div class="tl-item">
+        <small${ed(`items.${i}.label`, 'ラベル')}>${esc(it.label)}</small>
+        <b${el(p, `tl${i}.title`, 'ta', '項目見出し', `items.${i}.title`)}>${esc(it.title)}</b>
+        <p${ed(`items.${i}.text`, '項目説明')}>${nl2br(it.text)}</p>
+      </div>`).join('\n')}
+    </div>`),
+  },
+
+  /* ---------------- 円形マスクで切り替え ---------------- */
+  clipreveal: {
+    label: '円形マスクで切り替え',
+    icon: '◍',
+    tag: 'スクロール',
+    about: 'スクロールすると円が開いて、下の世界に入れ替わります。ビフォーアフターや転換に。',
+    tall: true,
+    fields: [
+      { key: 'height', label: 'スクロールの長さ', type: 'range', min: 150, max: 500, suffix: 'vh' },
+      { key: 'titleA', label: '手前の見出し', type: 'text' },
+      { key: 'textA', label: '手前の説明', type: 'text' },
+      { key: 'imageA', label: '手前の画像URL', type: 'image' },
+      { key: 'titleB', label: '奥の見出し', type: 'text' },
+      { key: 'textB', label: '奥の説明', type: 'text' },
+      { key: 'imageB', label: '奥の画像URL', type: 'image' },
+      FIELD.anchor,
+    ],
+    defaults: {
+      height: 260, anchor: 'change',
+      titleA: 'これまでの当たり前を、', textA: 'そのままにしていませんか', imageA: '',
+      titleB: '塗り替える。', textB: 'ここから、新しい体験がはじまります', imageB: '',
+    },
+    render: (p) => `<section class="pinsec" data-clip style="height:${+p.height || 260}vh"${attr('id', p.anchor)}>
+  <div class="pin-in">
+    <div class="clip-box">
+      <div class="clip-side clip-a"${imgSlot('imageA')} data-elname="手前の画像">
+        ${p.imageA ? img(p.imageA, p.titleA) : ''}
+        <div class="in-txt">
+          <h3${el(p, 'titleA', 'ta', '手前の見出し', 'titleA')}>${nl2br(p.titleA)}</h3>
+          <p${ed('textA', '手前の説明')}>${esc(p.textA)}</p>
+        </div>
+      </div>
+      <div class="clip-side clip-b"${imgSlot('imageB')} data-elname="奥の画像">
+        ${p.imageB ? img(p.imageB, p.titleB) : ''}
+        <div class="in-txt">
+          <h3${ed('titleB', '奥の見出し')}>${nl2br(p.titleB)}</h3>
+          <p${ed('textB', '奥の説明')}>${esc(p.textB)}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>`,
+  },
+
+  /* ---------------- 3Dカルーセル ---------------- */
+  carousel3d: {
+    label: '3Dカルーセル',
+    icon: '◎',
+    tag: '3D',
+    about: '円環に並んだカードがゆっくり回ります。ドラッグで手動でも回せます。',
+    fields: [
+      FIELD.eyebrow, FIELD.title, FIELD.text,
+      { key: 'items', label: 'カード', type: 'list', addLabel: 'カードを追加', titleKey: 'title',
+        item: [
+          { key: 'title', label: 'タイトル', type: 'text' },
+          { key: 'sub', label: '小さい文字', type: 'text' },
+          { key: 'image', label: '画像URL', type: 'image' },
+        ] },
+      FIELD.bg, FIELD.anchor,
+    ],
+    defaults: {
+      eyebrow: 'WORKS', title: '制作実績', text: 'ドラッグすると回せます。',
+      bg: 'surface', anchor: 'carousel',
+      items: [
+        { title: 'ブランドサイト', sub: 'PROJECT 01', image: '' },
+        { title: 'ECサイト', sub: 'PROJECT 02', image: '' },
+        { title: '採用ページ', sub: 'PROJECT 03', image: '' },
+        { title: 'コーポレート', sub: 'PROJECT 04', image: '' },
+        { title: 'イベントLP', sub: 'PROJECT 05', image: '' },
+        { title: 'ポートフォリオ', sub: 'PROJECT 06', image: '' },
+      ],
+    },
+    render: (p) => sec('carousel', p,
+      `${head(p)}
+    <div class="car"><div class="car-in">
+${(p.items || []).map((it, i) => `      <div class="car-it"${imgSlot(`items.${i}.image`)} data-elname="カード${i + 1}">${it.image ? img(it.image, it.title) : ''}<b${ed(`items.${i}.title`, 'カード名')}>${esc(it.title)}</b><small>${esc(it.sub)}</small></div>`).join('\n')}
+    </div></div>`),
+  },
+
+  /* ---------------- スロット式カウンター ---------------- */
+  slotstats: {
+    label: '数字カウンター',
+    icon: '＃',
+    tag: '数字',
+    about: '桁ごとに数字が縦に回って止まります。実績数値を見せるときに。',
+    fields: [
+      FIELD.eyebrow, FIELD.title, FIELD.text, FIELD.cols,
+      { key: 'items', label: '数値', type: 'list', addLabel: '数値を追加', titleKey: 'value',
+        item: [
+          { key: 'value', label: '数値（記号もOK）', type: 'text' },
+          { key: 'label', label: '説明', type: 'text' },
+        ] },
+      FIELD.bg, FIELD.anchor,
+    ],
+    defaults: {
+      eyebrow: 'NUMBERS', title: '数字で見る私たち', text: '', cols: 'c3',
+      bg: 'surface', anchor: 'numbers',
+      items: [
+        { value: '128,400', label: '累計ダウンロード' },
+        { value: '99.8%', label: '稼働率' },
+        { value: '2,140', label: '導入企業' },
+      ],
+    },
+    render: (p) => sec('slotstats', p,
+      `${head(p)}
+    <div class="slots grid ${p.cols || 'c3'}">
+${(p.items || []).map((it, i) => `      <div><span class="slot" data-slot="${esc(it.value)}"></span><small${ed(`items.${i}.label`, '説明')}>${esc(it.label)}</small></div>`).join('\n')}
+    </div>`),
+  },
+
+  /* ---------------- SVG線画のグラフ ---------------- */
+  svgdraw: {
+    label: '線が引かれるグラフ',
+    icon: '⌁',
+    tag: '図解',
+    about: '棒グラフと折れ線が、線を引くように現れます。実績の推移や比較に。',
+    fields: [
+      FIELD.eyebrow, FIELD.title, FIELD.text,
+      { key: 'items', label: '棒（最大6本）', type: 'list', addLabel: '棒を追加', titleKey: 'label',
+        item: [
+          { key: 'label', label: 'ラベル', type: 'text' },
+          { key: 'value', label: '高さ（0〜100）', type: 'range', min: 5, max: 100, suffix: '' },
+        ] },
+      { key: 'line', label: '折れ線も引く', type: 'toggle' },
+      FIELD.bg, FIELD.anchor,
+    ],
+    defaults: {
+      eyebrow: 'GROWTH', title: '数字は伸びています', text: '導入社数の推移',
+      line: true, bg: '', anchor: 'graph',
+      items: [
+        { label: '2021', value: 22 }, { label: '2022', value: 38 },
+        { label: '2023', value: 55 }, { label: '2024', value: 74 },
+        { label: '2025', value: 92 },
+      ],
+    },
+    render: (p) => {
+      const items = (p.items || []).slice(0, 6);
+      const n = items.length || 1;
+      const W = 600, H = 260, pad = 20;
+      const bw = (W - pad * 2) / n * 0.56;
+      const x = (i) => pad + (W - pad * 2) / n * (i + 0.5);
+      const y = (v) => H - 24 - (H - 60) * (Math.max(5, Math.min(100, +v || 0)) / 100);
+      return sec('svgdraw', p,
+        `${head(p)}
+    <div class="draw-wrap">
+      <svg viewBox="0 0 ${W} ${H}" fill="none" stroke-width="2">
+${items.map((it, i) => `        <rect x="${(x(i) - bw / 2).toFixed(1)}" y="${y(it.value).toFixed(1)}" width="${bw.toFixed(1)}" height="${(H - 24 - y(it.value)).toFixed(1)}" rx="4" stroke="var(--c-primary)"/>`).join('\n')}
+${p.line ? `        <polyline points="${items.map((it, i) => `${x(i).toFixed(1)},${(y(it.value) - 10).toFixed(1)}`).join(' ')}" stroke="var(--c-accent)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>` : ''}
+        <line x1="${pad}" y1="${H - 24}" x2="${W - pad}" y2="${H - 24}" stroke="var(--c-border)"/>
+      </svg>
+      <div class="draw-lbl">${items.map((it, i) => `<span${ed(`items.${i}.label`, 'ラベル')}>${esc(it.label)}</span>`).join('')}</div>
+    </div>`);
+    },
+  },
+
+  /* ---------------- 全画面メッセージ ---------------- */
+  shift: {
+    label: '全画面メッセージ',
+    icon: '◧',
+    tag: '演出',
+    about: '画面いっぱいに1つの言葉だけを置きます。色を変えると空気が切り替わります。',
+    fields: [
+      { key: 'title', label: '見出し', type: 'textarea', rows: 2 },
+      { key: 'text', label: '説明', type: 'text' },
+      { key: 'bgColor', label: '背景色', type: 'color' },
+      { key: 'fgColor', label: '文字色', type: 'color' },
+      FIELD.anchor,
+    ],
+    defaults: {
+      title: '白に、なる。', text: '色が変わると、空気が変わります。',
+      bgColor: '#f4f1ea', fgColor: '#1a1a17', anchor: '',
+    },
+    render: (p) => `<section class="shift-pane" style="background:${esc(p.bgColor)};color:${esc(p.fgColor)}"${attr('id', p.anchor)}>
+  <div class="wrap">
+    ${p.title ? `<h3${el(p, 'title', 'ta', '見出し', 'title')}>${nl2br(p.title)}</h3>` : ''}
+    ${p.text ? `<p${ed('text', '説明')}>${esc(p.text)}</p>` : ''}
+  </div>
+</section>`,
+  },
 };
 
 /* 追加メニューに出す順番（ヘッダー・フッターは常設なので除く） */
-const ADDABLE = ['hero', 'features', 'about', 'gallery', 'pricing', 'faq', 'cta', 'contact', 'rich'];
+const ADDABLE = [
+  'hero', 'features', 'about', 'gallery', 'pricing', 'faq', 'cta', 'contact', 'rich',
+  'product3d', 'exploded', 'hscroll', 'stackcards', 'timeline', 'clipreveal',
+  'carousel3d', 'slotstats', 'svgdraw', 'shift',
+];
