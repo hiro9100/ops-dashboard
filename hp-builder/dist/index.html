@@ -30,7 +30,9 @@ input,select,textarea{font:inherit}
 }
 .topbar{
   grid-area:top;display:flex;align-items:center;gap:10px;padding:0 14px;
-  background:var(--panel);border-bottom:1px solid var(--line)
+  background:var(--panel);border-bottom:1px solid var(--line);
+  /* シートを開いている間もここのボタン（取り消しなど）は押せるようにする */
+  position:relative;z-index:80
 }
 .brand{font-weight:800;letter-spacing:.02em;margin-right:6px;white-space:nowrap}
 .saved{color:var(--tx2);font-size:11.5px;margin-right:auto;min-width:80px}
@@ -1027,6 +1029,9 @@ function el(p, role, kind, label, prop) {
   return out;
 }
 
+/* 画像を差し替えられる枠であることを示す（タップで選択、ドロップで投入） */
+const imgSlot = (prop) => ` data-imgprop="${esc(prop)}"`;
+
 /* ダブルクリック編集だけを付ける（段落が複数あるなど、文字アニメを付けない場所用） */
 function ed(prop, label) {
   return ` data-prop="${esc(prop)}" data-elname="${esc(label)}"`;
@@ -1134,7 +1139,7 @@ ${buttons(p.buttons)}`;
       const inner = p.layout === 'split'
         ? `    <div class="hero-in">
       <div>\n${body}\n      </div>
-      <div class="hero-media"${el(p, 'image', 'ia', '画像')}>${media(p.image, p.title)}</div>
+      <div class="hero-media"${el(p, 'image', 'ia', '画像')}${imgSlot('image')}>${media(p.image, p.title)}</div>
     </div>`
         : `    <div class="hero-in">\n${body}\n    </div>`;
       return `<section class="${cls}"${attr('id', p.anchor)}>
@@ -1175,7 +1180,7 @@ ${inner}
       `${head(p)}
     <div class="grid ${p.cols || 'c3'}">
 ${(p.items || []).map((it, i) => `      <div class="card"${el(p, `card${i}`, 'ia', `カード${i + 1}`)}>
-        ${p.style === 'image' ? `<div class="hero-media" style="aspect-ratio:16/10;margin-bottom:18px">${media(it.image, it.title)}</div>` : ''}
+        ${p.style === 'image' ? `<div class="hero-media" style="aspect-ratio:16/10;margin-bottom:18px" data-elname="カード画像"${imgSlot(`items.${i}.image`)}>${media(it.image, it.title)}</div>` : ''}
         ${p.style === 'num' ? `<span class="num">${i + 1}</span>` : p.style === 'image' ? '' : `<span class="ic">${esc(it.icon || '◆')}</span>`}
         ${it.title ? `<h3${el(p, `card${i}.title`, 'ta', 'カード見出し', `items.${i}.title`)}>${esc(it.title)}</h3>` : ''}
         ${it.text ? `<p${el(p, `card${i}.text`, 'ta', 'カード説明', `items.${i}.text`)}>${nl2br(it.text)}</p>` : ''}
@@ -1203,7 +1208,7 @@ ${(p.items || []).map((it, i) => `      <div class="card"${el(p, `card${i}`, 'ia
     },
     render: (p) => sec('about', p,
       `    <div class="about-in${p.reverse ? ' rev' : ''}">
-      <div class="about-media"${el(p, 'image', 'ia', '画像')}>${media(p.image, p.title)}</div>
+      <div class="about-media"${el(p, 'image', 'ia', '画像')}${imgSlot('image')}>${media(p.image, p.title)}</div>
       <div class="about-body">
         ${p.eyebrow ? `<span class="eyebrow"${el(p, 'eyebrow', 'ta', '小見出し', 'eyebrow')}>${esc(p.eyebrow)}</span>` : ''}
         ${p.title ? `<h2 class="sec-title"${el(p, 'title', 'ta', '見出し', 'title')}>${nl2br(p.title)}</h2>` : ''}
@@ -1235,7 +1240,7 @@ ${buttons(p.buttons)}
     render: (p) => sec('gallery', p,
       `${head(p)}
     <div class="gal">
-${(p.items || []).map((it, i) => `      <figure${el(p, `img${i}`, 'ia', `画像${i + 1}`)}>${media(it.src, it.alt)}</figure>`).join('\n')}
+${(p.items || []).map((it, i) => `      <figure${el(p, `img${i}`, 'ia', `画像${i + 1}`)}${imgSlot(`items.${i}.src`)}>${media(it.src, it.alt)}</figure>`).join('\n')}
     </div>`),
   },
 
@@ -1729,7 +1734,9 @@ function save(key) {
       localStorage.setItem(STORE_KEY, JSON.stringify(state));
       flash('保存しました');
     } catch (e) {
-      flash('保存できません（画像が大きすぎるかも）');
+      /* 画像を入れすぎるとブラウザの保存上限（おおむね5MB）を超える。
+         編集も書き出しも続けられるので、その旨だけ伝える。 */
+      flash('自動保存の上限を超えました。今すぐHTMLを書き出してください');
     }
   }, 400);
 }
@@ -1837,6 +1844,17 @@ const PREVIEW_CSS = `
   background:#4c8dff;color:#fff;border-radius:4px;padding:1px 7px;pointer-events:none;
   font:700 10px/1.7 -apple-system,"Hiragino Sans",sans-serif;letter-spacing:.04em;white-space:nowrap}
 
+/* 画像を差し替えられる枠 */
+[data-imgprop]{position:relative;cursor:pointer}
+[data-imgprop]:hover::after{
+  content:"画像を選ぶ";background:#8b5cf6;color:#fff;position:absolute;top:2px;left:2px;z-index:21;
+  border-radius:4px;padding:1px 7px;pointer-events:none;white-space:nowrap;
+  font:700 10px/1.7 -apple-system,"Hiragino Sans",sans-serif;letter-spacing:.04em}
+[data-imgprop].__imgdrop{
+  outline:3px dashed #8b5cf6!important;outline-offset:-3px;
+  background:rgba(139,92,246,.22)!important}
+[data-imgprop].__imgdrop::after{content:"ここに放す";background:#8b5cf6;opacity:1}
+
 /* 編集中 */
 [data-prop].__editing{
   outline:2px solid #f59e0b!important;outline-offset:3px;cursor:text;
@@ -1863,6 +1881,37 @@ function initPreview() {
         const elt = e.target.closest('[data-el]');
         if (elt) selectEl(blk.dataset.bid, elt.dataset.el, elt.dataset.elkind, elt.dataset.elname, elt.dataset.prop);
         else { selectedEl = null; select(blk.dataset.bid); }
+
+        /* 画像枠なら、そのまま端末の画像選択を開く */
+        const slot = e.target.closest('[data-imgprop]');
+        if (slot) openImagePicker(blk.dataset.bid, slot.dataset.imgprop);
+      });
+
+      /* ---- 画像ファイルのドラッグ&ドロップ（PC） ---- */
+      let dropSlot = null;
+      const clearDropSlot = () => {
+        if (dropSlot) dropSlot.classList.remove('__imgdrop');
+        dropSlot = null;
+      };
+      pdoc.addEventListener('dragover', (e) => {
+        if (![...(e.dataTransfer.types || [])].includes('Files')) return;
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'copy';
+        const slot = e.target.closest('[data-imgprop]');
+        if (slot === dropSlot) return;
+        clearDropSlot();
+        if (slot) { dropSlot = slot; slot.classList.add('__imgdrop'); }
+      });
+      pdoc.addEventListener('dragleave', (e) => { if (!e.relatedTarget) clearDropSlot(); });
+      pdoc.addEventListener('drop', (e) => {
+        if (![...(e.dataTransfer.types || [])].includes('Files')) return;
+        e.preventDefault();
+        const slot = e.target.closest('[data-imgprop]');
+        const blk = e.target.closest('[data-bid]');
+        clearDropSlot();
+        if (!slot || !blk) { flash('画像の枠に重ねて放してください'); return; }
+        const f = e.dataTransfer.files[0];
+        if (f) setImage(blk.dataset.bid, slot.dataset.imgprop, f);
       });
 
       pdoc.addEventListener('dblclick', (e) => {
@@ -2314,7 +2363,9 @@ function elementPanel(b) {
     return `<div class="el-hint">
       <b>ダブルクリック</b>で文字をその場で書き換えられます。<br>
       <b>1回クリック</b>すると、その要素にアニメーションを付けられます
-      （青枠＝テキスト12種 / 紫枠＝画像・カード12種）。
+      （青枠＝テキスト12種 / 紫枠＝画像・カード12種）。<br>
+      <b>画像枠をクリック</b>すると端末の画像から選べます。
+      パソコンなら画像ファイルを枠に放り込んでもOKです。
     </div>`;
   }
   const isText = selectedEl.kind === 'ta';
@@ -2450,31 +2501,94 @@ function findListField(type, path) {
   return walk(BLOCKS[type].fields);
 }
 
-/* ---- 画像を端末から選ぶ ---- */
+/* ================================================================
+   画像の取り込み
+   プレビューの画像をタップ（スマホならカメラロールが開く）／
+   PCはファイルをドロップ／右パネルのボタン、の3経路。
+   スマホの写真はそのままだと数MBあり保存できなくなるので、
+   取り込むときに長辺1600pxまで縮小する。
+   ================================================================ */
+const IMG_MAX = 1600;
+const IMG_QUALITY = 0.82;
+
+const readAsDataURL = (file) => new Promise((res, rej) => {
+  const r = new FileReader();
+  r.onload = () => res(r.result);
+  r.onerror = rej;
+  r.readAsDataURL(file);
+});
+
+async function loadImage(file) {
+  if (window.createImageBitmap) {
+    /* 写真の向き（EXIF）を反映してくれる */
+    try { return await createImageBitmap(file, { imageOrientation: 'from-image' }); } catch (e) { /* 下の方法へ */ }
+  }
+  const url = URL.createObjectURL(file);
+  try {
+    const im = new Image();
+    await new Promise((res, rej) => { im.onload = res; im.onerror = rej; im.src = url; });
+    return im;
+  } finally { setTimeout(() => URL.revokeObjectURL(url), 0); }
+}
+
+async function toDataURL(file) {
+  /* SVGとGIFは描き直すと壊れる（ベクタ / アニメーション）ためそのまま使う */
+  if (file.type === 'image/svg+xml' || file.type === 'image/gif') return readAsDataURL(file);
+  const src = await loadImage(file);
+  const scale = Math.min(1, IMG_MAX / Math.max(src.width, src.height));
+  if (scale === 1 && file.size <= 400 * 1024) return readAsDataURL(file);   // 十分小さい
+  const cv = document.createElement('canvas');
+  cv.width = Math.round(src.width * scale);
+  cv.height = Math.round(src.height * scale);
+  cv.getContext('2d').drawImage(src, 0, 0, cv.width, cv.height);
+  if (src.close) src.close();
+  return cv.toDataURL('image/jpeg', IMG_QUALITY);
+}
+
+async function setImage(blockId, prop, file) {
+  const b = state.blocks.find((x) => x.id === blockId);
+  if (!b || !file) return;
+  if (!file.type.startsWith('image/')) { flash('画像ファイルを選んでください'); return; }
+  flash('画像を読み込んでいます…');
+  try {
+    const url = await toDataURL(file);
+    setPath(b.props, prop, url);
+    renderEditor(); renderPreview(true); save(`img:${prop}:${blockId}`);
+    const kb = Math.round(url.length / 1400);
+    const total = Math.round(JSON.stringify(state).length / 1400);
+    flash(total > 3500 ? `画像を入れました（合計約${total}KB・保存上限が近いです）`
+                       : `画像を入れました（約${kb}KB）`);
+  } catch (e) {
+    flash('画像を読み込めませんでした');
+  }
+}
+
+/* ファイル選択（スマホではカメラロールが開く） */
 const filePicker = document.createElement('input');
 filePicker.type = 'file';
 filePicker.accept = 'image/*';
-let pickPath = null;
+let pickTarget = null;
+function openImagePicker(blockId, prop) {
+  if (!blockId || !prop) return;
+  pickTarget = { blockId, prop };
+  filePicker.value = '';
+  filePicker.click();
+}
+filePicker.addEventListener('change', () => {
+  const f = filePicker.files[0];
+  if (f && pickTarget) setImage(pickTarget.blockId, pickTarget.prop, f);
+});
+
+/* 右パネルの「画像を選ぶ」ボタン */
 document.addEventListener('click', (e) => {
   const btn = e.target.closest('[data-pick]');
   if (!btn) return;
-  pickPath = { path: btn.dataset.pick, scope: btn.closest('#tab-design') ? 'theme' : 'block' };
-  filePicker.value = '';
-  filePicker.click();
+  openImagePicker(selected, btn.dataset.pick.replace(/^props\./, ''));
 });
-filePicker.addEventListener('change', () => {
-  const file = filePicker.files[0];
-  if (!file || !pickPath) return;
-  if (file.size > 1.5 * 1024 * 1024) {
-    if (!confirm('画像が大きめです（1.5MB超）。保存できないことがあります。続けますか？')) return;
-  }
-  const r = new FileReader();
-  r.onload = () => {
-    const b = state.blocks.find((x) => x.id === selected);
-    if (b) { setPath(b, pickPath.path, r.result); renderEditor(); renderPreview(); save(); }
-  };
-  r.readAsDataURL(file);
-});
+
+/* 編集画面の外にファイルを落としても、ブラウザがそれを開いてしまわないように */
+['dragover', 'drop'].forEach((t) =>
+  document.addEventListener(t, (e) => { if ([...(e.dataTransfer?.types || [])].includes('Files')) e.preventDefault(); }));
 
 /* ================================================================
    デザインタブ / ページ設定タブ

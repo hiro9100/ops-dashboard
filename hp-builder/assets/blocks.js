@@ -86,6 +86,9 @@ function el(p, role, kind, label, prop) {
   return out;
 }
 
+/* 画像を差し替えられる枠であることを示す（タップで選択、ドロップで投入） */
+const imgSlot = (prop) => ` data-imgprop="${esc(prop)}"`;
+
 /* ダブルクリック編集だけを付ける（段落が複数あるなど、文字アニメを付けない場所用） */
 function ed(prop, label) {
   return ` data-prop="${esc(prop)}" data-elname="${esc(label)}"`;
@@ -193,7 +196,7 @@ ${buttons(p.buttons)}`;
       const inner = p.layout === 'split'
         ? `    <div class="hero-in">
       <div>\n${body}\n      </div>
-      <div class="hero-media"${el(p, 'image', 'ia', '画像')}>${media(p.image, p.title)}</div>
+      <div class="hero-media"${el(p, 'image', 'ia', '画像')}${imgSlot('image')}>${media(p.image, p.title)}</div>
     </div>`
         : `    <div class="hero-in">\n${body}\n    </div>`;
       return `<section class="${cls}"${attr('id', p.anchor)}>
@@ -234,7 +237,7 @@ ${inner}
       `${head(p)}
     <div class="grid ${p.cols || 'c3'}">
 ${(p.items || []).map((it, i) => `      <div class="card"${el(p, `card${i}`, 'ia', `カード${i + 1}`)}>
-        ${p.style === 'image' ? `<div class="hero-media" style="aspect-ratio:16/10;margin-bottom:18px">${media(it.image, it.title)}</div>` : ''}
+        ${p.style === 'image' ? `<div class="hero-media" style="aspect-ratio:16/10;margin-bottom:18px" data-elname="カード画像"${imgSlot(`items.${i}.image`)}>${media(it.image, it.title)}</div>` : ''}
         ${p.style === 'num' ? `<span class="num">${i + 1}</span>` : p.style === 'image' ? '' : `<span class="ic">${esc(it.icon || '◆')}</span>`}
         ${it.title ? `<h3${el(p, `card${i}.title`, 'ta', 'カード見出し', `items.${i}.title`)}>${esc(it.title)}</h3>` : ''}
         ${it.text ? `<p${el(p, `card${i}.text`, 'ta', 'カード説明', `items.${i}.text`)}>${nl2br(it.text)}</p>` : ''}
@@ -262,7 +265,7 @@ ${(p.items || []).map((it, i) => `      <div class="card"${el(p, `card${i}`, 'ia
     },
     render: (p) => sec('about', p,
       `    <div class="about-in${p.reverse ? ' rev' : ''}">
-      <div class="about-media"${el(p, 'image', 'ia', '画像')}>${media(p.image, p.title)}</div>
+      <div class="about-media"${el(p, 'image', 'ia', '画像')}${imgSlot('image')}>${media(p.image, p.title)}</div>
       <div class="about-body">
         ${p.eyebrow ? `<span class="eyebrow"${el(p, 'eyebrow', 'ta', '小見出し', 'eyebrow')}>${esc(p.eyebrow)}</span>` : ''}
         ${p.title ? `<h2 class="sec-title"${el(p, 'title', 'ta', '見出し', 'title')}>${nl2br(p.title)}</h2>` : ''}
@@ -294,7 +297,7 @@ ${buttons(p.buttons)}
     render: (p) => sec('gallery', p,
       `${head(p)}
     <div class="gal">
-${(p.items || []).map((it, i) => `      <figure${el(p, `img${i}`, 'ia', `画像${i + 1}`)}>${media(it.src, it.alt)}</figure>`).join('\n')}
+${(p.items || []).map((it, i) => `      <figure${el(p, `img${i}`, 'ia', `画像${i + 1}`)}${imgSlot(`items.${i}.src`)}>${media(it.src, it.alt)}</figure>`).join('\n')}
     </div>`),
   },
 
