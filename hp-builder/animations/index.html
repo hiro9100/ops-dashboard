@@ -68,6 +68,10 @@ details.code pre{
 }
 #cursor.on{opacity:.85}
 #cursor.hot{width:52px;height:52px;background:rgba(34,211,238,.15)}
+.topnav{position:fixed;top:16px;left:22px;z-index:95;display:flex;gap:8px;font-size:11.5px}
+.topnav a{border:1px solid var(--line);border-radius:999px;padding:6px 14px;background:rgba(10,14,19,.8);
+  backdrop-filter:blur(8px);color:var(--tx2);transition:.2s;text-decoration:none}
+.topnav a:hover,.topnav a.on{color:var(--tx);border-color:var(--pri)}
 #toc{
   position:fixed;right:22px;top:50%;transform:translateY(-50%);z-index:90;
   display:flex;flex-direction:column;gap:11px
@@ -307,6 +311,7 @@ details.code pre{
 
 <div id="bar"></div>
 <div id="cursor"></div>
+<nav class="topnav"><a href="index.html" class="on">Vol.1</a><a href="vol2.html">Vol.2</a></nav>
 <nav id="toc"></nav>
 
 <!-- ============ ヒーロー ============ -->
@@ -639,7 +644,7 @@ addEventListener('pointermove', e =&gt; {
 
 <footer class="foot">
   <div class="wrap">
-    すべて依存ライブラリなし・このHTML1枚で動いています。<br>
+    すべて依存ライブラリなし・このHTML1枚で動いています。 — <a href="vol2.html" style="color:var(--pri)">Vol.2（12種）を見る</a><br>
     <span style="opacity:.6">動きを減らす設定（prefers-reduced-motion）にも対応済み。</span>
   </div>
 </footer>
