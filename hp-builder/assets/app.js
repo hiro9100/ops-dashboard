@@ -10,6 +10,7 @@ const STORE_KEY = 'hp-builder-v1';
 let state = null;      // { template, meta, theme, blocks:[{id,type,props}] }
 let selected = null;   // 編集中のブロックID
 let uidSeq = 0;
+const DEFAULT_MOTION = { anim: 'fadeup', dur: 900, stagger: 40, ease: 'cubic-bezier(.2,.7,.3,1)', reveal: true };
 const uid = () => `b${Date.now().toString(36)}${(uidSeq++).toString(36)}`;
 const closed = new Set(); // 折りたたんでいる繰り返し項目
 
@@ -30,9 +31,19 @@ function buildState(tplKey) {
       lang: 'ja',
     },
     theme: clone(t.theme),
+    motion: clone(DEFAULT_MOTION),
     blocks: t.blocks.map((b) => makeBlock(b.type, b.props)),
   };
 }
+
+/* 動きの初期設定 */
+const MOTION_EASES = [
+  ['cubic-bezier(.2,.7,.3,1)', 'なめらか（標準）'],
+  ['cubic-bezier(.16,1,.3,1)', 'ぬるっと減速'],
+  ['cubic-bezier(.34,1.56,.64,1)', '行き過ぎて戻る'],
+  ['cubic-bezier(.76,0,.24,1)', 'ためて一気に'],
+  ['linear', '等速'],
+];
 
 /* ---------------- 保存 / 読み込み ---------------- */
 let saveTimer;
@@ -60,6 +71,7 @@ function load() {
     const s = JSON.parse(raw);
     // 知らないブロックが混ざっていたら捨てる（定義を消した時の保険）
     s.blocks = (s.blocks || []).filter((b) => BLOCKS[b.type]);
+    s.motion = Object.assign(clone(DEFAULT_MOTION), s.motion || {}); // 旧データ対策
     return s.blocks.length ? s : null;
   } catch (e) { return null; }
 }
@@ -81,6 +93,9 @@ function themeCSS(t) {
   --max:${t.max}px;
   --font:${fontStack(t.font)};
   --font-head:${fontStack(t.fontHead)};
+  --ta-dur:${(state.motion.dur / 1000)}s;
+  --ta-stagger:${(state.motion.stagger / 1000)}s;
+  --ta-ease:${state.motion.ease};
 }`;
 }
 
@@ -104,7 +119,7 @@ ${themeCSS(state.theme)}
 ${SITE_CSS}
 </style>
 </head>
-<body class="tpl-${esc(state.template)}">
+<body class="tpl-${esc(state.template)}" data-anim="${esc(state.motion.anim)}" data-reveal="${state.motion.reveal ? 1 : 0}">
 
 ${bodyHTML()}
 
@@ -153,6 +168,8 @@ function renderPreview(now = false) {
     if (!pdoc) return;
     pdoc.getElementById('s-theme').textContent = themeCSS(state.theme);
     pdoc.body.className = `tpl-${state.template}`;
+    pdoc.body.setAttribute('data-anim', state.motion.anim);
+    pdoc.body.setAttribute('data-reveal', state.motion.reveal ? '1' : '0');
     pdoc.body.innerHTML = bodyHTML();
     // 生成されたトップレベル要素とブロックを対応づける（クリックで選択できるように）
     [...pdoc.body.children].forEach((el, i) => {
@@ -470,13 +487,31 @@ const THEME_FIELDS = [
   ]],
 ];
 
+const MOTION_FIELDS = [
+  { key: 'anim', label: '見出しの文字アニメ', type: 'select', options: TEXT_ANIMS,
+    hint: 'すべての見出しに適用されます（ヒーローは個別に変更できます）' },
+  { key: 'dur', label: 'アニメの長さ', type: 'range', min: 150, max: 2500, suffix: 'ms' },
+  { key: 'stagger', label: '1文字ごとのずらし', type: 'range', min: 0, max: 200, suffix: 'ms' },
+  { key: 'ease', label: 'イージング（速度の変化）', type: 'select', options: MOTION_EASES },
+  { key: 'reveal', label: 'ブロックをスクロールで出現させる', type: 'toggle' },
+];
+
 function renderDesign() {
   $('#tab-design').innerHTML = THEME_FIELDS.map(([g, fs]) =>
     `<div class="sec-label">${g}</div>` + fs.map((f) => {
       const path = `theme.${f.key}`;
       const val = state.theme[f.key];
       return `<div class="f"><label>${esc(f.label)}</label>${inputHTML(f, val, path)}</div>`;
-    }).join('')).join('');
+    }).join('')).join('')
+    + `<div class="sec-label">動き</div>`
+    + MOTION_FIELDS.map((f) => {
+        const path = `motion.${f.key}`;
+        const val = state.motion[f.key];
+        if (f.type === 'toggle') return `<div class="f">${inputHTML(f, val, path)}</div>`;
+        return `<div class="f"><label>${esc(f.label)}</label>${inputHTML(f, val, path)}
+          ${f.hint ? `<div class="hint">${esc(f.hint)}</div>` : ''}</div>`;
+      }).join('')
+    + `<button class="add-btn" id="btnReplayAnim" style="margin-top:6px">▶ プレビューで再生</button>`;
 }
 function renderPage() {
   $('#tab-page').innerHTML = `
@@ -497,7 +532,7 @@ function renderPage() {
 function themeInput(e) {
   const el = e.target;
   const path = el.dataset.path || '';
-  if (!path.startsWith('theme.') && !path.startsWith('meta.')) return;
+  if (!path.startsWith('theme.') && !path.startsWith('meta.') && !path.startsWith('motion.')) return;
   setPath(state, path, readEl(el));
 
   if (el.type === 'range') {
@@ -514,6 +549,14 @@ function themeInput(e) {
   renderPreview(); save();
 }
 $('#tab-design').addEventListener('input', themeInput);
+$('#tab-design').addEventListener('click', (e) => {
+  if (e.target.id === 'btnReplayAnim') renderPreview(true);
+});
+/* select や toggle を変えたら、すぐ動きを確認できるよう作り直す */
+$('#tab-design').addEventListener('change', (e) => {
+  const path = e.target.dataset.path || '';
+  if (path.startsWith('motion.')) renderPreview(true);
+});
 $('#tab-page').addEventListener('input', themeInput);
 
 /* ---- タブ切り替え ---- */

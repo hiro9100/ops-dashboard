@@ -212,6 +212,78 @@ p:last-child{margin-bottom:0}
 .tpl-studio .nav a{color:rgba(255,255,255,.7)}
 .tpl-studio .hdr{border-bottom-color:rgba(255,255,255,.12)}
 
+/* ==========================================================
+   文字アニメーション
+   [data-ta] が付いた見出しを、JSが1文字ずつ span に分割する。
+   画面に入ると .in が付いて再生される。
+   ========================================================== */
+[data-ta] .ln{display:block}
+[data-ta] .ch{display:inline-block;white-space:pre;will-change:transform,opacity}
+[data-ta]:not(.in) .ch{opacity:0}
+[data-ta].ta-none .ch{opacity:1}
+
+@keyframes ta-fadeup{from{opacity:0;transform:translateY(.65em)}to{opacity:1;transform:none}}
+[data-ta].ta-fadeup.in .ch{animation:ta-fadeup var(--ta-dur) var(--ta-ease) calc(var(--i)*var(--ta-stagger)) both}
+
+[data-ta].ta-maskline .ln{overflow:hidden;padding-bottom:.08em}
+@keyframes ta-maskline{from{transform:translateY(110%)}to{transform:none}}
+[data-ta].ta-maskline.in .ch{animation:ta-maskline var(--ta-dur) var(--ta-ease) calc(var(--i)*var(--ta-stagger)) both}
+
+@keyframes ta-blur{from{opacity:0;filter:blur(18px);transform:scale(1.18)}to{opacity:1;filter:blur(0);transform:none}}
+[data-ta].ta-blur.in .ch{animation:ta-blur var(--ta-dur) var(--ta-ease) calc(var(--i)*var(--ta-stagger)) both}
+
+[data-ta].ta-flip3d .ln{perspective:700px}
+@keyframes ta-flip3d{from{opacity:0;transform:rotateX(-95deg)}to{opacity:1;transform:none}}
+[data-ta].ta-flip3d.in .ch{transform-origin:50% 100%;
+  animation:ta-flip3d var(--ta-dur) var(--ta-ease) calc(var(--i)*var(--ta-stagger)) both}
+
+@keyframes ta-drop{from{opacity:0;transform:translateY(-.9em) rotate(-26deg)}to{opacity:1;transform:none}}
+[data-ta].ta-drop.in .ch{animation:ta-drop var(--ta-dur) var(--ta-ease) calc(var(--i)*var(--ta-stagger)) both}
+
+@keyframes ta-bounce{
+  0%{opacity:0;transform:translateY(-1.3em) scale(.55)}
+  55%{opacity:1;transform:translateY(.14em) scale(1.08)}
+  75%{transform:translateY(-.06em) scale(.97)}
+  100%{opacity:1;transform:none}}
+[data-ta].ta-bounce.in .ch{animation:ta-bounce var(--ta-dur) var(--ta-ease) calc(var(--i)*var(--ta-stagger)) both}
+
+@keyframes ta-slidealt{from{opacity:0;transform:translateX(var(--dir,-.8em))}to{opacity:1;transform:none}}
+[data-ta].ta-slidealt.in .ch{animation:ta-slidealt var(--ta-dur) var(--ta-ease) calc(var(--i)*var(--ta-stagger)) both}
+
+@keyframes ta-scatter{
+  from{opacity:0;transform:translate(var(--x,0),var(--y,0)) rotate(var(--r,0deg)) scale(.35)}
+  to{opacity:1;transform:none}}
+[data-ta].ta-scatter.in .ch{animation:ta-scatter var(--ta-dur) var(--ta-ease) calc(var(--i)*var(--ta-stagger)) both}
+
+@keyframes ta-neon{
+  0%{opacity:.15;text-shadow:none}
+  12%{opacity:1;text-shadow:0 0 6px var(--c-primary),0 0 18px var(--c-primary)}
+  16%{opacity:.25;text-shadow:none}
+  22%{opacity:1;text-shadow:0 0 6px var(--c-primary),0 0 18px var(--c-primary)}
+  28%{opacity:.4;text-shadow:none}
+  36%,100%{opacity:1;text-shadow:0 0 8px var(--c-primary),0 0 26px var(--c-primary),0 0 48px var(--c-primary)}}
+[data-ta].ta-neon.in .ch{animation:ta-neon var(--ta-dur) linear calc(var(--i)*var(--ta-stagger)) both}
+
+[data-ta].ta-fillgrad{
+  background:linear-gradient(100deg,var(--c-primary),var(--c-accent)) 0 0/0% 100% no-repeat,
+             linear-gradient(var(--c-muted),var(--c-muted));
+  -webkit-background-clip:text;background-clip:text;
+  color:transparent;-webkit-text-fill-color:transparent}
+@keyframes ta-fillgrad{from{background-size:0% 100%,100% 100%}to{background-size:100% 100%,100% 100%}}
+[data-ta].ta-fillgrad.in{animation:ta-fillgrad var(--ta-dur) var(--ta-ease) both}
+
+/* スクランブル・タイプライターはJSで動かす */
+[data-ta].ta-type .ch{visibility:hidden}
+[data-ta].ta-type .ch.show{visibility:visible}
+.ta-cursor{display:inline-block;width:.06em;height:1em;background:currentColor;
+  vertical-align:-.12em;margin-left:.04em;animation:ta-blink .9s steps(1) infinite}
+@keyframes ta-blink{0%,49%{opacity:1}50%,100%{opacity:0}}
+
+/* ---------- ブロックの出現 ---------- */
+.rv{opacity:0;transform:translateY(34px);
+  transition:opacity .85s cubic-bezier(.2,.7,.3,1),transform .85s cubic-bezier(.2,.7,.3,1)}
+.rv.in{opacity:1;transform:none}
+
 /* ---------- レスポンシブ ---------- */
 @media(max-width:900px){
   .grid.c3,.grid.c4{grid-template-columns:repeat(2,1fr)}
@@ -236,15 +308,126 @@ p:last-child{margin-bottom:0}
   .btn-row .btn{width:100%}
   .ftr-in{flex-direction:column;align-items:flex-start}
 }
+
+/* ---------- 動きを減らす設定への配慮 ---------- */
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;
+    transition-duration:.001ms!important;scroll-behavior:auto!important}
+  [data-ta] .ch{opacity:1!important;transform:none!important;filter:none!important;visibility:visible!important}
+  [data-ta].ta-fillgrad{background-size:100% 100%,100% 100%!important}
+  .rv{opacity:1!important;transform:none!important}
+}
 `;
 
-/* 書き出したHTMLでも動く最小限のJS（ハンバーガーメニュー） */
+/* 書き出したHTMLでも動く最小限のJS
+   ① ハンバーガーメニュー ② 文字アニメーション ③ ブロックの出現 */
 const SITE_JS = `
 (function(){
+  /* ---------- ハンバーガーメニュー ---------- */
   var t=document.querySelector('.hdr-toggle'),n=document.querySelector('.hdr .nav');
   if(t&&n){t.onclick=function(){n.classList.toggle('open')};}
   document.querySelectorAll('.nav a').forEach(function(a){
     a.addEventListener('click',function(){ if(n) n.classList.remove('open'); });
   });
+
+  var d=document, body=d.body;
+  var reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* ---------- 見出しを1文字ずつに分割 ---------- */
+  function lineTexts(el){
+    var lines=[[]];
+    [].slice.call(el.childNodes).forEach(function(nd){
+      if(nd.nodeName==='BR') lines.push([]);
+      else lines[lines.length-1].push(nd.textContent);
+    });
+    return lines.map(function(p){return p.join('')});
+  }
+
+  function split(el, anim){
+    var lines = lineTexts(el), i = 0;
+    el.textContent = '';
+    lines.forEach(function(text){
+      var ln = d.createElement('span'); ln.className = 'ln';
+      if(anim === 'maskline'){
+        var one = d.createElement('span'); one.className = 'ch';
+        one.style.setProperty('--i', i++);
+        one.textContent = text || ' ';
+        ln.appendChild(one);
+      } else {
+        Array.from(text).forEach(function(c){
+          var ch = d.createElement('span'); ch.className = 'ch';
+          ch.style.setProperty('--i', i++);
+          if(c === ' '){ ch.className += ' sp'; ch.innerHTML = '&nbsp;'; }
+          else { ch.textContent = c; ch.setAttribute('data-c', c); }
+          if(anim === 'slidealt') ch.style.setProperty('--dir', (i%2 ? '-.9em' : '.9em'));
+          if(anim === 'scatter'){
+            ch.style.setProperty('--x', ((Math.random()*2-1)*2.4).toFixed(2)+'em');
+            ch.style.setProperty('--y', ((Math.random()*2-1)*1.8).toFixed(2)+'em');
+            ch.style.setProperty('--r', ((Math.random()*2-1)*90).toFixed(0)+'deg');
+          }
+          ln.appendChild(ch);
+        });
+      }
+      el.appendChild(ln);
+    });
+  }
+
+  var RND='ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789#$%&@';
+  function runScramble(el){
+    var chs=[].slice.call(el.querySelectorAll('.ch'));
+    var dur=parseFloat(getComputedStyle(el).getPropertyValue('--ta-dur'))*1000||900;
+    var stg=parseFloat(getComputedStyle(el).getPropertyValue('--ta-stagger'))*1000||40;
+    chs.forEach(function(c){ c.dataset.final=c.textContent; c.textContent=''; c.style.opacity=1; });
+    var step=Math.max(1,Math.round(stg/16)), span=Math.round(dur/16), f=0;
+    (function tick(){
+      chs.forEach(function(c,i){
+        var s=i*step;
+        if(f>=s+span) c.textContent=c.dataset.final;
+        else if(f>=s) c.textContent=RND[Math.floor(Math.random()*RND.length)];
+      });
+      if(f++ < chs.length*step+span) requestAnimationFrame(tick);
+      else chs.forEach(function(c){ c.textContent=c.dataset.final; });
+    })();
+  }
+  function runType(el){
+    var chs=[].slice.call(el.querySelectorAll('.ch'));
+    var stg=parseFloat(getComputedStyle(el).getPropertyValue('--ta-stagger'))*1000||40;
+    var cur=d.createElement('span'); cur.className='ta-cursor';
+    if(el.lastElementChild) el.lastElementChild.appendChild(cur);
+    chs.forEach(function(c,i){ c.style.opacity=1;
+      setTimeout(function(){ c.classList.add('show'); }, i*Math.max(20,stg)); });
+  }
+
+  /* ---------- 準備 ---------- */
+  var def = body.getAttribute('data-anim') || 'none';
+  var targets = [].slice.call(d.querySelectorAll('[data-ta]'));
+  targets.forEach(function(el){
+    var a = el.getAttribute('data-anim') || def;
+    el.classList.add('ta-' + a);
+    if(a === 'none' || reduce){ el.classList.add('in'); return; }
+    if(a !== 'fillgrad') split(el, a);
+  });
+
+  if(body.getAttribute('data-reveal') === '1' && !reduce){
+    [].slice.call(d.querySelectorAll('.sec, .hero')).forEach(function(s){ s.classList.add('rv'); });
+  }
+
+  /* ---------- 画面に入ったら再生 ---------- */
+  var watch = [].slice.call(d.querySelectorAll('[data-ta]:not(.in), .rv'));
+  if(!('IntersectionObserver' in window) || reduce){
+    watch.forEach(function(el){ el.classList.add('in'); });
+  }else{
+    var io = new IntersectionObserver(function(es){
+      es.forEach(function(e){
+        if(!e.isIntersecting) return;
+        var el = e.target;
+        el.classList.add('in');
+        if(el.classList.contains('ta-scramble')) runScramble(el);
+        if(el.classList.contains('ta-type'))     runType(el);
+        io.unobserve(el);
+      });
+    }, {threshold:.15, rootMargin:'0px 0px -6% 0px'});
+    watch.forEach(function(el){ io.observe(el); });
+  }
 })();
 `;

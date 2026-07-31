@@ -1,0 +1,2008 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>かんたんHP作成ツール</title>
+<style>
+/* ビルダー（編集画面）のUI。生成されるサイトの見た目とは無関係。 */
+*,*::before,*::after{box-sizing:border-box}
+:root{
+  --bg:#0f1115; --panel:#171a21; --panel2:#1e222b; --line:#2a2f3a;
+  --tx:#e7ebf0; --tx2:#98a2b3; --pri:#4c8dff; --danger:#f2565c;
+  --r:8px;
+}
+html,body{height:100%}
+body{
+  margin:0;background:var(--bg);color:var(--tx);
+  font-family:"Helvetica Neue",Arial,"Hiragino Kaku Gothic ProN","Hiragino Sans",Meiryo,sans-serif;
+  font-size:13px;line-height:1.7;overflow:hidden;
+}
+button{font:inherit;color:inherit;cursor:pointer}
+input,select,textarea{font:inherit}
+
+/* ================= 全体レイアウト ================= */
+.app{
+  height:100vh;display:grid;
+  grid-template-columns:236px 1fr 348px;
+  grid-template-rows:52px 1fr;
+  grid-template-areas:"top top top" "left stage right";
+}
+.topbar{
+  grid-area:top;display:flex;align-items:center;gap:10px;padding:0 14px;
+  background:var(--panel);border-bottom:1px solid var(--line)
+}
+.brand{font-weight:800;letter-spacing:.02em;margin-right:6px;white-space:nowrap}
+.saved{color:var(--tx2);font-size:11.5px;margin-right:auto;min-width:80px}
+
+.tb-btn{
+  background:var(--panel2);border:1px solid var(--line);border-radius:var(--r);
+  padding:7px 13px;font-size:12.5px;font-weight:600;white-space:nowrap;
+  transition:background .15s,border-color .15s
+}
+.tb-btn:hover{background:#262b36;border-color:#3a4150}
+.tb-btn.primary{background:var(--pri);border-color:var(--pri);color:#fff}
+.tb-btn.primary:hover{background:#3d7cf0}
+.tb-btn.danger:hover{border-color:var(--danger);color:var(--danger)}
+
+.devices{display:flex;background:var(--panel2);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.devices button{background:transparent;border:0;padding:7px 12px;font-size:12px;color:var(--tx2)}
+.devices button.on{background:#2d3441;color:var(--tx);font-weight:700}
+
+/* ================= パネル共通 ================= */
+.panel{background:var(--panel);display:flex;flex-direction:column;min-height:0}
+.panel.left{grid-area:left;border-right:1px solid var(--line)}
+.panel.right{grid-area:right;border-left:1px solid var(--line)}
+.panel-h{
+  padding:12px 14px;font-size:11px;font-weight:800;letter-spacing:.14em;
+  color:var(--tx2);border-bottom:1px solid var(--line)
+}
+.panel-body{padding:14px;overflow-y:auto;flex:1;min-height:0}
+
+.tabs{display:flex;border-bottom:1px solid var(--line)}
+.tabs button{
+  flex:1;background:transparent;border:0;border-bottom:2px solid transparent;
+  padding:13px 4px;font-size:12px;color:var(--tx2);font-weight:600
+}
+.tabs button.on{color:var(--tx);border-bottom-color:var(--pri)}
+
+/* ================= 左：ブロック一覧 ================= */
+.blocklist{overflow-y:auto;flex:1;padding:8px;min-height:0}
+.bl-item{
+  display:flex;align-items:center;gap:8px;padding:9px 10px;border-radius:var(--r);
+  border:1px solid transparent;margin-bottom:3px;user-select:none
+}
+.bl-item:hover{background:var(--panel2)}
+.bl-item.on{background:#20293a;border-color:var(--pri)}
+.bl-ic{
+  width:24px;height:24px;flex:none;display:grid;place-items:center;
+  background:var(--panel2);border-radius:6px;font-size:12px;color:var(--tx2)
+}
+.bl-item.on .bl-ic{background:var(--pri);color:#fff}
+.bl-name{flex:1;font-size:12.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bl-sub{font-size:10.5px;color:var(--tx2);font-weight:400}
+.bl-ops{display:flex;gap:1px;opacity:0;transition:opacity .12s}
+.bl-item:hover .bl-ops,.bl-item.on .bl-ops{opacity:1}
+.bl-ops button{
+  background:transparent;border:0;padding:2px 5px;font-size:12px;color:var(--tx2);border-radius:4px;line-height:1
+}
+.bl-ops button:hover{background:#39404f;color:var(--tx)}
+.bl-fixed{font-size:10px;color:var(--tx2);padding:0 4px}
+
+.add-wrap{position:relative;padding:10px;border-top:1px solid var(--line)}
+.add-btn{
+  width:100%;background:var(--panel2);border:1px dashed var(--line);border-radius:var(--r);
+  padding:10px;font-size:12.5px;font-weight:700;color:var(--tx2)
+}
+.add-btn:hover{color:var(--tx);border-color:var(--pri)}
+.add-menu{
+  position:absolute;bottom:56px;left:10px;right:10px;background:var(--panel2);
+  border:1px solid var(--line);border-radius:var(--r);padding:6px;z-index:30;
+  box-shadow:0 16px 40px rgba(0,0,0,.5);max-height:340px;overflow-y:auto
+}
+.add-menu button{
+  display:flex;align-items:center;gap:9px;width:100%;background:transparent;border:0;
+  padding:9px 10px;border-radius:6px;font-size:12.5px;text-align:left
+}
+.add-menu button:hover{background:#2f3644}
+
+/* ================= 中央：プレビュー ================= */
+.stage{
+  grid-area:stage;background:#0a0c10;padding:18px;overflow:auto;
+  display:flex;justify-content:center;align-items:flex-start
+}
+.frame{
+  width:100%;height:100%;background:#fff;border-radius:10px;overflow:hidden;
+  box-shadow:0 20px 60px rgba(0,0,0,.5);transition:width .2s ease
+}
+.frame iframe{width:100%;height:100%;border:0;display:block}
+
+/* ================= 右：編集フォーム ================= */
+.f{margin-bottom:15px}
+.f > label{display:block;font-size:11.5px;font-weight:700;color:var(--tx2);margin-bottom:5px}
+.f input[type=text],.f input[type=number],.f textarea,.f select{
+  width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:6px;
+  padding:8px 10px;color:var(--tx);font-size:12.5px
+}
+.f textarea{resize:vertical;min-height:70px;line-height:1.7}
+.f input:focus,.f textarea:focus,.f select:focus{outline:none;border-color:var(--pri)}
+.f .hint{font-size:10.5px;color:var(--tx2);margin-top:4px}
+
+.f-row{display:flex;align-items:center;gap:9px}
+.f-row input[type=color]{
+  width:34px;height:30px;padding:0;background:none;border:1px solid var(--line);border-radius:6px;cursor:pointer
+}
+.f-row input[type=range]{flex:1;accent-color:var(--pri)}
+.f-val{font-size:11.5px;color:var(--tx2);min-width:42px;text-align:right}
+
+.sw{display:flex;align-items:center;gap:9px;cursor:pointer;font-size:12.5px;font-weight:600}
+.sw input{width:16px;height:16px;accent-color:var(--pri);cursor:pointer}
+
+.img-f{display:flex;gap:7px;align-items:center}
+.img-f input{flex:1;min-width:0}
+.img-f .pick{
+  flex:none;background:var(--panel2);border:1px solid var(--line);border-radius:6px;
+  padding:8px 10px;font-size:11.5px;white-space:nowrap
+}
+.img-f .pick:hover{border-color:var(--pri)}
+.img-thumb{
+  width:100%;height:74px;object-fit:cover;border-radius:6px;margin-top:7px;
+  border:1px solid var(--line);background:#0a0c10;display:block
+}
+
+/* 繰り返し項目 */
+.list{border:1px solid var(--line);border-radius:var(--r);padding:8px;background:#13161d}
+.li{border:1px solid var(--line);border-radius:6px;margin-bottom:7px;background:var(--panel)}
+.li-h{display:flex;align-items:center;gap:6px;padding:7px 9px;cursor:pointer}
+.li-h .t{flex:1;font-size:12px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.li-h .n{font-size:10.5px;color:var(--tx2);font-weight:700;min-width:15px}
+.li-h button{background:transparent;border:0;color:var(--tx2);padding:2px 5px;border-radius:4px;font-size:12px;line-height:1}
+.li-h button:hover{background:#39404f;color:var(--tx)}
+.li-b{padding:2px 10px 10px;border-top:1px solid var(--line)}
+.li-b .f{margin:11px 0 0}
+.li-add{
+  width:100%;background:transparent;border:1px dashed var(--line);border-radius:6px;
+  padding:8px;font-size:12px;color:var(--tx2);font-weight:600
+}
+.li-add:hover{color:var(--tx);border-color:var(--pri)}
+
+.empty{color:var(--tx2);text-align:center;padding:44px 16px;font-size:12.5px;line-height:1.9}
+.sec-label{
+  font-size:10.5px;font-weight:800;letter-spacing:.14em;color:var(--tx2);
+  margin:22px 0 11px;padding-top:14px;border-top:1px solid var(--line)
+}
+.sec-label:first-child{margin-top:0;padding-top:0;border-top:0}
+.edit-head{
+  display:flex;align-items:center;gap:8px;margin:-2px 0 15px;padding-bottom:12px;
+  border-bottom:1px solid var(--line);font-weight:800;font-size:13.5px
+}
+
+/* ================= モーダル ================= */
+.modal{
+  position:fixed;inset:0;background:rgba(5,7,10,.72);display:grid;place-items:center;
+  z-index:100;padding:24px;backdrop-filter:blur(3px)
+}
+/* display 指定が hidden 属性に勝ってしまうので明示的に消す */
+.modal[hidden],.add-menu[hidden],.panel-body[hidden]{display:none}
+.modal-box{
+  background:var(--panel);border:1px solid var(--line);border-radius:14px;
+  padding:26px;width:100%;max-width:840px;max-height:88vh;overflow-y:auto
+}
+.modal-box.wide{max-width:960px;display:flex;flex-direction:column}
+.modal-box h2{margin:0 0 6px;font-size:18px}
+.modal-sub{margin:0 0 20px;color:var(--tx2);font-size:12.5px}
+.modal-foot{display:flex;justify-content:flex-end;gap:9px;margin-top:18px}
+#codeArea{
+  width:100%;height:52vh;background:#0b0d12;border:1px solid var(--line);border-radius:8px;
+  color:#c9d4e2;padding:14px;font-family:Menlo,Consolas,monospace;font-size:11.5px;line-height:1.65;resize:none
+}
+
+.tpl-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.tpl-card{
+  background:var(--panel2);border:1px solid var(--line);border-radius:11px;overflow:hidden;
+  text-align:left;padding:0;transition:border-color .15s,transform .15s
+}
+.tpl-card:hover{border-color:var(--pri);transform:translateY(-3px)}
+.tpl-prev{height:132px;display:flex;flex-direction:column;gap:5px;padding:13px}
+.tpl-prev .bar{height:9px;border-radius:2px;opacity:.9}
+.tpl-prev .big{height:24px;border-radius:3px;margin-top:5px}
+.tpl-prev .row{display:flex;gap:5px;margin-top:auto}
+.tpl-prev .row span{flex:1;height:30px;border-radius:3px}
+.tpl-meta{padding:12px 14px 15px;border-top:1px solid var(--line)}
+.tpl-meta b{display:block;font-size:13px;margin-bottom:3px}
+.tpl-meta small{color:var(--tx2);font-size:11px;line-height:1.65;display:block}
+
+@media(max-width:1180px){
+  .app{grid-template-columns:200px 1fr 300px}
+  .brand{display:none}
+}
+
+</style>
+</head>
+<body>
+
+<div class="app">
+  <!-- ================= 上部バー ================= -->
+  <header class="topbar">
+    <div class="brand">かんたんHP作成ツール</div>
+
+    <button class="tb-btn" id="btnTemplates">テンプレートを選ぶ</button>
+    <span class="saved" id="saved"></span>
+
+    <div class="devices" id="devices">
+      <button data-w="100%" class="on">PC</button>
+      <button data-w="820px">タブレット</button>
+      <button data-w="390px">スマホ</button>
+    </div>
+
+    <button class="tb-btn" id="btnCode">HTMLを見る</button>
+    <button class="tb-btn danger" id="btnReset">最初から</button>
+    <button class="tb-btn primary" id="btnExport">HTMLを書き出す</button>
+  </header>
+
+  <!-- ================= 左：ブロック一覧 ================= -->
+  <aside class="panel left">
+    <div class="panel-h">ページの構成</div>
+    <div id="blockList" class="blocklist"></div>
+    <div class="add-wrap">
+      <button class="add-btn" id="btnAdd">＋ ブロックを追加</button>
+      <div class="add-menu" id="addMenu" hidden></div>
+    </div>
+  </aside>
+
+  <!-- ================= 中央：プレビュー ================= -->
+  <main class="stage">
+    <div class="frame" id="frame">
+      <iframe id="preview" title="プレビュー"></iframe>
+    </div>
+  </main>
+
+  <!-- ================= 右：編集 ================= -->
+  <aside class="panel right">
+    <div class="tabs">
+      <button class="on" data-tab="edit">ブロック編集</button>
+      <button data-tab="design">デザイン</button>
+      <button data-tab="page">ページ設定</button>
+    </div>
+    <div class="panel-body" id="tab-edit"></div>
+    <div class="panel-body" id="tab-design" hidden></div>
+    <div class="panel-body" id="tab-page" hidden></div>
+  </aside>
+</div>
+
+<!-- ================= テンプレート選択 ================= -->
+<div class="modal" id="tplModal" hidden>
+  <div class="modal-box">
+    <h2>テンプレートを選ぶ</h2>
+    <p class="modal-sub">選ぶと、いまの内容は置きかわります。あとから中身は自由に変えられます。</p>
+    <div class="tpl-grid" id="tplGrid"></div>
+    <div class="modal-foot"><button class="tb-btn" id="tplClose">閉じる</button></div>
+  </div>
+</div>
+
+<!-- ================= HTML表示 ================= -->
+<div class="modal" id="codeModal" hidden>
+  <div class="modal-box wide">
+    <h2>書き出されるHTML</h2>
+    <p class="modal-sub">このまま1ファイルで動きます。サーバーにアップすれば公開できます。</p>
+    <textarea id="codeArea" readonly spellcheck="false"></textarea>
+    <div class="modal-foot">
+      <button class="tb-btn" id="codeCopy">コピー</button>
+      <button class="tb-btn" id="codeClose">閉じる</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ===== assets/site-css.js ===== */
+/* 生成されるサイトに適用されるCSS。プレビューと書き出しHTMLの両方で使う。
+   file:// でも動くように fetch せず JS 文字列として持つ。 */
+const SITE_CSS = `
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0;
+  font-family:var(--font);
+  font-size:16px;
+  line-height:1.9;
+  color:var(--c-text);
+  background:var(--c-bg);
+  -webkit-font-smoothing:antialiased;
+  word-break:break-word;
+}
+img{max-width:100%;display:block}
+a{color:inherit;text-decoration:none}
+p{margin:0 0 1em}
+p:last-child{margin-bottom:0}
+
+.wrap{width:100%;max-width:var(--max);margin:0 auto;padding:0 24px}
+
+/* 画像がまだ設定されていない場所の目印 */
+.ph{width:100%;height:100%;display:grid;place-items:center}
+.ph::before{content:"IMAGE";font-size:11px;font-weight:800;letter-spacing:.22em;opacity:.4}
+.hero-media > .ph::before,.about-media > .ph::before{color:#fff;opacity:.8}
+
+/* ---------- セクション共通 ---------- */
+.sec{padding:clamp(56px,8vw,96px) 0;position:relative}
+.sec.bg-surface{background:var(--c-surface)}
+.sec.bg-primary{background:var(--c-primary);color:#fff}
+.sec.bg-dark{background:var(--c-dark);color:#fff}
+.sec.bg-primary .sec-sub,.sec.bg-dark .sec-sub{color:rgba(255,255,255,.75)}
+.sec.bg-primary .card,.sec.bg-dark .card{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.18)}
+
+.sec-head{max-width:760px;margin:0 auto clamp(32px,5vw,56px);text-align:center}
+.sec-head.left{text-align:left;margin-left:0}
+.eyebrow{
+  display:inline-block;margin:0 0 12px;font-size:12px;font-weight:700;
+  letter-spacing:.18em;text-transform:uppercase;color:var(--c-primary)
+}
+.bg-primary .eyebrow,.bg-dark .eyebrow{color:var(--c-accent)}
+.sec-title{
+  margin:0 0 14px;font-size:clamp(24px,3.6vw,36px);line-height:1.4;
+  letter-spacing:.02em;font-weight:800
+}
+.sec-sub{margin:0;color:var(--c-muted);font-size:15px}
+
+/* ---------- ボタン ---------- */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  padding:14px 30px;border-radius:var(--radius);
+  background:var(--c-primary);color:#fff;font-weight:700;font-size:15px;
+  border:1.5px solid transparent;cursor:pointer;
+  transition:transform .18s ease,box-shadow .18s ease,opacity .18s ease;
+  box-shadow:0 6px 20px -8px var(--c-primary)
+}
+.btn:hover{transform:translateY(-2px);box-shadow:0 12px 26px -10px var(--c-primary)}
+.btn.ghost{background:transparent;color:inherit;border-color:currentColor;box-shadow:none;opacity:.9}
+.btn.ghost:hover{opacity:1;box-shadow:none}
+.btn.accent{background:var(--c-accent);box-shadow:0 6px 20px -8px var(--c-accent)}
+.btn.sm{padding:10px 20px;font-size:14px}
+.btn-row{display:flex;flex-wrap:wrap;gap:14px;margin-top:32px}
+.center .btn-row,.hero.center .btn-row{justify-content:center}
+
+/* ---------- ヘッダー ---------- */
+.hdr{
+  position:relative;z-index:50;background:var(--c-bg);
+  border-bottom:1px solid var(--c-border)
+}
+.hdr.sticky{position:sticky;top:0;background:color-mix(in srgb,var(--c-bg) 86%,transparent);backdrop-filter:blur(12px)}
+.hdr-in{display:flex;align-items:center;gap:24px;height:72px}
+.logo{font-weight:800;font-size:19px;letter-spacing:.02em;display:flex;align-items:center;gap:10px}
+.logo img{height:32px;width:auto}
+.nav{display:flex;align-items:center;gap:28px;margin-left:auto}
+.nav a{font-size:14px;font-weight:600;color:var(--c-muted);transition:color .15s}
+.nav a:hover{color:var(--c-primary)}
+.hdr .btn{margin-left:4px}
+.hdr-toggle{
+  display:none;margin-left:auto;width:44px;height:44px;border:1px solid var(--c-border);
+  background:transparent;border-radius:10px;font-size:18px;cursor:pointer;color:inherit
+}
+
+/* ---------- ヒーロー ---------- */
+.hero{position:relative;overflow:hidden;padding:clamp(64px,9vw,120px) 0}
+.hero.center{text-align:center}
+.hero-in{position:relative;z-index:2}
+.hero-title{margin:0 0 20px;font-size:clamp(30px,5.4vw,56px);line-height:1.28;letter-spacing:.01em;font-weight:800}
+.hero-text{margin:0;font-size:clamp(15px,1.6vw,18px);color:var(--c-muted);max-width:620px}
+.hero.center .hero-text{margin-inline:auto}
+.hero-media{
+  border-radius:var(--radius);overflow:hidden;aspect-ratio:4/3;
+  background:linear-gradient(135deg,var(--c-primary),var(--c-accent));
+  box-shadow:0 30px 60px -30px rgba(15,23,42,.45)
+}
+.hero-media img{width:100%;height:100%;object-fit:cover}
+.hero.split .hero-in{display:grid;grid-template-columns:1.02fr .98fr;gap:clamp(32px,5vw,64px);align-items:center}
+.hero.split .hero-title{font-size:clamp(28px,3.4vw,42px)}
+.hero.cover{color:#fff}
+.hero.cover .hero-text{color:rgba(255,255,255,.82)}
+.hero-bg{position:absolute;inset:0;z-index:0;background:linear-gradient(135deg,var(--c-primary),var(--c-accent))}
+.hero-bg img{width:100%;height:100%;object-fit:cover}
+.hero-bg::after{content:"";position:absolute;inset:0;background:var(--hero-overlay,rgba(15,23,42,.55))}
+.hero.center.cover .hero-in,.hero.left.cover .hero-in{padding:clamp(24px,4vw,48px) 0}
+
+/* ---------- 特徴 / カード ---------- */
+.grid{display:grid;gap:24px}
+.grid.c2{grid-template-columns:repeat(2,1fr)}
+.grid.c3{grid-template-columns:repeat(3,1fr)}
+.grid.c4{grid-template-columns:repeat(4,1fr)}
+.card{
+  background:var(--c-bg);border:1px solid var(--c-border);border-radius:var(--radius);
+  padding:32px 28px;transition:transform .2s ease,box-shadow .2s ease
+}
+.card:hover{transform:translateY(-4px);box-shadow:0 20px 40px -24px rgba(15,23,42,.35)}
+.card .ic{font-size:30px;line-height:1;margin-bottom:16px;display:block}
+.card h3{margin:0 0 10px;font-size:18px;font-weight:700;line-height:1.5}
+.card p{margin:0;font-size:14.5px;color:var(--c-muted)}
+.card .num{
+  display:inline-flex;align-items:center;justify-content:center;width:38px;height:38px;
+  border-radius:50%;background:var(--c-primary);color:#fff;font-weight:800;margin-bottom:16px
+}
+
+/* ---------- About ---------- */
+.about-in{display:grid;grid-template-columns:1fr 1fr;gap:clamp(32px,5vw,64px);align-items:center}
+.about-in.rev .about-media{order:2}
+.about-media{border-radius:var(--radius);overflow:hidden;aspect-ratio:4/3;background:linear-gradient(135deg,var(--c-primary),var(--c-accent))}
+.about-media img{width:100%;height:100%;object-fit:cover}
+.about-body .sec-title{font-size:clamp(22px,3vw,30px)}
+.about-body p{color:var(--c-muted)}
+
+/* ---------- ギャラリー ---------- */
+.gal{display:grid;gap:14px;grid-template-columns:repeat(3,1fr)}
+.gal figure{
+  margin:0;border-radius:var(--radius);overflow:hidden;aspect-ratio:1/1;
+  background:var(--c-surface);border:1px solid var(--c-border)
+}
+.bg-surface .gal figure{background:var(--c-bg)}
+.gal img{width:100%;height:100%;object-fit:cover;transition:transform .35s ease}
+.gal figure:hover img{transform:scale(1.06)}
+
+/* ---------- 料金 ---------- */
+.plan{
+  background:var(--c-bg);border:1px solid var(--c-border);border-radius:var(--radius);
+  padding:36px 30px;display:flex;flex-direction:column
+}
+.plan.feat{border-color:var(--c-primary);box-shadow:0 24px 48px -28px var(--c-primary);position:relative}
+.plan .tag{
+  position:absolute;top:-13px;left:50%;transform:translateX(-50%);
+  background:var(--c-primary);color:#fff;font-size:12px;font-weight:700;
+  padding:5px 14px;border-radius:999px;white-space:nowrap
+}
+.plan h3{margin:0 0 6px;font-size:17px;font-weight:700}
+.plan .price{font-size:34px;font-weight:800;letter-spacing:-.01em;line-height:1.3}
+.plan .price span{font-size:14px;font-weight:600;color:var(--c-muted);margin-left:4px}
+.plan ul{list-style:none;margin:22px 0;padding:0;display:grid;gap:10px}
+.plan li{font-size:14.5px;color:var(--c-muted);padding-left:26px;position:relative}
+.plan li::before{content:"✓";position:absolute;left:0;color:var(--c-primary);font-weight:800}
+.plan .btn{margin-top:auto;width:100%}
+
+/* ---------- FAQ ---------- */
+.faq{max-width:800px;margin:0 auto;display:grid;gap:12px}
+.faq details{border:1px solid var(--c-border);border-radius:var(--radius);background:var(--c-bg);overflow:hidden}
+.faq summary{
+  padding:20px 24px;font-weight:700;cursor:pointer;list-style:none;
+  display:flex;align-items:center;gap:12px;font-size:15.5px
+}
+.faq summary::-webkit-details-marker{display:none}
+.faq summary::after{content:"+";margin-left:auto;color:var(--c-primary);font-size:20px;font-weight:800}
+.faq details[open] summary::after{content:"−"}
+.faq .a{padding:0 24px 22px;color:var(--c-muted);font-size:14.5px}
+
+/* ---------- CTA帯 ---------- */
+.cta-in{text-align:center;max-width:720px;margin:0 auto}
+.cta-in .sec-title{margin-bottom:12px}
+.cta-in p{opacity:.85}
+
+/* ---------- お問い合わせ ---------- */
+.contact-in{display:grid;grid-template-columns:1fr 1fr;gap:clamp(32px,5vw,56px)}
+.contact-in.only1{grid-template-columns:1fr;max-width:640px;margin:0 auto}
+.info{display:grid;gap:18px;align-content:start}
+.info div{display:grid;gap:2px}
+.info dt{font-size:12px;font-weight:700;letter-spacing:.12em;color:var(--c-primary)}
+.info dd{margin:0;font-size:16px;font-weight:600}
+.form{display:grid;gap:14px}
+.form label{display:grid;gap:6px;font-size:13px;font-weight:700}
+.form input,.form textarea{
+  font:inherit;font-size:15px;padding:13px 15px;border:1px solid var(--c-border);
+  border-radius:calc(var(--radius) * .7);background:var(--c-bg);color:inherit;width:100%
+}
+.form textarea{min-height:130px;resize:vertical}
+.form input:focus,.form textarea:focus{outline:2px solid var(--c-primary);outline-offset:1px;border-color:transparent}
+
+/* ---------- 自由テキスト ---------- */
+.rich{max-width:760px;margin:0 auto;font-size:16px}
+.rich.left{margin-left:0}
+
+/* ---------- フッター ---------- */
+.ftr{background:var(--c-dark);color:rgba(255,255,255,.72);padding:56px 0 32px;font-size:14px}
+.ftr-in{display:flex;flex-wrap:wrap;gap:24px;align-items:center;justify-content:space-between}
+.ftr .logo{color:#fff;font-size:17px}
+.ftr-nav{display:flex;flex-wrap:wrap;gap:22px}
+.ftr-nav a{transition:color .15s}
+.ftr-nav a:hover{color:#fff}
+.copy{margin-top:32px;padding-top:20px;border-top:1px solid rgba(255,255,255,.12);font-size:12.5px;opacity:.7}
+
+/* ---------- テンプレート別の味付け ---------- */
+.sec-title,.hero-title,.logo,.plan h3,.card h3{font-family:var(--font-head)}
+.tpl-shop .card{text-align:center}
+.tpl-studio .hero-title{letter-spacing:-.02em}
+.tpl-studio .card{background:transparent}
+.tpl-studio .nav a{color:rgba(255,255,255,.7)}
+.tpl-studio .hdr{border-bottom-color:rgba(255,255,255,.12)}
+
+/* ==========================================================
+   文字アニメーション
+   [data-ta] が付いた見出しを、JSが1文字ずつ span に分割する。
+   画面に入ると .in が付いて再生される。
+   ========================================================== */
+[data-ta] .ln{display:block}
+[data-ta] .ch{display:inline-block;white-space:pre;will-change:transform,opacity}
+[data-ta]:not(.in) .ch{opacity:0}
+[data-ta].ta-none .ch{opacity:1}
+
+@keyframes ta-fadeup{from{opacity:0;transform:translateY(.65em)}to{opacity:1;transform:none}}
+[data-ta].ta-fadeup.in .ch{animation:ta-fadeup var(--ta-dur) var(--ta-ease) calc(var(--i)*var(--ta-stagger)) both}
+
+[data-ta].ta-maskline .ln{overflow:hidden;padding-bottom:.08em}
+@keyframes ta-maskline{from{transform:translateY(110%)}to{transform:none}}
+[data-ta].ta-maskline.in .ch{animation:ta-maskline var(--ta-dur) var(--ta-ease) calc(var(--i)*var(--ta-stagger)) both}
+
+@keyframes ta-blur{from{opacity:0;filter:blur(18px);transform:scale(1.18)}to{opacity:1;filter:blur(0);transform:none}}
+[data-ta].ta-blur.in .ch{animation:ta-blur var(--ta-dur) var(--ta-ease) calc(var(--i)*var(--ta-stagger)) both}
+
+[data-ta].ta-flip3d .ln{perspective:700px}
+@keyframes ta-flip3d{from{opacity:0;transform:rotateX(-95deg)}to{opacity:1;transform:none}}
+[data-ta].ta-flip3d.in .ch{transform-origin:50% 100%;
+  animation:ta-flip3d var(--ta-dur) var(--ta-ease) calc(var(--i)*var(--ta-stagger)) both}
+
+@keyframes ta-drop{from{opacity:0;transform:translateY(-.9em) rotate(-26deg)}to{opacity:1;transform:none}}
+[data-ta].ta-drop.in .ch{animation:ta-drop var(--ta-dur) var(--ta-ease) calc(var(--i)*var(--ta-stagger)) both}
+
+@keyframes ta-bounce{
+  0%{opacity:0;transform:translateY(-1.3em) scale(.55)}
+  55%{opacity:1;transform:translateY(.14em) scale(1.08)}
+  75%{transform:translateY(-.06em) scale(.97)}
+  100%{opacity:1;transform:none}}
+[data-ta].ta-bounce.in .ch{animation:ta-bounce var(--ta-dur) var(--ta-ease) calc(var(--i)*var(--ta-stagger)) both}
+
+@keyframes ta-slidealt{from{opacity:0;transform:translateX(var(--dir,-.8em))}to{opacity:1;transform:none}}
+[data-ta].ta-slidealt.in .ch{animation:ta-slidealt var(--ta-dur) var(--ta-ease) calc(var(--i)*var(--ta-stagger)) both}
+
+@keyframes ta-scatter{
+  from{opacity:0;transform:translate(var(--x,0),var(--y,0)) rotate(var(--r,0deg)) scale(.35)}
+  to{opacity:1;transform:none}}
+[data-ta].ta-scatter.in .ch{animation:ta-scatter var(--ta-dur) var(--ta-ease) calc(var(--i)*var(--ta-stagger)) both}
+
+@keyframes ta-neon{
+  0%{opacity:.15;text-shadow:none}
+  12%{opacity:1;text-shadow:0 0 6px var(--c-primary),0 0 18px var(--c-primary)}
+  16%{opacity:.25;text-shadow:none}
+  22%{opacity:1;text-shadow:0 0 6px var(--c-primary),0 0 18px var(--c-primary)}
+  28%{opacity:.4;text-shadow:none}
+  36%,100%{opacity:1;text-shadow:0 0 8px var(--c-primary),0 0 26px var(--c-primary),0 0 48px var(--c-primary)}}
+[data-ta].ta-neon.in .ch{animation:ta-neon var(--ta-dur) linear calc(var(--i)*var(--ta-stagger)) both}
+
+[data-ta].ta-fillgrad{
+  background:linear-gradient(100deg,var(--c-primary),var(--c-accent)) 0 0/0% 100% no-repeat,
+             linear-gradient(var(--c-muted),var(--c-muted));
+  -webkit-background-clip:text;background-clip:text;
+  color:transparent;-webkit-text-fill-color:transparent}
+@keyframes ta-fillgrad{from{background-size:0% 100%,100% 100%}to{background-size:100% 100%,100% 100%}}
+[data-ta].ta-fillgrad.in{animation:ta-fillgrad var(--ta-dur) var(--ta-ease) both}
+
+/* スクランブル・タイプライターはJSで動かす */
+[data-ta].ta-type .ch{visibility:hidden}
+[data-ta].ta-type .ch.show{visibility:visible}
+.ta-cursor{display:inline-block;width:.06em;height:1em;background:currentColor;
+  vertical-align:-.12em;margin-left:.04em;animation:ta-blink .9s steps(1) infinite}
+@keyframes ta-blink{0%,49%{opacity:1}50%,100%{opacity:0}}
+
+/* ---------- ブロックの出現 ---------- */
+.rv{opacity:0;transform:translateY(34px);
+  transition:opacity .85s cubic-bezier(.2,.7,.3,1),transform .85s cubic-bezier(.2,.7,.3,1)}
+.rv.in{opacity:1;transform:none}
+
+/* ---------- レスポンシブ ---------- */
+@media(max-width:900px){
+  .grid.c3,.grid.c4{grid-template-columns:repeat(2,1fr)}
+  .hero.split .hero-in,.about-in,.contact-in{grid-template-columns:1fr}
+  .about-in.rev .about-media{order:0}
+  .gal{grid-template-columns:repeat(2,1fr)}
+}
+@media(max-width:640px){
+  .sec{padding:56px 0}
+  .wrap{padding:0 20px}
+  .grid.c2,.grid.c3,.grid.c4{grid-template-columns:1fr}
+  .hdr-toggle{display:block}
+  .nav{
+    display:none;position:absolute;top:100%;left:0;right:0;flex-direction:column;
+    align-items:stretch;gap:0;background:var(--c-bg);border-bottom:1px solid var(--c-border);
+    padding:8px 20px 16px;margin:0
+  }
+  .nav.open{display:flex}
+  .nav a{padding:13px 0;border-bottom:1px solid var(--c-border)}
+  .hdr .btn{display:none}
+  .hdr-in{height:64px}
+  .btn-row .btn{width:100%}
+  .ftr-in{flex-direction:column;align-items:flex-start}
+}
+
+/* ---------- 動きを減らす設定への配慮 ---------- */
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;
+    transition-duration:.001ms!important;scroll-behavior:auto!important}
+  [data-ta] .ch{opacity:1!important;transform:none!important;filter:none!important;visibility:visible!important}
+  [data-ta].ta-fillgrad{background-size:100% 100%,100% 100%!important}
+  .rv{opacity:1!important;transform:none!important}
+}
+`;
+
+/* 書き出したHTMLでも動く最小限のJS
+   ① ハンバーガーメニュー ② 文字アニメーション ③ ブロックの出現 */
+const SITE_JS = `
+(function(){
+  /* ---------- ハンバーガーメニュー ---------- */
+  var t=document.querySelector('.hdr-toggle'),n=document.querySelector('.hdr .nav');
+  if(t&&n){t.onclick=function(){n.classList.toggle('open')};}
+  document.querySelectorAll('.nav a').forEach(function(a){
+    a.addEventListener('click',function(){ if(n) n.classList.remove('open'); });
+  });
+
+  var d=document, body=d.body;
+  var reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* ---------- 見出しを1文字ずつに分割 ---------- */
+  function lineTexts(el){
+    var lines=[[]];
+    [].slice.call(el.childNodes).forEach(function(nd){
+      if(nd.nodeName==='BR') lines.push([]);
+      else lines[lines.length-1].push(nd.textContent);
+    });
+    return lines.map(function(p){return p.join('')});
+  }
+
+  function split(el, anim){
+    var lines = lineTexts(el), i = 0;
+    el.textContent = '';
+    lines.forEach(function(text){
+      var ln = d.createElement('span'); ln.className = 'ln';
+      if(anim === 'maskline'){
+        var one = d.createElement('span'); one.className = 'ch';
+        one.style.setProperty('--i', i++);
+        one.textContent = text || ' ';
+        ln.appendChild(one);
+      } else {
+        Array.from(text).forEach(function(c){
+          var ch = d.createElement('span'); ch.className = 'ch';
+          ch.style.setProperty('--i', i++);
+          if(c === ' '){ ch.className += ' sp'; ch.innerHTML = '&nbsp;'; }
+          else { ch.textContent = c; ch.setAttribute('data-c', c); }
+          if(anim === 'slidealt') ch.style.setProperty('--dir', (i%2 ? '-.9em' : '.9em'));
+          if(anim === 'scatter'){
+            ch.style.setProperty('--x', ((Math.random()*2-1)*2.4).toFixed(2)+'em');
+            ch.style.setProperty('--y', ((Math.random()*2-1)*1.8).toFixed(2)+'em');
+            ch.style.setProperty('--r', ((Math.random()*2-1)*90).toFixed(0)+'deg');
+          }
+          ln.appendChild(ch);
+        });
+      }
+      el.appendChild(ln);
+    });
+  }
+
+  var RND='ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789#$%&@';
+  function runScramble(el){
+    var chs=[].slice.call(el.querySelectorAll('.ch'));
+    var dur=parseFloat(getComputedStyle(el).getPropertyValue('--ta-dur'))*1000||900;
+    var stg=parseFloat(getComputedStyle(el).getPropertyValue('--ta-stagger'))*1000||40;
+    chs.forEach(function(c){ c.dataset.final=c.textContent; c.textContent=''; c.style.opacity=1; });
+    var step=Math.max(1,Math.round(stg/16)), span=Math.round(dur/16), f=0;
+    (function tick(){
+      chs.forEach(function(c,i){
+        var s=i*step;
+        if(f>=s+span) c.textContent=c.dataset.final;
+        else if(f>=s) c.textContent=RND[Math.floor(Math.random()*RND.length)];
+      });
+      if(f++ < chs.length*step+span) requestAnimationFrame(tick);
+      else chs.forEach(function(c){ c.textContent=c.dataset.final; });
+    })();
+  }
+  function runType(el){
+    var chs=[].slice.call(el.querySelectorAll('.ch'));
+    var stg=parseFloat(getComputedStyle(el).getPropertyValue('--ta-stagger'))*1000||40;
+    var cur=d.createElement('span'); cur.className='ta-cursor';
+    if(el.lastElementChild) el.lastElementChild.appendChild(cur);
+    chs.forEach(function(c,i){ c.style.opacity=1;
+      setTimeout(function(){ c.classList.add('show'); }, i*Math.max(20,stg)); });
+  }
+
+  /* ---------- 準備 ---------- */
+  var def = body.getAttribute('data-anim') || 'none';
+  var targets = [].slice.call(d.querySelectorAll('[data-ta]'));
+  targets.forEach(function(el){
+    var a = el.getAttribute('data-anim') || def;
+    el.classList.add('ta-' + a);
+    if(a === 'none' || reduce){ el.classList.add('in'); return; }
+    if(a !== 'fillgrad') split(el, a);
+  });
+
+  if(body.getAttribute('data-reveal') === '1' && !reduce){
+    [].slice.call(d.querySelectorAll('.sec, .hero')).forEach(function(s){ s.classList.add('rv'); });
+  }
+
+  /* ---------- 画面に入ったら再生 ---------- */
+  var watch = [].slice.call(d.querySelectorAll('[data-ta]:not(.in), .rv'));
+  if(!('IntersectionObserver' in window) || reduce){
+    watch.forEach(function(el){ el.classList.add('in'); });
+  }else{
+    var io = new IntersectionObserver(function(es){
+      es.forEach(function(e){
+        if(!e.isIntersecting) return;
+        var el = e.target;
+        el.classList.add('in');
+        if(el.classList.contains('ta-scramble')) runScramble(el);
+        if(el.classList.contains('ta-type'))     runType(el);
+        io.unobserve(el);
+      });
+    }, {threshold:.15, rootMargin:'0px 0px -6% 0px'});
+    watch.forEach(function(el){ io.observe(el); });
+  }
+})();
+`;
+
+</script>
+<script>
+/* ===== assets/blocks.js ===== */
+/* ブロックの定義。
+   1ブロック = { label, icon, fields(編集フォームの項目), defaults(初期値), render(HTML生成) }
+   fields を書けば編集フォームは自動で作られる。ブロックを増やしたい時はここに足すだけ。 */
+
+/* ---------- 小さなヘルパ ---------- */
+const esc = (s) =>
+  String(s ?? '').replace(/[&<>"']/g, (c) =>
+    ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const nl2br = (s) => esc(s).replace(/\n/g, '<br>');
+const attr = (name, v) => (v ? ` ${name}="${esc(v)}"` : '');
+
+/* 画像URLがあれば <img>、無ければ何も出さない（ロゴ・背景用） */
+const img = (src, alt) => (src ? `<img src="${esc(src)}" alt="${esc(alt || '')}" loading="lazy">` : '');
+/* 画像を置く枠。未設定なら「IMAGE」のプレースホルダを出す */
+const media = (src, alt) => (src ? img(src, alt) : '<span class="ph" aria-hidden="true"></span>');
+
+/* セクションの外枠 */
+function sec(type, p, inner, extraClass = '') {
+  const cls = ['sec', `sec-${type}`, p.bg ? `bg-${p.bg}` : '', extraClass].filter(Boolean).join(' ');
+  return `<section class="${cls}"${attr('id', p.anchor)}>\n  <div class="wrap">\n${inner}\n  </div>\n</section>`;
+}
+
+/* 見出しブロック（アイキャッチ・タイトル・サブ） */
+function head(p, align = 'center') {
+  if (!p.eyebrow && !p.title && !p.text) return '';
+  return `    <div class="sec-head${align === 'left' ? ' left' : ''}">
+${p.eyebrow ? `      <span class="eyebrow">${esc(p.eyebrow)}</span>\n` : ''}${p.title ? `      <h2 class="sec-title" data-ta>${nl2br(p.title)}</h2>\n` : ''}${p.text ? `      <p class="sec-sub">${nl2br(p.text)}</p>\n` : ''}    </div>`;
+}
+
+/* ボタン群 */
+function buttons(list, extraClass = '') {
+  if (!list || !list.length) return '';
+  const items = list
+    .filter((b) => b.label)
+    .map((b) => `      <a class="btn${b.style && b.style !== 'primary' ? ' ' + b.style : ''}" href="${esc(b.href || '#')}">${esc(b.label)}</a>`)
+    .join('\n');
+  return items ? `    <div class="btn-row ${extraClass}">\n${items}\n    </div>` : '';
+}
+
+/* 文字アニメーションの一覧（サイト側CSSの ta-* と対応） */
+const TEXT_ANIMS = [
+  ['none', 'なし'],
+  ['fadeup', 'フェードアップ'],
+  ['maskline', '行マスクせり上げ'],
+  ['blur', 'ぼかし解除'],
+  ['flip3d', '3Dフリップ'],
+  ['drop', '回転して落ちる'],
+  ['bounce', '弾む'],
+  ['slidealt', '左右交互スライド'],
+  ['scatter', '散らばりから集合'],
+  ['neon', 'ネオン点灯'],
+  ['fillgrad', 'グラデーションで塗る'],
+  ['scramble', 'スクランブル'],
+  ['type', 'タイプライター'],
+];
+const TEXT_ANIMS_WITH_DEFAULT = [['', '全体設定に従う']].concat(TEXT_ANIMS);
+
+/* よく使う共通フィールド */
+const FIELD = {
+  bg: {
+    key: 'bg', label: '背景色', type: 'select',
+    options: [['', '標準'], ['surface', '薄いグレー'], ['primary', 'メインカラー'], ['dark', 'ダーク']],
+  },
+  anchor: { key: 'anchor', label: 'アンカーID', type: 'text', hint: 'メニューから #about のようにリンクできます' },
+  eyebrow: { key: 'eyebrow', label: '小見出し', type: 'text' },
+  title: { key: 'title', label: '見出し', type: 'text' },
+  text: { key: 'text', label: '説明文', type: 'textarea' },
+  cols: {
+    key: 'cols', label: '横に並べる数', type: 'select',
+    options: [['c2', '2列'], ['c3', '3列'], ['c4', '4列']],
+  },
+  btnItem: [
+    { key: 'label', label: 'ボタン文字', type: 'text' },
+    { key: 'href', label: 'リンク先', type: 'text' },
+    { key: 'style', label: '見た目', type: 'select', options: [['primary', 'メイン'], ['ghost', '枠線'], ['accent', 'アクセント']] },
+  ],
+};
+
+/* ============================================================
+   ブロック本体
+   ============================================================ */
+const BLOCKS = {
+  /* ---------------- ヘッダー ---------------- */
+  header: {
+    label: 'ヘッダー',
+    icon: '▤',
+    unique: true, // 1ページに1つだけ
+    fields: [
+      { key: 'logo', label: 'サイト名 / ロゴ文字', type: 'text' },
+      { key: 'logoImage', label: 'ロゴ画像URL（任意）', type: 'image' },
+      { key: 'sticky', label: 'スクロールしても上に固定', type: 'toggle' },
+      { key: 'nav', label: 'メニュー', type: 'list', addLabel: 'メニューを追加',
+        titleKey: 'label',
+        item: [
+          { key: 'label', label: '表示名', type: 'text' },
+          { key: 'href', label: 'リンク先', type: 'text' },
+        ] },
+      { key: 'cta', label: 'ボタン文字（空でボタン無し）', type: 'text' },
+      { key: 'ctaHref', label: 'ボタンのリンク先', type: 'text' },
+    ],
+    defaults: {
+      logo: 'YOUR LOGO', logoImage: '', sticky: true,
+      nav: [
+        { label: 'サービス', href: '#features' },
+        { label: '私たちについて', href: '#about' },
+        { label: '料金', href: '#pricing' },
+        { label: 'お問い合わせ', href: '#contact' },
+      ],
+      cta: 'お問い合わせ', ctaHref: '#contact',
+    },
+    render: (p) => `<header class="hdr${p.sticky ? ' sticky' : ''}">
+  <div class="wrap hdr-in">
+    <a class="logo" href="#">${p.logoImage ? img(p.logoImage, p.logo) : ''}${esc(p.logo)}</a>
+    <nav class="nav">${(p.nav || []).filter((n) => n.label).map((n) => `<a href="${esc(n.href || '#')}">${esc(n.label)}</a>`).join('')}</nav>
+    ${p.cta ? `<a class="btn sm" href="${esc(p.ctaHref || '#')}">${esc(p.cta)}</a>` : ''}
+    <button class="hdr-toggle" aria-label="メニュー">☰</button>
+  </div>
+</header>`,
+  },
+
+  /* ---------------- ヒーロー ---------------- */
+  hero: {
+    label: 'ヒーロー',
+    icon: '★',
+    fields: [
+      { key: 'layout', label: 'レイアウト', type: 'select',
+        options: [['center', '中央ぞろえ'], ['left', '左ぞろえ'], ['split', '左右に画像'], ['cover', '背景画像いっぱい']] },
+      FIELD.eyebrow,
+      { key: 'title', label: 'キャッチコピー', type: 'text' },
+      { key: 'text', label: '説明文', type: 'textarea' },
+      { key: 'image', label: '画像URL', type: 'image' },
+      { key: 'anim', label: 'キャッチコピーの文字アニメ', type: 'select', options: TEXT_ANIMS_WITH_DEFAULT,
+        hint: '「全体設定に従う」以外を選ぶと、このブロックだけ別の動きになります' },
+      { key: 'overlay', label: '背景画像の暗さ', type: 'range', min: 0, max: 90, suffix: '%',
+        showIf: (p) => p.layout === 'cover' },
+      { key: 'buttons', label: 'ボタン', type: 'list', addLabel: 'ボタンを追加', titleKey: 'label', item: FIELD.btnItem },
+      FIELD.bg, FIELD.anchor,
+    ],
+    defaults: {
+      layout: 'center', eyebrow: 'WELCOME',
+      title: 'ここにいちばん伝えたい\nキャッチコピーを',
+      text: 'サービスの魅力を1〜2行で。訪れた人が「自分に関係ある」と感じる言葉を置きましょう。',
+      image: '', anim: '', overlay: 55, bg: '', anchor: 'top',
+      buttons: [
+        { label: '無料で相談する', href: '#contact', style: 'primary' },
+        { label: 'くわしく見る', href: '#features', style: 'ghost' },
+      ],
+    },
+    render: (p) => {
+      const cover = p.layout === 'cover';
+      const cls = ['hero', cover ? 'cover center' : p.layout, p.bg ? `bg-${p.bg}` : ''].filter(Boolean).join(' ');
+      const body = `      ${p.eyebrow ? `<span class="eyebrow">${esc(p.eyebrow)}</span>` : ''}
+      ${p.title ? `<h1 class="hero-title" data-ta${attr('data-anim', p.anim)}>${nl2br(p.title)}</h1>` : ''}
+      ${p.text ? `<p class="hero-text">${nl2br(p.text)}</p>` : ''}
+${buttons(p.buttons)}`;
+      const bg = cover
+        ? `  <div class="hero-bg" style="--hero-overlay:rgba(15,23,42,${(p.overlay ?? 55) / 100})">${img(p.image, '')}</div>\n`
+        : '';
+      const inner = p.layout === 'split'
+        ? `    <div class="hero-in">
+      <div>\n${body}\n      </div>
+      <div class="hero-media">${media(p.image, p.title)}</div>
+    </div>`
+        : `    <div class="hero-in">\n${body}\n    </div>`;
+      return `<section class="${cls}"${attr('id', p.anchor)}>
+${bg}  <div class="wrap">
+${inner}
+  </div>
+</section>`;
+    },
+  },
+
+  /* ---------------- 特徴・サービス ---------------- */
+  features: {
+    label: '特徴・サービス',
+    icon: '◆',
+    fields: [
+      FIELD.eyebrow, FIELD.title, FIELD.text, FIELD.cols,
+      { key: 'style', label: 'カードの形式', type: 'select', options: [['icon', 'アイコン'], ['num', '番号（手順）'], ['image', '画像']] },
+      { key: 'items', label: '項目', type: 'list', addLabel: '項目を追加', titleKey: 'title',
+        item: [
+          { key: 'icon', label: 'アイコン（絵文字）', type: 'text' },
+          { key: 'image', label: '画像URL', type: 'image' },
+          { key: 'title', label: 'タイトル', type: 'text' },
+          { key: 'text', label: '説明', type: 'textarea' },
+        ] },
+      FIELD.bg, FIELD.anchor,
+    ],
+    defaults: {
+      eyebrow: 'FEATURES', title: '選ばれている3つの理由',
+      text: '強みを短い言葉で並べると伝わりやすくなります。',
+      cols: 'c3', style: 'icon', bg: 'surface', anchor: 'features',
+      items: [
+        { icon: '⚡', title: 'とにかく速い', text: 'ご相談から最短3日で公開。スピードが必要な場面でもお任せください。' },
+        { icon: '🎯', title: '目的に合わせて', text: '集客・採用・ブランディング。ゴールから逆算して設計します。' },
+        { icon: '🤝', title: '公開後も伴走', text: '作って終わりにしません。運用のご相談もいつでもどうぞ。' },
+      ],
+    },
+    render: (p) => sec('features', p,
+      `${head(p)}
+    <div class="grid ${p.cols || 'c3'}">
+${(p.items || []).map((it, i) => `      <div class="card">
+        ${p.style === 'image' ? `<div class="hero-media" style="aspect-ratio:16/10;margin-bottom:18px">${media(it.image, it.title)}</div>` : ''}
+        ${p.style === 'num' ? `<span class="num">${i + 1}</span>` : p.style === 'image' ? '' : `<span class="ic">${esc(it.icon || '◆')}</span>`}
+        ${it.title ? `<h3>${esc(it.title)}</h3>` : ''}
+        ${it.text ? `<p>${nl2br(it.text)}</p>` : ''}
+      </div>`).join('\n')}
+    </div>`),
+  },
+
+  /* ---------------- 紹介（画像＋文章） ---------------- */
+  about: {
+    label: '紹介（画像＋文章）',
+    icon: '▧',
+    fields: [
+      FIELD.eyebrow, FIELD.title,
+      { key: 'body', label: '本文', type: 'textarea', rows: 7 },
+      { key: 'image', label: '画像URL', type: 'image' },
+      { key: 'reverse', label: '画像を右側にする', type: 'toggle' },
+      { key: 'buttons', label: 'ボタン', type: 'list', addLabel: 'ボタンを追加', titleKey: 'label', item: FIELD.btnItem },
+      FIELD.bg, FIELD.anchor,
+    ],
+    defaults: {
+      eyebrow: 'ABOUT', title: '私たちについて',
+      body: 'ここに会社やお店のストーリーを書きます。\n\nどんな想いで始めたのか、どんな人に届けたいのか。事実だけでなく背景を書くと、読み手との距離がぐっと縮まります。',
+      image: '', reverse: false, bg: '', anchor: 'about',
+      buttons: [{ label: 'もっと読む', href: '#', style: 'ghost' }],
+    },
+    render: (p) => sec('about', p,
+      `    <div class="about-in${p.reverse ? ' rev' : ''}">
+      <div class="about-media">${media(p.image, p.title)}</div>
+      <div class="about-body">
+        ${p.eyebrow ? `<span class="eyebrow">${esc(p.eyebrow)}</span>` : ''}
+        ${p.title ? `<h2 class="sec-title" data-ta>${nl2br(p.title)}</h2>` : ''}
+        ${(p.body || '').split(/\n{2,}/).filter(Boolean).map((t) => `<p>${nl2br(t)}</p>`).join('\n        ')}
+${buttons(p.buttons)}
+      </div>
+    </div>`),
+  },
+
+  /* ---------------- ギャラリー ---------------- */
+  gallery: {
+    label: 'ギャラリー',
+    icon: '▦',
+    fields: [
+      FIELD.eyebrow, FIELD.title, FIELD.text,
+      { key: 'items', label: '画像', type: 'list', addLabel: '画像を追加', titleKey: 'alt',
+        item: [
+          { key: 'src', label: '画像URL', type: 'image' },
+          { key: 'alt', label: '説明（代替テキスト）', type: 'text' },
+        ] },
+      FIELD.bg, FIELD.anchor,
+    ],
+    defaults: {
+      eyebrow: 'GALLERY', title: 'ギャラリー', text: '',
+      bg: '', anchor: 'gallery',
+      items: [{ src: '', alt: '写真1' }, { src: '', alt: '写真2' }, { src: '', alt: '写真3' },
+        { src: '', alt: '写真4' }, { src: '', alt: '写真5' }, { src: '', alt: '写真6' }],
+    },
+    render: (p) => sec('gallery', p,
+      `${head(p)}
+    <div class="gal">
+${(p.items || []).map((it) => `      <figure>${media(it.src, it.alt)}</figure>`).join('\n')}
+    </div>`),
+  },
+
+  /* ---------------- 料金 ---------------- */
+  pricing: {
+    label: '料金プラン',
+    icon: '¥',
+    fields: [
+      FIELD.eyebrow, FIELD.title, FIELD.text, FIELD.cols,
+      { key: 'items', label: 'プラン', type: 'list', addLabel: 'プランを追加', titleKey: 'name',
+        item: [
+          { key: 'name', label: 'プラン名', type: 'text' },
+          { key: 'price', label: '価格', type: 'text' },
+          { key: 'unit', label: '単位（/月 など）', type: 'text' },
+          { key: 'features', label: '含まれる内容（改行区切り）', type: 'textarea' },
+          { key: 'btn', label: 'ボタン文字', type: 'text' },
+          { key: 'href', label: 'ボタンのリンク先', type: 'text' },
+          { key: 'featured', label: 'おすすめとして目立たせる', type: 'toggle' },
+          { key: 'tag', label: 'おすすめラベル', type: 'text' },
+        ] },
+      FIELD.bg, FIELD.anchor,
+    ],
+    defaults: {
+      eyebrow: 'PRICING', title: '料金プラン', text: 'わかりやすい料金体系でご案内しています。',
+      cols: 'c3', bg: 'surface', anchor: 'pricing',
+      items: [
+        { name: 'ライト', price: '¥50,000', unit: '〜', features: '1ページ構成\nスマホ対応\nお問い合わせフォーム', btn: '相談する', href: '#contact', featured: false, tag: '' },
+        { name: 'スタンダード', price: '¥150,000', unit: '〜', features: '5ページまで\nスマホ対応\n写真撮影つき\n公開後1ヶ月サポート', btn: '相談する', href: '#contact', featured: true, tag: '人気' },
+        { name: 'プレミアム', price: '要相談', unit: '', features: 'ページ数無制限\nオリジナルデザイン\nロゴ制作\n運用サポート', btn: '相談する', href: '#contact', featured: false, tag: '' },
+      ],
+    },
+    render: (p) => sec('pricing', p,
+      `${head(p)}
+    <div class="grid ${p.cols || 'c3'}">
+${(p.items || []).map((it) => `      <div class="plan${it.featured ? ' feat' : ''}">
+        ${it.featured && it.tag ? `<span class="tag">${esc(it.tag)}</span>` : ''}
+        <h3>${esc(it.name)}</h3>
+        <div class="price">${esc(it.price)}${it.unit ? `<span>${esc(it.unit)}</span>` : ''}</div>
+        <ul>${(it.features || '').split('\n').filter(Boolean).map((f) => `<li>${esc(f)}</li>`).join('')}</ul>
+        ${it.btn ? `<a class="btn${it.featured ? '' : ' ghost'}" href="${esc(it.href || '#')}">${esc(it.btn)}</a>` : ''}
+      </div>`).join('\n')}
+    </div>`),
+  },
+
+  /* ---------------- よくある質問 ---------------- */
+  faq: {
+    label: 'よくある質問',
+    icon: '?',
+    fields: [
+      FIELD.eyebrow, FIELD.title, FIELD.text,
+      { key: 'items', label: '質問', type: 'list', addLabel: '質問を追加', titleKey: 'q',
+        item: [
+          { key: 'q', label: '質問', type: 'text' },
+          { key: 'a', label: '答え', type: 'textarea' },
+          { key: 'open', label: '最初から開いておく', type: 'toggle' },
+        ] },
+      FIELD.bg, FIELD.anchor,
+    ],
+    defaults: {
+      eyebrow: 'FAQ', title: 'よくあるご質問', text: '', bg: '', anchor: 'faq',
+      items: [
+        { q: '制作にはどのくらいかかりますか？', a: '内容によりますが、1ページ構成であれば最短3日、5ページ程度で2〜3週間が目安です。', open: true },
+        { q: '写真がないのですが大丈夫ですか？', a: 'はい。フリー素材のご提案や、撮影の手配も承っています。', open: false },
+        { q: '公開後に自分で更新できますか？', a: '更新しやすい形でお渡しします。操作方法もレクチャーいたします。', open: false },
+      ],
+    },
+    render: (p) => sec('faq', p,
+      `${head(p)}
+    <div class="faq">
+${(p.items || []).map((it) => `      <details${it.open ? ' open' : ''}>
+        <summary>${esc(it.q)}</summary>
+        <div class="a">${nl2br(it.a)}</div>
+      </details>`).join('\n')}
+    </div>`),
+  },
+
+  /* ---------------- CTA帯 ---------------- */
+  cta: {
+    label: 'CTA（行動を促す帯）',
+    icon: '➤',
+    fields: [
+      FIELD.title, FIELD.text,
+      { key: 'buttons', label: 'ボタン', type: 'list', addLabel: 'ボタンを追加', titleKey: 'label', item: FIELD.btnItem },
+      FIELD.bg, FIELD.anchor,
+    ],
+    defaults: {
+      title: 'まずは気軽にご相談ください',
+      text: '相談は無料です。ざっくりしたイメージだけでも大丈夫です。',
+      bg: 'primary', anchor: '',
+      buttons: [{ label: '無料で相談する', href: '#contact', style: 'ghost' }],
+    },
+    render: (p) => sec('cta', p,
+      `    <div class="cta-in">
+      ${p.title ? `<h2 class="sec-title" data-ta>${nl2br(p.title)}</h2>` : ''}
+      ${p.text ? `<p>${nl2br(p.text)}</p>` : ''}
+${buttons(p.buttons, 'center')}
+    </div>`),
+  },
+
+  /* ---------------- お問い合わせ ---------------- */
+  contact: {
+    label: 'お問い合わせ',
+    icon: '✉',
+    fields: [
+      FIELD.eyebrow, FIELD.title, FIELD.text,
+      { key: 'tel', label: '電話番号', type: 'text' },
+      { key: 'email', label: 'メールアドレス', type: 'text' },
+      { key: 'address', label: '住所', type: 'text' },
+      { key: 'hours', label: '営業時間', type: 'text' },
+      { key: 'form', label: '入力フォームを表示', type: 'toggle' },
+      { key: 'action', label: 'フォームの送信先URL', type: 'text', hint: 'Googleフォーム等のURL。空なら見た目だけ', showIf: (p) => p.form },
+      { key: 'submit', label: '送信ボタンの文字', type: 'text', showIf: (p) => p.form },
+      FIELD.bg, FIELD.anchor,
+    ],
+    defaults: {
+      eyebrow: 'CONTACT', title: 'お問い合わせ',
+      text: 'お気軽にご連絡ください。2営業日以内にご返信します。',
+      tel: '03-0000-0000', email: 'hello@example.com',
+      address: '東京都〇〇区〇〇 1-2-3', hours: '平日 10:00 - 18:00',
+      form: true, action: '', submit: '送信する', bg: 'surface', anchor: 'contact',
+    },
+    render: (p) => {
+      const info = [['TEL', p.tel], ['EMAIL', p.email], ['ADDRESS', p.address], ['HOURS', p.hours]]
+        .filter(([, v]) => v)
+        .map(([k, v]) => `        <div><dt>${k}</dt><dd>${esc(v)}</dd></div>`).join('\n');
+      const form = p.form ? `      <form class="form"${attr('action', p.action)}${p.action ? ' method="post"' : ''}>
+        <label>お名前<input type="text" name="name" required></label>
+        <label>メールアドレス<input type="email" name="email" required></label>
+        <label>お問い合わせ内容<textarea name="message" required></textarea></label>
+        <button class="btn" type="submit">${esc(p.submit || '送信する')}</button>
+      </form>` : '';
+      const only1 = !info || !form ? ' only1' : '';
+      return sec('contact', p,
+        `${head(p)}
+    <div class="contact-in${only1}">
+${info ? `      <dl class="info">\n${info}\n      </dl>` : ''}
+${form}
+    </div>`);
+    },
+  },
+
+  /* ---------------- 自由テキスト ---------------- */
+  rich: {
+    label: '自由テキスト',
+    icon: '¶',
+    fields: [
+      FIELD.title,
+      { key: 'body', label: '本文（空行で段落）', type: 'textarea', rows: 10 },
+      { key: 'align', label: '配置', type: 'select', options: [['center', '中央寄せ'], ['left', '左寄せ']] },
+      FIELD.bg, FIELD.anchor,
+    ],
+    defaults: {
+      title: '見出し', align: 'center', bg: '', anchor: '',
+      body: 'ここに自由に文章を書けます。\n\n空行で区切ると段落になります。お知らせやポリシー、長めの説明文などにどうぞ。',
+    },
+    render: (p) => sec('rich', p,
+      `    <div class="rich${p.align === 'left' ? ' left' : ''}">
+      ${p.title ? `<h2 class="sec-title" style="text-align:${p.align === 'left' ? 'left' : 'center'}">${nl2br(p.title)}</h2>` : ''}
+      ${(p.body || '').split(/\n{2,}/).filter(Boolean).map((t) => `<p>${nl2br(t)}</p>`).join('\n      ')}
+    </div>`),
+  },
+
+  /* ---------------- フッター ---------------- */
+  footer: {
+    label: 'フッター',
+    icon: '▁',
+    unique: true,
+    fields: [
+      { key: 'logo', label: 'サイト名', type: 'text' },
+      { key: 'links', label: 'リンク', type: 'list', addLabel: 'リンクを追加', titleKey: 'label',
+        item: [
+          { key: 'label', label: '表示名', type: 'text' },
+          { key: 'href', label: 'リンク先', type: 'text' },
+        ] },
+      { key: 'copy', label: 'コピーライト', type: 'text' },
+    ],
+    defaults: {
+      logo: 'YOUR LOGO',
+      links: [
+        { label: 'プライバシーポリシー', href: '#' },
+        { label: '特定商取引法に基づく表記', href: '#' },
+        { label: 'お問い合わせ', href: '#contact' },
+      ],
+      copy: '© 2026 Your Company. All rights reserved.',
+    },
+    render: (p) => `<footer class="ftr">
+  <div class="wrap">
+    <div class="ftr-in">
+      <span class="logo">${esc(p.logo)}</span>
+      <nav class="ftr-nav">${(p.links || []).filter((l) => l.label).map((l) => `<a href="${esc(l.href || '#')}">${esc(l.label)}</a>`).join('')}</nav>
+    </div>
+    ${p.copy ? `<div class="copy">${esc(p.copy)}</div>` : ''}
+  </div>
+</footer>`,
+  },
+};
+
+/* 追加メニューに出す順番（ヘッダー・フッターは常設なので除く） */
+const ADDABLE = ['hero', 'features', 'about', 'gallery', 'pricing', 'faq', 'cta', 'contact', 'rich'];
+
+</script>
+<script>
+/* ===== assets/templates.js ===== */
+/* テンプレート定義。
+   blocks には各ブロックの「初期値からの上書き分」だけを書く。
+   （BLOCKS[type].defaults にマージされる） */
+
+const FONTS = [
+  ['gothic', 'ゴシック（標準）', '"Helvetica Neue",Arial,"Hiragino Kaku Gothic ProN","Hiragino Sans",Meiryo,sans-serif'],
+  ['mincho', '明朝（上品・和風）', '"Hiragino Mincho ProN","Yu Mincho",YuMincho,"Noto Serif JP",serif'],
+  ['round', '丸ゴシック（やわらかい）', '"Hiragino Maru Gothic ProN","Quicksand",  "Hiragino Sans",Meiryo,sans-serif'],
+  ['mono', '等幅（かっこいい）', '"SF Mono",Menlo,Consolas,"Hiragino Sans",monospace'],
+];
+
+const fontStack = (key) => (FONTS.find((f) => f[0] === key) || FONTS[0])[2];
+
+const TEMPLATES = {
+  /* ============ 1. コーポレート ============ */
+  corporate: {
+    name: 'コーポレート',
+    desc: '会社・士業・BtoBサービス向け。清潔感のある青ベース。',
+    swatch: ['#2563eb', '#f59e0b', '#f8fafc'],
+    theme: {
+      primary: '#2563eb', accent: '#f59e0b', bg: '#ffffff', surface: '#f5f8fc',
+      text: '#0f172a', muted: '#64748b', border: '#e3e9f0', dark: '#0f172a',
+      radius: 12, max: 1120, font: 'gothic', fontHead: 'gothic',
+    },
+    blocks: [
+      { type: 'header', props: { logo: 'ACME Inc.' } },
+      { type: 'hero', props: {
+        layout: 'split', eyebrow: 'WEB SOLUTION',
+        title: 'ビジネスの成長を、\nテクノロジーで支える。',
+        text: '創業から10年、500社以上の課題解決に伴走してきました。まずはお気軽にご相談ください。',
+      } },
+      { type: 'features', props: {} },
+      { type: 'about', props: {} },
+      { type: 'pricing', props: {} },
+      { type: 'faq', props: {} },
+      { type: 'cta', props: {} },
+      { type: 'contact', props: {} },
+      { type: 'footer', props: { logo: 'ACME Inc.', copy: '© 2026 ACME Inc. All rights reserved.' } },
+    ],
+  },
+
+  /* ============ 2. ショップ / カフェ ============ */
+  shop: {
+    name: 'ショップ・カフェ',
+    desc: '飲食店やサロン、小さなお店向け。あたたかい色と明朝見出し。',
+    swatch: ['#b4693b', '#5c7a5c', '#faf6f0'],
+    theme: {
+      primary: '#b4693b', accent: '#5c7a5c', bg: '#fffdfa', surface: '#f7f0e6',
+      text: '#3a2f26', muted: '#7d6d5f', border: '#e8ddcf', dark: '#3a2f26',
+      radius: 20, max: 1080, font: 'gothic', fontHead: 'mincho',
+    },
+    blocks: [
+      { type: 'header', props: {
+        logo: 'cafe hinata', sticky: true, cta: 'ご予約',
+        nav: [
+          { label: 'メニュー', href: '#features' },
+          { label: 'お店について', href: '#about' },
+          { label: '店内の様子', href: '#gallery' },
+          { label: 'アクセス', href: '#contact' },
+        ],
+      } },
+      { type: 'hero', props: {
+        layout: 'cover', eyebrow: 'SINCE 2018', overlay: 45,
+        title: '陽だまりのような、\n一杯を。',
+        text: '自家焙煎の豆と、焼きたてのお菓子。ゆっくり流れる時間をどうぞ。',
+        buttons: [{ label: '席を予約する', href: '#contact', style: 'primary' }, { label: 'メニューを見る', href: '#features', style: 'ghost' }],
+      } },
+      { type: 'features', props: {
+        eyebrow: 'MENU', title: 'おすすめ', text: '季節ごとに内容が変わります。',
+        style: 'image', cols: 'c3', bg: '',
+        items: [
+          { image: '', title: '自家焙煎ブレンド', text: '¥550 / 深煎りと浅煎りの2種類をご用意しています。' },
+          { image: '', title: '本日のケーキ', text: '¥600 / 毎朝店内で焼き上げる、素朴な味わい。' },
+          { image: '', title: 'ランチプレート', text: '¥1,200 / 地元の野菜をたっぷり使った日替わりです。' },
+        ],
+      } },
+      { type: 'about', props: {
+        eyebrow: 'ABOUT', title: '小さな町の、小さな喫茶店',
+        body: '2018年、古い民家を少しずつ手直しして始めました。\n\n派手さはありませんが、常連さんも一見さんも、同じようにくつろげる場所でありたいと思っています。',
+        bg: 'surface',
+      } },
+      { type: 'gallery', props: { eyebrow: 'GALLERY', title: '店内の様子' } },
+      { type: 'contact', props: {
+        eyebrow: 'ACCESS', title: 'アクセス・ご予約',
+        text: '駐車場は3台分ございます。ご予約はお電話でも承ります。',
+        hours: '9:00 - 18:00（水曜定休）', form: true, submit: '予約を申し込む',
+      } },
+      { type: 'footer', props: { logo: 'cafe hinata', copy: '© 2026 cafe hinata' } },
+    ],
+  },
+
+  /* ============ 3. ポートフォリオ ============ */
+  studio: {
+    name: 'ポートフォリオ',
+    desc: 'クリエイター・フリーランス向け。黒背景で作品が映える。',
+    swatch: ['#e2e8f0', '#22d3ee', '#0b0f14'],
+    theme: {
+      primary: '#22d3ee', accent: '#f472b6', bg: '#0b0f14', surface: '#12181f',
+      text: '#e8edf2', muted: '#93a1b1', border: '#212b36', dark: '#05080b',
+      radius: 6, max: 1180, font: 'mono', fontHead: 'mono',
+    },
+    blocks: [
+      { type: 'header', props: {
+        logo: 'TARO.', cta: 'Contact',
+        nav: [
+          { label: 'Works', href: '#gallery' },
+          { label: 'About', href: '#about' },
+          { label: 'Service', href: '#features' },
+          { label: 'Contact', href: '#contact' },
+        ],
+      } },
+      { type: 'hero', props: {
+        layout: 'left', eyebrow: 'DESIGNER / DEVELOPER',
+        title: 'つくることで、\n伝わる形にする。',
+        text: 'グラフィック、Web、映像。ジャンルを横断して「伝わる」を設計しています。',
+        buttons: [{ label: 'View Works', href: '#gallery', style: 'primary' }, { label: 'About me', href: '#about', style: 'ghost' }],
+      } },
+      { type: 'gallery', props: { eyebrow: 'WORKS', title: '制作実績', bg: 'surface' } },
+      { type: 'about', props: {
+        eyebrow: 'ABOUT', title: 'Taro Yamada',
+        body: '1995年生まれ。制作会社を経て2022年に独立しました。\n\n手を動かす前に、まず「誰に何を届けたいのか」を一緒に言葉にするところから始めます。',
+        reverse: true, buttons: [{ label: '経歴を見る', href: '#', style: 'ghost' }],
+      } },
+      { type: 'features', props: {
+        eyebrow: 'SERVICE', title: 'できること', text: '', cols: 'c3', style: 'num', bg: 'surface',
+        items: [
+          { icon: '', title: 'ブランディング', text: 'ロゴ、名刺、パッケージまで一貫して設計します。' },
+          { icon: '', title: 'Webサイト制作', text: 'デザインから実装まで、一人で完結できます。' },
+          { icon: '', title: '映像・モーション', text: 'SNS用の短尺から、会社紹介まで対応します。' },
+        ],
+      } },
+      { type: 'cta', props: { title: '一緒につくりませんか', text: '小さなご相談でも歓迎です。', bg: 'dark' } },
+      { type: 'contact', props: {
+        eyebrow: 'CONTACT', title: 'お問い合わせ', text: '3営業日以内にご返信します。',
+        tel: '', address: '', hours: '', email: 'hello@taro.design', bg: '',
+      } },
+      { type: 'footer', props: { logo: 'TARO.', copy: '© 2026 Taro Yamada' } },
+    ],
+  },
+};
+
+</script>
+<script>
+/* ===== assets/app.js ===== */
+/* ================================================================
+   かんたんHP作成ツール — 編集画面のロジック
+   state（サイトのデータ）→ HTML生成 → プレビュー / 書き出し
+   ================================================================ */
+
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const STORE_KEY = 'hp-builder-v1';
+
+let state = null;      // { template, meta, theme, blocks:[{id,type,props}] }
+let selected = null;   // 編集中のブロックID
+let uidSeq = 0;
+const DEFAULT_MOTION = { anim: 'fadeup', dur: 900, stagger: 40, ease: 'cubic-bezier(.2,.7,.3,1)', reveal: true };
+const uid = () => `b${Date.now().toString(36)}${(uidSeq++).toString(36)}`;
+const closed = new Set(); // 折りたたんでいる繰り返し項目
+
+/* ---------------- データの組み立て ---------------- */
+const clone = (o) => JSON.parse(JSON.stringify(o));
+
+function makeBlock(type, override = {}) {
+  return { id: uid(), type, props: Object.assign(clone(BLOCKS[type].defaults), clone(override)) };
+}
+
+function buildState(tplKey) {
+  const t = TEMPLATES[tplKey];
+  return {
+    template: tplKey,
+    meta: {
+      title: t.blocks[0]?.props?.logo || 'My Website',
+      description: 'このサイトの説明を入れてください。検索結果やSNSでの共有時に表示されます。',
+      lang: 'ja',
+    },
+    theme: clone(t.theme),
+    motion: clone(DEFAULT_MOTION),
+    blocks: t.blocks.map((b) => makeBlock(b.type, b.props)),
+  };
+}
+
+/* 動きの初期設定 */
+const MOTION_EASES = [
+  ['cubic-bezier(.2,.7,.3,1)', 'なめらか（標準）'],
+  ['cubic-bezier(.16,1,.3,1)', 'ぬるっと減速'],
+  ['cubic-bezier(.34,1.56,.64,1)', '行き過ぎて戻る'],
+  ['cubic-bezier(.76,0,.24,1)', 'ためて一気に'],
+  ['linear', '等速'],
+];
+
+/* ---------------- 保存 / 読み込み ---------------- */
+let saveTimer;
+function save() {
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => {
+    try {
+      localStorage.setItem(STORE_KEY, JSON.stringify(state));
+      flash('保存しました');
+    } catch (e) {
+      flash('保存できません（画像が大きすぎるかも）');
+    }
+  }, 400);
+}
+function flash(msg) {
+  const el = $('#saved');
+  el.textContent = msg;
+  clearTimeout(flash._t);
+  flash._t = setTimeout(() => { el.textContent = ''; }, 1800);
+}
+function load() {
+  try {
+    const raw = localStorage.getItem(STORE_KEY);
+    if (!raw) return null;
+    const s = JSON.parse(raw);
+    // 知らないブロックが混ざっていたら捨てる（定義を消した時の保険）
+    s.blocks = (s.blocks || []).filter((b) => BLOCKS[b.type]);
+    s.motion = Object.assign(clone(DEFAULT_MOTION), s.motion || {}); // 旧データ対策
+    return s.blocks.length ? s : null;
+  } catch (e) { return null; }
+}
+
+/* ================================================================
+   HTML生成
+   ================================================================ */
+function themeCSS(t) {
+  return `:root{
+  --c-primary:${t.primary};
+  --c-accent:${t.accent};
+  --c-bg:${t.bg};
+  --c-surface:${t.surface};
+  --c-text:${t.text};
+  --c-muted:${t.muted};
+  --c-border:${t.border};
+  --c-dark:${t.dark};
+  --radius:${t.radius}px;
+  --max:${t.max}px;
+  --font:${fontStack(t.font)};
+  --font-head:${fontStack(t.fontHead)};
+  --ta-dur:${(state.motion.dur / 1000)}s;
+  --ta-stagger:${(state.motion.stagger / 1000)}s;
+  --ta-ease:${state.motion.ease};
+}`;
+}
+
+const bodyHTML = () => state.blocks.map((b) => BLOCKS[b.type].render(b.props)).join('\n\n');
+
+/* 書き出し用の完成HTML（1ファイルで動く） */
+function fullHTML() {
+  const m = state.meta;
+  return `<!DOCTYPE html>
+<html lang="${esc(m.lang || 'ja')}">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>${esc(m.title)}</title>
+<meta name="description" content="${esc(m.description)}">
+<meta property="og:title" content="${esc(m.title)}">
+<meta property="og:description" content="${esc(m.description)}">
+<meta property="og:type" content="website">
+<style>
+${themeCSS(state.theme)}
+${SITE_CSS}
+</style>
+</head>
+<body class="tpl-${esc(state.template)}" data-anim="${esc(state.motion.anim)}" data-reveal="${state.motion.reveal ? 1 : 0}">
+
+${bodyHTML()}
+
+<script>${SITE_JS}<\/script>
+</body>
+</html>`;
+}
+
+/* ================================================================
+   プレビュー
+   ================================================================ */
+const PREVIEW_CSS = `
+[data-bid]{position:relative;transition:outline-color .15s}
+[data-bid]{outline:2px solid transparent;outline-offset:-2px}
+[data-bid]:hover{outline-color:rgba(76,141,255,.45);cursor:pointer}
+[data-bid].__sel{outline-color:#4c8dff}
+`;
+
+let pdoc = null;
+function initPreview() {
+  const f = $('#preview');
+  return new Promise((res) => {
+    f.addEventListener('load', () => {
+      pdoc = f.contentDocument;
+      pdoc.getElementById('s-base').textContent = SITE_CSS;
+      pdoc.getElementById('s-edit').textContent = PREVIEW_CSS;
+      pdoc.addEventListener('click', (e) => {
+        const el = e.target.closest('[data-bid]');
+        if (el) { e.preventDefault(); select(el.dataset.bid); }
+        const a = e.target.closest('a');
+        if (a && !el) e.preventDefault();
+      });
+      res();
+    }, { once: true });
+    f.srcdoc = `<!DOCTYPE html><html lang="ja"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style id="s-base"></style><style id="s-theme"></style><style id="s-edit"></style>
+</head><body></body></html>`;
+  });
+}
+
+let pvTimer;
+function renderPreview(now = false) {
+  clearTimeout(pvTimer);
+  const run = () => {
+    if (!pdoc) return;
+    pdoc.getElementById('s-theme').textContent = themeCSS(state.theme);
+    pdoc.body.className = `tpl-${state.template}`;
+    pdoc.body.setAttribute('data-anim', state.motion.anim);
+    pdoc.body.setAttribute('data-reveal', state.motion.reveal ? '1' : '0');
+    pdoc.body.innerHTML = bodyHTML();
+    // 生成されたトップレベル要素とブロックを対応づける（クリックで選択できるように）
+    [...pdoc.body.children].forEach((el, i) => {
+      const b = state.blocks[i];
+      if (!b) return;
+      el.dataset.bid = b.id;
+      if (b.id === selected) el.classList.add('__sel');
+    });
+    const s = pdoc.createElement('script');
+    s.textContent = SITE_JS;
+    pdoc.body.appendChild(s);
+  };
+  now ? run() : (pvTimer = setTimeout(run, 160));
+}
+
+function highlight() {
+  if (!pdoc) return;
+  $$('[data-bid]', pdoc).forEach((el) => el.classList.toggle('__sel', el.dataset.bid === selected));
+}
+function scrollToBlock(id) {
+  const el = pdoc && pdoc.querySelector(`[data-bid="${id}"]`);
+  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+/* ================================================================
+   左パネル：ブロック一覧
+   ================================================================ */
+function renderList() {
+  const wrap = $('#blockList');
+  wrap.innerHTML = state.blocks.map((b, i) => {
+    const def = BLOCKS[b.type];
+    const label = b.props.title || b.props.logo || def.label;
+    return `<div class="bl-item${b.id === selected ? ' on' : ''}" data-id="${b.id}">
+      <span class="bl-ic">${def.icon}</span>
+      <span class="bl-name">${esc(label)}<br><span class="bl-sub">${def.label}</span></span>
+      <span class="bl-ops">
+        <button data-act="up" title="上へ"${i === 0 ? ' disabled' : ''}>↑</button>
+        <button data-act="down" title="下へ"${i === state.blocks.length - 1 ? ' disabled' : ''}>↓</button>
+        <button data-act="dup" title="複製">⧉</button>
+        <button data-act="del" title="削除">✕</button>
+      </span>
+    </div>`;
+  }).join('');
+}
+
+$('#blockList').addEventListener('click', (e) => {
+  const item = e.target.closest('.bl-item');
+  if (!item) return;
+  const id = item.dataset.id;
+  const i = state.blocks.findIndex((b) => b.id === id);
+  const act = e.target.closest('button')?.dataset.act;
+
+  if (!act) { select(id); scrollToBlock(id); return; }
+  if (act === 'up' && i > 0) state.blocks.splice(i - 1, 0, state.blocks.splice(i, 1)[0]);
+  if (act === 'down' && i < state.blocks.length - 1) state.blocks.splice(i + 1, 0, state.blocks.splice(i, 1)[0]);
+  if (act === 'dup') {
+    const c = clone(state.blocks[i]); c.id = uid();
+    state.blocks.splice(i + 1, 0, c); selected = c.id;
+  }
+  if (act === 'del') {
+    if (!confirm(`「${BLOCKS[state.blocks[i].type].label}」を削除しますか？`)) return;
+    state.blocks.splice(i, 1);
+    if (selected === id) selected = state.blocks[Math.min(i, state.blocks.length - 1)]?.id || null;
+  }
+  refresh();
+});
+
+/* ---- ブロック追加メニュー ---- */
+function renderAddMenu() {
+  const exists = new Set(state.blocks.map((b) => b.type));
+  // 常設ブロック（消してしまった場合のみ出る）→ 通常ブロックの順に並べる
+  const order = Object.keys(BLOCKS).filter((t) => BLOCKS[t].unique).concat(ADDABLE);
+  const types = order.filter((t) => !(BLOCKS[t].unique && exists.has(t)));
+  $('#addMenu').innerHTML = types.map((t) =>
+    `<button data-type="${t}"><span class="bl-ic">${BLOCKS[t].icon}</span>${BLOCKS[t].label}</button>`).join('');
+}
+$('#btnAdd').addEventListener('click', (e) => {
+  e.stopPropagation();
+  renderAddMenu();
+  $('#addMenu').hidden = !$('#addMenu').hidden;
+});
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('.add-wrap')) $('#addMenu').hidden = true;
+});
+$('#addMenu').addEventListener('click', (e) => {
+  const t = e.target.closest('button')?.dataset.type;
+  if (!t) return;
+  const nb = makeBlock(t);
+  let at = state.blocks.findIndex((b) => b.id === selected) + 1;
+  if (!at) at = state.blocks.length;
+  // フッターより下には入れない
+  const fi = state.blocks.findIndex((b) => b.type === 'footer');
+  if (t !== 'footer' && fi >= 0 && at > fi) at = fi;
+  if (t === 'header') at = 0;
+  if (t === 'footer') at = state.blocks.length;
+  state.blocks.splice(at, 0, nb);
+  selected = nb.id;
+  $('#addMenu').hidden = true;
+  refresh();
+  setTimeout(() => scrollToBlock(nb.id), 220);
+});
+
+/* ================================================================
+   右パネル：編集フォーム（fields から自動生成）
+   ================================================================ */
+function inputHTML(f, val, path) {
+  const p = `data-path="${path}"`;
+  switch (f.type) {
+    case 'textarea':
+      return `<textarea ${p} rows="${f.rows || 4}">${esc(val ?? '')}</textarea>`;
+    case 'select':
+      return `<select ${p}>${f.options.map(([v, l]) =>
+        `<option value="${esc(v)}"${String(val ?? '') === String(v) ? ' selected' : ''}>${esc(l)}</option>`).join('')}</select>`;
+    case 'toggle':
+      return `<label class="sw"><input type="checkbox" ${p}${val ? ' checked' : ''}>${esc(f.label)}</label>`;
+    case 'color':
+      return `<div class="f-row"><input type="color" ${p} value="${esc(val)}">
+        <input type="text" data-path="${path}" value="${esc(val)}"></div>`;
+    case 'range':
+      return `<div class="f-row"><input type="range" ${p} min="${f.min ?? 0}" max="${f.max ?? 100}" value="${val ?? 0}" data-suffix="${esc(f.suffix || '')}">
+        <span class="f-val">${val ?? 0}${f.suffix || ''}</span></div>`;
+    case 'image':
+      return `<div class="img-f">
+        <input type="text" ${p} value="${esc(val ?? '')}" placeholder="https://... または端末から選択">
+        <button class="pick" data-pick="${path}">画像を選ぶ</button>
+      </div>${val ? `<img class="img-thumb" src="${esc(val)}" alt="">` : ''}`;
+    default:
+      return `<input type="text" ${p} value="${esc(val ?? '')}">`;
+  }
+}
+
+function fieldHTML(f, props, base) {
+  if (f.showIf && !f.showIf(props)) return '';
+  const path = `${base}.${f.key}`;
+  const val = props[f.key];
+
+  if (f.type === 'list') {
+    const items = val || [];
+    const rows = items.map((it, i) => {
+      const key = `${path}.${i}`;
+      const isClosed = closed.has(key);
+      const title = it[f.titleKey] || `項目 ${i + 1}`;
+      return `<div class="li${isClosed ? ' closed' : ''}" data-i="${i}">
+        <div class="li-h" data-fold="${key}">
+          <span class="n">${i + 1}</span>
+          <span class="t">${esc(title)}</span>
+          <button data-lact="up" data-i="${i}" title="上へ">↑</button>
+          <button data-lact="down" data-i="${i}" title="下へ">↓</button>
+          <button data-lact="del" data-i="${i}" title="削除">✕</button>
+        </div>
+        <div class="li-b"${isClosed ? ' hidden' : ''}>
+          ${f.item.map((sf) => fieldHTML(sf, it, key)).join('')}
+        </div>
+      </div>`;
+    }).join('');
+    return `<div class="f">
+      <label>${esc(f.label)}</label>
+      <div class="list" data-list="${path}">
+        ${rows}
+        <button class="li-add" data-lact="add">＋ ${esc(f.addLabel || '追加')}</button>
+      </div>
+    </div>`;
+  }
+
+  if (f.type === 'toggle') {
+    return `<div class="f">${inputHTML(f, val, path)}${f.hint ? `<div class="hint">${esc(f.hint)}</div>` : ''}</div>`;
+  }
+  return `<div class="f">
+    <label>${esc(f.label)}</label>
+    ${inputHTML(f, val, path)}
+    ${f.hint ? `<div class="hint">${esc(f.hint)}</div>` : ''}
+  </div>`;
+}
+
+function renderEditor() {
+  const box = $('#tab-edit');
+  const b = state.blocks.find((x) => x.id === selected);
+  if (!b) {
+    box.innerHTML = `<div class="empty">左の一覧、またはプレビューを<br>クリックしてブロックを選んでください。</div>`;
+    return;
+  }
+  const def = BLOCKS[b.type];
+  const keep = box.scrollTop;
+  box.innerHTML = `<div class="edit-head"><span class="bl-ic">${def.icon}</span>${esc(def.label)}</div>`
+    + def.fields.map((f) => fieldHTML(f, b.props, 'props')).join('');
+  box.scrollTop = keep;
+}
+
+/* ---- 値の書き込み ---- */
+function setPath(root, path, val) {
+  const ks = path.split('.');
+  let o = root;
+  for (let i = 0; i < ks.length - 1; i++) o = o[ks[i]];
+  o[ks[ks.length - 1]] = val;
+}
+function readEl(el) {
+  if (el.type === 'checkbox') return el.checked;
+  if (el.type === 'range' || el.type === 'number') return Number(el.value);
+  return el.value;
+}
+
+$('#tab-edit').addEventListener('input', (e) => {
+  const el = e.target;
+  if (!el.dataset.path) return;
+  const b = state.blocks.find((x) => x.id === selected);
+  if (!b) return;
+  setPath(b, el.dataset.path, readEl(el));
+  if (el.type === 'range') el.parentElement.querySelector('.f-val').textContent = el.value + (el.dataset.suffix || '');
+  renderList();
+  renderPreview();
+  save();
+});
+
+/* select / checkbox は showIf の出し分けがあるのでフォームごと作り直す */
+$('#tab-edit').addEventListener('change', (e) => {
+  if (!e.target.dataset.path) return;
+  if (e.target.tagName === 'SELECT' || e.target.type === 'checkbox' || e.target.type === 'file') renderEditor();
+});
+
+/* ---- 繰り返し項目の操作 ---- */
+$('#tab-edit').addEventListener('click', (e) => {
+  const b = state.blocks.find((x) => x.id === selected);
+  if (!b) return;
+
+  const fold = e.target.closest('.li-h');
+  if (fold && !e.target.closest('button')) {
+    const k = fold.dataset.fold;
+    closed.has(k) ? closed.delete(k) : closed.add(k);
+    renderEditor();
+    return;
+  }
+
+  const btn = e.target.closest('[data-lact]');
+  if (!btn) return;
+  const listEl = btn.closest('.list');
+  const path = listEl.dataset.list;
+  const arr = path.split('.').slice(1).reduce((o, k) => o[k], b.props);
+  const i = Number(btn.dataset.i);
+  const act = btn.dataset.lact;
+
+  if (act === 'add') {
+    // 直前の項目と同じ形の空データを作る
+    const fdef = findListField(b.type, path);
+    const blank = {};
+    (fdef?.item || []).forEach((sf) => { blank[sf.key] = sf.type === 'toggle' ? false : ''; });
+    arr.push(blank);
+    closed.delete(`${path}.${arr.length - 1}`);
+  }
+  if (act === 'del') arr.splice(i, 1);
+  if (act === 'up' && i > 0) arr.splice(i - 1, 0, arr.splice(i, 1)[0]);
+  if (act === 'down' && i < arr.length - 1) arr.splice(i + 1, 0, arr.splice(i, 1)[0]);
+
+  renderEditor(); renderList(); renderPreview(); save();
+});
+
+function findListField(type, path) {
+  const key = path.split('.').pop();
+  const walk = (fields) => {
+    for (const f of fields) {
+      if (f.key === key && f.type === 'list') return f;
+      if (f.type === 'list') { const r = walk(f.item); if (r) return r; }
+    }
+    return null;
+  };
+  return walk(BLOCKS[type].fields);
+}
+
+/* ---- 画像を端末から選ぶ ---- */
+const filePicker = document.createElement('input');
+filePicker.type = 'file';
+filePicker.accept = 'image/*';
+let pickPath = null;
+document.addEventListener('click', (e) => {
+  const btn = e.target.closest('[data-pick]');
+  if (!btn) return;
+  pickPath = { path: btn.dataset.pick, scope: btn.closest('#tab-design') ? 'theme' : 'block' };
+  filePicker.value = '';
+  filePicker.click();
+});
+filePicker.addEventListener('change', () => {
+  const file = filePicker.files[0];
+  if (!file || !pickPath) return;
+  if (file.size > 1.5 * 1024 * 1024) {
+    if (!confirm('画像が大きめです（1.5MB超）。保存できないことがあります。続けますか？')) return;
+  }
+  const r = new FileReader();
+  r.onload = () => {
+    const b = state.blocks.find((x) => x.id === selected);
+    if (b) { setPath(b, pickPath.path, r.result); renderEditor(); renderPreview(); save(); }
+  };
+  r.readAsDataURL(file);
+});
+
+/* ================================================================
+   デザインタブ / ページ設定タブ
+   ================================================================ */
+const THEME_FIELDS = [
+  ['色', [
+    { key: 'primary', label: 'メインカラー', type: 'color' },
+    { key: 'accent', label: 'アクセントカラー', type: 'color' },
+    { key: 'bg', label: '背景色', type: 'color' },
+    { key: 'surface', label: '背景色（薄いエリア）', type: 'color' },
+    { key: 'text', label: '文字色', type: 'color' },
+    { key: 'muted', label: '文字色（うすい）', type: 'color' },
+    { key: 'border', label: '線の色', type: 'color' },
+    { key: 'dark', label: 'ダークエリアの色', type: 'color' },
+  ]],
+  ['文字', [
+    { key: 'font', label: '本文のフォント', type: 'select', options: FONTS.map((f) => [f[0], f[1]]) },
+    { key: 'fontHead', label: '見出しのフォント', type: 'select', options: FONTS.map((f) => [f[0], f[1]]) },
+  ]],
+  ['かたち', [
+    { key: 'radius', label: '角の丸み', type: 'range', min: 0, max: 32, suffix: 'px' },
+    { key: 'max', label: 'コンテンツの幅', type: 'range', min: 880, max: 1400, suffix: 'px' },
+  ]],
+];
+
+const MOTION_FIELDS = [
+  { key: 'anim', label: '見出しの文字アニメ', type: 'select', options: TEXT_ANIMS,
+    hint: 'すべての見出しに適用されます（ヒーローは個別に変更できます）' },
+  { key: 'dur', label: 'アニメの長さ', type: 'range', min: 150, max: 2500, suffix: 'ms' },
+  { key: 'stagger', label: '1文字ごとのずらし', type: 'range', min: 0, max: 200, suffix: 'ms' },
+  { key: 'ease', label: 'イージング（速度の変化）', type: 'select', options: MOTION_EASES },
+  { key: 'reveal', label: 'ブロックをスクロールで出現させる', type: 'toggle' },
+];
+
+function renderDesign() {
+  $('#tab-design').innerHTML = THEME_FIELDS.map(([g, fs]) =>
+    `<div class="sec-label">${g}</div>` + fs.map((f) => {
+      const path = `theme.${f.key}`;
+      const val = state.theme[f.key];
+      return `<div class="f"><label>${esc(f.label)}</label>${inputHTML(f, val, path)}</div>`;
+    }).join('')).join('')
+    + `<div class="sec-label">動き</div>`
+    + MOTION_FIELDS.map((f) => {
+        const path = `motion.${f.key}`;
+        const val = state.motion[f.key];
+        if (f.type === 'toggle') return `<div class="f">${inputHTML(f, val, path)}</div>`;
+        return `<div class="f"><label>${esc(f.label)}</label>${inputHTML(f, val, path)}
+          ${f.hint ? `<div class="hint">${esc(f.hint)}</div>` : ''}</div>`;
+      }).join('')
+    + `<button class="add-btn" id="btnReplayAnim" style="margin-top:6px">▶ プレビューで再生</button>`;
+}
+function renderPage() {
+  $('#tab-page').innerHTML = `
+    <div class="sec-label">ページ情報（ブラウザのタブ名・検索結果に出ます）</div>
+    <div class="f"><label>ページタイトル</label><input type="text" data-path="meta.title" value="${esc(state.meta.title)}"></div>
+    <div class="f"><label>ページの説明</label><textarea data-path="meta.description" rows="4">${esc(state.meta.description)}</textarea></div>
+    <div class="f"><label>言語</label><input type="text" data-path="meta.lang" value="${esc(state.meta.lang)}"></div>
+    <div class="sec-label">つかいかた</div>
+    <div class="hint" style="line-height:2">
+      ・左でブロックの並べかえ・追加・削除<br>
+      ・プレビューを直接クリックしても選べます<br>
+      ・「アンカーID」を付けると、メニューから <b>#id</b> でリンクできます<br>
+      ・内容はこのブラウザに自動保存されます<br>
+      ・完成したら「HTMLを書き出す」で1ファイルとして保存できます
+    </div>`;
+}
+
+function themeInput(e) {
+  const el = e.target;
+  const path = el.dataset.path || '';
+  if (!path.startsWith('theme.') && !path.startsWith('meta.') && !path.startsWith('motion.')) return;
+  setPath(state, path, readEl(el));
+
+  if (el.type === 'range') {
+    el.parentElement.querySelector('.f-val').textContent = el.value + (el.dataset.suffix || '');
+  }
+  // カラーピッカーと16進数の入力欄を同期させる（作り直すとピッカーが閉じるので値だけ更新）
+  if (el.type === 'color') {
+    const t = el.parentElement.querySelector('input[type=text]');
+    if (t) t.value = el.value;
+  } else if (el.type === 'text' && /^#[0-9a-f]{6}$/i.test(el.value)) {
+    const c = el.parentElement.querySelector('input[type=color]');
+    if (c) c.value = el.value;
+  }
+  renderPreview(); save();
+}
+$('#tab-design').addEventListener('input', themeInput);
+$('#tab-design').addEventListener('click', (e) => {
+  if (e.target.id === 'btnReplayAnim') renderPreview(true);
+});
+/* select や toggle を変えたら、すぐ動きを確認できるよう作り直す */
+$('#tab-design').addEventListener('change', (e) => {
+  const path = e.target.dataset.path || '';
+  if (path.startsWith('motion.')) renderPreview(true);
+});
+$('#tab-page').addEventListener('input', themeInput);
+
+/* ---- タブ切り替え ---- */
+$$('.tabs button').forEach((b) => b.addEventListener('click', () => {
+  $$('.tabs button').forEach((x) => x.classList.toggle('on', x === b));
+  ['edit', 'design', 'page'].forEach((t) => { $(`#tab-${t}`).hidden = t !== b.dataset.tab; });
+}));
+
+/* ================================================================
+   テンプレート選択
+   ================================================================ */
+function renderTplGrid() {
+  $('#tplGrid').innerHTML = Object.entries(TEMPLATES).map(([k, t]) => {
+    const [c1, c2, c3] = t.swatch;
+    return `<button class="tpl-card" data-tpl="${k}">
+      <div class="tpl-prev" style="background:${c3}">
+        <div class="bar" style="background:${c1};width:38%"></div>
+        <div class="big" style="background:${c1};opacity:.85;width:80%"></div>
+        <div class="bar" style="background:${c2};width:52%;opacity:.7"></div>
+        <div class="row"><span style="background:${c1};opacity:.25"></span><span style="background:${c1};opacity:.25"></span><span style="background:${c2};opacity:.35"></span></div>
+      </div>
+      <div class="tpl-meta"><b>${esc(t.name)}</b><small>${esc(t.desc)}</small></div>
+    </button>`;
+  }).join('');
+}
+const openModal = (id) => { $(id).hidden = false; };
+const closeModal = (id) => { $(id).hidden = true; };
+
+let askBeforeSwitch = false; // 起動直後の選択では確認しない
+
+$('#btnTemplates').addEventListener('click', () => {
+  askBeforeSwitch = true;
+  renderTplGrid(); openModal('#tplModal');
+});
+$('#tplClose').addEventListener('click', () => closeModal('#tplModal'));
+$('#tplGrid').addEventListener('click', (e) => {
+  const k = e.target.closest('[data-tpl]')?.dataset.tpl;
+  if (!k) return;
+  if (askBeforeSwitch && !confirm('テンプレートを切り替えると、いまの内容は置きかわります。よろしいですか？')) return;
+  state = buildState(k);
+  selected = state.blocks[1]?.id || state.blocks[0]?.id;
+  closed.clear();
+  closeModal('#tplModal');
+  refresh();
+});
+
+/* ================================================================
+   書き出し / コード表示 / リセット / 画面幅
+   ================================================================ */
+$('#btnExport').addEventListener('click', () => {
+  const blob = new Blob([fullHTML()], { type: 'text/html;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'index.html';
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  flash('index.html を書き出しました');
+});
+$('#btnCode').addEventListener('click', () => { $('#codeArea').value = fullHTML(); openModal('#codeModal'); });
+$('#codeClose').addEventListener('click', () => closeModal('#codeModal'));
+$('#codeCopy').addEventListener('click', async () => {
+  const ta = $('#codeArea');
+  try { await navigator.clipboard.writeText(ta.value); } catch (e) { ta.select(); document.execCommand('copy'); }
+  flash('コピーしました');
+});
+$('#btnReset').addEventListener('click', () => {
+  if (!confirm('編集した内容をすべて消して、テンプレート選択に戻ります。よろしいですか？')) return;
+  localStorage.removeItem(STORE_KEY);
+  location.reload();
+});
+$('#devices').addEventListener('click', (e) => {
+  const b = e.target.closest('button');
+  if (!b) return;
+  $$('#devices button').forEach((x) => x.classList.toggle('on', x === b));
+  $('#frame').style.width = b.dataset.w;
+});
+$$('.modal').forEach((m) => m.addEventListener('click', (e) => { if (e.target === m) m.hidden = true; }));
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') $$('.modal').forEach((m) => (m.hidden = true)); });
+
+/* ================================================================
+   まとめて再描画
+   ================================================================ */
+function select(id) { selected = id; renderList(); renderEditor(); highlight(); }
+function refresh() { renderList(); renderEditor(); renderDesign(); renderPage(); renderPreview(true); save(); }
+
+/* ---------------- 起動 ---------------- */
+(async function start() {
+  await initPreview();
+  const saved = load();
+  if (saved) {
+    state = saved;
+    selected = state.blocks[1]?.id || state.blocks[0]?.id;
+    refresh();
+  } else {
+    renderTplGrid();
+    openModal('#tplModal');
+    state = buildState('corporate');
+    selected = state.blocks[1].id;
+    refresh();
+  }
+})();
+
+</script>
+</body>
+</html>

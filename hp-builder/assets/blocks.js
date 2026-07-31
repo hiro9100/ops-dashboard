@@ -24,7 +24,7 @@ function sec(type, p, inner, extraClass = '') {
 function head(p, align = 'center') {
   if (!p.eyebrow && !p.title && !p.text) return '';
   return `    <div class="sec-head${align === 'left' ? ' left' : ''}">
-${p.eyebrow ? `      <span class="eyebrow">${esc(p.eyebrow)}</span>\n` : ''}${p.title ? `      <h2 class="sec-title">${nl2br(p.title)}</h2>\n` : ''}${p.text ? `      <p class="sec-sub">${nl2br(p.text)}</p>\n` : ''}    </div>`;
+${p.eyebrow ? `      <span class="eyebrow">${esc(p.eyebrow)}</span>\n` : ''}${p.title ? `      <h2 class="sec-title" data-ta>${nl2br(p.title)}</h2>\n` : ''}${p.text ? `      <p class="sec-sub">${nl2br(p.text)}</p>\n` : ''}    </div>`;
 }
 
 /* ボタン群 */
@@ -36,6 +36,24 @@ function buttons(list, extraClass = '') {
     .join('\n');
   return items ? `    <div class="btn-row ${extraClass}">\n${items}\n    </div>` : '';
 }
+
+/* 文字アニメーションの一覧（サイト側CSSの ta-* と対応） */
+const TEXT_ANIMS = [
+  ['none', 'なし'],
+  ['fadeup', 'フェードアップ'],
+  ['maskline', '行マスクせり上げ'],
+  ['blur', 'ぼかし解除'],
+  ['flip3d', '3Dフリップ'],
+  ['drop', '回転して落ちる'],
+  ['bounce', '弾む'],
+  ['slidealt', '左右交互スライド'],
+  ['scatter', '散らばりから集合'],
+  ['neon', 'ネオン点灯'],
+  ['fillgrad', 'グラデーションで塗る'],
+  ['scramble', 'スクランブル'],
+  ['type', 'タイプライター'],
+];
+const TEXT_ANIMS_WITH_DEFAULT = [['', '全体設定に従う']].concat(TEXT_ANIMS);
 
 /* よく使う共通フィールド */
 const FIELD = {
@@ -111,6 +129,8 @@ const BLOCKS = {
       { key: 'title', label: 'キャッチコピー', type: 'text' },
       { key: 'text', label: '説明文', type: 'textarea' },
       { key: 'image', label: '画像URL', type: 'image' },
+      { key: 'anim', label: 'キャッチコピーの文字アニメ', type: 'select', options: TEXT_ANIMS_WITH_DEFAULT,
+        hint: '「全体設定に従う」以外を選ぶと、このブロックだけ別の動きになります' },
       { key: 'overlay', label: '背景画像の暗さ', type: 'range', min: 0, max: 90, suffix: '%',
         showIf: (p) => p.layout === 'cover' },
       { key: 'buttons', label: 'ボタン', type: 'list', addLabel: 'ボタンを追加', titleKey: 'label', item: FIELD.btnItem },
@@ -120,7 +140,7 @@ const BLOCKS = {
       layout: 'center', eyebrow: 'WELCOME',
       title: 'ここにいちばん伝えたい\nキャッチコピーを',
       text: 'サービスの魅力を1〜2行で。訪れた人が「自分に関係ある」と感じる言葉を置きましょう。',
-      image: '', overlay: 55, bg: '', anchor: 'top',
+      image: '', anim: '', overlay: 55, bg: '', anchor: 'top',
       buttons: [
         { label: '無料で相談する', href: '#contact', style: 'primary' },
         { label: 'くわしく見る', href: '#features', style: 'ghost' },
@@ -130,7 +150,7 @@ const BLOCKS = {
       const cover = p.layout === 'cover';
       const cls = ['hero', cover ? 'cover center' : p.layout, p.bg ? `bg-${p.bg}` : ''].filter(Boolean).join(' ');
       const body = `      ${p.eyebrow ? `<span class="eyebrow">${esc(p.eyebrow)}</span>` : ''}
-      ${p.title ? `<h1 class="hero-title">${nl2br(p.title)}</h1>` : ''}
+      ${p.title ? `<h1 class="hero-title" data-ta${attr('data-anim', p.anim)}>${nl2br(p.title)}</h1>` : ''}
       ${p.text ? `<p class="hero-text">${nl2br(p.text)}</p>` : ''}
 ${buttons(p.buttons)}`;
       const bg = cover
@@ -211,7 +231,7 @@ ${(p.items || []).map((it, i) => `      <div class="card">
       <div class="about-media">${media(p.image, p.title)}</div>
       <div class="about-body">
         ${p.eyebrow ? `<span class="eyebrow">${esc(p.eyebrow)}</span>` : ''}
-        ${p.title ? `<h2 class="sec-title">${nl2br(p.title)}</h2>` : ''}
+        ${p.title ? `<h2 class="sec-title" data-ta>${nl2br(p.title)}</h2>` : ''}
         ${(p.body || '').split(/\n{2,}/).filter(Boolean).map((t) => `<p>${nl2br(t)}</p>`).join('\n        ')}
 ${buttons(p.buttons)}
       </div>
@@ -334,7 +354,7 @@ ${(p.items || []).map((it) => `      <details${it.open ? ' open' : ''}>
     },
     render: (p) => sec('cta', p,
       `    <div class="cta-in">
-      ${p.title ? `<h2 class="sec-title">${nl2br(p.title)}</h2>` : ''}
+      ${p.title ? `<h2 class="sec-title" data-ta>${nl2br(p.title)}</h2>` : ''}
       ${p.text ? `<p>${nl2br(p.text)}</p>` : ''}
 ${buttons(p.buttons, 'center')}
     </div>`),
