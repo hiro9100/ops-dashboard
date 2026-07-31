@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>文字アニメーション ラボ — HP作成ツール</title>
+<style>
+/* ==========================================================
+   ラボ（編集画面）のUI
+   ========================================================== */
+*,*::before,*::after{box-sizing:border-box}
+:root{
+  --bg:#0f1115; --panel:#171a21; --panel2:#1e222b; --line:#2a2f3a;
+  --tx:#e7ebf0; --tx2:#98a2b3; --pri:#4c8dff; --r:8px;
+}
+html,body{height:100%}
+body{
+  margin:0;background:var(--bg);color:var(--tx);overflow:hidden;font-size:13px;line-height:1.7;
+  font-family:"Helvetica Neue",Arial,"Hiragino Kaku Gothic ProN","Hiragino Sans",Meiryo,sans-serif;
+}
+button{font:inherit;color:inherit;cursor:pointer}
+input,select,textarea{font:inherit}
+
+.app{
+  height:100vh;display:grid;
+  grid-template-columns:238px 1fr 320px;
+  grid-template-rows:52px 1fr;
+  grid-template-areas:"top top top" "left stage right";
+}
+.topbar{grid-area:top;display:flex;align-items:center;gap:10px;padding:0 14px;
+  background:var(--panel);border-bottom:1px solid var(--line)}
+.brand{font-weight:800;margin-right:auto;white-space:nowrap}
+.tb-btn{background:var(--panel2);border:1px solid var(--line);border-radius:var(--r);
+  padding:7px 14px;font-size:12.5px;font-weight:600;white-space:nowrap;transition:.15s;
+  color:var(--tx);text-decoration:none;display:inline-block}
+.tb-btn:hover{background:#262b36;border-color:#3a4150}
+.tb-btn.primary{background:var(--pri);border-color:var(--pri);color:#fff}
+.tb-btn.primary:hover{background:#3d7cf0}
+.hint-top{color:var(--tx2);font-size:11.5px}
+
+.panel{background:var(--panel);display:flex;flex-direction:column;min-height:0}
+.panel.left{grid-area:left;border-right:1px solid var(--line)}
+.panel.right{grid-area:right;border-left:1px solid var(--line)}
+.panel-h{padding:12px 14px;font-size:11px;font-weight:800;letter-spacing:.14em;
+  color:var(--tx2);border-bottom:1px solid var(--line)}
+.panel-body{padding:14px;overflow-y:auto;flex:1;min-height:0}
+
+/* アニメ一覧 */
+.alist{overflow-y:auto;flex:1;padding:8px;min-height:0}
+.aitem{display:flex;align-items:center;gap:9px;padding:9px 10px;border-radius:var(--r);
+  border:1px solid transparent;margin-bottom:3px}
+.aitem:hover{background:var(--panel2)}
+.aitem.on{background:#20293a;border-color:var(--pri)}
+.aitem .n{width:22px;font-family:Menlo,monospace;font-size:10.5px;color:var(--tx2)}
+.aitem.on .n{color:var(--pri)}
+.aitem .t{flex:1;font-size:12.5px;font-weight:600}
+.aitem .k{font-size:10px;color:var(--tx2);border:1px solid var(--line);border-radius:4px;padding:1px 5px}
+
+/* ステージ */
+.stage{grid-area:stage;overflow:auto;display:grid;place-items:center;padding:24px;position:relative}
+.stage-in{
+  width:100%;height:100%;border-radius:12px;display:grid;place-items:center;
+  padding:6% 5%;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.45)
+}
+.stage-meta{position:absolute;left:32px;bottom:28px;font-size:11.5px;color:var(--tx2);
+  font-family:Menlo,monospace;pointer-events:none}
+.replay{position:absolute;right:30px;bottom:24px;border:1px solid var(--line);
+  background:rgba(23,26,33,.9);border-radius:999px;padding:9px 20px;font-size:12.5px;font-weight:700}
+.replay:hover{border-color:var(--pri)}
+
+/* フォーム */
+.f{margin-bottom:14px}
+.f > label{display:block;font-size:11.5px;font-weight:700;color:var(--tx2);margin-bottom:5px}
+.f input[type=text],.f textarea,.f select{
+  width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:6px;
+  padding:8px 10px;color:var(--tx);font-size:12.5px}
+.f textarea{resize:vertical;min-height:66px;line-height:1.6;font-family:inherit}
+.f input:focus,.f textarea:focus,.f select:focus{outline:none;border-color:var(--pri)}
+.f-row{display:flex;align-items:center;gap:9px}
+.f-row input[type=range]{flex:1;accent-color:var(--pri);min-width:0}
+.f-row input[type=color]{width:34px;height:30px;padding:0;background:none;
+  border:1px solid var(--line);border-radius:6px;cursor:pointer;flex:none}
+.f-val{font-size:11px;color:var(--tx2);min-width:52px;text-align:right;font-family:Menlo,monospace}
+.sw{display:flex;align-items:center;gap:9px;cursor:pointer;font-size:12.5px;font-weight:600}
+.sw input{width:16px;height:16px;accent-color:var(--pri);cursor:pointer}
+.seg{display:flex;background:var(--panel2);border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.seg button{flex:1;background:transparent;border:0;padding:7px 4px;font-size:11.5px;color:var(--tx2)}
+.seg button.on{background:#2d3441;color:var(--tx);font-weight:700}
+.sec-label{font-size:10.5px;font-weight:800;letter-spacing:.14em;color:var(--tx2);
+  margin:20px 0 11px;padding-top:14px;border-top:1px solid var(--line)}
+.sec-label:first-child{margin-top:0;padding-top:0;border-top:0}
+.desc{font-size:11.5px;color:var(--tx2);background:#13161d;border:1px solid var(--line);
+  border-radius:6px;padding:10px 12px;margin-bottom:16px}
+
+/* モーダル */
+.modal{position:fixed;inset:0;background:rgba(5,7,10,.75);display:grid;place-items:center;
+  z-index:100;padding:24px;backdrop-filter:blur(3px)}
+.modal[hidden]{display:none}
+.modal-box{background:var(--panel);border:1px solid var(--line);border-radius:14px;
+  padding:24px;width:100%;max-width:900px;max-height:88vh;display:flex;flex-direction:column}
+.modal-box h2{margin:0 0 6px;font-size:17px}
+.modal-sub{margin:0 0 16px;color:var(--tx2);font-size:12.5px}
+#codeArea{width:100%;height:54vh;background:#0b0d12;border:1px solid var(--line);border-radius:8px;
+  color:#c9d4e2;padding:14px;font-family:Menlo,Consolas,monospace;font-size:11.5px;
+  line-height:1.65;resize:none}
+.modal-foot{display:flex;justify-content:flex-end;gap:9px;margin-top:16px}
+
+@media(max-width:1150px){.app{grid-template-columns:190px 1fr 280px}.brand{display:none}}
+
+/* ==========================================================
+   ここから下が「書き出されるCSS」の土台
+   ========================================================== */
+.ta{
+  --dur:.9s; --ease:cubic-bezier(.2,.7,.3,1); --delay:.1s; --stagger:.04s;
+  --c1:#e8eef6; --c2:#22d3ee;
+  margin:0; color:var(--c1); text-align:center;
+}
+.ta .ln{display:block}
+.ta .ch{display:inline-block; white-space:pre; will-change:transform,opacity}
+
+/* --- 01 フェードアップ --- */
+@keyframes ta-fadeup{from{opacity:0;transform:translateY(.65em)}to{opacity:1;transform:none}}
+.ta-fadeup .ch{animation:ta-fadeup var(--dur) var(--ease) calc(var(--delay) + var(--i)*var(--stagger)) both}
+
+/* --- 02 行マスク --- */
+.ta-maskline .ln{overflow:hidden;padding-bottom:.08em}
+@keyframes ta-maskline{from{transform:translateY(110%)}to{transform:none}}
+.ta-maskline .ch{animation:ta-maskline var(--dur) var(--ease) calc(var(--delay) + var(--i)*var(--stagger)) both}
+
+/* --- 03 ぼかし解除 --- */
+@keyframes ta-blur{from{opacity:0;filter:blur(18px);transform:scale(1.18)}to{opacity:1;filter:blur(0);transform:none}}
+.ta-blur .ch{animation:ta-blur var(--dur) var(--ease) calc(var(--delay) + var(--i)*var(--stagger)) both}
+
+/* --- 04 3Dフリップ --- */
+.ta-flip3d .ln{perspective:700px}
+@keyframes ta-flip3d{from{opacity:0;transform:rotateX(-95deg)}to{opacity:1;transform:none}}
+.ta-flip3d .ch{transform-origin:50% 100%;
+  animation:ta-flip3d var(--dur) var(--ease) calc(var(--delay) + var(--i)*var(--stagger)) both}
+
+/* --- 05 回転して落ちる --- */
+@keyframes ta-drop{from{opacity:0;transform:translateY(-.9em) rotate(-26deg)}to{opacity:1;transform:none}}
+.ta-drop .ch{animation:ta-drop var(--dur) var(--ease) calc(var(--delay) + var(--i)*var(--stagger)) both}
+
+/* --- 06 弾む --- */
+@keyframes ta-bounce{
+  0%{opacity:0;transform:translateY(-1.3em) scale(.55)}
+  55%{opacity:1;transform:translateY(.14em) scale(1.08)}
+  75%{transform:translateY(-.06em) scale(.97)}
+  100%{opacity:1;transform:none}}
+.ta-bounce .ch{animation:ta-bounce var(--dur) var(--ease) calc(var(--delay) + var(--i)*var(--stagger)) both}
+
+/* --- 07 左右交互スライド --- */
+@keyframes ta-slidealt{from{opacity:0;transform:translateX(var(--dir,-.8em))}to{opacity:1;transform:none}}
+.ta-slidealt .ch{animation:ta-slidealt var(--dur) var(--ease) calc(var(--delay) + var(--i)*var(--stagger)) both}
+
+/* --- 08 散らばりから集合 --- */
+@keyframes ta-scatter{
+  from{opacity:0;transform:translate(var(--x,0),var(--y,0)) rotate(var(--r,0deg)) scale(.35)}
+  to{opacity:1;transform:none}}
+.ta-scatter .ch{animation:ta-scatter var(--dur) var(--ease) calc(var(--delay) + var(--i)*var(--stagger)) both}
+
+/* --- 09 波打ち（ループ） --- */
+@keyframes ta-wave{0%,100%{transform:translateY(0)}50%{transform:translateY(-.3em)}}
+.ta-wave .ch{animation:ta-wave var(--dur) ease-in-out calc(var(--i)*var(--stagger)) infinite}
+
+/* --- 10 ネオン点灯 --- */
+@keyframes ta-neon{
+  0%{opacity:.15;text-shadow:none}
+  12%{opacity:1;text-shadow:0 0 6px var(--c2),0 0 18px var(--c2)}
+  16%{opacity:.25;text-shadow:none}
+  22%{opacity:1;text-shadow:0 0 6px var(--c2),0 0 18px var(--c2)}
+  28%{opacity:.4;text-shadow:none}
+  36%{opacity:1;text-shadow:0 0 8px var(--c2),0 0 26px var(--c2),0 0 48px var(--c2)}
+  100%{opacity:1;text-shadow:0 0 8px var(--c2),0 0 26px var(--c2),0 0 48px var(--c2)}}
+.ta-neon .ch{animation:ta-neon var(--dur) linear calc(var(--delay) + var(--i)*var(--stagger)) both}
+
+/* --- 11 グリッチ --- */
+.ta-glitch .ch{position:relative}
+.ta-glitch .ch::before,.ta-glitch .ch::after{
+  content:attr(data-c);position:absolute;left:0;top:0;width:100%;pointer-events:none}
+.ta-glitch .ch::before{color:#ff2e88;
+  animation:ta-g1 calc(var(--dur)*.5) steps(2,end) calc(var(--delay) + var(--i)*var(--stagger)) infinite}
+.ta-glitch .ch::after{color:#00e5ff;
+  animation:ta-g2 calc(var(--dur)*.7) steps(2,end) calc(var(--delay) + var(--i)*var(--stagger)) infinite}
+@keyframes ta-g1{0%,100%{transform:none;opacity:0}20%{transform:translate(-.05em,.02em);opacity:.9}40%{transform:translate(.04em,-.02em);opacity:.5}60%{opacity:0}}
+@keyframes ta-g2{0%,100%{transform:none;opacity:0}30%{transform:translate(.05em,.01em);opacity:.85}50%{transform:translate(-.03em,-.02em);opacity:.4}70%{opacity:0}}
+
+/* --- 12 グラデーションが塗る --- */
+.ta-fillgrad{
+  background:linear-gradient(100deg,var(--c2),var(--c1)) 0 0/0% 100% no-repeat,
+             linear-gradient(var(--c3,#3a4658),var(--c3,#3a4658));
+  -webkit-background-clip:text;background-clip:text;
+  color:transparent;-webkit-text-fill-color:transparent;
+  animation:ta-fillgrad var(--dur) var(--ease) var(--delay) both}
+@keyframes ta-fillgrad{from{background-size:0% 100%,100% 100%}to{background-size:100% 100%,100% 100%}}
+
+/* --- 13 スクランブル（JS） --- */
+.ta-scramble .rnd{opacity:.65}
+
+/* --- 14 タイプライター（JS） --- */
+.ta-type .ch{visibility:hidden}
+.ta-type .ch.show{visibility:visible}
+.ta-cursor{display:inline-block;width:.06em;height:1em;background:currentColor;
+  vertical-align:-.12em;margin-left:.04em;animation:ta-blink .9s steps(1) infinite}
+@keyframes ta-blink{0%,49%{opacity:1}50%,100%{opacity:0}}
+
+@media (prefers-reduced-motion: reduce){
+  .ta .ch{animation:none!important;opacity:1!important;transform:none!important;filter:none!important;visibility:visible!important}
+}
+</style>
+</head>
+<body>
+
+<div class="app">
+  <header class="topbar">
+    <div class="brand">文字アニメーション ラボ</div>
+    <span class="hint-top" id="msg"></span>
+    <a class="tb-btn" href="index.html" style="text-decoration:none">Vol.1</a>
+    <a class="tb-btn" href="vol2.html" style="text-decoration:none">Vol.2</a>
+    <button class="tb-btn" id="btnRandom">ランダム配色</button>
+    <button class="tb-btn primary" id="btnCode">コードを書き出す</button>
+  </header>
+
+  <aside class="panel left">
+    <div class="panel-h">アニメーション（14種）</div>
+    <div class="alist" id="alist"></div>
+  </aside>
+
+  <main class="stage">
+    <div class="stage-in" id="stageIn">
+      <p class="ta" id="ta"></p>
+    </div>
+    <div class="stage-meta" id="meta"></div>
+    <button class="replay" id="btnReplay">▶ もう一度再生</button>
+  </main>
+
+  <aside class="panel right">
+    <div class="panel-body" id="controls"></div>
+  </aside>
+</div>
+
+<div class="modal" id="codeModal" hidden>
+  <div class="modal-box">
+    <h2>書き出しコード</h2>
+    <p class="modal-sub">HTML・CSS（必要ならJS）が全部入りです。そのまま貼れば同じ動きになります。</p>
+    <textarea id="codeArea" readonly spellcheck="false"></textarea>
+    <div class="modal-foot">
+      <button class="tb-btn" id="codeCopy">コピー</button>
+      <button class="tb-btn" id="codeClose">閉じる</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const $  = (s,r=document)=>r.querySelector(s);
+const $$ = (s,r=document)=>[...r.querySelectorAll(s)];
+const esc = s => String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+/* ==========================================================
+   フォント
+   ========================================================== */
+const FONTS = [
+  ['gothic','ゴシック','"Helvetica Neue",Arial,"Hiragino Kaku Gothic ProN","Hiragino Sans",Meiryo,sans-serif'],
+  ['mincho','明朝','"Hiragino Mincho ProN","Yu Mincho",YuMincho,"Noto Serif JP",serif'],
+  ['maru','丸ゴシック','"Hiragino Maru Gothic ProN","Quicksand","Hiragino Sans",Meiryo,sans-serif'],
+  ['mono','等幅','"SF Mono",Menlo,Consolas,"Hiragino Sans",monospace'],
+  ['impact','極太（英字向き）','Impact,"Arial Black","Hiragino Kaku Gothic ProN",sans-serif'],
+];
+const fontStack = k => (FONTS.find(f=>f[0]===k)||FONTS[0])[2];
+
+const EASES = [
+  ['cubic-bezier(.2,.7,.3,1)','なめらか（標準）'],
+  ['cubic-bezier(.16,1,.3,1)','ぬるっと減速'],
+  ['cubic-bezier(.34,1.56,.64,1)','行き過ぎて戻る'],
+  ['cubic-bezier(.76,0,.24,1)','ためて一気に'],
+  ['linear','等速'],
+  ['ease-out','ease-out'],
+];
+
+/* ==========================================================
+   アニメーション定義
+   split: char / line   js: 実行が必要なものだけ
+   ========================================================== */
+const ANIMS = {
+  fadeup:   {label:'フェードアップ', split:'char', tag:'定番', desc:'1文字ずつ下からふわっと。迷ったらこれ。見出し・リード文どこでも使えます。'},
+  maskline: {label:'行マスクせり上げ', split:'line', tag:'定番', desc:'行を枠で切り取り、下から押し上げます。上質に見えるので大見出し向き。'},
+  blur:     {label:'ぼかし解除', split:'char', tag:'', desc:'ピントが合うように出現。写真の上に重ねると相性がいいです。'},
+  flip3d:   {label:'3Dフリップ', split:'char', tag:'', desc:'文字が板のように起き上がります。動きが大きいので短い言葉向き。'},
+  drop:     {label:'回転して落ちる', split:'char', tag:'', desc:'斜めに回りながら着地。カジュアル・ポップな印象に。'},
+  bounce:   {label:'弾む', split:'char', tag:'人気', desc:'跳ねて着地。イージングを「行き過ぎて戻る」にするとさらに弾みます。'},
+  slidealt: {label:'左右交互スライド', split:'char', tag:'', desc:'1文字おきに左右から集まります。リズムが出ます。'},
+  scatter:  {label:'散らばりから集合', split:'char', tag:'人気', desc:'バラバラの位置から所定の場所へ。再生ごとに散り方が変わります。'},
+  wave:     {label:'波打ち（ループ）', split:'char', tag:'ループ', desc:'ずっと上下に揺れ続けます。ロゴやキャッチの常時演出に。', loopOnly:true},
+  neon:     {label:'ネオン点灯', split:'char', tag:'', desc:'チカチカしてから点灯。暗い背景＋鮮やかなサブカラーで映えます。'},
+  glitch:   {label:'グリッチ（ループ）', split:'char', tag:'ループ', desc:'RGBがずれ続けます。テック・ゲーム系に。', loopOnly:true},
+  fillgrad: {label:'グラデーションで塗る', split:'none', tag:'', desc:'左から色が塗られていきます。読ませたい一文に一度だけ使うと効果的。'},
+  scramble: {label:'スクランブル', split:'char', tag:'人気', desc:'ランダムな文字が回ってから確定。英数字だと特に映えます。', js:'scramble'},
+  type:     {label:'タイプライター', split:'char', tag:'', desc:'1文字ずつ打ち込まれ、カーソルが点滅します。', js:'type'},
+};
+
+/* ==========================================================
+   状態
+   ========================================================== */
+const state = {
+  anim:'fadeup',
+  text:'伝わる、を\nデザインする。',
+  font:'gothic', size:62, weight:800, ls:2, lh:1.35, align:'center',
+  grad:false, c1:'#eef3f8', c2:'#22d3ee', bg:'#0b0f14',
+  dur:900, stagger:40, delay:100, ease:EASES[0][0],
+  loop:false,
+};
+
+/* ==========================================================
+   テキスト分割
+   ========================================================== */
+/* 2色を混ぜる。
+   background-clip:text は 1文字ずつ transform をかけると描画が壊れるので、
+   グラデーションは「文字ごとに色を少しずつ変える」方式で表現する。 */
+function mix(a, b, t){
+  const rgb = h => [1,3,5].map(i=>parseInt(h.substr(i,2),16));
+  const A = rgb(a), B = rgb(b);
+  return '#' + A.map((v,i)=>Math.round(v + (B[i]-v)*t).toString(16).padStart(2,'0')).join('');
+}
+
+function build(){
+  const a = ANIMS[state.anim];
+  const lines = state.text.split('\n');
+  if(a.split === 'none') return lines.map(l=>`<span class="ln">${esc(l)}</span>`).join('');
+
+  const total = a.split === 'line' ? lines.length : lines.reduce((n,l)=>n + [...l].length, 0);
+  const colorAt = idx => state.grad ? `;color:${mix(state.c1, state.c2, total<2 ? 0 : idx/(total-1))}` : '';
+  let i = 0;
+
+  if(a.split === 'line') return lines.map(l=>{
+    const k = i++;
+    return `<span class="ln"><span class="ch" style="--i:${k}${colorAt(k)}">${esc(l)||'&nbsp;'}</span></span>`;
+  }).join('');
+
+  return lines.map(l=>{
+    const inner = [...l].map(c=>{
+      const k = i++;
+      if(c === ' ') return `<span class="ch sp" style="--i:${k}">&nbsp;</span>`;
+      const extra = [`--i:${k}`];
+      if(state.anim === 'slidealt') extra.push(`--dir:${k%2 ? '-.9em' : '.9em'}`);
+      if(state.anim === 'scatter'){
+        const rx = (Math.random()*2-1)*2.4, ry = (Math.random()*2-1)*1.8, rr = (Math.random()*2-1)*90;
+        extra.push(`--x:${rx.toFixed(2)}em`,`--y:${ry.toFixed(2)}em`,`--r:${rr.toFixed(0)}deg`);
+      }
+      return `<span class="ch" style="${extra.join(';')}${colorAt(k)}" data-c="${esc(c)}">${esc(c)}</span>`;
+    }).join('');
+    return `<span class="ln">${inner || '&nbsp;'}</span>`;
+  }).join('');
+}
+
+/* ==========================================================
+   プレビュー描画・再生
+   ========================================================== */
+let loopTimer = null;
+function render(){
+  const a = ANIMS[state.anim];
+  const ta = $('#ta'), stage = $('#stageIn');
+
+  stage.style.background = state.bg;
+  ta.className = 'ta ta-' + state.anim;
+  Object.assign(ta.style, {
+    fontFamily: fontStack(state.font),
+    fontSize: state.size + 'px',
+    fontWeight: state.weight,
+    letterSpacing: (state.ls/100) + 'em',
+    lineHeight: state.lh,
+    textAlign: state.align,
+  });
+  ta.style.setProperty('--dur', (state.dur/1000)+'s');
+  ta.style.setProperty('--stagger', (state.stagger/1000)+'s');
+  ta.style.setProperty('--delay', (state.delay/1000)+'s');
+  ta.style.setProperty('--ease', state.ease);
+  ta.style.setProperty('--c1', state.c1);
+  ta.style.setProperty('--c2', state.c2);
+
+  ta.innerHTML = build();
+  if(a.js === 'scramble') runScramble(ta);
+  if(a.js === 'type')     runType(ta);
+
+  const chars = $$('.ch', ta).length;
+  const total = state.delay + state.dur + (a.split==='char' ? chars*state.stagger : 0);
+  $('#meta').textContent = `${a.label} / 全体 ${(total/1000).toFixed(2)}s / ${chars || '—'}文字`;
+
+  clearInterval(loopTimer);
+  if(state.loop && !a.loopOnly) loopTimer = setInterval(render, total + 900);
+}
+
+/* --- スクランブル --- */
+const CH = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789#$%&@';
+function runScramble(root){
+  const chs = $$('.ch', root);
+  chs.forEach(c=>{ c.dataset.final = c.textContent; c.textContent = ''; });
+  const step = Math.max(1, Math.round(state.stagger/16));
+  let f = 0;
+  const maxF = chs.length*step + Math.round(state.dur/16);
+  (function tick(){
+    chs.forEach((c,idx)=>{
+      const s = idx*step, e = s + Math.round(state.dur/16);
+      if(f >= e){ c.textContent = c.dataset.final; c.classList.remove('rnd'); }
+      else if(f >= s){ c.textContent = CH[Math.floor(Math.random()*CH.length)]; c.classList.add('rnd'); }
+    });
+    if(f++ < maxF) root._raf = requestAnimationFrame(tick);
+    else chs.forEach(c=>{ c.textContent = c.dataset.final; c.classList.remove('rnd'); });
+  })();
+}
+
+/* --- タイプライター --- */
+function runType(root){
+  const chs = $$('.ch', root);
+  const cur = document.createElement('span');
+  cur.className = 'ta-cursor';
+  root.lastElementChild?.appendChild(cur);
+  chs.forEach((c,i)=>setTimeout(()=>c.classList.add('show'), state.delay + i*Math.max(20,state.stagger)));
+}
+
+/* ==========================================================
+   左：一覧
+   ========================================================== */
+function renderList(){
+  $('#alist').innerHTML = Object.entries(ANIMS).map(([k,a],i)=>
+    `<div class="aitem${k===state.anim?' on':''}" data-k="${k}">
+      <span class="n">${String(i+1).padStart(2,'0')}</span>
+      <span class="t">${a.label}</span>
+      ${a.tag?`<span class="k">${a.tag}</span>`:''}
+    </div>`).join('');
+}
+$('#alist').addEventListener('click', e=>{
+  const k = e.target.closest('.aitem')?.dataset.k;
+  if(!k) return;
+  state.anim = k; renderList(); renderControls(); render();
+});
+
+/* ==========================================================
+   右：コントロール
+   ========================================================== */
+function slider(label,key,min,max,step,unit){
+  return `<div class="f"><label>${label}</label>
+    <div class="f-row">
+      <input type="range" data-k="${key}" min="${min}" max="${max}" step="${step}" value="${state[key]}">
+      <span class="f-val">${state[key]}${unit}</span>
+    </div></div>`;
+}
+function renderControls(){
+  const a = ANIMS[state.anim];
+  $('#controls').innerHTML = `
+    <div class="desc">${a.desc}</div>
+
+    <div class="sec-label">テキスト</div>
+    <div class="f"><label>文章（改行で行送り）</label>
+      <textarea data-k="text" rows="3">${esc(state.text)}</textarea></div>
+    <div class="f"><label>フォント</label>
+      <select data-k="font">${FONTS.map(f=>`<option value="${f[0]}"${state.font===f[0]?' selected':''}>${f[1]}</option>`).join('')}</select></div>
+    ${slider('文字の大きさ','size',18,150,1,'px')}
+    ${slider('太さ','weight',100,900,100,'')}
+    ${slider('字間','ls',-8,30,1,'%')}
+    ${slider('行間','lh',0.9,2.4,0.05,'')}
+    <div class="f"><label>揃え</label>
+      <div class="seg" data-seg="align">
+        ${[['left','左'],['center','中央'],['right','右']].map(([v,l])=>
+          `<button data-v="${v}" class="${state.align===v?'on':''}">${l}</button>`).join('')}
+      </div></div>
+
+    <div class="sec-label">色</div>
+    ${state.anim!=='fillgrad' ? `<div class="f"><label class="sw">
+      <input type="checkbox" data-k="grad"${state.grad?' checked':''}>グラデーションにする</label></div>` : ''}
+    <div class="f"><label>${state.anim==='fillgrad'||state.grad?'色 1':'文字色'}</label>
+      <div class="f-row"><input type="color" data-k="c1" value="${state.c1}">
+        <input type="text" data-k="c1" value="${state.c1}"></div></div>
+    <div class="f"><label>色 2${state.anim==='neon'?'（発光色）':''}</label>
+      <div class="f-row"><input type="color" data-k="c2" value="${state.c2}">
+        <input type="text" data-k="c2" value="${state.c2}"></div></div>
+    <div class="f"><label>背景色（プレビュー用）</label>
+      <div class="f-row"><input type="color" data-k="bg" value="${state.bg}">
+        <input type="text" data-k="bg" value="${state.bg}"></div></div>
+
+    <div class="sec-label">動き</div>
+    ${slider(a.loopOnly?'1周の長さ':'アニメの長さ','dur',150,3000,50,'ms')}
+    ${a.split==='none' ? '' : slider('1文字ごとのずらし','stagger',0,300,5,'ms')}
+    ${a.loopOnly ? '' : slider('開始までの待ち','delay',0,2000,50,'ms')}
+    ${a.loopOnly||a.js ? '' : `<div class="f"><label>イージング（速度の変化）</label>
+      <select data-k="ease">${EASES.map(e=>`<option value="${e[0]}"${state.ease===e[0]?' selected':''}>${e[1]}</option>`).join('')}</select></div>`}
+    ${a.loopOnly ? '<div class="desc">このアニメはずっと動き続けます。</div>' :
+      `<div class="f"><label class="sw"><input type="checkbox" data-k="loop"${state.loop?' checked':''}>くり返し再生（確認用）</label></div>`}
+  `;
+}
+
+/* 入力の反映 */
+$('#controls').addEventListener('input', e=>{
+  const el = e.target, k = el.dataset.k;
+  if(!k) return;
+  let v = el.type==='checkbox' ? el.checked : el.value;
+  if(el.type==='range') v = parseFloat(v);
+  state[k] = v;
+  if(el.type==='range') el.parentElement.querySelector('.f-val').textContent =
+    v + (k==='size'?'px':k==='ls'?'%':['dur','stagger','delay'].includes(k)?'ms':'');
+  /* カラーピッカーと16進入力を同期（作り直すとピッカーが閉じるので値だけ差し替え） */
+  if(el.type==='color'){
+    const t = el.parentElement.querySelector('input[type=text]'); if(t) t.value = el.value;
+  }else if(el.type==='text' && /^#[0-9a-f]{6}$/i.test(el.value)){
+    const c = el.parentElement.querySelector('input[type=color]'); if(c) c.value = el.value;
+  }
+  render();
+});
+$('#controls').addEventListener('change', e=>{
+  if(e.target.dataset.k === 'grad') renderControls();
+});
+$('#controls').addEventListener('click', e=>{
+  const b = e.target.closest('.seg button'); if(!b) return;
+  state[b.parentElement.dataset.seg] = b.dataset.v;
+  renderControls(); render();
+});
+
+/* ==========================================================
+   ボタン
+   ========================================================== */
+$('#btnReplay').addEventListener('click', render);
+$('#btnRandom').addEventListener('click', ()=>{
+  const sets = [
+    ['#eef3f8','#22d3ee','#0b0f14'], ['#fff1e6','#fb7185','#1a0f14'],
+    ['#0f172a','#2563eb','#f5f8fc'], ['#f7f3e8','#b4693b','#221a13'],
+    ['#e8fff4','#a3e635','#08130d'], ['#1a1a17','#7c3aed','#f4f1ea'],
+  ];
+  const s = sets[Math.floor(Math.random()*sets.length)];
+  [state.c1, state.c2, state.bg] = s;
+  renderControls(); render();
+});
+
+/* ==========================================================
+   コード書き出し
+   ========================================================== */
+const BASE_CSS = `.ta{
+  margin:0;
+  font-family:FONT;
+  font-size:SIZEpx;
+  font-weight:WEIGHT;
+  letter-spacing:LSem;
+  line-height:LH;
+  text-align:ALIGN;
+  color:var(--c1);
+}
+.ta .ln{display:block}
+.ta .ch{display:inline-block;white-space:pre;will-change:transform,opacity}`;
+
+/* 各アニメのCSS（ページ内の <style> からそのまま取り出す） */
+function animCSS(key){
+  const sheet = [...document.styleSheets].find(s=>!s.href);
+  /* 末尾の $ を忘れると `.ta-fillgrad{...}` のようにクラス名で終わるルールを取りこぼす */
+  const want = new RegExp(`(^|[\\s,])\\.ta-${key}(\\s|\\.|,|\\{|::|:|$)`);
+  const out = [];
+  for(const r of sheet.cssRules){
+    if(r.type === CSSRule.KEYFRAMES_RULE && r.name.startsWith('ta-'+key)) out.push(r.cssText);
+    else if(r.type === CSSRule.STYLE_RULE && want.test(r.selectorText)) out.push(r.cssText);
+  }
+  /* 共通で必要になるキーフレーム */
+  if(key === 'type') for(const r of sheet.cssRules)
+    if(r.type===CSSRule.KEYFRAMES_RULE && r.name==='ta-blink') out.push(r.cssText);
+  return out.join('\n');
+}
+
+function exportCode(){
+  const a = ANIMS[state.anim];
+  const vars = [
+    `--dur:${(state.dur/1000)}s`,
+    a.split!=='none' ? `--stagger:${(state.stagger/1000)}s` : '',
+    !a.loopOnly ? `--delay:${(state.delay/1000)}s` : '',
+    !a.loopOnly && !a.js ? `--ease:${state.ease}` : '',
+    `--c1:${state.c1}`, `--c2:${state.c2}`,
+  ].filter(Boolean).join(';');
+
+  const base = BASE_CSS
+    .replace('FONT', fontStack(state.font))
+    .replace('SIZE', state.size)
+    .replace('WEIGHT', state.weight)
+    .replace('LS', state.ls/100)
+    .replace('LH', state.lh)
+    .replace('ALIGN', state.align);
+
+  let js = '';
+  if(a.js === 'scramble') js = `
+<script>
+// スクランブル：ランダムな文字を回してから確定させる
+(function(){
+  var CH='${CH}', root=document.currentScript.previousElementSibling;
+  var chs=[].slice.call(root.querySelectorAll('.ch'));
+  chs.forEach(function(c){ c.dataset.final=c.textContent; c.textContent=''; });
+  var step=${Math.max(1,Math.round(state.stagger/16))}, span=${Math.round(state.dur/16)}, f=0;
+  (function tick(){
+    chs.forEach(function(c,i){
+      var s=i*step;
+      if(f>=s+span){ c.textContent=c.dataset.final; }
+      else if(f>=s){ c.textContent=CH[Math.floor(Math.random()*CH.length)]; }
+    });
+    if(f++ < chs.length*step+span) requestAnimationFrame(tick);
+    else chs.forEach(function(c){ c.textContent=c.dataset.final; });
+  })();
+})();
+<\/script>`;
+  if(a.js === 'type') js = `
+<script>
+// タイプライター：1文字ずつ表示し、末尾にカーソルを置く
+(function(){
+  var root=document.currentScript.previousElementSibling;
+  var cur=document.createElement('span'); cur.className='ta-cursor';
+  root.lastElementChild.appendChild(cur);
+  [].slice.call(root.querySelectorAll('.ch')).forEach(function(c,i){
+    setTimeout(function(){ c.classList.add('show'); }, ${state.delay} + i*${Math.max(20,state.stagger)});
+  });
+})();
+<\/script>`;
+
+  return `<!-- ===== 文字アニメーション：${a.label} ===== -->
+<p class="ta ta-${state.anim}" style="${vars}">
+${build().replace(/<span class="ln">/g,'\n  <span class="ln">')}
+</p>${js}
+
+<style>
+${base}
+${animCSS(state.anim)}
+
+/* 動きを減らす設定への配慮 */
+@media (prefers-reduced-motion: reduce){
+  .ta .ch{animation:none!important;opacity:1!important;transform:none!important;
+          filter:none!important;visibility:visible!important}
+}
+</style>`;
+}
+
+$('#btnCode').addEventListener('click', ()=>{
+  $('#codeArea').value = exportCode();
+  $('#codeModal').hidden = false;
+});
+$('#codeClose').addEventListener('click', ()=>$('#codeModal').hidden = true);
+$('#codeCopy').addEventListener('click', async ()=>{
+  const ta = $('#codeArea');
+  try{ await navigator.clipboard.writeText(ta.value); }catch(e){ ta.select(); document.execCommand('copy'); }
+  flash('コピーしました');
+});
+$('#codeModal').addEventListener('click', e=>{ if(e.target.id==='codeModal') e.currentTarget.hidden = true; });
+document.addEventListener('keydown', e=>{ if(e.key==='Escape') $('#codeModal').hidden = true; });
+
+function flash(m){
+  $('#msg').textContent = m;
+  clearTimeout(flash._t);
+  flash._t = setTimeout(()=>$('#msg').textContent='', 1800);
+}
+
+/* ---------------- 起動 ---------------- */
+renderList(); renderControls(); render();
+</script>
+</body>
+</html>
