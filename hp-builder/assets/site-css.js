@@ -28,9 +28,10 @@ p:last-child{margin-bottom:0}
 /* ---------- セクション共通 ---------- */
 .sec{padding:clamp(56px,8vw,96px) 0;position:relative}
 .sec.bg-surface{background:var(--c-surface)}
-.sec.bg-primary{background:var(--c-primary);color:#fff}
-.sec.bg-dark{background:var(--c-dark);color:#fff}
-.sec.bg-primary .sec-sub,.sec.bg-dark .sec-sub{color:rgba(255,255,255,.75)}
+.sec.bg-primary{background:var(--c-primary);color:var(--c-on-primary,#fff)}
+.sec.bg-dark{background:var(--c-dark);color:var(--c-on-dark,#fff)}
+.sec.bg-primary .sec-sub{color:color-mix(in srgb,var(--c-on-primary,#fff) 72%,transparent)}
+.sec.bg-dark .sec-sub{color:color-mix(in srgb,var(--c-on-dark,#fff) 72%,transparent)}
 .sec.bg-primary .card,.sec.bg-dark .card{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.18)}
 
 .sec-head{max-width:760px;margin:0 auto clamp(32px,5vw,56px);text-align:center}
@@ -50,7 +51,7 @@ p:last-child{margin-bottom:0}
 .btn{
   display:inline-flex;align-items:center;justify-content:center;gap:8px;
   padding:14px 30px;border-radius:var(--radius);
-  background:var(--c-primary);color:#fff;font-weight:700;font-size:15px;
+  background:var(--c-primary);color:var(--c-on-primary,#fff);font-weight:700;font-size:15px;
   border:1.5px solid transparent;cursor:pointer;
   transition:transform .18s ease,box-shadow .18s ease,opacity .18s ease;
   box-shadow:0 6px 20px -8px var(--c-primary)
@@ -58,7 +59,7 @@ p:last-child{margin-bottom:0}
 .btn:hover{transform:translateY(-2px);box-shadow:0 12px 26px -10px var(--c-primary)}
 .btn.ghost{background:transparent;color:inherit;border-color:currentColor;box-shadow:none;opacity:.9}
 .btn.ghost:hover{opacity:1;box-shadow:none}
-.btn.accent{background:var(--c-accent);box-shadow:0 6px 20px -8px var(--c-accent)}
+.btn.accent{background:var(--c-accent);color:var(--c-on-accent,#fff);box-shadow:0 6px 20px -8px var(--c-accent)}
 .btn.sm{padding:10px 20px;font-size:14px}
 .btn-row{display:flex;flex-wrap:wrap;gap:14px;margin-top:32px}
 .center .btn-row,.hero.center .btn-row{justify-content:center}
@@ -118,7 +119,7 @@ p:last-child{margin-bottom:0}
 .card p{margin:0;font-size:14.5px;color:var(--c-muted)}
 .card .num{
   display:inline-flex;align-items:center;justify-content:center;width:38px;height:38px;
-  border-radius:50%;background:var(--c-primary);color:#fff;font-weight:800;margin-bottom:16px
+  border-radius:50%;background:var(--c-primary);color:var(--c-on-primary,#fff);font-weight:800;margin-bottom:16px
 }
 
 /* ---------- About ---------- */
@@ -147,7 +148,7 @@ p:last-child{margin-bottom:0}
 .plan.feat{border-color:var(--c-primary);box-shadow:0 24px 48px -28px var(--c-primary);position:relative}
 .plan .tag{
   position:absolute;top:-13px;left:50%;transform:translateX(-50%);
-  background:var(--c-primary);color:#fff;font-size:12px;font-weight:700;
+  background:var(--c-primary);color:var(--c-on-primary,#fff);font-size:12px;font-weight:700;
   padding:5px 14px;border-radius:999px;white-space:nowrap
 }
 .plan h3{margin:0 0 6px;font-size:17px;font-weight:700}
@@ -196,13 +197,100 @@ p:last-child{margin-bottom:0}
 .rich.left{margin-left:0}
 
 /* ---------- フッター ---------- */
-.ftr{background:var(--c-dark);color:rgba(255,255,255,.72);padding:56px 0 32px;font-size:14px}
+.ftr{background:var(--c-dark);color:color-mix(in srgb,var(--c-on-dark,#fff) 72%,transparent);
+  padding:56px 0 32px;font-size:14px}
 .ftr-in{display:flex;flex-wrap:wrap;gap:24px;align-items:center;justify-content:space-between}
-.ftr .logo{color:#fff;font-size:17px}
+.ftr .logo{color:var(--c-on-dark,#fff);font-size:17px}
 .ftr-nav{display:flex;flex-wrap:wrap;gap:22px}
 .ftr-nav a{transition:color .15s}
-.ftr-nav a:hover{color:#fff}
+.ftr-nav a:hover{color:var(--c-on-dark,#fff)}
 .copy{margin-top:32px;padding-top:20px;border-top:1px solid rgba(255,255,255,.12);font-size:12.5px;opacity:.7}
+
+/* ==========================================================
+   デザインの型（テンプレートごとの造形）
+   配色だけでは似た顔になるので、影・角・余白・見出しの構えを変える。
+   body に sty-* が付く。
+   ========================================================== */
+
+/* ---------- モノクロ＋アクセント（採用・コーポレート） ---------- */
+.sty-mono .card,.sty-mono .plan,.sty-mono .faq details,.sty-mono .stackcard{box-shadow:none}
+.sty-mono .card:hover{transform:none;box-shadow:none;border-color:var(--c-text)}
+.sty-mono .hero-media,.sty-mono .about-media{box-shadow:none}
+.sty-mono .btn{box-shadow:none;font-weight:800;letter-spacing:.06em;padding:16px 34px}
+.sty-mono .btn:hover{transform:none;background:var(--c-text);border-color:var(--c-text);color:var(--c-bg)}
+.sty-mono .btn.ghost:hover{background:var(--c-text);color:var(--c-bg)}
+.sty-mono .hdr{border-bottom:1px solid var(--c-text)}
+.sty-mono .logo{letter-spacing:.06em}
+.sty-mono .eyebrow{
+  letter-spacing:.3em;font-size:11px;display:flex;align-items:center;gap:12px;margin-bottom:18px}
+.sty-mono .eyebrow::before{content:"";width:28px;height:2px;background:var(--c-primary);flex:none}
+.sty-mono .sec-head{text-align:left;margin-left:0;max-width:none}
+.sty-mono .sec-head .eyebrow{justify-content:flex-start}
+.sty-mono .sec-title{font-size:clamp(26px,4.4vw,46px);line-height:1.28;letter-spacing:-.01em}
+.sty-mono .hero-title{line-height:1.18;letter-spacing:-.02em}
+.sty-mono .hero.center .hero-text,.sty-mono .hero.center{text-align:left}
+.sty-mono .hero.center .btn-row{justify-content:flex-start}
+.sty-mono .sec-sub{font-size:15.5px}
+/* 見出しの脇に細い罫を引いて、紙面のような構えにする */
+.sty-mono .sec{border-top:1px solid var(--c-border)}
+.sty-mono .sec.bg-primary,.sty-mono .sec.bg-dark{border-top:0}
+.sty-mono .card .num{border-radius:0;background:var(--c-primary)}
+.sty-mono .plan.feat{box-shadow:none;border-width:2px}
+.sty-mono .tl-item.on::before{box-shadow:none;border-radius:0}
+.sty-mono .tl-item::before{border-radius:0}
+.sty-mono .tl{margin-left:0}                      /* 見出しが左寄せなので線も左に揃える */
+.sty-mono .faq{margin-left:0}
+
+/* ---------- やわらかい（クリニック・サロン） ---------- */
+.sty-soft .card,.sty-soft .plan{border:0;box-shadow:0 10px 30px -18px rgba(20,40,40,.35)}
+.sty-soft .card:hover{box-shadow:0 24px 46px -22px rgba(20,40,40,.42)}
+.sty-soft .btn{padding:16px 36px;border-radius:999px}
+.sty-soft .hdr{border-bottom:0;box-shadow:0 2px 20px -12px rgba(20,40,40,.4)}
+.sty-soft .eyebrow{letter-spacing:.2em}
+.sty-soft .sec-title{font-weight:700;letter-spacing:.04em}
+.sty-soft .card .ic{
+  width:56px;height:56px;border-radius:50%;display:grid;place-items:center;font-size:24px;
+  background:color-mix(in srgb,var(--c-primary) 14%,transparent);margin-bottom:18px}
+.sty-soft .faq details{border:0;box-shadow:0 8px 24px -18px rgba(20,40,40,.4)}
+.sty-soft .hero-media,.sty-soft .about-media{box-shadow:0 26px 50px -28px rgba(20,40,40,.45)}
+
+/* ---------- 太い（製品LP・イベント） ---------- */
+.sty-bold .sec-title{font-size:clamp(28px,5.2vw,56px);font-weight:900;line-height:1.18;letter-spacing:-.02em}
+.sty-bold .hero-title{font-weight:900;letter-spacing:-.03em;line-height:1.08}
+.sty-bold .eyebrow{
+  background:var(--c-primary);color:var(--c-dark);padding:5px 12px;border-radius:3px;
+  letter-spacing:.16em;font-weight:900}
+.sty-bold .btn{font-weight:900;letter-spacing:.04em;padding:17px 38px}
+.sty-bold .card{border-width:2px}
+.sty-bold .plan .price{font-size:42px;font-weight:900}
+.sty-bold .slot{font-weight:900}
+.sty-bold .sec-sub{font-size:16px}
+
+/* ---------- 誌面のような（ブランド・エディトリアル） ---------- */
+.sty-edit .sec{padding:clamp(72px,10vw,132px) 0}
+.sty-edit .sec-head{margin-bottom:clamp(40px,6vw,72px)}
+.sty-edit .sec-title{font-weight:400;letter-spacing:.06em;line-height:1.6}
+.sty-edit .hero-title{font-weight:400;letter-spacing:.08em;line-height:1.55}
+.sty-edit .eyebrow{
+  letter-spacing:.4em;font-size:10.5px;font-weight:600;color:var(--c-muted)}
+.sty-edit .sec-head::after{
+  content:"";display:block;width:34px;height:1px;background:var(--c-primary);margin:26px auto 0}
+.sty-edit .sec-head.left::after{margin-left:0}
+.sty-edit .card,.sty-edit .plan,.sty-edit .faq details{
+  background:transparent;                          /* 面に箱を置かず、罫線だけで区切る */
+  border:0;border-top:1px solid var(--c-border);border-radius:0;box-shadow:none;padding-inline:0}
+.sty-edit .card .num{background:transparent;color:var(--c-primary);border:1px solid var(--c-primary)}
+.sty-edit .card:hover{transform:none;box-shadow:none}
+.sty-edit .btn{
+  background:transparent;color:var(--c-text);border:0;border-bottom:1px solid var(--c-text);
+  border-radius:0;box-shadow:none;padding:10px 2px;letter-spacing:.18em;font-weight:600}
+.sty-edit .btn:hover{transform:none;box-shadow:none;color:var(--c-primary);border-color:var(--c-primary)}
+.sty-edit .btn.sm{padding:8px 2px;font-size:12.5px}
+.sty-edit .hdr{border-bottom:0}
+.sty-edit .logo{letter-spacing:.22em;font-weight:600;font-size:16px}
+.sty-edit .nav a{letter-spacing:.14em;font-size:12.5px}
+.sty-edit .gal{gap:26px}
+.sty-edit .hero-media,.sty-edit .about-media{box-shadow:none;border-radius:0}
 
 /* ---------- テンプレート別の味付け ---------- */
 .sec-title,.hero-title,.logo,.plan h3,.card h3{font-family:var(--font-head)}

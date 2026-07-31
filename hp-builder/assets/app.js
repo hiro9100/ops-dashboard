@@ -32,6 +32,7 @@ function buildState(tplKey) {
       lang: 'ja',
     },
     theme: clone(t.theme),
+    style: t.style || '',
     motion: clone(DEFAULT_MOTION),
     blocks: t.blocks.map((b) => makeBlock(b.type, b.props)),
   };
@@ -164,6 +165,7 @@ function load() {
     // 知らないブロックが混ざっていたら捨てる（定義を消した時の保険）
     s.blocks = (s.blocks || []).filter((b) => BLOCKS[b.type]);
     s.motion = Object.assign(clone(DEFAULT_MOTION), s.motion || {}); // 旧データ対策
+    if (s.style === undefined) s.style = (TEMPLATES[s.template] || {}).style || '';
     return s.blocks.length ? s : null;
   } catch (e) { return null; }
 }
@@ -171,6 +173,18 @@ function load() {
 /* ================================================================
    HTML生成
    ================================================================ */
+/* 背景色の明るさから、その上に置いて読める文字色を決める。
+   利用者が明るい色をメインに選んでも白文字で潰れないようにするため。 */
+function readableOn(hex) {
+  const h = String(hex || '').replace('#', '');
+  const full = h.length === 3 ? h[0] + h[0] + h[1] + h[1] + h[2] + h[2] : h;
+  const n = parseInt(full, 16);
+  if (isNaN(n) || full.length !== 6) return '#ffffff';
+  const lin = (v) => { v /= 255; return v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); };
+  const L = 0.2126 * lin((n >> 16) & 255) + 0.7152 * lin((n >> 8) & 255) + 0.0722 * lin(n & 255);
+  return L > 0.42 ? '#111111' : '#ffffff';
+}
+
 function themeCSS(t) {
   return `:root{
   --c-primary:${t.primary};
@@ -185,11 +199,17 @@ function themeCSS(t) {
   --max:${t.max}px;
   --font:${fontStack(t.font)};
   --font-head:${fontStack(t.fontHead)};
+  --c-on-primary:${readableOn(t.primary)};
+  --c-on-accent:${readableOn(t.accent)};
+  --c-on-dark:${readableOn(t.dark)};
   --ta-dur:${(state.motion.dur / 1000)}s;
   --ta-stagger:${(state.motion.stagger / 1000)}s;
   --ta-ease:${state.motion.ease};
 }`;
 }
+
+/* テンプレート名と「デザインの型」を body のクラスにする */
+const bodyClass = () => `tpl-${state.template}${state.style ? ` sty-${state.style}` : ''}`;
 
 const bodyHTML = () => state.blocks.map((b) => BLOCKS[b.type].render(b.props)).join('\n\n');
 
@@ -214,7 +234,7 @@ ${themeCSS(state.theme)}
 ${SITE_CSS}
 </style>
 </head>
-<body class="tpl-${esc(state.template)}" data-anim="${esc(state.motion.anim)}" data-reveal="${state.motion.reveal ? 1 : 0}">
+<body class="${esc(bodyClass())}" data-anim="${esc(state.motion.anim)}" data-reveal="${state.motion.reveal ? 1 : 0}">
 
 ${exportBody()}
 
@@ -357,7 +377,7 @@ function renderPreview(now = false) {
   const run = () => {
     if (!pdoc) return;
     pdoc.getElementById('s-theme').textContent = themeCSS(state.theme);
-    pdoc.body.className = `tpl-${state.template}`;
+    pdoc.body.className = bodyClass();
     pdoc.body.setAttribute('data-anim', state.motion.anim);
     pdoc.body.setAttribute('data-reveal', state.motion.reveal ? '1' : '0');
     pdoc.body.innerHTML = bodyHTML();
@@ -649,9 +669,10 @@ const GALLERY_CSS = `
 body{margin:0;background:#0d1016;padding:14px;
   font-family:"Helvetica Neue",Arial,"Hiragino Sans",Meiryo,sans-serif}
 .gg{display:grid;grid-template-columns:repeat(auto-fill,minmax(268px,1fr));gap:14px}
-.gc{display:block;width:100%;padding:0;text-align:left;cursor:pointer;
+.gc{display:block;width:100%;padding:0;text-align:left;cursor:pointer;position:relative;
   background:#171a21;border:1px solid #2a2f3a;border-radius:12px;overflow:hidden;
   transition:border-color .15s,transform .15s;color:#e7ebf0;font:inherit}
+.gc-hit{position:absolute;inset:0;z-index:5}
 .gc:hover{border-color:#4c8dff;transform:translateY(-3px)}
 .gc-prev{height:176px;overflow:hidden;position:relative;background:var(--c-bg);
   border-bottom:1px solid #2a2f3a}
@@ -696,16 +717,19 @@ function renderGallery() {
   const cards = galleryTypes().map((t) => {
     const def = BLOCKS[t];
     const sample = def.render(clone(def.defaults));
-    return `<button class="gc" data-type="${t}">
+    /* サンプルには header や form が入るので、button ではなく div で包む
+       （button の中でそれらに出会うと、パーサが button を閉じて構造が壊れる） */
+    return `<div class="gc" data-type="${t}" role="button" tabindex="0">
+      <span class="gc-hit"></span>
       <div class="gc-prev"><div class="gc-scale">${sample}</div></div>
       <div class="gc-meta"><b>${esc(def.label)}</b>${def.tag ? `<i>${esc(def.tag)}</i>` : ''}
         <small>${esc(def.about || '')}</small></div>
-    </button>`;
+    </div>`;
   }).join('');
 
   f.srcdoc = `<!DOCTYPE html><html lang="ja"><head><meta charset="utf-8">
 <style>${themeCSS(state.theme)}\n${SITE_CSS}\n${GALLERY_CSS}</style></head>
-<body class="tpl-${esc(state.template)}"><div class="gg">${cards}</div>
+<body class="${esc(bodyClass())}"><div class="gg">${cards}</div>
 <script>${SITE_JS}<\/script></body></html>`;
 
   f.addEventListener('load', () => {
@@ -830,7 +854,7 @@ function openAnimGallery(kind, current, onPick) {
 
   $('#animFrame').srcdoc = `<!DOCTYPE html><html lang="ja"><head><meta charset="utf-8">
 <style>${themeCSS(state.theme)}\n${SITE_CSS}\n${ANIM_GAL_CSS}</style></head>
-<body class="tpl-${esc(state.template)}"><div class="ag">${cards}</div>
+<body class="${esc(bodyClass())}"><div class="ag">${cards}</div>
 <script>${ANIM_GAL_JS}<\/script></body></html>`;
   openModal('#animModal');
 }
@@ -1237,6 +1261,15 @@ const THEME_FIELDS = [
   ]],
 ];
 
+/* デザインの型（影・罫線・見出しの構えがまとめて変わる） */
+const STYLES = [
+  ['', '標準（影と丸み）'],
+  ['mono', 'モノクロ調（罫線・角なし）'],
+  ['soft', 'やわらかい（丸み・影）'],
+  ['bold', '太い（見出しを大きく）'],
+  ['edit', '誌面のような（余白・細い線）'],
+];
+
 const MOTION_FIELDS = [
   { key: 'anim', label: '見出しの文字アニメ', type: 'select', options: TEXT_ANIMS,
     hint: 'すべての見出しに適用されます（ヒーローは個別に変更できます）' },
@@ -1253,6 +1286,11 @@ function renderDesign() {
       const val = state.theme[f.key];
       return `<div class="f"><label>${esc(f.label)}</label>${inputHTML(f, val, path)}</div>`;
     }).join('')).join('')
+    + `<div class="sec-label">デザインの型</div>`
+    + `<div class="f"><label>全体の造形</label>
+        <select data-path="style">${STYLES.map(([v, l]) =>
+          `<option value="${v}"${state.style === v ? ' selected' : ''}>${esc(l)}</option>`).join('')}</select>
+        <div class="hint">影・罫線・見出しの構えがまとめて変わります</div></div>`
     + `<div class="sec-label">動き</div>`
     + MOTION_FIELDS.map((f) => {
         const path = `motion.${f.key}`;
@@ -1283,7 +1321,7 @@ function renderPage() {
 function themeInput(e) {
   const el = e.target;
   const path = el.dataset.path || '';
-  if (!path.startsWith('theme.') && !path.startsWith('meta.') && !path.startsWith('motion.')) return;
+  if (path !== 'style' && !path.startsWith('theme.') && !path.startsWith('meta.') && !path.startsWith('motion.')) return;
   setPath(state, path, readEl(el));
 
   if (el.type === 'range') {
@@ -1312,7 +1350,7 @@ $('#tab-design').addEventListener('click', (e) => {
 /* select や toggle を変えたら、すぐ動きを確認できるよう作り直す */
 $('#tab-design').addEventListener('change', (e) => {
   const path = e.target.dataset.path || '';
-  if (path.startsWith('motion.')) renderPreview(true);
+  if (path.startsWith('motion.') || path === 'style') renderPreview(true);
 });
 $('#tab-page').addEventListener('input', themeInput);
 
@@ -1322,19 +1360,70 @@ $$('.tabs button').forEach((b) => b.addEventListener('click', () => switchTab(b.
 /* ================================================================
    テンプレート選択
    ================================================================ */
+/* テーマの色などを、まとめて style 属性に書ける形にする（カードごとに配色を変えるため） */
+function themeVars(t) {
+  return [
+    `--c-primary:${t.primary}`, `--c-accent:${t.accent}`, `--c-bg:${t.bg}`,
+    `--c-surface:${t.surface}`, `--c-text:${t.text}`, `--c-muted:${t.muted}`,
+    `--c-border:${t.border}`, `--c-dark:${t.dark}`,
+    `--c-on-primary:${readableOn(t.primary)}`, `--c-on-accent:${readableOn(t.accent)}`,
+    `--c-on-dark:${readableOn(t.dark)}`,
+    `--radius:${t.radius}px`, `--max:${t.max}px`,
+    `--font:${fontStack(t.font)}`, `--font-head:${fontStack(t.fontHead)}`,
+    '--ta-dur:.9s', '--ta-stagger:.04s', '--ta-ease:cubic-bezier(.2,.7,.3,1)',
+  ].join(';');
+}
+
+const TPL_GAL_CSS = `
+body{margin:0;background:#0d1016;padding:14px;
+  font-family:"Helvetica Neue",Arial,"Hiragino Sans",Meiryo,sans-serif}
+.tg{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px}
+.tc{display:block;width:100%;padding:0;cursor:pointer;color:#e7ebf0;font:inherit;position:relative;
+  background:#171a21;border:1px solid #2a2f3a;border-radius:12px;overflow:hidden;
+  transition:border-color .15s,transform .15s}
+.tc:hover{border-color:#4c8dff;transform:translateY(-3px)}
+.tc-hit{position:absolute;inset:0;z-index:5}
+.tc-prev{height:250px;overflow:hidden;border-bottom:1px solid #2a2f3a}
+.tc-scale{width:1300px;transform:scale(.246);transform-origin:top left;pointer-events:none}
+.tc-meta{padding:12px 14px 15px}
+.tc-meta b{font-size:14px;display:block;margin-bottom:4px}
+.tc-meta small{color:#98a2b3;font-size:11.5px;line-height:1.65;display:block}
+.tc-sw{display:flex;gap:4px;margin-top:9px}
+.tc-sw i{width:16px;height:16px;border-radius:4px;border:1px solid rgba(255,255,255,.18)}
+/* 見出しの出現アニメは止めて、完成形で見せる */
+.tc-scale [data-ta] .ch,.tc-scale .rv{opacity:1!important;transform:none!important}
+.tc-scale .pinsec{height:auto!important}
+.tc-scale .pin-in{position:static;height:520px}
+`;
+
 function renderTplGrid() {
-  $('#tplGrid').innerHTML = Object.entries(TEMPLATES).map(([k, t]) => {
-    const [c1, c2, c3] = t.swatch;
-    return `<button class="tpl-card" data-tpl="${k}">
-      <div class="tpl-prev" style="background:${c3}">
-        <div class="bar" style="background:${c1};width:38%"></div>
-        <div class="big" style="background:${c1};opacity:.85;width:80%"></div>
-        <div class="bar" style="background:${c2};width:52%;opacity:.7"></div>
-        <div class="row"><span style="background:${c1};opacity:.25"></span><span style="background:${c1};opacity:.25"></span><span style="background:${c2};opacity:.35"></span></div>
+  const cards = Object.entries(TEMPLATES).map(([k, t]) => {
+    /* 上から3ブロックだけ描いて、そのテンプレートの顔を見せる */
+    const sample = t.blocks.slice(0, 3).map((b) => {
+      const props = Object.assign(clone(BLOCKS[b.type].defaults), clone(b.props || {}));
+      return BLOCKS[b.type].render(props);
+    }).join('');
+    return `<div class="tc" data-tpl="${k}" role="button" tabindex="0">
+      <span class="tc-hit"></span>
+      <div class="tc-prev" style="background:${t.theme.bg}">
+        <div class="tc-scale tpl-${k}${t.style ? ` sty-${t.style}` : ''}" style="${themeVars(t.theme)}">${sample}</div>
       </div>
-      <div class="tpl-meta"><b>${esc(t.name)}</b><small>${esc(t.desc)}</small></div>
-    </button>`;
+      <div class="tc-meta"><b>${esc(t.name)}</b><small>${esc(t.desc)}</small>
+        <span class="tc-sw">${t.swatch.map((c) => `<i style="background:${c}"></i>`).join('')}</span>
+      </div>
+    </div>`;
   }).join('');
+
+  const f = $('#tplFrame');
+  f.srcdoc = `<!DOCTYPE html><html lang="ja"><head><meta charset="utf-8">
+<style>${SITE_CSS}\n${TPL_GAL_CSS}</style></head>
+<body><div class="tg">${cards}</div></body></html>`;
+  f.addEventListener('load', () => {
+    f.contentDocument.addEventListener('click', (e) => {
+      const k = e.target.closest('.tc')?.dataset.tpl;
+      if (k) pickTemplate(k);
+    });
+  }, { once: true });
 }
 const openModal = (id) => { $(id).hidden = false; };
 const closeModal = (id) => { $(id).hidden = true; };
@@ -1346,17 +1435,17 @@ $('#btnTemplates').addEventListener('click', () => {
   renderTplGrid(); openModal('#tplModal');
 });
 $('#tplClose').addEventListener('click', () => closeModal('#tplModal'));
-$('#tplGrid').addEventListener('click', (e) => {
-  const k = e.target.closest('[data-tpl]')?.dataset.tpl;
-  if (!k) return;
+function pickTemplate(k) {
   if (askBeforeSwitch && !confirm('テンプレートを切り替えると、いまの内容は置きかわります。よろしいですか？')) return;
   state = buildState(k);
   selected = state.blocks[1]?.id || state.blocks[0]?.id;
+  selectedEl = null;
   closed.clear();
   closeModal('#tplModal');
   refresh();
   resetHistory();     // テンプレートを選び直したらそこを起点にする
-});
+  flash(`「${TEMPLATES[k].name}」を読み込みました`);
+}
 
 /* ================================================================
    書き出し / コード表示 / リセット / 画面幅
