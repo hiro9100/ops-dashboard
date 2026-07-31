@@ -103,7 +103,7 @@ function themeCSS(t) {
 const bodyHTML = () => state.blocks.map((b) => BLOCKS[b.type].render(b.props)).join('\n\n');
 
 /* 書き出し時は編集画面専用の属性を取り除く（動作に必要な data-ta/-ia/-anim/-delay は残す） */
-const exportBody = () => bodyHTML().replace(/ data-el(?:name|kind)?="[^"]*"/g, '');
+const exportBody = () => bodyHTML().replace(/ data-(?:el|elname|elkind|prop)="[^"]*"/g, '');
 
 /* 書き出し用の完成HTML（1ファイルで動く） */
 function fullHTML() {
@@ -153,6 +153,23 @@ const PREVIEW_CSS = `
 [data-elkind="ia"]:hover::after,[data-elkind="ia"].__elsel::after{background:#8b5cf6}
 [data-elkind="ia"]:hover{outline-color:rgba(139,92,246,.85)}
 [data-elkind="ia"].__elsel{outline-color:#8b5cf6}
+
+/* ダブルクリックで直接編集できる場所 */
+[data-prop]{position:relative;outline:1px dashed transparent;outline-offset:3px;
+  transition:outline-color .12s}
+[data-prop]:hover{outline-color:rgba(76,141,255,.85);cursor:text}
+[data-prop]:hover::after{
+  content:attr(data-elname) " ✎";position:absolute;top:2px;left:2px;z-index:20;
+  background:#4c8dff;color:#fff;border-radius:4px;padding:1px 7px;pointer-events:none;
+  font:700 10px/1.7 -apple-system,"Hiragino Sans",sans-serif;letter-spacing:.04em;white-space:nowrap}
+
+/* 編集中 */
+[data-prop].__editing{
+  outline:2px solid #f59e0b!important;outline-offset:3px;cursor:text;
+  background:rgba(245,158,11,.10);white-space:pre-wrap;border-radius:3px}
+[data-prop].__editing::after{
+  content:"編集中 — Esc で取り消し / 外をクリックで確定";background:#f59e0b;color:#3a2a05;
+  top:auto;bottom:calc(100% + 5px);opacity:1}
 `;
 
 let pdoc = null;
@@ -164,12 +181,31 @@ function initPreview() {
       pdoc.getElementById('s-base').textContent = SITE_CSS;
       pdoc.getElementById('s-edit').textContent = PREVIEW_CSS;
       pdoc.addEventListener('click', (e) => {
+        if (editing && editing.el.contains(e.target)) return;  // 編集中の中身のクリックは通す
         e.preventDefault();
+        if (editing) commitEdit();
         const blk = e.target.closest('[data-bid]');
         if (!blk) return;
         const elt = e.target.closest('[data-el]');
         if (elt) selectEl(blk.dataset.bid, elt.dataset.el, elt.dataset.elkind, elt.dataset.elname);
         else { selectedEl = null; select(blk.dataset.bid); }
+      });
+
+      pdoc.addEventListener('dblclick', (e) => {
+        const t = e.target.closest('[data-prop]');
+        const blk = e.target.closest('[data-bid]');
+        if (!t || !blk) return;
+        e.preventDefault();
+        startEdit(t, blk.dataset.bid, t.dataset.prop);
+      });
+
+      pdoc.addEventListener('keydown', (e) => {
+        if (!editing) return;
+        if (e.key === 'Escape') { e.preventDefault(); commitEdit(true); }
+        else if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); commitEdit(); }
+      });
+      pdoc.addEventListener('focusout', (e) => {
+        if (editing && e.target === editing.el) setTimeout(() => { if (editing) commitEdit(); }, 0);
       });
       res();
     }, { once: true });
@@ -182,6 +218,7 @@ function initPreview() {
 
 let pvTimer;
 function renderPreview(now = false) {
+  if (editing) return;   // 直接編集の最中に作り直すと入力が消えるので触らない
   clearTimeout(pvTimer);
   const run = () => {
     if (!pdoc) return;
@@ -219,6 +256,50 @@ function markSelectedEl() {
   const blk = pdoc.querySelector(`[data-bid="${selected}"]`);
   const el = blk && blk.querySelector(`[data-el="${selectedEl.role}"]`);
   if (el) el.classList.add('__elsel');
+}
+
+/* ================================================================
+   プレビュー上での直接編集（ダブルクリック）
+   ================================================================ */
+let editing = null;   // {el, blockId, prop, raw}
+const getPath = (o, path) => path.split('.').reduce((a, k) => (a == null ? a : a[k]), o);
+
+function startEdit(el, blockId, prop) {
+  if (editing) commitEdit();
+  const b = state.blocks.find((x) => x.id === blockId);
+  if (!b) return;
+  const raw = String(getPath(b.props, prop) ?? '');
+
+  editing = { el, blockId, prop, raw };
+  el.textContent = raw;            // 文字アニメで分割された span を元のテキストに戻す
+  el.classList.add('__editing');
+  /* plaintext-only なら改行だけの素直な入力になる。未対応のブラウザは true にする */
+  try { el.contentEditable = 'plaintext-only'; } catch (e) { el.contentEditable = 'true'; }
+  el.focus();
+
+  const r = pdoc.createRange();
+  r.selectNodeContents(el);
+  const sel = pdoc.getSelection();
+  sel.removeAllRanges();
+  sel.addRange(r);
+}
+
+function commitEdit(cancel = false) {
+  if (!editing) return;
+  const { el, blockId, prop, raw } = editing;
+  const typed = el.innerText.replace(/\u00a0/g, ' ').replace(/\n+$/, '');
+  editing = null;
+
+  el.contentEditable = 'false';
+  el.classList.remove('__editing');
+
+  const b = state.blocks.find((x) => x.id === blockId);
+  const val = cancel ? raw : typed;
+  if (b && val !== raw) {
+    setPath(b.props, prop, val);
+    renderList(); renderEditor(); save();
+  }
+  renderPreview(true);
 }
 
 function selectEl(blockId, role, kind, name) {
@@ -500,8 +581,9 @@ function renderEditor() {
 function elementPanel(b) {
   if (!selectedEl) {
     return `<div class="el-hint">
-      プレビューの<b>文字や画像をクリック</b>すると、そこにアニメーションを付けられます。<br>
-      テキストは文字アニメ12種、画像・カードは動き12種から選べます。
+      <b>ダブルクリック</b>で文字をその場で書き換えられます。<br>
+      <b>1回クリック</b>すると、その要素にアニメーションを付けられます
+      （青枠＝テキスト12種 / 紫枠＝画像・カード12種）。
     </div>`;
   }
   const isText = selectedEl.kind === 'ta';
@@ -515,6 +597,7 @@ function elementPanel(b) {
       <span class="en">${esc(selectedEl.name)}</span>
       <button class="ex" data-elclose title="選択を解除">✕</button>
     </div>
+    ${selectedEl.kind === 'ta' ? '<div class="el-tip">ダブルクリックすると文字を直接書き換えられます</div>' : ''}
     <div class="f"><label>アニメーション</label>
       <select data-elk="a">${list.map(([v, l]) =>
         `<option value="${v}"${cur === v ? ' selected' : ''}>${esc(l)}</option>`).join('')}</select>

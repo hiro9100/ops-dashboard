@@ -242,3 +242,8 @@ input,select,textarea{font:inherit}
   .app{grid-template-columns:200px 1fr 300px}
   .brand{display:none}
 }
+
+.el-tip{
+  font-size:11px;color:var(--tx2);background:#12161f;border-radius:5px;
+  padding:6px 9px;margin:-3px 0 11px;line-height:1.6
+}

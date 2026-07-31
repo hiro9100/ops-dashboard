@@ -24,7 +24,7 @@ function sec(type, p, inner, extraClass = '') {
 function head(p, align = 'center') {
   if (!p.eyebrow && !p.title && !p.text) return '';
   return `    <div class="sec-head${align === 'left' ? ' left' : ''}">
-${p.eyebrow ? `      <span class="eyebrow"${el(p, 'eyebrow', 'ta', '小見出し')}>${esc(p.eyebrow)}</span>\n` : ''}${p.title ? `      <h2 class="sec-title"${el(p, 'title', 'ta', '見出し')}>${nl2br(p.title)}</h2>\n` : ''}${p.text ? `      <p class="sec-sub"${el(p, 'text', 'ta', '説明文')}>${nl2br(p.text)}</p>\n` : ''}    </div>`;
+${p.eyebrow ? `      <span class="eyebrow"${el(p, 'eyebrow', 'ta', '小見出し', 'eyebrow')}>${esc(p.eyebrow)}</span>\n` : ''}${p.title ? `      <h2 class="sec-title"${el(p, 'title', 'ta', '見出し', 'title')}>${nl2br(p.title)}</h2>\n` : ''}${p.text ? `      <p class="sec-sub"${el(p, 'text', 'ta', '説明文', 'text')}>${nl2br(p.text)}</p>\n` : ''}    </div>`;
 }
 
 /* ボタン群 */
@@ -77,12 +77,18 @@ const IMAGE_ANIMS = [
    kind  : 'ta'（文字）/ 'ia'（画像・要素）
    label : 編集画面に表示する名前
    ※ 遅延は style ではなく data-delay で渡す（既存の style 属性とぶつからないように） */
-function el(p, role, kind, label) {
+function el(p, role, kind, label, prop) {
   const cfg = (p.anims || {})[role] || {};
   let out = ` data-el="${esc(role)}" data-elname="${esc(label)}" data-elkind="${kind}" data-${kind}`;
+  if (prop) out += ` data-prop="${esc(prop)}"`;   // ダブルクリックで直接編集できる
   if (cfg.a) out += ` data-anim="${esc(cfg.a)}"`;
   if (cfg.d) out += ` data-delay="${parseInt(cfg.d, 10) || 0}"`;
   return out;
+}
+
+/* ダブルクリック編集だけを付ける（段落が複数あるなど、文字アニメを付けない場所用） */
+function ed(prop, label) {
+  return ` data-prop="${esc(prop)}" data-elname="${esc(label)}"`;
 }
 
 /* よく使う共通フィールド */
@@ -93,7 +99,7 @@ const FIELD = {
   },
   anchor: { key: 'anchor', label: 'アンカーID', type: 'text', hint: 'メニューから #about のようにリンクできます' },
   eyebrow: { key: 'eyebrow', label: '小見出し', type: 'text' },
-  title: { key: 'title', label: '見出し', type: 'text' },
+  title: { key: 'title', label: '見出し', type: 'textarea', rows: 2 },
   text: { key: 'text', label: '説明文', type: 'textarea' },
   cols: {
     key: 'cols', label: '横に並べる数', type: 'select',
@@ -140,7 +146,7 @@ const BLOCKS = {
     },
     render: (p) => `<header class="hdr${p.sticky ? ' sticky' : ''}">
   <div class="wrap hdr-in">
-    <a class="logo" href="#">${p.logoImage ? img(p.logoImage, p.logo) : ''}${esc(p.logo)}</a>
+    <a class="logo" href="#"${ed('logo', 'サイト名')}>${p.logoImage ? img(p.logoImage, p.logo) : ''}${esc(p.logo)}</a>
     <nav class="nav">${(p.nav || []).filter((n) => n.label).map((n) => `<a href="${esc(n.href || '#')}">${esc(n.label)}</a>`).join('')}</nav>
     ${p.cta ? `<a class="btn sm" href="${esc(p.ctaHref || '#')}">${esc(p.cta)}</a>` : ''}
     <button class="hdr-toggle" aria-label="メニュー">☰</button>
@@ -156,7 +162,7 @@ const BLOCKS = {
       { key: 'layout', label: 'レイアウト', type: 'select',
         options: [['center', '中央ぞろえ'], ['left', '左ぞろえ'], ['split', '左右に画像'], ['cover', '背景画像いっぱい']] },
       FIELD.eyebrow,
-      { key: 'title', label: 'キャッチコピー', type: 'text' },
+      { key: 'title', label: 'キャッチコピー', type: 'textarea', rows: 2 },
       { key: 'text', label: '説明文', type: 'textarea' },
       { key: 'image', label: '画像URL', type: 'image' },
       { key: 'overlay', label: '背景画像の暗さ', type: 'range', min: 0, max: 90, suffix: '%',
@@ -177,9 +183,9 @@ const BLOCKS = {
     render: (p) => {
       const cover = p.layout === 'cover';
       const cls = ['hero', cover ? 'cover center' : p.layout, p.bg ? `bg-${p.bg}` : ''].filter(Boolean).join(' ');
-      const body = `      ${p.eyebrow ? `<span class="eyebrow"${el(p, 'eyebrow', 'ta', '小見出し')}>${esc(p.eyebrow)}</span>` : ''}
-      ${p.title ? `<h1 class="hero-title"${el(p, 'title', 'ta', 'キャッチコピー')}>${nl2br(p.title)}</h1>` : ''}
-      ${p.text ? `<p class="hero-text"${el(p, 'text', 'ta', '説明文')}>${nl2br(p.text)}</p>` : ''}
+      const body = `      ${p.eyebrow ? `<span class="eyebrow"${el(p, 'eyebrow', 'ta', '小見出し', 'eyebrow')}>${esc(p.eyebrow)}</span>` : ''}
+      ${p.title ? `<h1 class="hero-title"${el(p, 'title', 'ta', 'キャッチコピー', 'title')}>${nl2br(p.title)}</h1>` : ''}
+      ${p.text ? `<p class="hero-text"${el(p, 'text', 'ta', '説明文', 'text')}>${nl2br(p.text)}</p>` : ''}
 ${buttons(p.buttons)}`;
       const bg = cover
         ? `  <div class="hero-bg" style="--hero-overlay:rgba(15,23,42,${(p.overlay ?? 55) / 100})">${img(p.image, '')}</div>\n`
@@ -230,8 +236,8 @@ ${inner}
 ${(p.items || []).map((it, i) => `      <div class="card"${el(p, `card${i}`, 'ia', `カード${i + 1}`)}>
         ${p.style === 'image' ? `<div class="hero-media" style="aspect-ratio:16/10;margin-bottom:18px">${media(it.image, it.title)}</div>` : ''}
         ${p.style === 'num' ? `<span class="num">${i + 1}</span>` : p.style === 'image' ? '' : `<span class="ic">${esc(it.icon || '◆')}</span>`}
-        ${it.title ? `<h3>${esc(it.title)}</h3>` : ''}
-        ${it.text ? `<p>${nl2br(it.text)}</p>` : ''}
+        ${it.title ? `<h3${el(p, `card${i}.title`, 'ta', 'カード見出し', `items.${i}.title`)}>${esc(it.title)}</h3>` : ''}
+        ${it.text ? `<p${el(p, `card${i}.text`, 'ta', 'カード説明', `items.${i}.text`)}>${nl2br(it.text)}</p>` : ''}
       </div>`).join('\n')}
     </div>`),
   },
@@ -258,9 +264,9 @@ ${(p.items || []).map((it, i) => `      <div class="card"${el(p, `card${i}`, 'ia
       `    <div class="about-in${p.reverse ? ' rev' : ''}">
       <div class="about-media"${el(p, 'image', 'ia', '画像')}>${media(p.image, p.title)}</div>
       <div class="about-body">
-        ${p.eyebrow ? `<span class="eyebrow"${el(p, 'eyebrow', 'ta', '小見出し')}>${esc(p.eyebrow)}</span>` : ''}
-        ${p.title ? `<h2 class="sec-title"${el(p, 'title', 'ta', '見出し')}>${nl2br(p.title)}</h2>` : ''}
-        ${(p.body || '').split(/\n{2,}/).filter(Boolean).map((t) => `<p>${nl2br(t)}</p>`).join('\n        ')}
+        ${p.eyebrow ? `<span class="eyebrow"${el(p, 'eyebrow', 'ta', '小見出し', 'eyebrow')}>${esc(p.eyebrow)}</span>` : ''}
+        ${p.title ? `<h2 class="sec-title"${el(p, 'title', 'ta', '見出し', 'title')}>${nl2br(p.title)}</h2>` : ''}
+        <div${ed('body', '本文')}>${(p.body || '').split(/\n{2,}/).filter(Boolean).map((t) => `<p>${nl2br(t)}</p>`).join('\n          ')}</div>
 ${buttons(p.buttons)}
       </div>
     </div>`),
@@ -325,7 +331,7 @@ ${(p.items || []).map((it, i) => `      <figure${el(p, `img${i}`, 'ia', `画像$
     <div class="grid ${p.cols || 'c3'}">
 ${(p.items || []).map((it, i) => `      <div class="plan${it.featured ? ' feat' : ''}"${el(p, `plan${i}`, 'ia', `プラン${i + 1}`)}>
         ${it.featured && it.tag ? `<span class="tag">${esc(it.tag)}</span>` : ''}
-        <h3>${esc(it.name)}</h3>
+        <h3${el(p, `plan${i}.name`, 'ta', 'プラン名', `items.${i}.name`)}>${esc(it.name)}</h3>
         <div class="price">${esc(it.price)}${it.unit ? `<span>${esc(it.unit)}</span>` : ''}</div>
         <ul>${(it.features || '').split('\n').filter(Boolean).map((f) => `<li>${esc(f)}</li>`).join('')}</ul>
         ${it.btn ? `<a class="btn${it.featured ? '' : ' ghost'}" href="${esc(it.href || '#')}">${esc(it.btn)}</a>` : ''}
@@ -358,9 +364,9 @@ ${(p.items || []).map((it, i) => `      <div class="plan${it.featured ? ' feat' 
     render: (p) => sec('faq', p,
       `${head(p)}
     <div class="faq">
-${(p.items || []).map((it) => `      <details${it.open ? ' open' : ''}>
-        <summary>${esc(it.q)}</summary>
-        <div class="a">${nl2br(it.a)}</div>
+${(p.items || []).map((it, i) => `      <details${it.open ? ' open' : ''}>
+        <summary${ed(`items.${i}.q`, '質問')}>${esc(it.q)}</summary>
+        <div class="a"${ed(`items.${i}.a`, '答え')}>${nl2br(it.a)}</div>
       </details>`).join('\n')}
     </div>`),
   },
@@ -382,8 +388,8 @@ ${(p.items || []).map((it) => `      <details${it.open ? ' open' : ''}>
     },
     render: (p) => sec('cta', p,
       `    <div class="cta-in">
-      ${p.title ? `<h2 class="sec-title"${el(p, 'title', 'ta', '見出し')}>${nl2br(p.title)}</h2>` : ''}
-      ${p.text ? `<p${el(p, 'text', 'ta', '本文')}>${nl2br(p.text)}</p>` : ''}
+      ${p.title ? `<h2 class="sec-title"${el(p, 'title', 'ta', '見出し', 'title')}>${nl2br(p.title)}</h2>` : ''}
+      ${p.text ? `<p${el(p, 'text', 'ta', '本文', 'text')}>${nl2br(p.text)}</p>` : ''}
 ${buttons(p.buttons, 'center')}
     </div>`),
   },
@@ -446,8 +452,8 @@ ${form}
     },
     render: (p) => sec('rich', p,
       `    <div class="rich${p.align === 'left' ? ' left' : ''}">
-      ${p.title ? `<h2 class="sec-title" style="text-align:${p.align === 'left' ? 'left' : 'center'}"${el(p, 'title', 'ta', '見出し')}>${nl2br(p.title)}</h2>` : ''}
-      ${(p.body || '').split(/\n{2,}/).filter(Boolean).map((t) => `<p>${nl2br(t)}</p>`).join('\n      ')}
+      ${p.title ? `<h2 class="sec-title" style="text-align:${p.align === 'left' ? 'left' : 'center'}"${el(p, 'title', 'ta', '見出し', 'title')}>${nl2br(p.title)}</h2>` : ''}
+      <div${ed('body', '本文')}>${(p.body || '').split(/\n{2,}/).filter(Boolean).map((t) => `<p>${nl2br(t)}</p>`).join('\n        ')}</div>
     </div>`),
   },
 
@@ -477,10 +483,10 @@ ${form}
     render: (p) => `<footer class="ftr">
   <div class="wrap">
     <div class="ftr-in">
-      <span class="logo">${esc(p.logo)}</span>
+      <span class="logo"${ed('logo', 'サイト名')}>${esc(p.logo)}</span>
       <nav class="ftr-nav">${(p.links || []).filter((l) => l.label).map((l) => `<a href="${esc(l.href || '#')}">${esc(l.label)}</a>`).join('')}</nav>
     </div>
-    ${p.copy ? `<div class="copy">${esc(p.copy)}</div>` : ''}
+    ${p.copy ? `<div class="copy"${ed('copy', 'コピーライト')}>${esc(p.copy)}</div>` : ''}
   </div>
 </footer>`,
   },
