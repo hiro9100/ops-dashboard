@@ -867,6 +867,88 @@ ${p.line ? `        <polyline points="${items.map((it, i) => `${x(i).toFixed(1)}
     },
   },
 
+  /* ---------------- スライドページ ---------------- */
+  slides: {
+    label: 'スライドページ',
+    icon: '❐',
+    tag: 'スクロール',
+    about: 'スクロール1回で1枚めくる全画面スライド。表示のたびに図と数字が最初から再生されます。',
+    tall: true,
+    fields: [
+      { key: 'items', label: 'スライド', type: 'list', addLabel: 'スライドを追加', titleKey: 'title',
+        item: [
+          { key: 'no', label: '番号', type: 'text' },
+          { key: 'title', label: '見出し', type: 'text' },
+          { key: 'lead', label: 'リード文', type: 'textarea' },
+          { key: 'bullets', label: '箇条書き（改行区切り）', type: 'textarea' },
+          { key: 'num', label: '大きな数字（任意）', type: 'text' },
+          { key: 'suffix', label: '数字の単位', type: 'text' },
+          { key: 'viz', label: '左の図', type: 'select',
+            options: [['bar', '棒グラフが伸びる'], ['line', '線が描かれる'], ['ring', '円が満ちる']] },
+        ] },
+      FIELD.bg, FIELD.anchor,
+    ],
+    defaults: {
+      bg: 'dark', anchor: 'slides',
+      items: [
+        { no: '01', title: '速さで、選ばれる。', lead: 'ご相談から公開まで、最短3日。', num: '3', suffix: '日',
+          bullets: '構成案は当日中にお出しします\n修正は2回まで無料\n公開後1ヶ月は無償サポート', viz: 'bar' },
+        { no: '02', title: '数字で、伸ばす。', lead: '公開したあとの改善までが仕事です。', num: '182', suffix: '%',
+          bullets: '問い合わせ数の推移を毎月共有\n離脱の多い場所から直す\n施策の効果を数字で確認', viz: 'line' },
+        { no: '03', title: '長く、使える。', lead: '自分たちで更新できる形でお渡しします。', num: '96', suffix: '%',
+          bullets: '専門知識がいらないシンプルな構造\n更新方法をレクチャー\n1ファイルで完結', viz: 'ring' },
+      ],
+    },
+    render: (p) => {
+      const items = (p.items || []);
+      const n = Math.max(1, items.length);
+      const viz = (kind, i) => {
+        if (kind === 'line') {
+          const pts = [[10, 150], [70, 122], [130, 128], [190, 84], [250, 60], [310, 24]];
+          return `<svg viewBox="0 0 330 180" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="10" y1="168" x2="320" y2="168" stroke="var(--c-border)" stroke-width="2" data-draw style="--d:0s"/>
+          <polyline points="${pts.map((q) => q.join(',')).join(' ')}" stroke="var(--c-primary)" data-draw style="--d:.15s"/>
+          ${pts.map((q, k) => `<circle cx="${q[0]}" cy="${q[1]}" r="5" fill="var(--c-primary)" stroke="none" data-draw style="--d:${(0.4 + k * 0.08).toFixed(2)}s"/>`).join('')}
+        </svg>`;
+        }
+        if (kind === 'ring') {
+          return `<svg viewBox="0 0 200 200" fill="none" stroke-width="14">
+          <circle cx="100" cy="100" r="78" stroke="var(--c-border)"/>
+          <circle cx="100" cy="100" r="78" stroke="var(--c-primary)" stroke-linecap="round"
+                  transform="rotate(-90 100 100)" data-draw style="--d:.1s"/>
+        </svg>`;
+        }
+        const hs = [34, 58, 46, 78, 96];
+        return `<svg viewBox="0 0 330 180" fill="none">
+          <line x1="10" y1="168" x2="320" y2="168" stroke="var(--c-border)" stroke-width="2" data-draw style="--d:0s"/>
+          ${hs.map((h, k) => `<rect class="bar" x="${28 + k * 60}" y="${168 - h * 1.45}" width="34" height="${h * 1.45}" rx="3"
+              fill="var(--c-primary)" style="--d:${(0.15 + k * 0.09).toFixed(2)}s"/>`).join('')}
+        </svg>`;
+      };
+
+      const slides = items.map((it, i) => `      <div class="sl" style="--i:${i}">
+        <div class="sl-viz">${viz(it.viz, i)}</div>
+        <div class="sl-body">
+          <span class="sl-no"${ed(`items.${i}.no`, '番号')}>${esc(it.no)}</span>
+          ${it.num ? `<b class="sl-num" data-count="${esc(it.num)}"${it.suffix ? ` data-suffix="${esc(it.suffix)}"` : ''}>0</b>` : ''}
+          <h3${el(p, `sl${i}.title`, 'ta', 'スライド見出し', `items.${i}.title`)}>${nl2br(it.title)}</h3>
+          ${it.lead ? `<p class="sl-lead"${ed(`items.${i}.lead`, 'リード文')}>${nl2br(it.lead)}</p>` : ''}
+          ${it.bullets ? `<ul>${(it.bullets || '').split('\n').filter(Boolean).map((b) => `<li>${esc(b)}</li>`).join('')}</ul>` : ''}
+        </div>
+      </div>`).join('\n');
+
+      return `<section class="pinsec slidesec${p.bg ? ` bg-${p.bg}` : ''}" data-slides
+  style="height:${n * 100}vh"${attr('id', p.anchor)}>
+  <div class="pin-in">
+    <div class="sl-stage">
+${slides}
+    </div>
+    <nav class="sl-dots">${items.map((it, i) => `<button aria-label="${i + 1}枚目へ"${i === 0 ? ' class="on"' : ''}></button>`).join('')}</nav>
+  </div>
+</section>`;
+    },
+  },
+
   /* ---------------- 全画面メッセージ ---------------- */
   shift: {
     label: '全画面メッセージ',
@@ -896,6 +978,6 @@ ${p.line ? `        <polyline points="${items.map((it, i) => `${x(i).toFixed(1)}
 /* 追加メニューに出す順番（ヘッダー・フッターは常設なので除く） */
 const ADDABLE = [
   'hero', 'features', 'about', 'gallery', 'pricing', 'faq', 'cta', 'contact', 'rich',
-  'product3d', 'exploded', 'hscroll', 'stackcards', 'timeline', 'clipreveal',
+  'slides', 'product3d', 'exploded', 'hscroll', 'stackcards', 'timeline', 'clipreveal',
   'carousel3d', 'slotstats', 'svgdraw', 'shift',
 ];

@@ -110,6 +110,74 @@ const TEMPLATES = {
     ],
   },
 
+  /* ============ スライド資料（1スクロール＝1枚） ============ */
+  deck: {
+    name: 'スライド資料',
+    desc: 'スクロール1回で1枚めくる全画面スライド。ダーク×ゴールドで、提案資料のように読ませる。',
+    swatch: ['#c9a227', '#e8d9a8', '#0d0d0f'],
+    style: '',
+    theme: {
+      primary: '#c9a227', accent: '#e8d9a8', bg: '#0d0d0f', surface: '#16161a',
+      text: '#f2efe6', muted: '#9a978d', border: '#2a2a30', dark: '#08080a',
+      radius: 2, max: 1200, font: 'gothic', fontHead: 'mincho',
+    },
+    blocks: [
+      { type: 'header', props: {
+        logo: 'AURUM', cta: 'お問い合わせ', ctaHref: '#contact',
+        nav: [
+          { label: '選ばれる理由', href: '#slides' },
+          { label: '実績', href: '#numbers' },
+          { label: 'お問い合わせ', href: '#contact' },
+        ],
+      } },
+      { type: 'hero', props: {
+        layout: 'center', eyebrow: 'WHY US',
+        title: '選ばれるには、\n理由があります。',
+        text: 'スクロールしてご覧ください。1回のスクロールで1枚ずつ進みます。',
+        bg: 'dark', anchor: 'top',
+        buttons: [{ label: '理由を見る', href: '#slides', style: 'primary' }],
+      } },
+      { type: 'slides', props: {
+        bg: 'dark', anchor: 'slides',
+        items: [
+          { no: '01', title: '速さで、選ばれる。', lead: 'ご相談から公開まで、最短3日。',
+            num: '3', suffix: '日', viz: 'bar',
+            bullets: '構成案は当日中にお出しします\n修正は2回まで無料\n公開後1ヶ月は無償サポート' },
+          { no: '02', title: '数字で、伸ばす。', lead: '公開したあとの改善までが仕事です。',
+            num: '182', suffix: '%', viz: 'line',
+            bullets: '問い合わせ数の推移を毎月共有\n離脱の多い場所から直す\n施策の効果を数字で確認' },
+          { no: '03', title: '長く、使える。', lead: 'ご自身で更新できる形でお渡しします。',
+            num: '96', suffix: '%', viz: 'ring',
+            bullets: '専門知識がいらないシンプルな構造\n更新方法をレクチャー\n1ファイルで完結' },
+        ],
+      } },
+      { type: 'slotstats', props: {
+        eyebrow: 'RESULTS', title: '実績', text: '', cols: 'c3',
+        bg: '', anchor: 'numbers',
+        items: [
+          { value: '480', label: '制作実績' },
+          { value: '98%', label: '継続率' },
+          { value: '12', label: '受賞歴' },
+        ],
+      } },
+      { type: 'cta', props: {
+        title: 'まずは、ご相談ください。', text: '30分のオンライン面談から始めましょう。',
+        bg: 'primary', anchor: '',
+        buttons: [{ label: '相談する', href: '#contact', style: 'ghost' }],
+      } },
+      { type: 'contact', props: {
+        eyebrow: 'CONTACT', title: 'お問い合わせ',
+        text: '2営業日以内にご返信します。',
+        tel: '03-0000-0000', email: 'hello@example.com', address: '', hours: '平日 10:00 - 19:00',
+        form: true, submit: '送信する', bg: '', anchor: 'contact',
+      } },
+      { type: 'footer', props: {
+        logo: 'AURUM', copy: '© 2026 AURUM',
+        links: [{ label: '会社概要', href: '#' }, { label: 'プライバシーポリシー', href: '#' }],
+      } },
+    ],
+  },
+
   /* ============ クリニック・サロン ============ */
   clinic: {
     name: 'クリニック・サロン',

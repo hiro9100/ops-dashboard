@@ -565,6 +565,69 @@ p:last-child{margin-bottom:0}
   .car{height:340px}
 }
 
+/* ==========================================================
+   スライドページ（1スクロール＝1枚めくり）
+   ページ全体を乗っ取らず、固定セクションの中でめくる。
+   最初と最後まで来たら、そのまま前後のセクションへ流れる。
+   ========================================================== */
+.slidesec .pin-in{display:block;padding:0}
+.sl-stage{position:absolute;inset:0;transition:transform .8s cubic-bezier(.65,0,.35,1)}
+.sl{
+  position:absolute;left:0;right:0;height:100%;
+  transform:translateY(calc(var(--i) * 100%));
+  display:grid;grid-template-columns:48% 52%;align-items:center;
+  gap:clamp(24px,4vw,64px);padding:0 clamp(24px,7vw,100px)
+}
+.sl-viz{width:100%;display:grid;place-items:center}
+.sl-viz svg{width:100%;max-width:440px;height:auto;overflow:visible}
+.sl-no{
+  display:block;font-family:Menlo,monospace;font-size:13px;letter-spacing:.24em;
+  color:var(--c-primary);margin-bottom:18px
+}
+.sl-body h3{margin:0 0 16px;font-size:clamp(24px,3.6vw,42px);line-height:1.35;
+  font-family:var(--font-head);font-weight:800}
+.sl-lead{margin:0 0 22px;color:var(--c-muted);font-size:clamp(14px,1.5vw,16.5px);max-width:34em}
+.sl-body ul{list-style:none;margin:0;padding:0;display:grid;gap:11px}
+.sl-body li{position:relative;padding-left:24px;font-size:14.5px}
+.sl-body li::before{content:"";position:absolute;left:0;top:.62em;width:9px;height:2px;background:var(--c-primary)}
+.sl-num{display:block;font-family:Menlo,monospace;font-weight:800;line-height:1.1;
+  font-size:clamp(34px,5vw,64px);color:var(--c-primary);margin-bottom:14px}
+.sl-num span{font-size:.5em;margin-left:.1em}
+
+/* 右端のドットナビ */
+.sl-dots{
+  position:absolute;right:clamp(12px,2.6vw,32px);top:50%;transform:translateY(-50%);
+  display:flex;flex-direction:column;gap:13px;z-index:6
+}
+.sl-dots button{
+  width:9px;height:9px;padding:0;border:0;border-radius:50%;cursor:pointer;
+  background:color-mix(in srgb,currentColor 30%,transparent);transition:.25s
+}
+.sl-dots button.on{background:var(--c-primary);transform:scale(1.55)}
+
+/* 表示されるたびに最初から再生する */
+.sl-viz [data-draw]{stroke-dasharray:var(--len);stroke-dashoffset:var(--len)}
+.sl.play .sl-viz [data-draw]{stroke-dashoffset:0;
+  transition:stroke-dashoffset 1.3s cubic-bezier(.4,0,.2,1) var(--d,0s)}
+.sl-viz .bar{transform:scaleY(0);transform-origin:50% 100%}
+.sl.play .sl-viz .bar{transform:scaleY(1);
+  transition:transform .9s cubic-bezier(.2,.7,.3,1) var(--d,0s)}
+.sl-body > *{opacity:0;transform:translateY(16px)}
+.sl.play .sl-body > *{opacity:1;transform:none;
+  transition:opacity .7s cubic-bezier(.2,.7,.3,1) var(--d,0s),
+             transform .7s cubic-bezier(.2,.7,.3,1) var(--d,0s)}
+
+/* スマホは普通の縦積みに戻す */
+@media(max-width:768px){
+  .slidesec{height:auto!important}
+  .slidesec .pin-in{position:static;height:auto;overflow:visible}
+  .sl-stage{position:static;transform:none!important;transition:none}
+  .sl{position:static;transform:none!important;grid-template-columns:1fr;height:auto;
+    padding:clamp(48px,10vw,72px) 24px;gap:28px}
+  .sl + .sl{border-top:1px solid var(--c-border)}
+  .sl-dots{display:none}
+}
+
 /* ---------- ブロックの出現 ---------- */
 .rv{opacity:0;transform:translateY(34px);
   transition:opacity .85s cubic-bezier(.2,.7,.3,1),transform .85s cubic-bezier(.2,.7,.3,1)}
@@ -848,6 +911,72 @@ const SITE_JS = `
     })();
     size(); addEventListener('resize', function(){ size(); dirty = true; }, {passive:true});
     draw(0,0);
+  });
+
+  /* ---------- スライドページ ---------- */
+  function countTo(el){
+    var to = parseFloat(el.getAttribute('data-count')) || 0;
+    var dec = (el.getAttribute('data-count') || '').indexOf('.') >= 0 ? 1 : 0;
+    var sfx = el.getAttribute('data-suffix') || '';
+    if(reduce){ el.textContent = to.toFixed(dec) + sfx; return; }
+    var t0 = null, dur = 1200;
+    function step(t){
+      if(t0 === null) t0 = t;
+      var p = Math.min(1, (t - t0) / dur), e = 1 - Math.pow(1 - p, 3);
+      el.textContent = (to * e).toFixed(dec) + sfx;
+      if(p < 1) requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+  }
+  function replaySlide(sl){
+    sl.classList.remove('play');
+    void sl.offsetWidth;                       /* いったん巻き戻してから再生する */
+    sl.classList.add('play');
+    var c = sl.querySelector('[data-count]');
+    if(c) countTo(c);
+  }
+
+  [].slice.call(d.querySelectorAll('[data-slides]')).forEach(function(sec){
+    var stage = sec.querySelector('.sl-stage');
+    var slides = [].slice.call(sec.querySelectorAll('.sl'));
+    var dots = [].slice.call(sec.querySelectorAll('.sl-dots button'));
+    var n = slides.length, cur = -1;
+    if(!n) return;
+    var isNarrow = function(){ return matchMedia('(max-width:768px)').matches; };
+
+    /* SVGの線の長さを測る */
+    [].slice.call(sec.querySelectorAll('.sl-viz [data-draw]')).forEach(function(el){
+      try{ el.style.setProperty('--len', Math.ceil(el.getTotalLength())); }catch(e){}
+    });
+
+    function show(i){
+      if(i === cur) return;
+      cur = i;
+      stage.style.transform = 'translateY(' + (-i * 100) + '%)';
+      dots.forEach(function(b, k){ b.classList.toggle('on', k === i); });
+      replaySlide(slides[i]);
+    }
+    watchScroll(function(){
+      if(isNarrow()) return;
+      var r = sec.getBoundingClientRect();
+      if(r.bottom < 0 || r.top > innerHeight) return;
+      show(Math.max(0, Math.min(n - 1, Math.round(progress(sec) * (n - 1)))));
+    });
+    dots.forEach(function(b, k){
+      b.addEventListener('click', function(){
+        var top = sec.getBoundingClientRect().top + (window.pageYOffset || d.documentElement.scrollTop);
+        var span = sec.offsetHeight - innerHeight;
+        scrollTo({ top: top + span * (n > 1 ? k / (n - 1) : 0), behavior: 'smooth' });
+      });
+    });
+    /* スマホでは画面に入るたびに再生する */
+    if('IntersectionObserver' in window){
+      var io2 = new IntersectionObserver(function(es){
+        es.forEach(function(e){ if(e.isIntersecting && isNarrow()) replaySlide(e.target); });
+      }, {threshold:.35});
+      slides.forEach(function(s){ io2.observe(s); });
+    }
+    if(isNarrow()) slides.forEach(function(s){ s.classList.add('play'); });
   });
 
   /* ---------- 分解図 ---------- */
