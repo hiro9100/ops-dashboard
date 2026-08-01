@@ -110,6 +110,152 @@ const TEMPLATES = {
     ],
   },
 
+  /* ============ ビストロ・レストラン ============ */
+  bistro: {
+    name: 'ビストロ・レストラン',
+    desc: '暗い青緑にテラコッタ。余白と明朝で、料理の写真を静かに見せる。',
+    swatch: ['#C94324', '#D0683E', '#1B2D33'],
+    style: 'edit',
+    theme: {
+      primary: '#c94324', accent: '#d0683e', bg: '#1b2d33', surface: '#254447',
+      text: '#f2ebe4', muted: '#a3b1ae', border: '#43574b', dark: '#122127',
+      radius: 0, max: 1080, font: 'gothic', fontHead: 'mincho',
+    },
+    blocks: [
+      { type: 'header', props: {
+        logo: 'TERRA', cta: 'ご予約', ctaHref: '#contact',
+        nav: [
+          { label: 'お品書き', href: '#menu' },
+          { label: '店内', href: '#gallery' },
+          { label: '私たちについて', href: '#about' },
+          { label: 'ご予約', href: '#contact' },
+        ],
+      } },
+      { type: 'hero', props: {
+        layout: 'cover', eyebrow: 'BISTRO TERRA', overlay: 42,
+        title: '火と、土と、\n季節のもの。',
+        text: '薪窯でゆっくり火を入れた料理を、少しずつ。',
+        bg: '', anchor: 'top',
+        buttons: [{ label: '席を予約する', href: '#contact', style: 'primary' },
+                  { label: 'お品書きを見る', href: '#menu', style: 'ghost' }],
+      } },
+      { type: 'rich', props: {
+        title: '', align: 'center', bg: '', anchor: '',
+        body: '毎朝、市場でその日いちばんのものを選びます。\n\nだから献立は決まっていません。届いたものを見てから、火の入れ方を決める。そういう店です。',
+      } },
+      { type: 'features', props: {
+        eyebrow: 'MENU', title: 'お品書き', text: '週替わりでご用意しています。',
+        cols: 'c3', style: 'image', bg: 'surface', anchor: 'menu',
+        items: [
+          { image: '', title: '前菜の盛り合わせ', text: '¥1,800 / 季節の野菜を6〜8種。その日の畑の様子で変わります。' },
+          { image: '', title: '薪窯の一皿', text: '¥3,400 / 魚か肉をお選びください。付け合わせはおまかせで。' },
+          { image: '', title: 'コース', text: '¥6,800 / 前菜から甘いものまで。2名様から承ります。' },
+        ],
+      } },
+      { type: 'gallery', props: {
+        eyebrow: 'GALLERY', title: '店内と、料理', text: '', bg: '', anchor: 'gallery',
+      } },
+      { type: 'about', props: {
+        eyebrow: 'ABOUT', title: '十席だけの\n理由',
+        body: 'ひとりで火を見ながら作れるのは、これくらいが限界でした。\n\n手が届く範囲でやると決めてから、料理はよくなったと思います。予約が取りにくいのは申し訳ないのですが、この形は変えないつもりです。',
+        reverse: true, bg: 'surface', anchor: 'about',
+        buttons: [],
+      } },
+      { type: 'contact', props: {
+        eyebrow: 'RESERVATION', title: 'ご予約・アクセス',
+        text: '2日前までにご予約ください。当日席の空きはお電話でご確認いただけます。',
+        tel: '03-0000-0000', email: 'hello@example.com',
+        address: '東京都〇〇区〇〇 1-8-3', hours: '18:00 - 23:00（日・月 定休）',
+        form: true, submit: '予約を申し込む', bg: '', anchor: 'contact',
+      } },
+      { type: 'footer', props: {
+        logo: 'TERRA', copy: '© 2026 BISTRO TERRA',
+        links: [{ label: 'お品書き', href: '#menu' }, { label: 'ご予約', href: '#contact' },
+                { label: 'Instagram', href: '#' }],
+      } },
+    ],
+  },
+
+  /* ============ 展示・ギャラリー ============ */
+  exhibit: {
+    name: '展示・ギャラリー',
+    desc: '水中のような深い青。細い罫線と静けさで、作品と会期を伝える。',
+    swatch: ['#486F76', '#244B6D', '#092E3E'],
+    style: 'mono',
+    theme: {
+      primary: '#486f76', accent: '#244b6d', bg: '#092e3e', surface: '#122931',
+      text: '#e6eef0', muted: '#8fa6ac', border: '#1e3d48', dark: '#061f2a',
+      radius: 0, max: 1180, font: 'gothic', fontHead: 'mincho',
+    },
+    blocks: [
+      { type: 'header', props: {
+        logo: 'SHIZUKA', cta: 'チケット', ctaHref: '#contact',
+        nav: [
+          { label: '展示について', href: '#about' },
+          { label: '作品', href: '#works' },
+          { label: '会期', href: '#steps' },
+          { label: 'アクセス', href: '#contact' },
+        ],
+      } },
+      { type: 'hero', props: {
+        layout: 'left', eyebrow: 'EXHIBITION 2026',
+        title: '沈むひかり、\nのこる音。',
+        text: '水の中でだけ起きる出来事を、42点の写真と3つの映像でたどります。',
+        bg: '', anchor: 'top',
+        buttons: [{ label: 'チケットを買う', href: '#contact', style: 'primary' },
+                  { label: '作品を見る', href: '#works', style: 'ghost' }],
+      } },
+      { type: 'about', props: {
+        eyebrow: 'ABOUT', title: '見えないものを、\n見にいく',
+        body: '深さ40メートルでは、赤はもう色として届きません。\n\nそこに残るのは青と、わずかな緑だけ。本展はその限られた色域だけで撮られた作品を集めました。目が慣れるまで、少し時間をかけてご覧ください。',
+        reverse: false, bg: 'surface', anchor: 'about',
+        buttons: [{ label: '作家について', href: '#', style: 'ghost' }],
+      } },
+      { type: 'hscroll', props: {
+        eyebrow: 'WORKS', title: '出展作品', height: 340, bg: '', anchor: 'works',
+        items: [
+          { no: '01', title: '群れ / 2024', image: '' },
+          { no: '02', title: '層 / 2024', image: '' },
+          { no: '03', title: '沈黙 / 2025', image: '' },
+          { no: '04', title: '呼吸 / 2025', image: '' },
+          { no: '05', title: '境界 / 2025', image: '' },
+          { no: '06', title: 'のこる音 / 2026', image: '' },
+        ],
+      } },
+      { type: 'slotstats', props: {
+        eyebrow: 'NUMBERS', title: '本展について', text: '', cols: 'c3',
+        bg: 'surface', anchor: 'numbers',
+        items: [
+          { value: '42', label: '出展点数' },
+          { value: '3', label: '映像作品' },
+          { value: '86', label: '会期日数' },
+        ],
+      } },
+      { type: 'timeline', props: {
+        eyebrow: 'SCHEDULE', title: '会期とイベント', text: '',
+        bg: '', anchor: 'steps',
+        items: [
+          { label: '04.12 SAT', title: '開幕', text: '11:00 開場。初日のみ作家在廊予定です。' },
+          { label: '04.26 SAT', title: 'アーティストトーク', text: '14:00 - 15:30 / 定員40名・要予約' },
+          { label: '05.17 SAT', title: '夜間開館', text: '20:00まで開館します。照明を落とした状態でご覧いただけます。' },
+          { label: '07.06 SUN', title: '閉幕', text: '17:00 閉場。最終日は混み合います。' },
+        ],
+      } },
+      { type: 'contact', props: {
+        eyebrow: 'ACCESS', title: 'アクセス・チケット',
+        text: '当日券は会場受付でも購入いただけます。',
+        tel: '03-0000-0000', email: 'info@example.com',
+        address: '東京都〇〇区〇〇 4-2-1 〇〇美術館 B1', hours: '11:00 - 18:00（火曜休館）',
+        form: true, submit: '問い合わせる', bg: 'surface', anchor: 'contact',
+      } },
+      { type: 'footer', props: {
+        logo: 'SHIZUKA', copy: '© 2026 SHIZUKA Exhibition',
+        links: [{ label: '展示について', href: '#about' }, { label: 'アクセス', href: '#contact' },
+                { label: '主催者情報', href: '#' }],
+      } },
+    ],
+  },
+
   /* ============ スライド資料（1スクロール＝1枚） ============ */
   deck: {
     name: 'スライド資料',

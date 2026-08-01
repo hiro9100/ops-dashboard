@@ -456,10 +456,12 @@ p:last-child{margin-bottom:0}
 .exp-l span{position:relative;text-shadow:0 1px 6px rgba(0,0,0,.5)}
 
 /* ---------- 横に流れるギャラリー ---------- */
-.hs-head{position:absolute;top:10vh;left:0;width:100%;z-index:3}
+.hs-head{position:absolute;top:clamp(24px,7vh,74px);left:0;width:100%;z-index:3}
+/* 見出しの分だけ上に余白を取る（画面が低いとカードと重なるため） */
+[data-hscroll] .pin-in{padding-top:clamp(96px,20vh,190px)}
 .hs-track{display:flex;gap:20px;padding-left:6vw;will-change:transform}
 .hs-card{
-  flex:none;width:clamp(220px,25vw,330px);aspect-ratio:3/4;border-radius:var(--radius);
+  flex:none;height:min(58vh,440px);width:auto;aspect-ratio:3/4;border-radius:var(--radius);
   overflow:hidden;position:relative;border:1px solid var(--c-border);background:var(--c-surface);
   display:flex;flex-direction:column;justify-content:flex-end;padding:20px
 }
