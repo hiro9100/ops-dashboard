@@ -534,6 +534,53 @@ p:last-child{margin-bottom:0}
   .mi dt b{font-size:15px}
 }
 
+/* ---------- お知らせ・イベント ---------- */
+.nws{list-style:none;margin:0;padding:0;border-top:1px solid var(--c-border)}
+.nws-i{border-bottom:1px solid var(--c-border)}
+.nws-i a{
+  display:flex;align-items:baseline;gap:clamp(12px,2vw,28px);
+  padding:clamp(16px,2.2vh,24px) 4px;text-decoration:none;color:inherit;
+  transition:opacity .2s,padding-left .25s
+}
+.nws-i a:hover{opacity:.65;padding-left:10px}
+.nws-i time{
+  font-size:13px;font-weight:700;letter-spacing:.06em;color:var(--c-muted);
+  white-space:nowrap;font-variant-numeric:tabular-nums;flex:0 0 auto
+}
+.nws-c{
+  font-size:11px;font-weight:800;letter-spacing:.1em;white-space:nowrap;flex:0 0 auto;
+  border:1px solid var(--c-border);border-radius:999px;padding:3px 11px;color:var(--c-muted)
+}
+.nws-i b{font-size:15.5px;font-weight:600;line-height:1.6;flex:1;min-width:0}
+.sec-news .btn-row{margin-top:clamp(24px,4vh,44px)}
+@media(max-width:640px){
+  .nws-i a{flex-wrap:wrap;gap:8px 12px}
+  .nws-i b{flex:0 0 100%}
+}
+
+/* ---------- フロアガイド ---------- */
+.flr{display:grid;gap:clamp(28px,5vh,64px)}
+.flr-i{
+  display:grid;grid-template-columns:1.05fr 1fr;gap:clamp(20px,4vw,56px);align-items:center
+}
+.flr-i:nth-child(even){direction:rtl}
+.flr-i:nth-child(even) > *{direction:ltr}
+.flr-pic{
+  aspect-ratio:16/10;overflow:hidden;border-radius:var(--radius);
+  background:linear-gradient(135deg,var(--c-primary),var(--c-accent))
+}
+.flr-pic img{width:100%;height:100%;object-fit:cover;display:block}
+.flr-n{
+  display:block;font-family:var(--font-head);font-size:clamp(34px,5vw,64px);
+  font-weight:900;line-height:1;letter-spacing:.02em;color:var(--c-primary);
+  margin-bottom:clamp(8px,1.6vh,16px)
+}
+.flr-b h3{margin:0 0 10px;font-size:clamp(17px,2vw,22px);font-weight:700;line-height:1.5}
+.flr-b p{margin:0;color:var(--c-muted);font-size:14.5px;line-height:1.9}
+@media(max-width:760px){
+  .flr-i,.flr-i:nth-child(even){grid-template-columns:1fr;direction:ltr}
+}
+
 /* ---------- 流れる文字（マーキー） ----------
    同じ並びを2組ならべ、1組ぶん動かして先頭に戻す。
    継ぎ目で一瞬止まるのを防ぐため、2組目は1組目の真後ろに置く。 */

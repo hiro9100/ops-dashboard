@@ -1034,6 +1034,53 @@ p:last-child{margin-bottom:0}
   .mi dt b{font-size:15px}
 }
 
+/* ---------- お知らせ・イベント ---------- */
+.nws{list-style:none;margin:0;padding:0;border-top:1px solid var(--c-border)}
+.nws-i{border-bottom:1px solid var(--c-border)}
+.nws-i a{
+  display:flex;align-items:baseline;gap:clamp(12px,2vw,28px);
+  padding:clamp(16px,2.2vh,24px) 4px;text-decoration:none;color:inherit;
+  transition:opacity .2s,padding-left .25s
+}
+.nws-i a:hover{opacity:.65;padding-left:10px}
+.nws-i time{
+  font-size:13px;font-weight:700;letter-spacing:.06em;color:var(--c-muted);
+  white-space:nowrap;font-variant-numeric:tabular-nums;flex:0 0 auto
+}
+.nws-c{
+  font-size:11px;font-weight:800;letter-spacing:.1em;white-space:nowrap;flex:0 0 auto;
+  border:1px solid var(--c-border);border-radius:999px;padding:3px 11px;color:var(--c-muted)
+}
+.nws-i b{font-size:15.5px;font-weight:600;line-height:1.6;flex:1;min-width:0}
+.sec-news .btn-row{margin-top:clamp(24px,4vh,44px)}
+@media(max-width:640px){
+  .nws-i a{flex-wrap:wrap;gap:8px 12px}
+  .nws-i b{flex:0 0 100%}
+}
+
+/* ---------- フロアガイド ---------- */
+.flr{display:grid;gap:clamp(28px,5vh,64px)}
+.flr-i{
+  display:grid;grid-template-columns:1.05fr 1fr;gap:clamp(20px,4vw,56px);align-items:center
+}
+.flr-i:nth-child(even){direction:rtl}
+.flr-i:nth-child(even) > *{direction:ltr}
+.flr-pic{
+  aspect-ratio:16/10;overflow:hidden;border-radius:var(--radius);
+  background:linear-gradient(135deg,var(--c-primary),var(--c-accent))
+}
+.flr-pic img{width:100%;height:100%;object-fit:cover;display:block}
+.flr-n{
+  display:block;font-family:var(--font-head);font-size:clamp(34px,5vw,64px);
+  font-weight:900;line-height:1;letter-spacing:.02em;color:var(--c-primary);
+  margin-bottom:clamp(8px,1.6vh,16px)
+}
+.flr-b h3{margin:0 0 10px;font-size:clamp(17px,2vw,22px);font-weight:700;line-height:1.5}
+.flr-b p{margin:0;color:var(--c-muted);font-size:14.5px;line-height:1.9}
+@media(max-width:760px){
+  .flr-i,.flr-i:nth-child(even){grid-template-columns:1fr;direction:ltr}
+}
+
 /* ---------- 流れる文字（マーキー） ----------
    同じ並びを2組ならべ、1組ぶん動かして先頭に戻す。
    継ぎ目で一瞬止まるのを防ぐため、2組目は1組目の真後ろに置く。 */
@@ -2828,6 +2875,88 @@ ${form}
     </div>`),
   },
 
+  /* ---------------- お知らせ・イベント ---------------- */
+  news: {
+    label: 'お知らせ・イベント',
+    icon: '📰',
+    about: '日付とカテゴリを添えた一覧。新着情報、イベント、実績の告知に。',
+    fields: [
+      FIELD.eyebrow, FIELD.title, FIELD.text,
+      { key: 'items', label: 'お知らせ', type: 'list', addLabel: 'お知らせを追加', titleKey: 'title',
+        item: [
+          { key: 'date', label: '日付', type: 'text' },
+          { key: 'cat', label: 'カテゴリ', type: 'text' },
+          { key: 'title', label: '見出し', type: 'text' },
+          { key: 'href', label: 'リンク先', type: 'text' },
+        ] },
+      { key: 'more', label: 'もっと見るボタン（空で非表示）', type: 'text' },
+      { key: 'moreHref', label: 'ボタンのリンク先', type: 'text' },
+      FIELD.bg, FIELD.anchor,
+    ],
+    defaults: {
+      eyebrow: 'NEWS', title: 'お知らせ', text: '',
+      more: '一覧を見る', moreHref: '#', bg: '', anchor: 'news',
+      items: [
+        { date: '2026.07.28', cat: 'お知らせ', title: '夏季休業のご案内', href: '#' },
+        { date: '2026.07.11', cat: 'イベント', title: '夏のワークショップを開催します', href: '#' },
+        { date: '2026.06.30', cat: '実績', title: '新しい施工事例を追加しました', href: '#' },
+      ],
+    },
+    render: (p) => sec('news', p,
+      `${head(p, 'left')}
+    <ul class="nws">
+${(p.items || []).map((it, i) => `      <li class="nws-i"${el(p, `row${i}`, 'ia', `お知らせ${i + 1}`)}>
+        <a href="${esc(it.href || '#')}">
+          <time>${esc(it.date)}</time>
+          ${it.cat ? `<span class="nws-c">${esc(it.cat)}</span>` : ''}
+          <b${ed(`items.${i}.title`, '見出し')}>${esc(it.title)}</b>
+        </a>
+      </li>`).join('\n')}
+    </ul>
+${p.more ? `    <div class="btn-row"><a class="btn ghost" href="${esc(p.moreHref || '#')}">${esc(p.more)}</a></div>` : ''}`),
+  },
+
+  /* ---------------- フロアガイド ---------------- */
+  floors: {
+    label: 'フロアガイド',
+    icon: '▤',
+    about: '階ごとに何があるかを並べます。商業施設・ビル・複合施設に。',
+    fields: [
+      FIELD.eyebrow, FIELD.title, FIELD.text,
+      { key: 'items', label: 'フロア', type: 'list', addLabel: 'フロアを追加', titleKey: 'name',
+        item: [
+          { key: 'floor', label: '階の表示', type: 'text', hint: '1F / B1 / RF など' },
+          { key: 'name', label: '名前', type: 'text' },
+          { key: 'text', label: '説明', type: 'textarea' },
+          { key: 'image', label: '画像', type: 'image' },
+        ] },
+      FIELD.bg, FIELD.anchor,
+    ],
+    defaults: {
+      eyebrow: 'FLOOR GUIDE', title: 'フロアガイド', text: '', bg: '', anchor: 'floors',
+      items: [
+        { floor: '1F', name: 'カフェ＆ショップ', image: '',
+          text: '海を眺めながら過ごせる、開けたフロアです。テイクアウトもできます。' },
+        { floor: '2F', name: 'レストラン', image: '',
+          text: '地元の食材を使ったコース料理を、テラス席でも。' },
+        { floor: '3F', name: 'イベントスペース', image: '',
+          text: '展示・マルシェ・ワークショップに。貸し出しもしています。' },
+      ],
+    },
+    render: (p) => sec('floors', p,
+      `${head(p, 'left')}
+    <div class="flr">
+${(p.items || []).map((it, i) => `      <div class="flr-i"${el(p, `fl${i}`, 'ia', `フロア${i + 1}`)}>
+        <div class="flr-pic"${imgSlot(`items.${i}.image`)}>${media(it.image, it.name)}</div>
+        <div class="flr-b">
+          <span class="flr-n"${ed(`items.${i}.floor`, '階')}>${esc(it.floor)}</span>
+          <h3${el(p, `fl${i}.name`, 'ta', 'フロア名', `items.${i}.name`)}>${esc(it.name)}</h3>
+          <p${ed(`items.${i}.text`, '説明')}>${nl2br(it.text)}</p>
+        </div>
+      </div>`).join('\n')}
+    </div>`),
+  },
+
   /* ---------------- 流れる文字（マーキー） ---------------- */
   marquee: {
     label: '流れる文字',
@@ -3509,7 +3638,7 @@ ${slides}
 
 /* 追加メニューに出す順番（ヘッダー・フッターは常設なので除く） */
 const ADDABLE = [
-  'hero', 'collage', 'features', 'about', 'gallery', 'menu', 'marquee', 'pricing', 'faq', 'cta', 'contact', 'rich',
+  'hero', 'collage', 'features', 'about', 'gallery', 'menu', 'floors', 'news', 'marquee', 'pricing', 'faq', 'cta', 'contact', 'rich',
   'slides', 'product3d', 'exploded', 'hscroll', 'stackcards', 'timeline', 'clipreveal',
   'carousel3d', 'slotstats', 'svgdraw', 'shift',
 ];
@@ -4472,6 +4601,211 @@ const TEMPLATES = {
           { label: '採用', href: '#recruit' },
         ],
         copy: '© 2026 Studio',
+      } },
+    ],
+  },
+
+  /* ============ 13. 解体・建設・職人 ============ */
+  demolition: {
+    style: 'bold',
+    name: '解体・建設・職人',
+    desc: '解体・土木・設備。濃い緑から黒に蛍光グリーン。数字と工事の種類を前に出す。',
+    swatch: ['#00e01e', '#15421b', '#09170c'],
+    theme: {
+      primary: '#00e01e', accent: '#15421b', bg: '#09170c', surface: '#131f16',
+      text: '#ffffff', muted: '#a9b6ac', border: '#26362a', dark: '#080908',
+      radius: 4, max: 1180, font: 'gothic', fontHead: 'gothic',
+    },
+    blocks: [
+      { type: 'header', props: {
+        logo: '株式会社〇〇', sticky: true, cta: '無料見積り', ctaHref: '#contact',
+        nav: [
+          { label: '対応できる工事', href: '#features' },
+          { label: '品質へのこだわり', href: '#about' },
+          { label: '施工実績', href: '#works' },
+          { label: '対応エリア', href: '#area' },
+        ],
+      } },
+      { type: 'hero', props: {
+        layout: 'cover', eyebrow: '', overlay: 60, anchor: 'top',
+        deco: 'dust', decoStrength: 45, grain: true, scroll: 'parallax', scrollLen: 175,
+        title: '解体業界の、\n未来をつくる。',
+        text: '近隣への配慮、産廃の適正処理、工期の厳守。当たり前を、当たり前にやりきります。',
+        buttons: [
+          { label: '無料で見積る', href: '#contact', style: 'primary' },
+          { label: '施工実績を見る', href: '#works', style: 'ghost' },
+        ],
+        anims: { title: { a: 'maskline' }, text: { a: 'fadeup', d: 280 } },
+      } },
+      { type: 'slotstats', props: {
+        eyebrow: 'NUMBERS', title: '数字で見る私たち', text: '', cols: 'c3',
+        bg: 'surface', anchor: 'numbers',
+        items: [
+          { value: '1,200', label: '年間施工件数' },
+          { value: '4.8', label: 'クチコミ評価' },
+          { value: '138%', label: '売上高 平均成長率' },
+        ],
+      } },
+      { type: 'features', props: {
+        eyebrow: 'SERVICE', title: '対応できる工事',
+        text: '住宅1棟から工場・プラントまで。一部だけの解体も承ります。',
+        cols: 'c3', style: 'num', bg: '', anchor: 'features',
+        items: [
+          { title: '建物解体工事', text: '木造・鉄骨・RC。近隣への説明から届出まで一式でお引き受けします。' },
+          { title: '一部解体・内装解体', text: '使いながらの改修にも対応。営業を止めずに進める段取りを組みます。' },
+          { title: '外構・撤去工事', text: 'ブロック塀、カーポート、残置物。小さな工事だけでも構いません。' },
+        ],
+      } },
+      { type: 'about', props: {
+        eyebrow: 'QUALITY', title: 'だから選ばれる、\n私たちの解体工事。',
+        image: '', reverse: false, bg: 'surface', anchor: 'about',
+        body: '解体は、壊すことより「そのあと」が大事だと考えています。\n\n'
+          + '近隣へのご挨拶、粉じんと騒音の抑え方、産業廃棄物の分別と行き先の記録。'
+          + 'ここを丁寧にやるかどうかで、工事の印象はまるごと変わります。\n\n'
+          + '写真つきの日報を毎日お送りし、いま何がどこまで進んでいるかを共有します。',
+        buttons: [{ label: '施工実績を見る', href: '#works', style: 'ghost' }],
+        anims: { image: { a: 'wipe' } },
+      } },
+      { type: 'hscroll', props: {
+        eyebrow: 'WORKS', title: '施工実績', height: 360, bg: '', anchor: 'works',
+        items: [
+          { no: '01', title: '木造2階建て 住宅解体', image: '' },
+          { no: '02', title: '鉄骨造 倉庫解体', image: '' },
+          { no: '03', title: 'テナント内装解体', image: '' },
+          { no: '04', title: 'RC造 マンション解体', image: '' },
+          { no: '05', title: '外構・ブロック塀撤去', image: '' },
+        ],
+      } },
+      { type: 'news', props: {
+        eyebrow: 'NEWS', title: 'お知らせ', text: '',
+        more: '一覧を見る', moreHref: '#', bg: 'surface', anchor: 'news',
+        items: [
+          { date: '2026.07.28', cat: 'お知らせ', title: '夏季休業のご案内', href: '#' },
+          { date: '2026.07.10', cat: '実績', title: '大型倉庫の解体工事が完了しました', href: '#' },
+          { date: '2026.06.22', cat: '採用', title: '重機オペレーターを募集しています', href: '#' },
+        ],
+      } },
+      { type: 'features', props: {
+        eyebrow: 'AREA', title: '対応エリア',
+        text: '記載のない地域もご相談ください。近隣であれば伺います。',
+        cols: 'c2', style: 'icon', bg: '', anchor: 'area',
+        items: [
+          { icon: '📍', title: '本社', text: '〇〇県〇〇市〇〇 1-2-3\n東海エリア全域' },
+          { icon: '📍', title: '東京営業所', text: '東京都〇〇区〇〇 4-5-6\n関東エリア全域' },
+        ],
+      } },
+      { type: 'cta', props: {
+        title: 'お見積りは無料です',
+        text: '図面がなくても構いません。写真と住所だけでも概算をお出しします。',
+        bg: 'primary', anchor: '',
+        buttons: [{ label: '無料で見積る', href: '#contact', style: 'ghost' }],
+      } },
+      { type: 'contact', props: {
+        eyebrow: 'CONTACT', title: 'お問い合わせ',
+        text: 'お電話でも承ります。現地調査は無料です。',
+        tel: '0120-000-000', email: 'info@example.com',
+        address: '〇〇県〇〇市〇〇 1-2-3', hours: '平日 8:00 - 18:00',
+        form: true, action: '', submit: '送信する', bg: 'surface', anchor: 'contact',
+      } },
+      { type: 'footer', props: {
+        logo: '株式会社〇〇',
+        links: [
+          { label: '対応できる工事', href: '#features' },
+          { label: '施工実績', href: '#works' },
+          { label: 'お問い合わせ', href: '#contact' },
+        ],
+        copy: '© 2026 〇〇',
+      } },
+    ],
+  },
+
+  /* ============ 14. 複合施設・商業施設 ============ */
+  facility: {
+    style: 'edit',
+    name: '複合施設・商業施設',
+    desc: '商業施設・公共施設・ビル。温かい黒に白と金。12カラムの広い余白とフロアガイド。',
+    swatch: ['#a9865f', '#242322', '#ffffff'],
+    theme: {
+      primary: '#a9865f', accent: '#242322', bg: '#ffffff', surface: '#f6f4f1',
+      text: '#242322', muted: '#7c7873', border: '#e3dfda', dark: '#242322',
+      radius: 2, max: 1320, font: 'gothic', fontHead: 'gothic',
+    },
+    blocks: [
+      { type: 'header', props: {
+        logo: 'FACILITY NAME', sticky: true, cta: 'アクセス', ctaHref: '#access',
+        nav: [
+          { label: 'フロアガイド', href: '#floors' },
+          { label: 'イベント', href: '#news' },
+          { label: '施設について', href: '#about' },
+          { label: 'アクセス', href: '#access' },
+        ],
+      } },
+      { type: 'hero', props: {
+        layout: 'cover', eyebrow: '', overlay: 40, anchor: 'top',
+        deco: 'silk', decoStrength: 45, grain: false, scroll: 'zoomout', scrollLen: 200,
+        title: '海と、木と、風と。',
+        text: '港を望む公園に生まれた、カフェとレストラン、そしてイベントの場所。',
+        buttons: [
+          { label: 'フロアガイド', href: '#floors', style: 'primary' },
+          { label: 'アクセス', href: '#access', style: 'ghost' },
+        ],
+        anims: { title: { a: 'maskline' }, text: { a: 'fadeup', d: 300 } },
+      } },
+      { type: 'news', props: {
+        eyebrow: 'INFORMATION', title: 'お知らせ・イベント', text: '',
+        more: '一覧を見る', moreHref: '#', bg: '', anchor: 'news',
+        items: [
+          { date: '2026.08.10', cat: 'イベント', title: '夏の大盆踊り大会を開催します', href: '#' },
+          { date: '2026.08.01', cat: 'イベント', title: '公園ランニングイベント 参加者募集', href: '#' },
+          { date: '2026.07.20', cat: 'お知らせ', title: '営業時間変更のお知らせ', href: '#' },
+        ],
+      } },
+      { type: 'floors', props: {
+        eyebrow: 'FLOOR GUIDE', title: 'フロアガイド',
+        text: '各フロアのご案内です。ベビーカー・車いすでもすべての階に上がれます。',
+        bg: 'surface', anchor: 'floors',
+        items: [
+          { floor: '1F', name: 'カフェ＆ショップ', image: '',
+            text: '海を眺めながら過ごせる、開けたフロアです。テイクアウトもできます。' },
+          { floor: '2F', name: 'レストラン', image: '',
+            text: '地元の食材を使ったコース料理を、テラス席でも。' },
+          { floor: '3F', name: 'イベントスペース', image: '',
+            text: '展示・マルシェ・ワークショップに。貸し出しも承っています。' },
+        ],
+      } },
+      { type: 'about', props: {
+        eyebrow: 'ABOUT', title: '港から、\n街が変わる。',
+        image: '', reverse: true, bg: '', anchor: 'about',
+        body: 'かつて木材を扱っていた埠頭に、木を使った新しい建物が建ちました。\n\n'
+          + '海に向かって開いた広いデッキ、風が抜ける吹き抜け。'
+          + '買い物のためだけでなく、ただ座って過ごすためにも来てほしい場所です。\n\n'
+          + '週末はマルシェやイベントを開いています。ぜひのぞいてみてください。',
+        buttons: [{ label: 'イベントを見る', href: '#news', style: 'ghost' }],
+        anims: { image: { a: 'wipe' } },
+      } },
+      { type: 'gallery', props: {
+        eyebrow: 'GALLERY', title: '施設の様子', text: '', bg: 'surface', anchor: 'gallery',
+        items: [
+          { src: '', alt: 'デッキ' }, { src: '', alt: '吹き抜け' }, { src: '', alt: 'カフェ' },
+          { src: '', alt: 'テラス' }, { src: '', alt: '夕景' }, { src: '', alt: 'イベント' },
+        ],
+      } },
+      { type: 'contact', props: {
+        eyebrow: 'ACCESS', title: 'アクセス',
+        text: '駐車場は台数に限りがあります。公共交通機関でのご来場にご協力ください。',
+        tel: '045-000-0000', email: 'info@example.com',
+        address: '神奈川県横浜市〇〇区〇〇 1-2-3',
+        hours: '11:00 - 21:00（店舗により異なります）',
+        form: false, action: '', submit: '送信する', bg: '', anchor: 'access',
+      } },
+      { type: 'footer', props: {
+        logo: 'FACILITY NAME',
+        links: [
+          { label: 'フロアガイド', href: '#floors' },
+          { label: 'イベント', href: '#news' },
+          { label: 'アクセス', href: '#access' },
+        ],
+        copy: '© 2026 Facility Name',
       } },
     ],
   },

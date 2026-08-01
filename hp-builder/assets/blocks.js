@@ -630,6 +630,88 @@ ${form}
     </div>`),
   },
 
+  /* ---------------- お知らせ・イベント ---------------- */
+  news: {
+    label: 'お知らせ・イベント',
+    icon: '📰',
+    about: '日付とカテゴリを添えた一覧。新着情報、イベント、実績の告知に。',
+    fields: [
+      FIELD.eyebrow, FIELD.title, FIELD.text,
+      { key: 'items', label: 'お知らせ', type: 'list', addLabel: 'お知らせを追加', titleKey: 'title',
+        item: [
+          { key: 'date', label: '日付', type: 'text' },
+          { key: 'cat', label: 'カテゴリ', type: 'text' },
+          { key: 'title', label: '見出し', type: 'text' },
+          { key: 'href', label: 'リンク先', type: 'text' },
+        ] },
+      { key: 'more', label: 'もっと見るボタン（空で非表示）', type: 'text' },
+      { key: 'moreHref', label: 'ボタンのリンク先', type: 'text' },
+      FIELD.bg, FIELD.anchor,
+    ],
+    defaults: {
+      eyebrow: 'NEWS', title: 'お知らせ', text: '',
+      more: '一覧を見る', moreHref: '#', bg: '', anchor: 'news',
+      items: [
+        { date: '2026.07.28', cat: 'お知らせ', title: '夏季休業のご案内', href: '#' },
+        { date: '2026.07.11', cat: 'イベント', title: '夏のワークショップを開催します', href: '#' },
+        { date: '2026.06.30', cat: '実績', title: '新しい施工事例を追加しました', href: '#' },
+      ],
+    },
+    render: (p) => sec('news', p,
+      `${head(p, 'left')}
+    <ul class="nws">
+${(p.items || []).map((it, i) => `      <li class="nws-i"${el(p, `row${i}`, 'ia', `お知らせ${i + 1}`)}>
+        <a href="${esc(it.href || '#')}">
+          <time>${esc(it.date)}</time>
+          ${it.cat ? `<span class="nws-c">${esc(it.cat)}</span>` : ''}
+          <b${ed(`items.${i}.title`, '見出し')}>${esc(it.title)}</b>
+        </a>
+      </li>`).join('\n')}
+    </ul>
+${p.more ? `    <div class="btn-row"><a class="btn ghost" href="${esc(p.moreHref || '#')}">${esc(p.more)}</a></div>` : ''}`),
+  },
+
+  /* ---------------- フロアガイド ---------------- */
+  floors: {
+    label: 'フロアガイド',
+    icon: '▤',
+    about: '階ごとに何があるかを並べます。商業施設・ビル・複合施設に。',
+    fields: [
+      FIELD.eyebrow, FIELD.title, FIELD.text,
+      { key: 'items', label: 'フロア', type: 'list', addLabel: 'フロアを追加', titleKey: 'name',
+        item: [
+          { key: 'floor', label: '階の表示', type: 'text', hint: '1F / B1 / RF など' },
+          { key: 'name', label: '名前', type: 'text' },
+          { key: 'text', label: '説明', type: 'textarea' },
+          { key: 'image', label: '画像', type: 'image' },
+        ] },
+      FIELD.bg, FIELD.anchor,
+    ],
+    defaults: {
+      eyebrow: 'FLOOR GUIDE', title: 'フロアガイド', text: '', bg: '', anchor: 'floors',
+      items: [
+        { floor: '1F', name: 'カフェ＆ショップ', image: '',
+          text: '海を眺めながら過ごせる、開けたフロアです。テイクアウトもできます。' },
+        { floor: '2F', name: 'レストラン', image: '',
+          text: '地元の食材を使ったコース料理を、テラス席でも。' },
+        { floor: '3F', name: 'イベントスペース', image: '',
+          text: '展示・マルシェ・ワークショップに。貸し出しもしています。' },
+      ],
+    },
+    render: (p) => sec('floors', p,
+      `${head(p, 'left')}
+    <div class="flr">
+${(p.items || []).map((it, i) => `      <div class="flr-i"${el(p, `fl${i}`, 'ia', `フロア${i + 1}`)}>
+        <div class="flr-pic"${imgSlot(`items.${i}.image`)}>${media(it.image, it.name)}</div>
+        <div class="flr-b">
+          <span class="flr-n"${ed(`items.${i}.floor`, '階')}>${esc(it.floor)}</span>
+          <h3${el(p, `fl${i}.name`, 'ta', 'フロア名', `items.${i}.name`)}>${esc(it.name)}</h3>
+          <p${ed(`items.${i}.text`, '説明')}>${nl2br(it.text)}</p>
+        </div>
+      </div>`).join('\n')}
+    </div>`),
+  },
+
   /* ---------------- 流れる文字（マーキー） ---------------- */
   marquee: {
     label: '流れる文字',
@@ -1311,7 +1393,7 @@ ${slides}
 
 /* 追加メニューに出す順番（ヘッダー・フッターは常設なので除く） */
 const ADDABLE = [
-  'hero', 'collage', 'features', 'about', 'gallery', 'menu', 'marquee', 'pricing', 'faq', 'cta', 'contact', 'rich',
+  'hero', 'collage', 'features', 'about', 'gallery', 'menu', 'floors', 'news', 'marquee', 'pricing', 'faq', 'cta', 'contact', 'rich',
   'slides', 'product3d', 'exploded', 'hscroll', 'stackcards', 'timeline', 'clipreveal',
   'carousel3d', 'slotstats', 'svgdraw', 'shift',
 ];
