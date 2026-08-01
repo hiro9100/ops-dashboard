@@ -33,7 +33,7 @@ p:last-child{margin-bottom:0}
 .hero-media > .ph::before,.about-media > .ph::before{color:#fff;opacity:.8}
 
 /* ---------- セクション共通 ---------- */
-.sec{padding:clamp(56px,8vw,96px) 0;position:relative}
+.sec{padding:clamp(56px,6.6667vw,133.3333px) 0;position:relative}
 .sec.bg-surface{background:var(--c-surface)}
 .sec.bg-primary{background:var(--c-primary);color:var(--c-on-primary,#fff)}
 .sec.bg-dark{background:var(--c-dark);color:var(--c-on-dark,#fff)}
@@ -41,7 +41,7 @@ p:last-child{margin-bottom:0}
 .sec.bg-dark .sec-sub{color:color-mix(in srgb,var(--c-on-dark,#fff) 72%,transparent)}
 .sec.bg-primary .card,.sec.bg-dark .card{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.18)}
 
-.sec-head{max-width:760px;margin:0 auto clamp(32px,5vw,56px);text-align:center}
+.sec-head{max-width:760px;margin:0 auto clamp(32px,3.8889vw,77.7778px);text-align:center}
 .sec-head.left{text-align:left;margin-left:0}
 .eyebrow{
   display:inline-block;margin:0 0 12px;font-size:12px;font-weight:700;
@@ -49,7 +49,7 @@ p:last-child{margin-bottom:0}
 }
 .bg-primary .eyebrow,.bg-dark .eyebrow{color:var(--c-accent)}
 .sec-title{
-  margin:0 0 14px;font-size:clamp(24px,3.6vw,36px);line-height:1.4;
+  margin:0 0 14px;font-size:clamp(24px,2.5vw,50px);line-height:1.4;
   letter-spacing:.02em;font-weight:800
 }
 .sec-sub{margin:0;color:var(--c-muted);font-size:15px}
@@ -90,11 +90,11 @@ p:last-child{margin-bottom:0}
 }
 
 /* ---------- ヒーロー ---------- */
-.hero{position:relative;overflow:hidden;padding:clamp(64px,9vw,120px) 0}
+.hero{position:relative;overflow:hidden;padding:clamp(64px,8.3333vw,166.6667px) 0}
 .hero.center{text-align:center}
 .hero-in{position:relative;z-index:2}
-.hero-title{margin:0 0 20px;font-size:clamp(30px,5.4vw,56px);line-height:1.28;letter-spacing:.01em;font-weight:800}
-.hero-text{margin:0;font-size:clamp(15px,1.6vw,18px);color:var(--c-muted);max-width:620px}
+.hero-title{margin:0 0 20px;font-size:clamp(30px,3.8889vw,77.7778px);line-height:1.28;letter-spacing:.01em;font-weight:800}
+.hero-text{margin:0;font-size:clamp(15px,1.25vw,25px);color:var(--c-muted);max-width:620px}
 .hero.center .hero-text{margin-inline:auto}
 .hero-media{
   border-radius:var(--radius);overflow:hidden;aspect-ratio:4/3;
@@ -102,8 +102,8 @@ p:last-child{margin-bottom:0}
   box-shadow:0 30px 60px -30px rgba(15,23,42,.45)
 }
 .hero-media img{width:100%;height:100%;object-fit:cover}
-.hero.split .hero-in{display:grid;grid-template-columns:1.02fr .98fr;gap:clamp(32px,5vw,64px);align-items:center}
-.hero.split .hero-title{font-size:clamp(28px,3.4vw,42px)}
+.hero.split .hero-in{display:grid;grid-template-columns:1.02fr .98fr;gap:clamp(32px,4.4444vw,88.8889px);align-items:center}
+.hero.split .hero-title{font-size:clamp(28px,2.9167vw,58.3333px)}
 .hero.cover{color:#fff}
 .hero.cover .hero-text{color:rgba(255,255,255,.92)}
 /* 平らな暗幕だけでは、写真の明るい部分で文字が読めなくなる。
@@ -116,7 +116,7 @@ p:last-child{margin-bottom:0}
 .hero-bg{position:absolute;inset:0;z-index:0;background:linear-gradient(135deg,var(--c-primary),var(--c-accent))}
 .hero-bg img{width:100%;height:100%;object-fit:cover}
 .hero-bg::after{content:"";position:absolute;inset:0;background:var(--hero-overlay,rgba(15,23,42,.55))}
-.hero.center.cover .hero-in,.hero.left.cover .hero-in{padding:clamp(24px,4vw,48px) 0}
+.hero.center.cover .hero-in,.hero.left.cover .hero-in{padding:clamp(24px,3.3333vw,66.6667px) 0}
 
 /* ==========================================================
    コラージュ・ヒーロー
@@ -135,7 +135,7 @@ p:last-child{margin-bottom:0}
    書き出したHTMLが巨大になる）。多めに敷いて、はみ出しは隠す。 */
 .cwall{
   position:absolute;inset:0;display:grid;gap:3px;
-  grid-template-columns:repeat(auto-fill,minmax(clamp(104px,13vw,200px),1fr));
+  grid-template-columns:repeat(auto-fill,minmax(clamp(104px,13vw,260px),1fr));
   grid-auto-rows:clamp(104px,14vh,180px);overflow:hidden;align-content:start
 }
 .cwall .cw{
@@ -175,7 +175,7 @@ p:last-child{margin-bottom:0}
 .cband{
   position:absolute;top:0;bottom:0;z-index:6;
   display:flex;flex-direction:row-reverse;align-items:flex-start;
-  gap:clamp(5px,.8vw,12px);padding:clamp(20px,4vh,56px) clamp(12px,2.6vw,46px);
+  gap:clamp(5px,0.8vw,16px);padding:clamp(20px,4vh,56px) clamp(12px,2.6vw,52px);
   pointer-events:none
 }
 .cband-r{right:0}
@@ -183,8 +183,8 @@ p:last-child{margin-bottom:0}
 .cb{
   display:flex;flex-direction:column;align-items:center;
   background:#fff;color:#111;font-family:var(--font-head);
-  font-weight:900;font-size:clamp(19px,2.4vw,36px);
-  padding:clamp(12px,1.8vh,22px) clamp(6px,.8vw,12px);
+  font-weight:900;font-size:clamp(19px,2.4vw,48px);
+  padding:clamp(12px,1.8vh,22px) clamp(6px,0.8vw,16px);
   box-shadow:0 22px 44px -22px rgba(0,0,0,.6);
   /* 列ごとに少しずらすと、貼り紙らしい表情になる */
   margin-top:calc(var(--i) * clamp(10px,2.4vh,34px));
@@ -221,8 +221,8 @@ p:last-child{margin-bottom:0}
   .cwall{grid-auto-rows:clamp(96px,13vh,150px)}
   /* 画面が狭いと写真が小さくなりすぎるので、大きめに出す */
   .cpic{width:calc(var(--w,30%) * 1.5)}
-  .cb{font-size:clamp(17px,5.4vw,26px)}
-  .cband{padding:clamp(16px,3vh,34px) clamp(8px,3vw,20px)}
+  .cb{font-size:clamp(17px,1.8056vw,36.1111px)}
+  .cband{padding:clamp(16px,3vh,34px) clamp(8px,1.3889vw,27.7778px)}
 }
 
 /* ==========================================================
@@ -359,11 +359,11 @@ p:last-child{margin-bottom:0}
 /* 位置は left/top で決める。transform の % は「自分の大きさ」に対する割合なので、
    親の中の座標には使えない（0,0 に貼りついてしまう）。 */
 [data-deco="glass"] .gl1{
-  width:clamp(230px,30vw,400px);aspect-ratio:1;
+  width:clamp(230px,27.7778vw,555.5556px);aspect-ratio:1;
   left:var(--px,50%);top:var(--py,45%);transform:translate(-50%,-50%)
 }
 [data-deco="glass"] .gl2{
-  width:clamp(110px,13vw,180px);aspect-ratio:1;opacity:.85;
+  width:clamp(110px,12.5vw,250px);aspect-ratio:1;opacity:.85;
   backdrop-filter:blur(7px) saturate(1.2);-webkit-backdrop-filter:blur(7px) saturate(1.2);
   left:var(--px2,50%);top:var(--py2,45%);transform:translate(-50%,-50%)
 }
@@ -411,7 +411,7 @@ p:last-child{margin-bottom:0}
    画面の外に出たら小さくたたむ。 */
 [data-deco="cursor"] .cur{
   left:var(--px,50%);top:var(--py,45%);
-  width:clamp(96px,9vw,132px);aspect-ratio:1;border-radius:50%;
+  width:clamp(96px,9vw,180px);aspect-ratio:1;border-radius:50%;
   display:grid;place-items:center;
   transform:translate(-50%,-50%) scale(var(--curs,1));
   background:var(--c-primary);color:var(--c-on-primary,#fff);
@@ -461,11 +461,11 @@ p:last-child{margin-bottom:0}
 }
 
 /* ---------- About ---------- */
-.about-in{display:grid;grid-template-columns:1fr 1fr;gap:clamp(32px,5vw,64px);align-items:center}
+.about-in{display:grid;grid-template-columns:1fr 1fr;gap:clamp(32px,4.4444vw,88.8889px);align-items:center}
 .about-in.rev .about-media{order:2}
 .about-media{border-radius:var(--radius);overflow:hidden;aspect-ratio:4/3;background:linear-gradient(135deg,var(--c-primary),var(--c-accent))}
 .about-media img{width:100%;height:100%;object-fit:cover}
-.about-body .sec-title{font-size:clamp(22px,3vw,30px)}
+.about-body .sec-title{font-size:clamp(22px,2.0833vw,41.6667px)}
 .about-body p{color:var(--c-muted)}
 
 /* ---------- ギャラリー ---------- */
@@ -538,7 +538,7 @@ p:last-child{margin-bottom:0}
 .nws{list-style:none;margin:0;padding:0;border-top:1px solid var(--c-border)}
 .nws-i{border-bottom:1px solid var(--c-border)}
 .nws-i a{
-  display:flex;align-items:baseline;gap:clamp(12px,2vw,28px);
+  display:flex;align-items:baseline;gap:clamp(12px,1.9444vw,38.8889px);
   padding:clamp(16px,2.2vh,24px) 4px;text-decoration:none;color:inherit;
   transition:opacity .2s,padding-left .25s
 }
@@ -561,7 +561,7 @@ p:last-child{margin-bottom:0}
 /* ---------- フロアガイド ---------- */
 .flr{display:grid;gap:clamp(28px,5vh,64px)}
 .flr-i{
-  display:grid;grid-template-columns:1.05fr 1fr;gap:clamp(20px,4vw,56px);align-items:center
+  display:grid;grid-template-columns:1.05fr 1fr;gap:clamp(20px,3.8889vw,77.7778px);align-items:center
 }
 .flr-i:nth-child(even){direction:rtl}
 .flr-i:nth-child(even) > *{direction:ltr}
@@ -571,11 +571,11 @@ p:last-child{margin-bottom:0}
 }
 .flr-pic img{width:100%;height:100%;object-fit:cover;display:block}
 .flr-n{
-  display:block;font-family:var(--font-head);font-size:clamp(34px,5vw,64px);
+  display:block;font-family:var(--font-head);font-size:clamp(34px,4.4444vw,88.8889px);
   font-weight:900;line-height:1;letter-spacing:.02em;color:var(--c-primary);
   margin-bottom:clamp(8px,1.6vh,16px)
 }
-.flr-b h3{margin:0 0 10px;font-size:clamp(17px,2vw,22px);font-weight:700;line-height:1.5}
+.flr-b h3{margin:0 0 10px;font-size:clamp(17px,1.5278vw,30.5556px);font-weight:700;line-height:1.5}
 .flr-b p{margin:0;color:var(--c-muted);font-size:14.5px;line-height:1.9}
 @media(max-width:760px){
   .flr-i,.flr-i:nth-child(even){grid-template-columns:1fr;direction:ltr}
@@ -628,7 +628,7 @@ p:last-child{margin-bottom:0}
 .cta-in p{opacity:.85}
 
 /* ---------- お問い合わせ ---------- */
-.contact-in{display:grid;grid-template-columns:1fr 1fr;gap:clamp(32px,5vw,56px)}
+.contact-in{display:grid;grid-template-columns:1fr 1fr;gap:clamp(32px,3.8889vw,77.7778px)}
 .contact-in.only1{grid-template-columns:1fr;max-width:640px;margin:0 auto}
 .info{display:grid;gap:18px;align-content:start}
 .info div{display:grid;gap:2px}
@@ -677,7 +677,7 @@ p:last-child{margin-bottom:0}
 .sty-mono .eyebrow::before{content:"";width:28px;height:2px;background:var(--c-primary);flex:none}
 .sty-mono .sec-head{text-align:left;margin-left:0;max-width:none}
 .sty-mono .sec-head .eyebrow{justify-content:flex-start}
-.sty-mono .sec-title{font-size:clamp(26px,4.4vw,46px);line-height:1.28;letter-spacing:-.01em}
+.sty-mono .sec-title{font-size:clamp(26px,3.1944vw,63.8889px);line-height:1.28;letter-spacing:-.01em}
 .sty-mono .hero-title{line-height:1.18;letter-spacing:-.02em}
 .sty-mono .hero.center .hero-text,.sty-mono .hero.center{text-align:left}
 .sty-mono .hero.center .btn-row{justify-content:flex-start}
@@ -706,7 +706,7 @@ p:last-child{margin-bottom:0}
 .sty-soft .hero-media,.sty-soft .about-media{box-shadow:0 26px 50px -28px rgba(20,40,40,.45)}
 
 /* ---------- 太い（製品LP・イベント） ---------- */
-.sty-bold .sec-title{font-size:clamp(28px,5.2vw,56px);font-weight:900;line-height:1.18;letter-spacing:-.02em}
+.sty-bold .sec-title{font-size:clamp(28px,3.8889vw,77.7778px);font-weight:900;line-height:1.18;letter-spacing:-.02em}
 .sty-bold .hero-title{font-weight:900;letter-spacing:-.03em;line-height:1.08}
 .sty-bold .eyebrow{
   background:var(--c-primary);color:var(--c-dark);padding:5px 12px;border-radius:3px;
@@ -718,8 +718,8 @@ p:last-child{margin-bottom:0}
 .sty-bold .sec-sub{font-size:16px}
 
 /* ---------- 誌面のような（ブランド・エディトリアル） ---------- */
-.sty-edit .sec{padding:clamp(72px,10vw,132px) 0}
-.sty-edit .sec-head{margin-bottom:clamp(40px,6vw,72px)}
+.sty-edit .sec{padding:clamp(72px,9.1667vw,183.3333px) 0}
+.sty-edit .sec-head{margin-bottom:clamp(40px,5vw,100px)}
 .sty-edit .sec-title{font-weight:400;letter-spacing:.06em;line-height:1.6}
 .sty-edit .hero-title{font-weight:400;letter-spacing:.08em;line-height:1.55}
 .sty-edit .eyebrow{
@@ -880,7 +880,7 @@ p:last-child{margin-bottom:0}
 .pinsec{position:relative}
 .pin-in{position:sticky;top:0;height:100vh;overflow:hidden;display:grid;place-items:center}
 .pin-cap{position:absolute;bottom:7vh;left:50%;transform:translateX(-50%);text-align:center;width:90%;z-index:3}
-.pin-cap b{display:block;font-size:clamp(18px,2.6vw,28px);font-family:var(--font-head);line-height:1.4}
+.pin-cap b{display:block;font-size:clamp(18px,1.9444vw,38.8889px);font-family:var(--font-head);line-height:1.4}
 .pin-cap small{color:var(--c-muted);font-size:12.5px}
 .bg-dark .pin-cap small,.bg-primary .pin-cap small{color:rgba(255,255,255,.72)}
 
@@ -933,13 +933,13 @@ p:last-child{margin-bottom:0}
 /* ---------- 積み重なるカード ---------- */
 .stack{display:grid;gap:24px}
 .stackcard{
-  position:sticky;height:56vh;border-radius:calc(var(--radius) * 1.6);padding:clamp(24px,4vw,44px);
+  position:sticky;height:56vh;border-radius:calc(var(--radius) * 1.6);padding:clamp(24px,3.0556vw,61.1111px);
   overflow:hidden;border:1px solid var(--c-border);background:var(--c-surface);
   display:flex;flex-direction:column;justify-content:space-between;
   will-change:transform;transform-origin:50% 0%
 }
 .stackcard .no{font-family:Menlo,monospace;font-size:12px;letter-spacing:.2em;color:var(--c-primary)}
-.stackcard h3{margin:0 0 8px;font-size:clamp(20px,3vw,30px);font-family:var(--font-head)}
+.stackcard h3{margin:0 0 8px;font-size:clamp(20px,2.0833vw,41.6667px);font-family:var(--font-head)}
 .stackcard p{margin:0;max-width:520px;font-size:14px;color:var(--c-muted)}
 .stackcard:nth-child(1){top:11vh}.stackcard:nth-child(2){top:14vh}
 .stackcard:nth-child(3){top:17vh}.stackcard:nth-child(4){top:20vh}
@@ -969,7 +969,7 @@ p:last-child{margin-bottom:0}
   clip-path:circle(var(--r,0%) at 50% 50%)}
 .clip-side img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 .clip-side .in-txt{position:relative;z-index:2}
-.clip-box h3{font-size:clamp(24px,4.6vw,50px);font-weight:800;margin:0;font-family:var(--font-head)}
+.clip-box h3{font-size:clamp(24px,3.4722vw,69.4444px);font-weight:800;margin:0;font-family:var(--font-head)}
 .clip-box p{margin:10px 0 0;font-size:14.5px;opacity:.85}
 
 /* ---------- 3Dカルーセル ---------- */
@@ -995,7 +995,7 @@ p:last-child{margin-bottom:0}
    変形した子孫の文字には効かず、数字がまるごと消える（実測で確認）。
    ここは単色で塗る。 */
 .slot{display:inline-flex;font-family:Menlo,monospace;font-weight:800;
-  font-size:clamp(30px,5.4vw,56px);line-height:1.1;overflow:hidden;
+  font-size:clamp(30px,3.8889vw,77.7778px);line-height:1.1;overflow:hidden;
   color:var(--c-text);-webkit-text-fill-color:currentColor}
 /* メインカラーが明るいと、背景に対して数字が沈む（緑#00f04b と #f4f4f4 で
    コントラスト比 1.41 だった）。文字色を少し混ぜて、どの配色でも読める濃さにする。 */
@@ -1020,7 +1020,7 @@ p:last-child{margin-bottom:0}
 /* ---------- 全画面メッセージ（背景色が変わる） ---------- */
 .shift-pane{min-height:100vh;display:grid;place-items:center;text-align:center;padding:0 24px;
   transition:background .8s ease,color .8s ease}
-.shift-pane h3{font-size:clamp(24px,4.8vw,52px);margin:0;font-weight:800;font-family:var(--font-head)}
+.shift-pane h3{font-size:clamp(24px,3.6111vw,72.2222px);margin:0;font-weight:800;font-family:var(--font-head)}
 .shift-pane p{margin:12px 0 0;opacity:.72;font-size:14.5px}
 
 @media(max-width:640px){
@@ -1041,7 +1041,7 @@ p:last-child{margin-bottom:0}
   position:absolute;left:0;right:0;height:100%;
   transform:translateY(calc(var(--i) * 100%));
   display:grid;grid-template-columns:48% 52%;align-items:center;
-  gap:clamp(24px,4vw,64px);padding:0 clamp(24px,7vw,100px)
+  gap:clamp(24px,4vw,80px);padding:0 clamp(24px,6.9444vw,138.8889px)
 }
 .sl-viz{width:100%;display:grid;place-items:center}
 .sl-viz svg{width:100%;max-width:440px;height:auto;overflow:visible}
@@ -1049,19 +1049,19 @@ p:last-child{margin-bottom:0}
   display:block;font-family:Menlo,monospace;font-size:13px;letter-spacing:.24em;
   color:var(--c-primary);margin-bottom:18px
 }
-.sl-body h3{margin:0 0 16px;font-size:clamp(24px,3.6vw,42px);line-height:1.35;
+.sl-body h3{margin:0 0 16px;font-size:clamp(24px,2.9167vw,58.3333px);line-height:1.35;
   font-family:var(--font-head);font-weight:800}
-.sl-lead{margin:0 0 22px;color:var(--c-muted);font-size:clamp(14px,1.5vw,16.5px);max-width:34em}
+.sl-lead{margin:0 0 22px;color:var(--c-muted);font-size:clamp(14px,1.1458vw,22.9167px);max-width:34em}
 .sl-body ul{list-style:none;margin:0;padding:0;display:grid;gap:11px}
 .sl-body li{position:relative;padding-left:24px;font-size:14.5px}
 .sl-body li::before{content:"";position:absolute;left:0;top:.62em;width:9px;height:2px;background:var(--c-primary)}
 .sl-num{display:block;font-family:Menlo,monospace;font-weight:800;line-height:1.1;
-  font-size:clamp(34px,5vw,64px);color:var(--c-primary);margin-bottom:14px}
+  font-size:clamp(34px,4.4444vw,88.8889px);color:var(--c-primary);margin-bottom:14px}
 .sl-num span{font-size:.5em;margin-left:.1em}
 
 /* 右端のドットナビ */
 .sl-dots{
-  position:absolute;right:clamp(12px,2.6vw,32px);top:50%;transform:translateY(-50%);
+  position:absolute;right:clamp(12px,2.2222vw,44.4444px);top:50%;transform:translateY(-50%);
   display:flex;flex-direction:column;gap:13px;z-index:6
 }
 .sl-dots button{
@@ -1088,7 +1088,7 @@ p:last-child{margin-bottom:0}
   .slidesec .pin-in{position:static;height:auto;overflow:visible}
   .sl-stage{position:static;transform:none!important;transition:none}
   .sl{position:static;transform:none!important;grid-template-columns:1fr;height:auto;
-    padding:clamp(48px,10vw,72px) 24px;gap:28px}
+    padding:clamp(48px,5vw,100px) 24px;gap:28px}
   .sl + .sl{border-top:1px solid var(--c-border)}
   .sl-dots{display:none}
 }
