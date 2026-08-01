@@ -16,6 +16,13 @@ body{
 img{max-width:100%;display:block}
 a{color:inherit;text-decoration:none}
 p{margin:0 0 1em}
+/* 最後の行に1〜2文字だけ取り残されると、素人くさい見た目になる。
+   日本語は単語の切れ目が無いぶん、この差が出やすい。
+   短いリード文は行の長さをそろえ、長い本文は短い最終行を避ける。 */
+h1,h2,h3,.hero-title,.sec-title,.hero-text,.sec-sub,.about-body p,.card p,.mi dt{
+  text-wrap:balance}
+/* 長文を貼られる場所は balance が効かなくなるので pretty にしておく */
+.rich p,.faq .a{text-wrap:pretty}
 p:last-child{margin-bottom:0}
 
 .wrap{width:100%;max-width:var(--max);margin:0 auto;padding:0 24px}
@@ -98,7 +105,14 @@ p:last-child{margin-bottom:0}
 .hero.split .hero-in{display:grid;grid-template-columns:1.02fr .98fr;gap:clamp(32px,5vw,64px);align-items:center}
 .hero.split .hero-title{font-size:clamp(28px,3.4vw,42px)}
 .hero.cover{color:#fff}
-.hero.cover .hero-text{color:rgba(255,255,255,.82)}
+.hero.cover .hero-text{color:rgba(255,255,255,.92)}
+/* 平らな暗幕だけでは、写真の明るい部分で文字が読めなくなる。
+   文字が乗る真ん中だけをもう一段落として、写真の四隅は明るいまま残す。 */
+.hero.cover::before{
+  content:"";position:absolute;inset:0;z-index:1;pointer-events:none;
+  background:radial-gradient(125% 85% at 50% 50%,rgba(0,0,0,.36),rgba(0,0,0,0) 74%)
+}
+.hero.cover .hero-title,.hero.cover .hero-text{text-shadow:0 1px 20px rgba(0,0,0,.5)}
 .hero-bg{position:absolute;inset:0;z-index:0;background:linear-gradient(135deg,var(--c-primary),var(--c-accent))}
 .hero-bg img{width:100%;height:100%;object-fit:cover}
 .hero-bg::after{content:"";position:absolute;inset:0;background:var(--hero-overlay,rgba(15,23,42,.55))}
@@ -158,6 +172,43 @@ p:last-child{margin-bottom:0}
 .plan li{font-size:14.5px;color:var(--c-muted);padding-left:26px;position:relative}
 .plan li::before{content:"✓";position:absolute;left:0;color:var(--c-primary);font-weight:800}
 .plan .btn{margin-top:auto;width:100%}
+
+/* ---------- お品書き（価格表） ----------
+   品名と価格のあいだは点線でつなぐ。品名が長くて折り返しても
+   価格は右端に揃ったままにしたいので、dt を伸ばして dd を固定にする。 */
+.menu-cols{display:grid;gap:44px 56px;max-width:960px;margin:0 auto}
+.menu-cols.c2{grid-template-columns:1fr 1fr}
+.mg-h{display:flex;align-items:baseline;gap:12px;margin-bottom:14px}
+.mg-n{
+  font-family:var(--font-head);font-size:15px;font-weight:700;
+  letter-spacing:.16em;color:var(--c-primary);white-space:nowrap
+}
+.mg-rule{flex:1;height:1px;background:var(--c-border)}
+.mg-note{
+  font-size:10.5px;letter-spacing:.14em;color:var(--c-muted);
+  white-space:nowrap;text-transform:uppercase
+}
+.mg-l{margin:0;display:grid;gap:11px}
+.mi{display:flex;align-items:baseline;gap:10px}
+.mi dt{flex:1;min-width:0;display:flex;align-items:baseline;gap:9px;flex-wrap:wrap}
+.mi dt b{font-family:var(--font-head);font-size:16px;font-weight:600;letter-spacing:.01em}
+.mi dt i{font-style:normal;font-size:11.5px;color:var(--c-muted);letter-spacing:.06em}
+.mi dd{
+  margin:0;font-size:15px;font-weight:600;font-variant-numeric:tabular-nums;
+  white-space:nowrap;order:3
+}
+/* 点線のリーダー。dt と dd のあいだを埋める */
+.mi::after{
+  content:"";order:2;flex:0 1 42px;min-width:14px;align-self:center;
+  border-bottom:1px dotted var(--c-border);margin-bottom:3px
+}
+.menu-note{
+  text-align:center;margin:44px 0 0;font-size:12.5px;color:var(--c-muted);letter-spacing:.04em
+}
+@media(max-width:760px){
+  .menu-cols,.menu-cols.c2{grid-template-columns:1fr;gap:36px}
+  .mi dt b{font-size:15px}
+}
 
 /* ---------- FAQ ---------- */
 .faq{max-width:800px;margin:0 auto;display:grid;gap:12px}
@@ -285,6 +336,11 @@ p:last-child{margin-bottom:0}
   background:transparent;color:var(--c-text);border:0;border-bottom:1px solid var(--c-text);
   border-radius:0;box-shadow:none;padding:10px 2px;letter-spacing:.18em;font-weight:600}
 .sty-edit .btn:hover{transform:none;box-shadow:none;color:var(--c-primary);border-color:var(--c-primary)}
+/* 誌面のような型ではボタンが下線だけになる。写真の上では本文色（濃い色）のままだと
+   ほとんど見えないので、白に切り替える。 */
+.sty-edit .hero.cover .btn{color:#fff;border-bottom-color:rgba(255,255,255,.7);
+  text-shadow:0 1px 16px rgba(0,0,0,.5)}
+.sty-edit .hero.cover .btn:hover{color:#fff;border-bottom-color:#fff}
 .sty-edit .btn.sm{padding:8px 2px;font-size:12.5px}
 .sty-edit .hdr{border-bottom:0}
 .sty-edit .logo{letter-spacing:.22em;font-weight:600;font-size:16px}

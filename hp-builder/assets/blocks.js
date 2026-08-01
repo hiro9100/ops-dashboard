@@ -460,6 +460,66 @@ ${form}
     </div>`),
   },
 
+  /* ---------------- お品書き（価格表） ---------------- */
+  menu: {
+    label: 'お品書き（価格表）',
+    icon: '≡',
+    about: 'カテゴリごとに品名と価格を並べます。カフェ・飲食店・サロンのメニューに。',
+    fields: [
+      FIELD.eyebrow, FIELD.title, FIELD.text,
+      { key: 'cols', label: '横に並べる数', type: 'select', options: [['c1', '1列'], ['c2', '2列']] },
+      { key: 'groups', label: 'カテゴリ', type: 'list', addLabel: 'カテゴリを追加', titleKey: 'name',
+        item: [
+          { key: 'name', label: 'カテゴリ名', type: 'text' },
+          { key: 'note', label: '右肩の注記', type: 'text', hint: 'HOT / ICED など。空でも構いません' },
+          { key: 'items', label: '品目', type: 'textarea', rows: 6,
+            hint: '1行に1品。「品名 | よみ | 価格」のように縦棒で区切ります' },
+        ] },
+      { key: 'note', label: '最後の注記', type: 'text' },
+      FIELD.bg, FIELD.anchor,
+    ],
+    defaults: {
+      eyebrow: 'MENU', title: 'お品書き', text: '', cols: 'c2',
+      note: '価格はすべて税込です。', bg: '', anchor: 'menu',
+      groups: [
+        { name: 'COFFEE', note: 'HOT / ICED',
+          items: 'ドリップコーヒー | Drip Coffee | 550\nカフェラテ | Café Latte | 600\nカプチーノ | Cappuccino | 600' },
+        { name: 'FOOD', note: '',
+          items: 'キッシュプレート | サラダ・スープ付 | 1,200\nサンドイッチプレート | サラダ・スープ付 | 1,100' },
+      ],
+    },
+    /* 「品名 | よみ | 価格」の行を、名前・よみ・価格に分ける。
+       縦棒が足りない書き方（「品名 価格」だけ等）でも壊れないように、
+       最後の1つを価格、最初を品名、あいだをよみとして扱う。 */
+    render: (p) => {
+      const rows = (txt) => String(txt || '').split('\n').map((l) => l.trim()).filter(Boolean)
+        .map((line) => {
+          const c = line.split('|').map((s) => s.trim());
+          const price = c.length > 1 ? c.pop() : '';
+          return { name: c.shift() || '', sub: c.join(' '), price };
+        });
+      const groups = (p.groups || []).filter((g) => g.name || g.items).map((g, i) => `      <div class="mg"${el(p, `g${i}`, 'ia', `カテゴリ${i + 1}`)}>
+        <div class="mg-h">
+          <span class="mg-n"${ed(`groups.${i}.name`, 'カテゴリ名')}>${esc(g.name)}</span>
+          <span class="mg-rule" aria-hidden="true"></span>
+          ${g.note ? `<span class="mg-note">${esc(g.note)}</span>` : ''}
+        </div>
+        <dl class="mg-l">
+${rows(g.items).map((it) => `          <div class="mi">
+            <dt><b>${esc(it.name)}</b>${it.sub ? `<i>${esc(it.sub)}</i>` : ''}</dt>
+            <dd>${esc(it.price)}</dd>
+          </div>`).join('\n')}
+        </dl>
+      </div>`).join('\n');
+      return sec('menu', p,
+        `${head(p)}
+    <div class="menu-cols ${p.cols === 'c1' ? 'c1' : 'c2'}">
+${groups}
+    </div>
+${p.note ? `    <p class="menu-note"${ed('note', '注記')}>${esc(p.note)}</p>` : ''}`);
+    },
+  },
+
   /* ---------------- フッター ---------------- */
   footer: {
     label: 'フッター',
@@ -977,7 +1037,7 @@ ${slides}
 
 /* 追加メニューに出す順番（ヘッダー・フッターは常設なので除く） */
 const ADDABLE = [
-  'hero', 'features', 'about', 'gallery', 'pricing', 'faq', 'cta', 'contact', 'rich',
+  'hero', 'features', 'about', 'gallery', 'menu', 'pricing', 'faq', 'cta', 'contact', 'rich',
   'slides', 'product3d', 'exploded', 'hscroll', 'stackcards', 'timeline', 'clipreveal',
   'carousel3d', 'slotstats', 'svgdraw', 'shift',
 ];
