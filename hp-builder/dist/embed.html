@@ -4150,6 +4150,113 @@ const TEMPLATES = {
       { type: 'footer', props: { logo: 'TARO.', copy: '© 2026 Taro Yamada' } },
     ],
   },
+
+  /* ============ 11. クリエイター・映像制作 ============ */
+  creator: {
+    style: 'bold',
+    name: 'クリエイター・映像制作',
+    desc: 'SNS動画・クリエイター事務所・制作会社。黒地に鮮やかな差し色で、数字と実績を前に出す。',
+    swatch: ['#ff2e63', '#00d9c0', '#0b0b10'],
+    theme: {
+      primary: '#ff2e63', accent: '#00d9c0', bg: '#0b0b10', surface: '#15151d',
+      text: '#f4f4f7', muted: '#9a9aab', border: '#2a2a36', dark: '#07070b',
+      radius: 6, max: 1180, font: 'gothic', fontHead: 'gothic',
+    },
+    blocks: [
+      { type: 'header', props: {
+        logo: 'STUDIO NAME', sticky: true, cta: 'ご相談はこちら', ctaHref: '#contact',
+        nav: [
+          { label: 'できること', href: '#features' },
+          { label: '実績', href: '#works' },
+          { label: '私たちについて', href: '#about' },
+          { label: 'お問い合わせ', href: '#contact' },
+        ],
+      } },
+      { type: 'hero', props: {
+        layout: 'cover', eyebrow: 'CREATORS FIRST', overlay: 62, anchor: 'top',
+        deco: 'aurora', decoStrength: 70, grain: true,
+        scroll: 'zoomout', scrollLen: 190,
+        title: 'つくる人が、\n真ん中にいる。',
+        text: '企画から撮影・編集・運用まで。数字で伸ばす動画を、チームでつくります。',
+        buttons: [
+          { label: '実績を見る', href: '#works', style: 'primary' },
+          { label: 'ご相談はこちら', href: '#contact', style: 'ghost' },
+        ],
+        anims: { title: { a: 'maskline' }, text: { a: 'fadeup', d: 260 } },
+      } },
+      { type: 'slotstats', props: {
+        eyebrow: 'NUMBERS', title: '数字で見る私たち',
+        text: '数字は入れ替えて使ってください。桁ごとに回って止まります。',
+        cols: 'c3', bg: 'surface', anchor: 'numbers',
+        items: [
+          { value: '41億', label: '累計再生回数' },
+          { value: '2,000', label: '制作した動画' },
+          { value: '120', label: '担当クリエイター' },
+        ],
+      } },
+      { type: 'features', props: {
+        eyebrow: 'WHAT WE DO', title: 'できること',
+        text: '企画だけ、編集だけ、といった部分的なご依頼も承ります。',
+        cols: 'c3', style: 'num', bg: '', anchor: 'features',
+        items: [
+          { title: '企画・構成', text: '伸びる型を知っているから、最初の3秒から逆算して組み立てます。' },
+          { title: '撮影・編集', text: '縦型に最適化した画作り。テロップ・音・間まで、細かく詰めます。' },
+          { title: '運用・分析', text: '出して終わりにしません。数字を見て、次の一本に反映します。' },
+        ],
+      } },
+      { type: 'hscroll', props: {
+        eyebrow: 'WORKS', title: '手がけた仕事', height: 360, bg: 'surface', anchor: 'works',
+        items: [
+          { no: '01', title: 'コスメブランドの立ち上げ', image: '' },
+          { no: '02', title: '飲食チェーンの新メニュー', image: '' },
+          { no: '03', title: 'アプリのダウンロード獲得', image: '' },
+          { no: '04', title: '採用のための会社紹介', image: '' },
+          { no: '05', title: 'イベントの当日レポート', image: '' },
+        ],
+      } },
+      { type: 'about', props: {
+        eyebrow: 'ABOUT', title: 'つくる人の\n価値を上げる。',
+        image: '', reverse: false, bg: '', anchor: 'about',
+        body: 'クリエイターが本業として続けられる環境をつくることが、私たちの仕事です。\n\n'
+          + '案件の獲得、契約、権利の扱い、税務の相談まで。'
+          + '作ることに集中できるよう、まわりのことを引き受けます。\n\n'
+          + '一緒に働く仲間も探しています。経験より、面白がれるかどうかを見ています。',
+        buttons: [{ label: '採用について', href: '#contact', style: 'ghost' }],
+        anims: { image: { a: 'tilt3d' } },
+      } },
+      { type: 'timeline', props: {
+        eyebrow: 'FLOW', title: 'ご依頼から公開まで', text: '', bg: 'surface', anchor: 'steps',
+        items: [
+          { label: 'STEP 01', title: 'ご相談', text: 'やりたいこと、おおよその予算、期日をお聞かせください。' },
+          { label: 'STEP 02', title: 'ご提案', text: '構成案と概算をお出しします。ここまで無料です。' },
+          { label: 'STEP 03', title: '撮影・編集', text: '素材をお預かりする形でも、こちらで撮る形でも承ります。' },
+          { label: 'STEP 04', title: '公開・運用', text: '数字を見ながら、次の一本を一緒に決めていきます。' },
+        ],
+      } },
+      { type: 'cta', props: {
+        title: 'まずは1本、試してみませんか',
+        text: '相談だけでも構いません。今の課題をお聞かせください。',
+        bg: 'primary', anchor: '',
+        buttons: [{ label: 'ご相談はこちら', href: '#contact', style: 'ghost' }],
+      } },
+      { type: 'contact', props: {
+        eyebrow: 'CONTACT', title: 'お問い合わせ',
+        text: '2営業日以内にご返信します。',
+        tel: '03-0000-0000', email: 'hello@example.com',
+        address: '東京都渋谷区〇〇 1-2-3', hours: '平日 10:00 - 19:00',
+        form: true, action: '', submit: '送信する', bg: '', anchor: 'contact',
+      } },
+      { type: 'footer', props: {
+        logo: 'STUDIO NAME',
+        links: [
+          { label: '実績', href: '#works' },
+          { label: '私たちについて', href: '#about' },
+          { label: 'お問い合わせ', href: '#contact' },
+        ],
+        copy: '© 2026 Studio Name',
+      } },
+    ],
+  },
 };
 
 </script>
