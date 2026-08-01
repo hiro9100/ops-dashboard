@@ -97,6 +97,7 @@ const HERO_DECOS = [
   ['spot', 'スポットライト（ポインタ追従）'],
   ['depth', '奥行き（ポインタで視差）'],
   ['silk', '流れる線'],
+  ['cursor', 'カーソルに丸がついてくる'],
 ];
 
 /* 雲・オーロラの配置。実行時に乱数を使うと再読み込みのたびに絵が変わって
@@ -155,6 +156,7 @@ function decoLayer(p) {
   else if (kind === 'aurora') inner = blobs(AURORA_BLOBS, true);
   else if (kind === 'glass') inner = '    <i class="gl gl1"></i>\n    <i class="gl gl2"></i>';
   else if (kind === 'spot') inner = '    <i class="sp"></i>';
+  else if (kind === 'cursor') inner = `    <i class="cur"><b>${esc(p.decoLabel || 'SCROLL')}</b></i>`;
   else if (kind === 'dust') inner = '    <canvas class="du"></canvas>';
   else if (kind === 'silk') {
     inner = [0, 1, 2, 3, 4].map((i) =>
@@ -319,6 +321,7 @@ const BLOCKS = {
         hint: 'ポインタ追従は指の環境では自動で止まります' },
       { key: 'decoStrength', label: '装飾の強さ', type: 'range', min: 10, max: 100, suffix: '%',
         showIf: (p) => p.deco && p.deco !== 'none' },
+      { key: 'decoLabel', label: '丸の中の文字', type: 'text', showIf: (p) => p.deco === 'cursor' },
       { key: 'grain', label: 'フィルムの粒状感を足す', type: 'toggle' },
       { key: 'buttons', label: 'ボタン', type: 'list', addLabel: 'ボタンを追加', titleKey: 'label', item: FIELD.btnItem },
       FIELD.bg, FIELD.anchor,
@@ -328,7 +331,7 @@ const BLOCKS = {
       title: 'ここにいちばん伝えたい\nキャッチコピーを',
       text: 'サービスの魅力を1〜2行で。訪れた人が「自分に関係ある」と感じる言葉を置きましょう。',
       image: '', overlay: 55, bg: '', anchor: 'top',
-      deco: 'none', decoStrength: 60, grain: false,
+      deco: 'none', decoStrength: 60, grain: false, decoLabel: 'SCROLL',
       scroll: 'none', scrollLen: 200,
       buttons: [
         { label: '無料で相談する', href: '#contact', style: 'primary' },
@@ -337,7 +340,7 @@ const BLOCKS = {
     },
     render: (p) => {
       const cover = p.layout === 'cover';
-      const needsPointer = ['glass', 'spot', 'depth', 'clouds', 'aurora'].includes(p.deco);
+      const needsPointer = ['glass', 'spot', 'depth', 'clouds', 'aurora', 'cursor'].includes(p.deco);
       const cls = ['hero', cover ? 'cover center' : p.layout, p.bg ? `bg-${p.bg}` : '',
         p.deco && p.deco !== 'none' ? `has-deco dk-${p.deco}` : ''].filter(Boolean).join(' ');
       const body = `      ${p.eyebrow ? `<span class="eyebrow"${el(p, 'eyebrow', 'ta', '小見出し', 'eyebrow')}>${esc(p.eyebrow)}</span>` : ''}
@@ -625,6 +628,44 @@ ${form}
       ${p.title ? `<h2 class="sec-title" style="text-align:${p.align === 'left' ? 'left' : 'center'}"${el(p, 'title', 'ta', '見出し', 'title')}>${nl2br(p.title)}</h2>` : ''}
       <div${ed('body', '本文')}>${(p.body || '').split(/\n{2,}/).filter(Boolean).map((t) => `<p>${nl2br(t)}</p>`).join('\n        ')}</div>
     </div>`),
+  },
+
+  /* ---------------- 流れる文字（マーキー） ---------------- */
+  marquee: {
+    label: '流れる文字',
+    icon: '⟶',
+    tag: '演出',
+    about: '同じ言葉が横に流れ続けます。区切りのしるしや、CONTACT の手前に置く帯として。',
+    fields: [
+      { key: 'text', label: '流す言葉', type: 'text' },
+      { key: 'sep', label: '区切り記号', type: 'text', hint: '空にすると言葉だけが並びます' },
+      { key: 'speed', label: '流れる速さ', type: 'range', min: 8, max: 60, suffix: '秒/周' },
+      { key: 'dir', label: '向き', type: 'select', options: [['l', '左へ'], ['r', '右へ']] },
+      { key: 'size', label: '文字の大きさ', type: 'range', min: 30, max: 180, suffix: 'px' },
+      { key: 'outline', label: '中を抜いた文字にする', type: 'toggle' },
+      { key: 'href', label: 'リンク先（空でリンクなし）', type: 'text' },
+      FIELD.bg, FIELD.anchor,
+    ],
+    defaults: {
+      text: 'CONTACT', sep: '✳', speed: 22, dir: 'l', size: 96,
+      outline: false, href: '', bg: 'primary', anchor: '',
+    },
+    /* 途切れずに流すため、同じ並びを2組出して片方が抜けた瞬間にもう片方が続く。
+       中身は装飾なので、読み上げには1組だけ渡す。 */
+    render: (p) => {
+      const one = Array.from({ length: 6 }, () =>
+        `<span class="mq-w">${esc(p.text)}</span>${p.sep ? `<span class="mq-s">${esc(p.sep)}</span>` : ''}`).join('');
+      const inner = `<div class="mq-run">${one}</div><div class="mq-run" aria-hidden="true">${one}</div>`;
+      const body = p.href
+        ? `<a class="mq-in" href="${esc(p.href)}">${inner}</a>`
+        : `<div class="mq-in">${inner}</div>`;
+      const cls = ['sec', 'sec-marquee', p.bg ? `bg-${p.bg}` : '', p.outline ? 'mq-line' : '',
+        p.dir === 'r' ? 'mq-r' : ''].filter(Boolean).join(' ');
+      return `<section class="${cls}"${attr('id', p.anchor)}`
+        + ` style="--mq-dur:${Math.max(4, p.speed || 22)}s;--mq-size:${Math.max(20, p.size || 96)}px">
+${body}
+</section>`;
+    },
   },
 
   /* ---------------- コラージュ・ヒーロー ---------------- */
@@ -1270,7 +1311,7 @@ ${slides}
 
 /* 追加メニューに出す順番（ヘッダー・フッターは常設なので除く） */
 const ADDABLE = [
-  'hero', 'collage', 'features', 'about', 'gallery', 'menu', 'pricing', 'faq', 'cta', 'contact', 'rich',
+  'hero', 'collage', 'features', 'about', 'gallery', 'menu', 'marquee', 'pricing', 'faq', 'cta', 'contact', 'rich',
   'slides', 'product3d', 'exploded', 'hscroll', 'stackcards', 'timeline', 'clipreveal',
   'carousel3d', 'slotstats', 'svgdraw', 'shift',
 ];

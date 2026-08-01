@@ -849,4 +849,111 @@ const TEMPLATES = {
       } },
     ],
   },
+
+  /* ============ 12. SNS動画・クリエイティブ会社 ============ */
+  agency: {
+    style: 'bold',
+    rules: true,
+    name: 'SNS動画・クリエイティブ',
+    desc: '縦型動画・広告制作・代理店。淡いグレーに黒と蛍光グリーン。縦の罫線と流れる文字。',
+    swatch: ['#00f04b', '#000000', '#f4f4f4'],
+    theme: {
+      primary: '#00f04b', accent: '#000000', bg: '#f4f4f4', surface: '#ffffff',
+      text: '#000000', muted: '#7a7a7a', border: '#d9d9d9', dark: '#000000',
+      radius: 6, max: 1240, font: 'gothic', fontHead: 'gothic',
+    },
+    blocks: [
+      { type: 'header', props: {
+        logo: 'STUDIO', sticky: true, cta: 'お問い合わせ', ctaHref: '#contact',
+        nav: [
+          { label: '実績', href: '#works' },
+          { label: 'できること', href: '#features' },
+          { label: '会社について', href: '#about' },
+          { label: '採用', href: '#recruit' },
+        ],
+      } },
+      { type: 'hero', props: {
+        layout: 'cover', eyebrow: '', overlay: 58, anchor: 'top',
+        deco: 'cursor', decoStrength: 60, decoLabel: 'SCROLL', grain: false,
+        scroll: 'parallax', scrollLen: 180,
+        title: 'SNS×縦型動画を起点に、\n認知とブランドを伸ばす。',
+        text: '企画・制作・運用まで一気通貫。数字で語れるクリエイティブを。',
+        buttons: [
+          { label: '実績を見る', href: '#works', style: 'primary' },
+          { label: 'ご相談はこちら', href: '#contact', style: 'ghost' },
+        ],
+        anims: { title: { a: 'maskline' }, text: { a: 'fadeup', d: 300 } },
+      } },
+      { type: 'slotstats', props: {
+        eyebrow: 'NUMBERS', title: '', text: '', cols: 'c3', bg: '', anchor: 'numbers',
+        items: [
+          { value: '41億', label: '累計再生回数' },
+          { value: '2,000', label: '制作した動画' },
+          { value: '150', label: 'ご一緒した企業' },
+        ],
+      } },
+      { type: 'hscroll', props: {
+        eyebrow: 'PROJECTS', title: '手がけた仕事', height: 380, bg: 'surface', anchor: 'works',
+        items: [
+          { no: '01', title: '飲料ブランドの縦型IP', image: '' },
+          { no: '02', title: '航空会社の公式アカウント', image: '' },
+          { no: '03', title: '製薬会社の公式アカウント', image: '' },
+          { no: '04', title: 'サンプリング施策との連動', image: '' },
+          { no: '05', title: 'ショートドラマの企画・制作', image: '' },
+        ],
+      } },
+      { type: 'features', props: {
+        eyebrow: 'WHAT WE DO', title: 'できること',
+        text: '媒体ごとの型を持っているので、同じ素材でも出し分けができます。',
+        cols: 'c3', style: 'num', bg: '', anchor: 'features',
+        items: [
+          { title: '各SNS媒体', text: '縦型に最適化した企画と編集。媒体ごとの伸び方の違いから逆算します。' },
+          { title: 'コマース', text: '見て終わりにしない導線設計。売上まで見て次の一本を決めます。' },
+          { title: '屋外広告・イベント', text: '同じ企画を街とイベントまで伸ばし、ひとつの素材で面を取ります。' },
+        ],
+      } },
+      { type: 'marquee', props: {
+        text: 'CREATORS FIRST', sep: '✳', speed: 24, dir: 'l', size: 104,
+        outline: false, href: '', bg: 'primary', anchor: '',
+      } },
+      { type: 'about', props: {
+        eyebrow: 'ABOUT', title: 'つくる人が、\n真ん中にいる。',
+        image: '', reverse: false, bg: 'surface', anchor: 'about',
+        body: 'クリエイターが本業として続けられる環境をつくることが、私たちの仕事です。\n\n'
+          + '案件の獲得から契約、権利の扱いまで。作ることに集中できるよう、まわりを引き受けます。\n\n'
+          + '数字を見ながら、次に何をつくるかを一緒に決めていきます。',
+        buttons: [{ label: '会社について', href: '#about', style: 'ghost' }],
+        anims: { image: { a: 'wipe' } },
+      } },
+      { type: 'timeline', props: {
+        eyebrow: 'FLOW', title: 'ご依頼から公開まで', text: '', bg: '', anchor: 'steps',
+        items: [
+          { label: 'STEP 01', title: 'ご相談', text: 'やりたいこと、おおよその予算、期日をお聞かせください。' },
+          { label: 'STEP 02', title: 'ご提案', text: '企画案と概算をお出しします。ここまで無料です。' },
+          { label: 'STEP 03', title: '制作', text: '撮影から編集まで。途中で方向を変えることもできます。' },
+          { label: 'STEP 04', title: '公開・運用', text: '数字を見ながら、次の一本を一緒に決めます。' },
+        ],
+      } },
+      { type: 'marquee', props: {
+        text: 'RECRUIT', sep: '/', speed: 30, dir: 'r', size: 116,
+        outline: true, href: '#recruit', bg: '', anchor: 'recruit',
+      } },
+      { type: 'contact', props: {
+        eyebrow: 'CONTACT', title: 'お問い合わせ',
+        text: '2営業日以内にご返信します。採用のご相談もこちらから。',
+        tel: '03-0000-0000', email: 'hello@example.com',
+        address: '東京都渋谷区〇〇 1-2-3', hours: '平日 10:00 - 19:00',
+        form: true, action: '', submit: '送信する', bg: 'surface', anchor: 'contact',
+      } },
+      { type: 'footer', props: {
+        logo: 'STUDIO',
+        links: [
+          { label: '実績', href: '#works' },
+          { label: '会社について', href: '#about' },
+          { label: '採用', href: '#recruit' },
+        ],
+        copy: '© 2026 Studio',
+      } },
+    ],
+  },
 };

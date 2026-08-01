@@ -33,6 +33,7 @@ function buildState(tplKey) {
     },
     theme: clone(t.theme),
     style: t.style || '',
+    rules: !!t.rules,
     motion: clone(DEFAULT_MOTION),
     blocks: t.blocks.map((b) => makeBlock(b.type, b.props)),
   };
@@ -209,7 +210,8 @@ function themeCSS(t) {
 }
 
 /* テンプレート名と「デザインの型」を body のクラスにする */
-const bodyClass = () => `tpl-${state.template}${state.style ? ` sty-${state.style}` : ''}`;
+const bodyClass = () => `tpl-${state.template}${state.style ? ` sty-${state.style}` : ''}`
+  + (state.rules ? ' has-rules' : '');
 
 const bodyHTML = () => state.blocks.map((b) => BLOCKS[b.type].render(b.props)).join('\n\n');
 
@@ -1426,6 +1428,8 @@ function renderDesign() {
         <select data-path="style">${STYLES.map(([v, l]) =>
           `<option value="${v}"${state.style === v ? ' selected' : ''}>${esc(l)}</option>`).join('')}</select>
         <div class="hint">影・罫線・見出しの構えがまとめて変わります</div></div>`
+    + `<div class="f"><label class="sw"><input type="checkbox" data-path="rules"${state.rules ? ' checked' : ''}>縦の罫線を通す</label>
+        <div class="hint">左・中央・右に細い線が入り、全体が図面のように締まります</div></div>`
     + `<div class="sec-label">動き</div>`
     + MOTION_FIELDS.map((f) => {
         const path = `motion.${f.key}`;
@@ -1456,7 +1460,8 @@ function renderPage() {
 function themeInput(e) {
   const el = e.target;
   const path = el.dataset.path || '';
-  if (path !== 'style' && !path.startsWith('theme.') && !path.startsWith('meta.') && !path.startsWith('motion.')) return;
+  if (path !== 'style' && path !== 'rules'
+    && !path.startsWith('theme.') && !path.startsWith('meta.') && !path.startsWith('motion.')) return;
   setPath(state, path, readEl(el));
 
   if (el.type === 'range') {
@@ -1486,7 +1491,7 @@ $('#tab-design').addEventListener('click', (e) => {
 /* select や toggle を変えたら、すぐ動きを確認できるよう作り直す */
 $('#tab-design').addEventListener('change', (e) => {
   const path = e.target.dataset.path || '';
-  if (path.startsWith('motion.') || path === 'style') renderPreview(true);
+  if (path.startsWith('motion.') || path === 'style' || path === 'rules') renderPreview(true);
 });
 $('#tab-page').addEventListener('input', themeInput);
 
@@ -1620,7 +1625,7 @@ function renderTplGrid() {
     return `<div class="tc" data-tpl="${k}" role="button" tabindex="0">
       <span class="tc-hit"></span>
       <div class="tc-prev" style="background:${t.theme.bg}">
-        <div class="tc-scale tpl-${k}${t.style ? ` sty-${t.style}` : ''}" style="${themeVars(t.theme)}">${sample}</div>
+        <div class="tc-scale tpl-${k}${t.style ? ` sty-${t.style}` : ''}${t.rules ? ' has-rules' : ''}" style="${themeVars(t.theme)}">${sample}</div>
       </div>
       <div class="tc-meta"><b>${esc(t.name)}</b><small>${esc(t.desc)}</small>
         <span class="tc-sw">${t.swatch.map((c) => `<i style="background:${c}"></i>`).join('')}</span>

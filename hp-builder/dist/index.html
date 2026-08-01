@@ -904,6 +904,24 @@ p:last-child{margin-bottom:0}
   transition:transform .7s cubic-bezier(.16,.8,.3,1)
 }
 
+
+/* ---- カーソルについてくる丸 ----
+   位置は left/top で決める（transform の % は自分の大きさ基準なので使えない）。
+   画面の外に出たら小さくたたむ。 */
+[data-deco="cursor"] .cur{
+  left:var(--px,50%);top:var(--py,45%);
+  width:clamp(96px,9vw,132px);aspect-ratio:1;border-radius:50%;
+  display:grid;place-items:center;
+  transform:translate(-50%,-50%) scale(var(--curs,1));
+  background:var(--c-primary);color:var(--c-on-primary,#fff);
+  transition:transform .5s cubic-bezier(.16,.84,.3,1)
+}
+[data-deco="cursor"] .cur b{
+  font-family:var(--font-head);font-size:12px;font-weight:900;
+  letter-spacing:.18em;text-align:center;padding:0 8px
+}
+@media (hover:none){[data-deco="cursor"] .cur{left:50%;top:auto;bottom:8%;transition:none}}
+
 /* ---- フィルムの粒状感（他の装飾と重ねられる） ---- */
 .deco .grain{
   position:absolute;inset:-50%;display:block;pointer-events:none;
@@ -1014,6 +1032,35 @@ p:last-child{margin-bottom:0}
   .menu-cols,.menu-cols.c2{grid-template-columns:1fr;gap:36px}
   .mi dt b{font-size:15px}
 }
+
+/* ---------- 流れる文字（マーキー） ----------
+   同じ並びを2組ならべ、1組ぶん動かして先頭に戻す。
+   継ぎ目で一瞬止まるのを防ぐため、2組目は1組目の真後ろに置く。 */
+.sec-marquee{padding:0;overflow:hidden}
+.mq-in{display:flex;width:max-content;text-decoration:none;color:inherit;
+  padding:clamp(14px,2.4vh,30px) 0}
+.mq-run{
+  display:flex;align-items:center;flex:0 0 auto;
+  animation:mq-flow var(--mq-dur,22s) linear infinite;will-change:transform
+}
+.mq-r .mq-run{animation-direction:reverse}
+@keyframes mq-flow{from{transform:translate3d(0,0,0)}to{transform:translate3d(-100%,0,0)}}
+.mq-w,.mq-s{
+  font-family:var(--font-head);font-weight:900;white-space:nowrap;
+  font-size:var(--mq-size,96px);line-height:1.05;letter-spacing:.01em
+}
+.mq-w{padding:0 .18em}
+.mq-s{padding:0 .1em;opacity:.5;font-size:calc(var(--mq-size,96px) * .5)}
+/* 中を抜いた文字。線だけになるぶん、うるさくならずに大きく置ける。
+   color を transparent にすると currentColor の線まで透明になるので、
+   色はそのままにして「塗りだけ」を消す。 */
+.mq-line .mq-w{
+  -webkit-text-fill-color:transparent;
+  -webkit-text-stroke:1.5px currentColor;
+  paint-order:stroke fill
+}
+.mq-in:hover .mq-run{animation-play-state:paused}
+@media(max-width:760px){.mq-w,.mq-s{font-size:calc(var(--mq-size,96px) * .55)}}
 
 /* ---------- FAQ ---------- */
 .faq{max-width:800px;margin:0 auto;display:grid;gap:12px}
@@ -1396,10 +1443,17 @@ p:last-child{margin-bottom:0}
 
 /* ---------- スロット式カウンター ---------- */
 .slots{display:grid;gap:24px;text-align:center}
+/* 桁は縦に回すので transform がかかる。background-clip:text は
+   変形した子孫の文字には効かず、数字がまるごと消える（実測で確認）。
+   ここは単色で塗る。 */
 .slot{display:inline-flex;font-family:Menlo,monospace;font-weight:800;
   font-size:clamp(30px,5.4vw,56px);line-height:1.1;overflow:hidden;
-  background:linear-gradient(140deg,var(--c-primary),var(--c-accent));
-  -webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent}
+  color:var(--c-text);-webkit-text-fill-color:currentColor}
+/* メインカラーが明るいと、背景に対して数字が沈む（緑#00f04b と #f4f4f4 で
+   コントラスト比 1.41 だった）。文字色を少し混ぜて、どの配色でも読める濃さにする。 */
+.slot .col u{color:color-mix(in srgb,var(--c-primary) 62%,var(--c-text))}
+.bg-primary .slot,.bg-dark .slot{color:inherit}
+.bg-primary .slot .col u,.bg-dark .slot .col u{color:inherit}
 .slot .col{height:1.1em;overflow:hidden}
 .slot .col u{display:block;text-decoration:none;transition:transform 1.6s cubic-bezier(.16,1,.3,1)}
 .slot .fix{opacity:.6}
@@ -1521,6 +1575,22 @@ p:last-child{margin-bottom:0}
   .ftr-in{flex-direction:column;align-items:flex-start}
 }
 
+
+/* ---------- 縦の罫線（ページ全体） ----------
+   左・中央・右に細い線を通すと、全体が図面のように締まる。
+   スクロールしても動かないよう、画面に固定する。 */
+.has-rules::before{
+  content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:
+    linear-gradient(var(--c-border),var(--c-border)) left top/1px 100% no-repeat,
+    linear-gradient(var(--c-border),var(--c-border)) center top/1px 100% no-repeat,
+    linear-gradient(var(--c-border),var(--c-border)) right top/1px 100% no-repeat;
+  opacity:.75
+}
+.has-rules .sec,.has-rules .hero,.has-rules .hdr,.has-rules .ftr{position:relative;z-index:1}
+@media(max-width:760px){.has-rules::before{background-position:left top,right top;
+  background-size:1px 100%,1px 100%;background-repeat:no-repeat}}
+
 /* ---------- 動きを減らす設定への配慮 ---------- */
 @media (prefers-reduced-motion: reduce){
   *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;
@@ -1530,7 +1600,7 @@ p:last-child{margin-bottom:0}
   .ia-on{opacity:1!important;transform:none!important;filter:none!important;clip-path:none!important}
   .rv{opacity:1!important;transform:none!important}
   /* 装飾は「止まった1枚の絵」として残す。消すと画面が寂しくなるため */
-  .deco b,.deco .sk,.deco .grain,.cg-float.in .cpic{animation:none!important}
+  .deco b,.deco .sk,.deco .grain,.cg-float.in .cpic,.mq-run{animation:none!important}
   .cpic,.sec-collage .cpic{opacity:1!important;transform:rotate(var(--rot,0deg))!important}
   .cb{clip-path:none!important}
   .hero.dk-depth .hero-bg img,.hero.dk-depth .hero-in{transform:none!important}
@@ -2224,6 +2294,7 @@ const HERO_DECOS = [
   ['spot', 'スポットライト（ポインタ追従）'],
   ['depth', '奥行き（ポインタで視差）'],
   ['silk', '流れる線'],
+  ['cursor', 'カーソルに丸がついてくる'],
 ];
 
 /* 雲・オーロラの配置。実行時に乱数を使うと再読み込みのたびに絵が変わって
@@ -2282,6 +2353,7 @@ function decoLayer(p) {
   else if (kind === 'aurora') inner = blobs(AURORA_BLOBS, true);
   else if (kind === 'glass') inner = '    <i class="gl gl1"></i>\n    <i class="gl gl2"></i>';
   else if (kind === 'spot') inner = '    <i class="sp"></i>';
+  else if (kind === 'cursor') inner = `    <i class="cur"><b>${esc(p.decoLabel || 'SCROLL')}</b></i>`;
   else if (kind === 'dust') inner = '    <canvas class="du"></canvas>';
   else if (kind === 'silk') {
     inner = [0, 1, 2, 3, 4].map((i) =>
@@ -2446,6 +2518,7 @@ const BLOCKS = {
         hint: 'ポインタ追従は指の環境では自動で止まります' },
       { key: 'decoStrength', label: '装飾の強さ', type: 'range', min: 10, max: 100, suffix: '%',
         showIf: (p) => p.deco && p.deco !== 'none' },
+      { key: 'decoLabel', label: '丸の中の文字', type: 'text', showIf: (p) => p.deco === 'cursor' },
       { key: 'grain', label: 'フィルムの粒状感を足す', type: 'toggle' },
       { key: 'buttons', label: 'ボタン', type: 'list', addLabel: 'ボタンを追加', titleKey: 'label', item: FIELD.btnItem },
       FIELD.bg, FIELD.anchor,
@@ -2455,7 +2528,7 @@ const BLOCKS = {
       title: 'ここにいちばん伝えたい\nキャッチコピーを',
       text: 'サービスの魅力を1〜2行で。訪れた人が「自分に関係ある」と感じる言葉を置きましょう。',
       image: '', overlay: 55, bg: '', anchor: 'top',
-      deco: 'none', decoStrength: 60, grain: false,
+      deco: 'none', decoStrength: 60, grain: false, decoLabel: 'SCROLL',
       scroll: 'none', scrollLen: 200,
       buttons: [
         { label: '無料で相談する', href: '#contact', style: 'primary' },
@@ -2464,7 +2537,7 @@ const BLOCKS = {
     },
     render: (p) => {
       const cover = p.layout === 'cover';
-      const needsPointer = ['glass', 'spot', 'depth', 'clouds', 'aurora'].includes(p.deco);
+      const needsPointer = ['glass', 'spot', 'depth', 'clouds', 'aurora', 'cursor'].includes(p.deco);
       const cls = ['hero', cover ? 'cover center' : p.layout, p.bg ? `bg-${p.bg}` : '',
         p.deco && p.deco !== 'none' ? `has-deco dk-${p.deco}` : ''].filter(Boolean).join(' ');
       const body = `      ${p.eyebrow ? `<span class="eyebrow"${el(p, 'eyebrow', 'ta', '小見出し', 'eyebrow')}>${esc(p.eyebrow)}</span>` : ''}
@@ -2752,6 +2825,44 @@ ${form}
       ${p.title ? `<h2 class="sec-title" style="text-align:${p.align === 'left' ? 'left' : 'center'}"${el(p, 'title', 'ta', '見出し', 'title')}>${nl2br(p.title)}</h2>` : ''}
       <div${ed('body', '本文')}>${(p.body || '').split(/\n{2,}/).filter(Boolean).map((t) => `<p>${nl2br(t)}</p>`).join('\n        ')}</div>
     </div>`),
+  },
+
+  /* ---------------- 流れる文字（マーキー） ---------------- */
+  marquee: {
+    label: '流れる文字',
+    icon: '⟶',
+    tag: '演出',
+    about: '同じ言葉が横に流れ続けます。区切りのしるしや、CONTACT の手前に置く帯として。',
+    fields: [
+      { key: 'text', label: '流す言葉', type: 'text' },
+      { key: 'sep', label: '区切り記号', type: 'text', hint: '空にすると言葉だけが並びます' },
+      { key: 'speed', label: '流れる速さ', type: 'range', min: 8, max: 60, suffix: '秒/周' },
+      { key: 'dir', label: '向き', type: 'select', options: [['l', '左へ'], ['r', '右へ']] },
+      { key: 'size', label: '文字の大きさ', type: 'range', min: 30, max: 180, suffix: 'px' },
+      { key: 'outline', label: '中を抜いた文字にする', type: 'toggle' },
+      { key: 'href', label: 'リンク先（空でリンクなし）', type: 'text' },
+      FIELD.bg, FIELD.anchor,
+    ],
+    defaults: {
+      text: 'CONTACT', sep: '✳', speed: 22, dir: 'l', size: 96,
+      outline: false, href: '', bg: 'primary', anchor: '',
+    },
+    /* 途切れずに流すため、同じ並びを2組出して片方が抜けた瞬間にもう片方が続く。
+       中身は装飾なので、読み上げには1組だけ渡す。 */
+    render: (p) => {
+      const one = Array.from({ length: 6 }, () =>
+        `<span class="mq-w">${esc(p.text)}</span>${p.sep ? `<span class="mq-s">${esc(p.sep)}</span>` : ''}`).join('');
+      const inner = `<div class="mq-run">${one}</div><div class="mq-run" aria-hidden="true">${one}</div>`;
+      const body = p.href
+        ? `<a class="mq-in" href="${esc(p.href)}">${inner}</a>`
+        : `<div class="mq-in">${inner}</div>`;
+      const cls = ['sec', 'sec-marquee', p.bg ? `bg-${p.bg}` : '', p.outline ? 'mq-line' : '',
+        p.dir === 'r' ? 'mq-r' : ''].filter(Boolean).join(' ');
+      return `<section class="${cls}"${attr('id', p.anchor)}`
+        + ` style="--mq-dur:${Math.max(4, p.speed || 22)}s;--mq-size:${Math.max(20, p.size || 96)}px">
+${body}
+</section>`;
+    },
   },
 
   /* ---------------- コラージュ・ヒーロー ---------------- */
@@ -3397,7 +3508,7 @@ ${slides}
 
 /* 追加メニューに出す順番（ヘッダー・フッターは常設なので除く） */
 const ADDABLE = [
-  'hero', 'collage', 'features', 'about', 'gallery', 'menu', 'pricing', 'faq', 'cta', 'contact', 'rich',
+  'hero', 'collage', 'features', 'about', 'gallery', 'menu', 'marquee', 'pricing', 'faq', 'cta', 'contact', 'rich',
   'slides', 'product3d', 'exploded', 'hscroll', 'stackcards', 'timeline', 'clipreveal',
   'carousel3d', 'slotstats', 'svgdraw', 'shift',
 ];
@@ -4256,6 +4367,113 @@ const TEMPLATES = {
       } },
     ],
   },
+
+  /* ============ 12. SNS動画・クリエイティブ会社 ============ */
+  agency: {
+    style: 'bold',
+    rules: true,
+    name: 'SNS動画・クリエイティブ',
+    desc: '縦型動画・広告制作・代理店。淡いグレーに黒と蛍光グリーン。縦の罫線と流れる文字。',
+    swatch: ['#00f04b', '#000000', '#f4f4f4'],
+    theme: {
+      primary: '#00f04b', accent: '#000000', bg: '#f4f4f4', surface: '#ffffff',
+      text: '#000000', muted: '#7a7a7a', border: '#d9d9d9', dark: '#000000',
+      radius: 6, max: 1240, font: 'gothic', fontHead: 'gothic',
+    },
+    blocks: [
+      { type: 'header', props: {
+        logo: 'STUDIO', sticky: true, cta: 'お問い合わせ', ctaHref: '#contact',
+        nav: [
+          { label: '実績', href: '#works' },
+          { label: 'できること', href: '#features' },
+          { label: '会社について', href: '#about' },
+          { label: '採用', href: '#recruit' },
+        ],
+      } },
+      { type: 'hero', props: {
+        layout: 'cover', eyebrow: '', overlay: 58, anchor: 'top',
+        deco: 'cursor', decoStrength: 60, decoLabel: 'SCROLL', grain: false,
+        scroll: 'parallax', scrollLen: 180,
+        title: 'SNS×縦型動画を起点に、\n認知とブランドを伸ばす。',
+        text: '企画・制作・運用まで一気通貫。数字で語れるクリエイティブを。',
+        buttons: [
+          { label: '実績を見る', href: '#works', style: 'primary' },
+          { label: 'ご相談はこちら', href: '#contact', style: 'ghost' },
+        ],
+        anims: { title: { a: 'maskline' }, text: { a: 'fadeup', d: 300 } },
+      } },
+      { type: 'slotstats', props: {
+        eyebrow: 'NUMBERS', title: '', text: '', cols: 'c3', bg: '', anchor: 'numbers',
+        items: [
+          { value: '41億', label: '累計再生回数' },
+          { value: '2,000', label: '制作した動画' },
+          { value: '150', label: 'ご一緒した企業' },
+        ],
+      } },
+      { type: 'hscroll', props: {
+        eyebrow: 'PROJECTS', title: '手がけた仕事', height: 380, bg: 'surface', anchor: 'works',
+        items: [
+          { no: '01', title: '飲料ブランドの縦型IP', image: '' },
+          { no: '02', title: '航空会社の公式アカウント', image: '' },
+          { no: '03', title: '製薬会社の公式アカウント', image: '' },
+          { no: '04', title: 'サンプリング施策との連動', image: '' },
+          { no: '05', title: 'ショートドラマの企画・制作', image: '' },
+        ],
+      } },
+      { type: 'features', props: {
+        eyebrow: 'WHAT WE DO', title: 'できること',
+        text: '媒体ごとの型を持っているので、同じ素材でも出し分けができます。',
+        cols: 'c3', style: 'num', bg: '', anchor: 'features',
+        items: [
+          { title: '各SNS媒体', text: '縦型に最適化した企画と編集。媒体ごとの伸び方の違いから逆算します。' },
+          { title: 'コマース', text: '見て終わりにしない導線設計。売上まで見て次の一本を決めます。' },
+          { title: '屋外広告・イベント', text: '同じ企画を街とイベントまで伸ばし、ひとつの素材で面を取ります。' },
+        ],
+      } },
+      { type: 'marquee', props: {
+        text: 'CREATORS FIRST', sep: '✳', speed: 24, dir: 'l', size: 104,
+        outline: false, href: '', bg: 'primary', anchor: '',
+      } },
+      { type: 'about', props: {
+        eyebrow: 'ABOUT', title: 'つくる人が、\n真ん中にいる。',
+        image: '', reverse: false, bg: 'surface', anchor: 'about',
+        body: 'クリエイターが本業として続けられる環境をつくることが、私たちの仕事です。\n\n'
+          + '案件の獲得から契約、権利の扱いまで。作ることに集中できるよう、まわりを引き受けます。\n\n'
+          + '数字を見ながら、次に何をつくるかを一緒に決めていきます。',
+        buttons: [{ label: '会社について', href: '#about', style: 'ghost' }],
+        anims: { image: { a: 'wipe' } },
+      } },
+      { type: 'timeline', props: {
+        eyebrow: 'FLOW', title: 'ご依頼から公開まで', text: '', bg: '', anchor: 'steps',
+        items: [
+          { label: 'STEP 01', title: 'ご相談', text: 'やりたいこと、おおよその予算、期日をお聞かせください。' },
+          { label: 'STEP 02', title: 'ご提案', text: '企画案と概算をお出しします。ここまで無料です。' },
+          { label: 'STEP 03', title: '制作', text: '撮影から編集まで。途中で方向を変えることもできます。' },
+          { label: 'STEP 04', title: '公開・運用', text: '数字を見ながら、次の一本を一緒に決めます。' },
+        ],
+      } },
+      { type: 'marquee', props: {
+        text: 'RECRUIT', sep: '/', speed: 30, dir: 'r', size: 116,
+        outline: true, href: '#recruit', bg: '', anchor: 'recruit',
+      } },
+      { type: 'contact', props: {
+        eyebrow: 'CONTACT', title: 'お問い合わせ',
+        text: '2営業日以内にご返信します。採用のご相談もこちらから。',
+        tel: '03-0000-0000', email: 'hello@example.com',
+        address: '東京都渋谷区〇〇 1-2-3', hours: '平日 10:00 - 19:00',
+        form: true, action: '', submit: '送信する', bg: 'surface', anchor: 'contact',
+      } },
+      { type: 'footer', props: {
+        logo: 'STUDIO',
+        links: [
+          { label: '実績', href: '#works' },
+          { label: '会社について', href: '#about' },
+          { label: '採用', href: '#recruit' },
+        ],
+        copy: '© 2026 Studio',
+      } },
+    ],
+  },
 };
 
 </script>
@@ -4296,6 +4514,7 @@ function buildState(tplKey) {
     },
     theme: clone(t.theme),
     style: t.style || '',
+    rules: !!t.rules,
     motion: clone(DEFAULT_MOTION),
     blocks: t.blocks.map((b) => makeBlock(b.type, b.props)),
   };
@@ -4472,7 +4691,8 @@ function themeCSS(t) {
 }
 
 /* テンプレート名と「デザインの型」を body のクラスにする */
-const bodyClass = () => `tpl-${state.template}${state.style ? ` sty-${state.style}` : ''}`;
+const bodyClass = () => `tpl-${state.template}${state.style ? ` sty-${state.style}` : ''}`
+  + (state.rules ? ' has-rules' : '');
 
 const bodyHTML = () => state.blocks.map((b) => BLOCKS[b.type].render(b.props)).join('\n\n');
 
@@ -5689,6 +5909,8 @@ function renderDesign() {
         <select data-path="style">${STYLES.map(([v, l]) =>
           `<option value="${v}"${state.style === v ? ' selected' : ''}>${esc(l)}</option>`).join('')}</select>
         <div class="hint">影・罫線・見出しの構えがまとめて変わります</div></div>`
+    + `<div class="f"><label class="sw"><input type="checkbox" data-path="rules"${state.rules ? ' checked' : ''}>縦の罫線を通す</label>
+        <div class="hint">左・中央・右に細い線が入り、全体が図面のように締まります</div></div>`
     + `<div class="sec-label">動き</div>`
     + MOTION_FIELDS.map((f) => {
         const path = `motion.${f.key}`;
@@ -5719,7 +5941,8 @@ function renderPage() {
 function themeInput(e) {
   const el = e.target;
   const path = el.dataset.path || '';
-  if (path !== 'style' && !path.startsWith('theme.') && !path.startsWith('meta.') && !path.startsWith('motion.')) return;
+  if (path !== 'style' && path !== 'rules'
+    && !path.startsWith('theme.') && !path.startsWith('meta.') && !path.startsWith('motion.')) return;
   setPath(state, path, readEl(el));
 
   if (el.type === 'range') {
@@ -5749,7 +5972,7 @@ $('#tab-design').addEventListener('click', (e) => {
 /* select や toggle を変えたら、すぐ動きを確認できるよう作り直す */
 $('#tab-design').addEventListener('change', (e) => {
   const path = e.target.dataset.path || '';
-  if (path.startsWith('motion.') || path === 'style') renderPreview(true);
+  if (path.startsWith('motion.') || path === 'style' || path === 'rules') renderPreview(true);
 });
 $('#tab-page').addEventListener('input', themeInput);
 
@@ -5883,7 +6106,7 @@ function renderTplGrid() {
     return `<div class="tc" data-tpl="${k}" role="button" tabindex="0">
       <span class="tc-hit"></span>
       <div class="tc-prev" style="background:${t.theme.bg}">
-        <div class="tc-scale tpl-${k}${t.style ? ` sty-${t.style}` : ''}" style="${themeVars(t.theme)}">${sample}</div>
+        <div class="tc-scale tpl-${k}${t.style ? ` sty-${t.style}` : ''}${t.rules ? ' has-rules' : ''}" style="${themeVars(t.theme)}">${sample}</div>
       </div>
       <div class="tc-meta"><b>${esc(t.name)}</b><small>${esc(t.desc)}</small>
         <span class="tc-sw">${t.swatch.map((c) => `<i style="background:${c}"></i>`).join('')}</span>

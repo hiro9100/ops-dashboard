@@ -405,6 +405,24 @@ p:last-child{margin-bottom:0}
   transition:transform .7s cubic-bezier(.16,.8,.3,1)
 }
 
+
+/* ---- カーソルについてくる丸 ----
+   位置は left/top で決める（transform の % は自分の大きさ基準なので使えない）。
+   画面の外に出たら小さくたたむ。 */
+[data-deco="cursor"] .cur{
+  left:var(--px,50%);top:var(--py,45%);
+  width:clamp(96px,9vw,132px);aspect-ratio:1;border-radius:50%;
+  display:grid;place-items:center;
+  transform:translate(-50%,-50%) scale(var(--curs,1));
+  background:var(--c-primary);color:var(--c-on-primary,#fff);
+  transition:transform .5s cubic-bezier(.16,.84,.3,1)
+}
+[data-deco="cursor"] .cur b{
+  font-family:var(--font-head);font-size:12px;font-weight:900;
+  letter-spacing:.18em;text-align:center;padding:0 8px
+}
+@media (hover:none){[data-deco="cursor"] .cur{left:50%;top:auto;bottom:8%;transition:none}}
+
 /* ---- フィルムの粒状感（他の装飾と重ねられる） ---- */
 .deco .grain{
   position:absolute;inset:-50%;display:block;pointer-events:none;
@@ -515,6 +533,35 @@ p:last-child{margin-bottom:0}
   .menu-cols,.menu-cols.c2{grid-template-columns:1fr;gap:36px}
   .mi dt b{font-size:15px}
 }
+
+/* ---------- 流れる文字（マーキー） ----------
+   同じ並びを2組ならべ、1組ぶん動かして先頭に戻す。
+   継ぎ目で一瞬止まるのを防ぐため、2組目は1組目の真後ろに置く。 */
+.sec-marquee{padding:0;overflow:hidden}
+.mq-in{display:flex;width:max-content;text-decoration:none;color:inherit;
+  padding:clamp(14px,2.4vh,30px) 0}
+.mq-run{
+  display:flex;align-items:center;flex:0 0 auto;
+  animation:mq-flow var(--mq-dur,22s) linear infinite;will-change:transform
+}
+.mq-r .mq-run{animation-direction:reverse}
+@keyframes mq-flow{from{transform:translate3d(0,0,0)}to{transform:translate3d(-100%,0,0)}}
+.mq-w,.mq-s{
+  font-family:var(--font-head);font-weight:900;white-space:nowrap;
+  font-size:var(--mq-size,96px);line-height:1.05;letter-spacing:.01em
+}
+.mq-w{padding:0 .18em}
+.mq-s{padding:0 .1em;opacity:.5;font-size:calc(var(--mq-size,96px) * .5)}
+/* 中を抜いた文字。線だけになるぶん、うるさくならずに大きく置ける。
+   color を transparent にすると currentColor の線まで透明になるので、
+   色はそのままにして「塗りだけ」を消す。 */
+.mq-line .mq-w{
+  -webkit-text-fill-color:transparent;
+  -webkit-text-stroke:1.5px currentColor;
+  paint-order:stroke fill
+}
+.mq-in:hover .mq-run{animation-play-state:paused}
+@media(max-width:760px){.mq-w,.mq-s{font-size:calc(var(--mq-size,96px) * .55)}}
 
 /* ---------- FAQ ---------- */
 .faq{max-width:800px;margin:0 auto;display:grid;gap:12px}
@@ -897,10 +944,17 @@ p:last-child{margin-bottom:0}
 
 /* ---------- スロット式カウンター ---------- */
 .slots{display:grid;gap:24px;text-align:center}
+/* 桁は縦に回すので transform がかかる。background-clip:text は
+   変形した子孫の文字には効かず、数字がまるごと消える（実測で確認）。
+   ここは単色で塗る。 */
 .slot{display:inline-flex;font-family:Menlo,monospace;font-weight:800;
   font-size:clamp(30px,5.4vw,56px);line-height:1.1;overflow:hidden;
-  background:linear-gradient(140deg,var(--c-primary),var(--c-accent));
-  -webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent}
+  color:var(--c-text);-webkit-text-fill-color:currentColor}
+/* メインカラーが明るいと、背景に対して数字が沈む（緑#00f04b と #f4f4f4 で
+   コントラスト比 1.41 だった）。文字色を少し混ぜて、どの配色でも読める濃さにする。 */
+.slot .col u{color:color-mix(in srgb,var(--c-primary) 62%,var(--c-text))}
+.bg-primary .slot,.bg-dark .slot{color:inherit}
+.bg-primary .slot .col u,.bg-dark .slot .col u{color:inherit}
 .slot .col{height:1.1em;overflow:hidden}
 .slot .col u{display:block;text-decoration:none;transition:transform 1.6s cubic-bezier(.16,1,.3,1)}
 .slot .fix{opacity:.6}
@@ -1022,6 +1076,22 @@ p:last-child{margin-bottom:0}
   .ftr-in{flex-direction:column;align-items:flex-start}
 }
 
+
+/* ---------- 縦の罫線（ページ全体） ----------
+   左・中央・右に細い線を通すと、全体が図面のように締まる。
+   スクロールしても動かないよう、画面に固定する。 */
+.has-rules::before{
+  content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:
+    linear-gradient(var(--c-border),var(--c-border)) left top/1px 100% no-repeat,
+    linear-gradient(var(--c-border),var(--c-border)) center top/1px 100% no-repeat,
+    linear-gradient(var(--c-border),var(--c-border)) right top/1px 100% no-repeat;
+  opacity:.75
+}
+.has-rules .sec,.has-rules .hero,.has-rules .hdr,.has-rules .ftr{position:relative;z-index:1}
+@media(max-width:760px){.has-rules::before{background-position:left top,right top;
+  background-size:1px 100%,1px 100%;background-repeat:no-repeat}}
+
 /* ---------- 動きを減らす設定への配慮 ---------- */
 @media (prefers-reduced-motion: reduce){
   *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;
@@ -1031,7 +1101,7 @@ p:last-child{margin-bottom:0}
   .ia-on{opacity:1!important;transform:none!important;filter:none!important;clip-path:none!important}
   .rv{opacity:1!important;transform:none!important}
   /* 装飾は「止まった1枚の絵」として残す。消すと画面が寂しくなるため */
-  .deco b,.deco .sk,.deco .grain,.cg-float.in .cpic{animation:none!important}
+  .deco b,.deco .sk,.deco .grain,.cg-float.in .cpic,.mq-run{animation:none!important}
   .cpic,.sec-collage .cpic{opacity:1!important;transform:rotate(var(--rot,0deg))!important}
   .cb{clip-path:none!important}
   .hero.dk-depth .hero-bg img,.hero.dk-depth .hero-in{transform:none!important}
