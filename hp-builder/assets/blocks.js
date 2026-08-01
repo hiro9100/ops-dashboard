@@ -72,6 +72,68 @@ const IMAGE_ANIMS = [
   ['float', 'ふわふわ浮遊（ループ）'],
 ];
 
+/* ============================================================
+   ヒーローの装飾レイヤー
+   写真や背景色の上に重ねる「金のかかったサイト」の質感担当。
+   文字を守る暗幕（.hero.cover::before）より下に敷くので、
+   どれを選んでも見出しが読めなくなることはない。
+   ============================================================ */
+const HERO_DECOS = [
+  ['none', 'なし'],
+  ['clouds', 'ふわふわ雲'],
+  ['glass', 'すりガラス（ポインタ追従）'],
+  ['aurora', 'オーロラ'],
+  ['dust', '光の粒'],
+  ['spot', 'スポットライト（ポインタ追従）'],
+  ['depth', '奥行き（ポインタで視差）'],
+  ['silk', '流れる線'],
+];
+
+/* 雲・オーロラの配置。実行時に乱数を使うと再読み込みのたびに絵が変わって
+   落ち着かないので、値は決め打ちで持つ。
+   [左%, 上%, 大きさvw, 横ゆれpx, 縦ゆれpx, 伸縮, 秒, 開始ずらし秒, 濃さ, 視差の強さ] */
+const CLOUD_BLOBS = [
+  [10, 18, 36, 62, -30, 1.14, 34, 0, 0.5, 26],
+  [70, 10, 28, -74, 36, 1.1, 43, -8, 0.42, 17],
+  [44, 58, 42, 46, -42, 1.18, 51, -19, 0.36, 34],
+  [85, 54, 24, -52, -28, 1.12, 39, -27, 0.34, 12],
+  [20, 76, 32, 70, 24, 1.08, 47, -13, 0.28, 22],
+];
+const AURORA_BLOBS = [
+  [14, 20, 46, 90, -46, 1.2, 28, 0, 0.5, 30, 'var(--c-primary)'],
+  [64, 8, 52, -96, 52, 1.24, 36, -11, 0.42, 20, 'var(--c-accent)'],
+  [40, 62, 58, 62, -58, 1.16, 44, -22, 0.34, 38, 'var(--c-primary)'],
+];
+
+/* 外側の <i> がポインタ視差、内側の <b> がゆっくりした漂い。
+   ひとつの要素に両方の transform は書けないので、2枚に分けている。 */
+function blobs(list, withColor) {
+  return list.map(([x, y, w, dx, dy, ds, dur, delay, op, pk, color]) =>
+    `    <i style="left:${x}%;top:${y}%;width:${w}vw;--pk:${pk}"><b style="--dx:${dx}px;--dy:${dy}px;`
+    + `--ds:${ds};animation-duration:${dur}s;animation-delay:${delay}s;opacity:${op}`
+    + `${withColor ? `;--col:${color}` : ''}"></b></i>`).join('\n');
+}
+
+/* 装飾レイヤーのHTML。強さは --deco-k（0〜1.5）で全体にかかる */
+function decoLayer(p) {
+  const kind = p.deco || 'none';
+  if (kind === 'none' && !p.grain) return '';
+  const k = ((p.decoStrength ?? 60) / 60).toFixed(2);
+  let inner = '';
+  if (kind === 'clouds') inner = blobs(CLOUD_BLOBS, false);
+  else if (kind === 'aurora') inner = blobs(AURORA_BLOBS, true);
+  else if (kind === 'glass') inner = '    <i class="gl gl1"></i>\n    <i class="gl gl2"></i>';
+  else if (kind === 'spot') inner = '    <i class="sp"></i>';
+  else if (kind === 'dust') inner = '    <canvas class="du"></canvas>';
+  else if (kind === 'silk') {
+    inner = [0, 1, 2, 3, 4].map((i) =>
+      `    <i class="sk" style="--n:${i};animation-duration:${20 + i * 5}s;animation-delay:${-i * 4}s"></i>`).join('\n');
+  }
+  const grain = p.grain ? `${inner ? '\n' : ''}    <u class="grain"></u>` : '';
+  return `  <div class="deco"${kind === 'none' ? '' : ` data-deco="${esc(kind)}"`}`
+    + ` style="--deco-k:${k}" aria-hidden="true">\n${inner}${grain}\n  </div>\n`;
+}
+
 /* 要素にアニメーション用の目印を付ける。
    role  : props.anims のキー
    kind  : 'ta'（文字）/ 'ia'（画像・要素）
@@ -170,6 +232,11 @@ const BLOCKS = {
       { key: 'image', label: '画像URL', type: 'image' },
       { key: 'overlay', label: '背景画像の暗さ', type: 'range', min: 0, max: 90, suffix: '%',
         showIf: (p) => p.layout === 'cover' },
+      { key: 'deco', label: '装飾の動き', type: 'select', options: HERO_DECOS, gallery: 'deco',
+        hint: 'ポインタ追従は指の環境では自動で止まります' },
+      { key: 'decoStrength', label: '装飾の強さ', type: 'range', min: 10, max: 100, suffix: '%',
+        showIf: (p) => p.deco && p.deco !== 'none' },
+      { key: 'grain', label: 'フィルムの粒状感を足す', type: 'toggle' },
       { key: 'buttons', label: 'ボタン', type: 'list', addLabel: 'ボタンを追加', titleKey: 'label', item: FIELD.btnItem },
       FIELD.bg, FIELD.anchor,
     ],
@@ -178,6 +245,7 @@ const BLOCKS = {
       title: 'ここにいちばん伝えたい\nキャッチコピーを',
       text: 'サービスの魅力を1〜2行で。訪れた人が「自分に関係ある」と感じる言葉を置きましょう。',
       image: '', overlay: 55, bg: '', anchor: 'top',
+      deco: 'none', decoStrength: 60, grain: false,
       buttons: [
         { label: '無料で相談する', href: '#contact', style: 'primary' },
         { label: 'くわしく見る', href: '#features', style: 'ghost' },
@@ -185,7 +253,9 @@ const BLOCKS = {
     },
     render: (p) => {
       const cover = p.layout === 'cover';
-      const cls = ['hero', cover ? 'cover center' : p.layout, p.bg ? `bg-${p.bg}` : ''].filter(Boolean).join(' ');
+      const needsPointer = ['glass', 'spot', 'depth', 'clouds', 'aurora'].includes(p.deco);
+      const cls = ['hero', cover ? 'cover center' : p.layout, p.bg ? `bg-${p.bg}` : '',
+        p.deco && p.deco !== 'none' ? `has-deco dk-${p.deco}` : ''].filter(Boolean).join(' ');
       const body = `      ${p.eyebrow ? `<span class="eyebrow"${el(p, 'eyebrow', 'ta', '小見出し', 'eyebrow')}>${esc(p.eyebrow)}</span>` : ''}
       ${p.title ? `<h1 class="hero-title"${el(p, 'title', 'ta', 'キャッチコピー', 'title')}>${nl2br(p.title)}</h1>` : ''}
       ${p.text ? `<p class="hero-text"${el(p, 'text', 'ta', '説明文', 'text')}>${nl2br(p.text)}</p>` : ''}
@@ -199,8 +269,8 @@ ${buttons(p.buttons)}`;
       <div class="hero-media"${el(p, 'image', 'ia', '画像')}${imgSlot('image')}>${media(p.image, p.title)}</div>
     </div>`
         : `    <div class="hero-in">\n${body}\n    </div>`;
-      return `<section class="${cls}"${attr('id', p.anchor)}>
-${bg}  <div class="wrap">
+      return `<section class="${cls}"${attr('id', p.anchor)}${needsPointer ? ' data-hpt' : ''}>
+${bg}${decoLayer(p)}  <div class="wrap">
 ${inner}
   </div>
 </section>`;

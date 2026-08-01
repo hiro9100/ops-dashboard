@@ -118,6 +118,127 @@ p:last-child{margin-bottom:0}
 .hero-bg::after{content:"";position:absolute;inset:0;background:var(--hero-overlay,rgba(15,23,42,.55))}
 .hero.center.cover .hero-in,.hero.left.cover .hero-in{padding:clamp(24px,4vw,48px) 0}
 
+/* ==========================================================
+   ヒーローの装飾レイヤー
+   z-index は 0。写真(.hero-bg)より後に置くので写真の上に出るが、
+   文字を守る暗幕(.hero.cover::before, z-index:1)より下に入る。
+   これで、どの装飾を選んでも見出しのコントラストは落ちない。
+   ポインタ位置は JS が --mx/--my（-1〜1）と --px/--py（px）で渡す。
+   ========================================================== */
+.deco{position:absolute;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+.deco i{position:absolute;display:block;transform:translate3d(0,0,0)}
+.deco b{display:block;width:100%;aspect-ratio:1;border-radius:50%}
+
+/* ---- ふわふわ雲 ---- */
+[data-deco="clouds"] i{
+  transform:translate3d(calc(var(--mx,0) * var(--pk) * 1px),calc(var(--my,0) * var(--pk) * 1px),0);
+  transition:transform .9s cubic-bezier(.16,.8,.3,1)
+}
+[data-deco="clouds"] b{
+  background:radial-gradient(circle at 34% 30%,rgba(255,255,255,.92),rgba(255,255,255,.28) 46%,rgba(255,255,255,0) 72%);
+  filter:blur(22px);will-change:transform;
+  animation-name:deco-drift;animation-timing-function:ease-in-out;animation-iteration-count:infinite
+}
+@keyframes deco-drift{
+  0%,100%{transform:translate3d(0,0,0) scale(1)}
+  50%{transform:translate3d(var(--dx),var(--dy),0) scale(var(--ds))}
+}
+.deco{opacity:var(--deco-k,1)}
+
+/* ---- オーロラ ---- */
+[data-deco="aurora"] i{
+  transform:translate3d(calc(var(--mx,0) * var(--pk) * 1px),calc(var(--my,0) * var(--pk) * 1px),0);
+  transition:transform 1.1s cubic-bezier(.16,.8,.3,1)
+}
+/* ブランド色をそのまま使うと、暗い写真の上では沈んで見えない。
+   白を混ぜて明度を上げてから重ねる。 */
+[data-deco="aurora"] b{
+  background:radial-gradient(circle at 40% 38%,
+    color-mix(in srgb,var(--col) 52%,white),
+    color-mix(in srgb,var(--col) 66%,white) 34%,transparent 68%);
+  filter:blur(52px) saturate(1.6);will-change:transform;
+  animation-name:deco-drift;animation-timing-function:ease-in-out;animation-iteration-count:infinite
+}
+
+/* ---- すりガラス（ポインタ追従） ----
+   背後をぼかすので、写真の上でいちばん効く。
+   2枚を違う遅さで追わせると、ガラスに厚みが出る。 */
+[data-deco="glass"] .gl{
+  left:0;top:0;border-radius:50%;
+  backdrop-filter:blur(15px) saturate(1.3) brightness(1.05);
+  -webkit-backdrop-filter:blur(15px) saturate(1.3) brightness(1.05);
+  background:linear-gradient(140deg,rgba(255,255,255,.17),rgba(255,255,255,.03) 58%);
+  border:1px solid rgba(255,255,255,.3);
+  box-shadow:0 34px 80px -34px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.45)
+}
+/* 位置は left/top で決める。transform の % は「自分の大きさ」に対する割合なので、
+   親の中の座標には使えない（0,0 に貼りついてしまう）。 */
+[data-deco="glass"] .gl1{
+  width:clamp(230px,30vw,400px);aspect-ratio:1;
+  left:var(--px,50%);top:var(--py,45%);transform:translate(-50%,-50%)
+}
+[data-deco="glass"] .gl2{
+  width:clamp(110px,13vw,180px);aspect-ratio:1;opacity:.85;
+  backdrop-filter:blur(7px) saturate(1.2);-webkit-backdrop-filter:blur(7px) saturate(1.2);
+  left:var(--px2,50%);top:var(--py2,45%);transform:translate(-50%,-50%)
+}
+
+/* ---- スポットライト（ポインタ追従） ---- */
+/* inset をずらすと --px/--py の基準までずれるので、枠は親と同じにする */
+[data-deco="spot"] .sp{
+  inset:0;width:auto;
+  background:radial-gradient(circle 30vw at var(--px,50%) var(--py,45%),
+    rgba(255,255,255,.3),rgba(255,255,255,.1) 34%,rgba(255,255,255,0) 64%)
+}
+
+/* ---- 光の粒 ---- */
+[data-deco="dust"] .du{position:absolute;inset:0;width:100%;height:100%}
+
+/* ---- 流れる線（絹） ----
+   線ではなく細い面にすると、絹のように光が走って見える。 */
+[data-deco="silk"] .sk{
+  left:-30%;width:160%;height:38vh;top:calc(6% + var(--n) * 17%);
+  border-radius:50%;
+  background:linear-gradient(100deg,transparent,rgba(255,255,255,.72) 46%,rgba(255,255,255,.1) 60%,transparent);
+  filter:blur(18px);opacity:calc(.66 - var(--n) * .07);will-change:transform;
+  animation-name:deco-silk;animation-timing-function:linear;animation-iteration-count:infinite
+}
+@keyframes deco-silk{
+  0%{transform:translate3d(-16%,0,0) rotate(-4deg) scaleY(1)}
+  50%{transform:translate3d(14%,-3vh,0) rotate(3deg) scaleY(1.24)}
+  100%{transform:translate3d(-16%,0,0) rotate(-4deg) scaleY(1)}
+}
+
+/* ---- 奥行き（ポインタで視差） ----
+   写真と文字を逆向きに動かす。写真は先に拡大しておかないと端が見える。 */
+.hero.dk-depth .hero-bg img{
+  transform:scale(1.08) translate3d(calc(var(--mx,0) * -14px),calc(var(--my,0) * -14px),0);
+  transition:transform .7s cubic-bezier(.16,.8,.3,1)
+}
+.hero.dk-depth .hero-in{
+  transform:translate3d(calc(var(--mx,0) * 7px),calc(var(--my,0) * 7px),0);
+  transition:transform .7s cubic-bezier(.16,.8,.3,1)
+}
+
+/* ---- フィルムの粒状感（他の装飾と重ねられる） ---- */
+.deco .grain{
+  position:absolute;inset:-50%;display:block;pointer-events:none;
+  opacity:.17;mix-blend-mode:overlay;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.82' numOctaves='3'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)'/%3E%3C/svg%3E");
+  animation:deco-grain .7s steps(1) infinite
+}
+@keyframes deco-grain{
+  0%{transform:translate3d(0,0,0)}   20%{transform:translate3d(-3%,2%,0)}
+  40%{transform:translate3d(2%,-3%,0)} 60%{transform:translate3d(-2%,-2%,0)}
+  80%{transform:translate3d(3%,1%,0)}  100%{transform:translate3d(0,0,0)}
+}
+
+/* 指の環境ではポインタ追従が意味を持たないので、真ん中に置いて動かさない */
+@media (hover:none){
+  [data-deco="glass"] .gl,[data-deco="spot"] .sp{transition:none}
+  .hero.dk-depth .hero-bg img,.hero.dk-depth .hero-in{transform:none}
+}
+
 /* ---------- 特徴 / カード ---------- */
 .grid{display:grid;gap:24px}
 .grid.c2{grid-template-columns:repeat(2,1fr)}
@@ -724,6 +845,9 @@ p:last-child{margin-bottom:0}
   [data-ta].ta-fillgrad{background-size:100% 100%,100% 100%!important}
   .ia-on{opacity:1!important;transform:none!important;filter:none!important;clip-path:none!important}
   .rv{opacity:1!important;transform:none!important}
+  /* 装飾は「止まった1枚の絵」として残す。消すと画面が寂しくなるため */
+  .deco b,.deco .sk,.deco .grain{animation:none!important}
+  .hero.dk-depth .hero-bg img,.hero.dk-depth .hero-in{transform:none!important}
 }
 `;
 
@@ -832,6 +956,112 @@ const SITE_JS = `
   if(body.getAttribute('data-reveal') === '1' && !reduce){
     [].slice.call(d.querySelectorAll('.sec, .hero')).forEach(function(s){ s.classList.add('rv'); });
   }
+
+  /* ==========================================================
+     ヒーローの装飾レイヤー
+     ========================================================== */
+
+  /* ---------- ポインタ追従 ----------
+     生の座標をそのまま使うとカクつくので、毎フレーム少しずつ寄せる。
+     この「遅れ」が、高い制作費のサイトらしい重みになる。 */
+  [].slice.call(d.querySelectorAll('.hero[data-hpt]')).forEach(function(hero){
+    var deco = hero.querySelector('.deco');
+    var live = false, tx = .5, ty = .45, x = .5, y = .45, x2 = .5, y2 = .45, raf = 0;
+
+    function frame(){
+      x += (tx - x) * .085; y += (ty - y) * .085;      /* 大きいガラス：ゆっくり */
+      x2 += (tx - x2) * .16; y2 += (ty - y2) * .16;    /* 小さいガラス：やや速く */
+      var s = hero.style;
+      s.setProperty('--mx', ((x - .5) * 2).toFixed(3));
+      s.setProperty('--my', ((y - .5) * 2).toFixed(3));
+      if(deco){
+        var ds = deco.style;
+        ds.setProperty('--px', (x * 100).toFixed(2) + '%');
+        ds.setProperty('--py', (y * 100).toFixed(2) + '%');
+        ds.setProperty('--px2', (x2 * 100).toFixed(2) + '%');
+        ds.setProperty('--py2', (y2 * 100).toFixed(2) + '%');
+      }
+      var near = Math.abs(tx - x) + Math.abs(ty - y) + Math.abs(tx - x2) + Math.abs(ty - y2);
+      if(live || near > .002) raf = requestAnimationFrame(frame);
+      else raf = 0;
+    }
+    function wake(){ if(!raf) raf = requestAnimationFrame(frame); }
+
+    if(reduce || !matchMedia('(hover:hover)').matches) return;
+    hero.addEventListener('pointermove', function(e){
+      var r = hero.getBoundingClientRect();
+      tx = (e.clientX - r.left) / r.width;
+      ty = (e.clientY - r.top) / r.height;
+      live = true; wake();
+    });
+    hero.addEventListener('pointerleave', function(){
+      tx = .5; ty = .45; live = false; wake();
+    });
+    frame();
+  });
+
+  /* ---------- 光の粒 ----------
+     ゆっくり昇る粒。ポインタが近いと軽く押しのけられる。 */
+  [].slice.call(d.querySelectorAll('[data-deco="dust"] .du')).forEach(function(cv){
+    var hero = cv.closest('.hero'), ctx = cv.getContext('2d'), ps = [], w = 0, h = 0, dpr = 1;
+    var mx = -999, my = -999, running = false;
+
+    function fit(){
+      dpr = Math.min(2, devicePixelRatio || 1);
+      w = cv.clientWidth; h = cv.clientHeight;
+      cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      var n = Math.max(40, Math.min(150, Math.round(w * h / 8200)));
+      ps = [];
+      for(var i = 0; i < n; i++) ps.push({
+        x: Math.random() * w, y: Math.random() * h,
+        r: 1 + Math.random() * 2.6,
+        v: .12 + Math.random() * .38,          /* 昇る速さ */
+        s: .45 + Math.random() * .55,          /* 明るさ */
+        p: Math.random() * 6.28, a: .4 + Math.random() * .9,  /* 横ゆれ */
+        ox: 0, oy: 0
+      });
+    }
+    function draw(){
+      ctx.clearRect(0, 0, w, h);
+      for(var i = 0; i < ps.length; i++){
+        var o = ps[i];
+        o.y -= o.v; o.p += .01;
+        if(o.y < -6){ o.y = h + 6; o.x = Math.random() * w; }
+        var px = o.x + Math.sin(o.p) * o.a * 8;
+        /* ポインタから遠ざける。戻りはゆっくり */
+        var dx = px - mx, dy = o.y - my, dist = Math.sqrt(dx * dx + dy * dy);
+        if(dist < 130){ var f = (1 - dist / 130) * 16; o.ox += (dx / (dist || 1) * f - o.ox) * .1; o.oy += (dy / (dist || 1) * f - o.oy) * .1; }
+        else { o.ox += (0 - o.ox) * .05; o.oy += (0 - o.oy) * .05; }
+        /* 点のままだと写真の細かい葉に埋もれるので、にじみを付ける */
+        ctx.shadowBlur = o.r * 4; ctx.shadowColor = 'rgba(255,255,255,.85)';
+        ctx.beginPath();
+        ctx.arc(px + o.ox, o.y + o.oy, o.r, 0, 6.2832);
+        ctx.fillStyle = 'rgba(255,255,255,' + o.s.toFixed(2) + ')';
+        ctx.fill();
+        ctx.shadowBlur = 0;
+      }
+      if(running) requestAnimationFrame(draw);
+    }
+    fit();
+    addEventListener('resize', fit, {passive:true});
+    if(hero){
+      hero.addEventListener('pointermove', function(e){
+        var r = cv.getBoundingClientRect(); mx = e.clientX - r.left; my = e.clientY - r.top;
+      });
+      hero.addEventListener('pointerleave', function(){ mx = my = -999; });
+    }
+    /* 画面の外に出たら止める。ずっと回し続けると電池を食う */
+    if('IntersectionObserver' in window && !reduce){
+      new IntersectionObserver(function(es){
+        es.forEach(function(e){
+          if(e.isIntersecting && !running){ running = true; draw(); }
+          else if(!e.isIntersecting) running = false;
+        });
+      }, {threshold:0}).observe(cv);
+    }else if(!reduce){ running = true; draw(); }
+    else draw();
+  });
 
   /* ==========================================================
      スクロールに連動するブロック

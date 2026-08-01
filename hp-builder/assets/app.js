@@ -859,6 +859,100 @@ function openAnimGallery(kind, current, onPick) {
   openModal('#animModal');
 }
 
+/* ================================================================
+   ヒーロー装飾のサンプル一覧
+   動きも、ポインタへの反応も、止まった絵では伝わらない。
+   実物のヒーローをそのまま縮めて並べ、枠の中でポインタを追わせる。
+   ================================================================ */
+const DECO_GAL_CSS = `
+body{margin:0;background:#0d1016;padding:14px;
+  font-family:"Helvetica Neue",Arial,"Hiragino Sans",Meiryo,sans-serif}
+/* 見本は縮尺が決まっているので、桁を伸縮させると右と下に白が余る。
+   列幅は縮尺後の幅ちょうどに固定する。 */
+.dg{display:grid;grid-template-columns:repeat(auto-fill,292px);gap:13px;justify-content:center}
+.dc{position:relative;background:#171a21;border:1px solid #2a2f3a;border-radius:11px;
+  overflow:hidden;cursor:pointer;transition:border-color .15s,transform .15s}
+.dc:hover{border-color:#4c8dff;transform:translateY(-3px)}
+.dc.on{border-color:#4c8dff;box-shadow:0 0 0 1px #4c8dff inset}
+/* 見本の中の要素を押せてしまうと選べないので、当たり判定は1枚かぶせる。
+   ポインタの動きは下まで通す必要があるため、クリックだけを受ける。 */
+.dc-hit{position:absolute;inset:0;z-index:9}
+.dc-prev{height:186px;overflow:hidden;position:relative;background:var(--c-bg)}
+.dc-scale{width:1100px;transform:scale(.2655);transform-origin:top left;
+  color:var(--c-text);background:var(--c-bg)}
+.dc-scale .hero{min-height:700px;padding:0;display:grid;align-items:center}
+.dc-scale .hero-title{font-size:52px}
+.dc-scale [data-ta] .ch,.dc-scale .rv{opacity:1!important;transform:none!important}
+.dc-meta{padding:10px 12px 12px;color:#e7ebf0}
+.dc-meta b{font-size:13px;display:block}
+.dc-meta small{color:#98a2b3;font-size:11px;line-height:1.6;display:block;margin-top:3px}
+`;
+
+/* 当たり判定の板はクリックだけ受け取り、ポインタの移動は下のヒーローへ流す。
+   こうしないと「追従するはずの装飾が動かない見本」になってしまう。 */
+const DECO_GAL_JS = `
+document.querySelectorAll('.dc').forEach(function(card){
+  var hero = card.querySelector('.hero'), hit = card.querySelector('.dc-hit');
+  hit.addEventListener('click', function(){ parent.pickDeco(card.dataset.k); });
+  hit.addEventListener('pointermove', function(e){
+    if(!hero) return;
+    hero.dispatchEvent(new PointerEvent('pointermove',
+      {clientX:e.clientX, clientY:e.clientY, bubbles:false}));
+  });
+  hit.addEventListener('pointerleave', function(){
+    if(hero) hero.dispatchEvent(new PointerEvent('pointerleave'));
+  });
+});
+`;
+
+const DECO_ABOUT = {
+  none: '装飾なし。写真や背景色だけで見せます。',
+  clouds: '光のかたまりがゆっくり漂います。ポインタで奥行きがずれます。',
+  glass: '大小2枚のガラスがポインタを追い、背後の写真をぼかします。写真の上でいちばん効きます。',
+  aurora: 'メインカラーとアクセントカラーが溶け合って流れます。',
+  dust: 'ゆっくり昇る粒。ポインタが近づくと押しのけられます。',
+  spot: 'ポインタのまわりだけが明るくなります。',
+  depth: '写真と文字が逆向きに動いて、立体に見えます。',
+  silk: '絹のような光の帯が、ゆっくり横切ります。',
+};
+
+let decoPick = null;
+
+function openDecoGallery(current, onPick) {
+  decoPick = onPick;
+  $('#animTitle').textContent = 'ヒーローの装飾を選ぶ';
+
+  /* 見本は「いま編集中のヒーロー」から作る。文言も写真もそのまま使うので、
+     自分のページでどう見えるかが分かる。 */
+  const b = state.blocks.find((x) => x.id === selected);
+  const base = b && b.type === 'hero' ? b.props
+    : (state.blocks.find((x) => x.type === 'hero') || { props: BLOCKS.hero.defaults }).props;
+
+  const cards = HERO_DECOS.map(([k, label]) => {
+    const props = Object.assign({}, base, {
+      deco: k, anchor: '', anims: {},
+      layout: base.layout === 'cover' ? 'cover' : 'cover',   // 見本は背景写真ありで揃える
+    });
+    return `<div class="dc${k === current ? ' on' : ''}" data-k="${esc(k)}" role="button" tabindex="0">
+      <span class="dc-hit"></span>
+      <div class="dc-prev"><div class="dc-scale ${esc(bodyClass())}">${BLOCKS.hero.render(props)}</div></div>
+      <div class="dc-meta"><b>${esc(label)}</b><small>${esc(DECO_ABOUT[k] || '')}</small></div>
+    </div>`;
+  }).join('');
+
+  $('#animFrame').srcdoc = `<!DOCTYPE html><html lang="ja"><head><meta charset="utf-8">
+<style>${themeCSS(state.theme)}\n${SITE_CSS}\n${DECO_GAL_CSS}</style></head>
+<body class="${esc(bodyClass())}"><div class="dg">${cards}</div>
+<script>${SITE_JS}<\/script><script>${DECO_GAL_JS}<\/script></body></html>`;
+  openModal('#animModal');
+}
+
+window.pickDeco = (key) => {
+  closeModal('#animModal');
+  if (decoPick) decoPick(key);
+  decoPick = null;
+};
+
 /* サンプル一覧（iframe）から呼ばれる */
 window.pickAnim = (key) => {
   closeModal('#animModal');
@@ -968,6 +1062,8 @@ function fieldHTML(f, props, base) {
   return `<div class="f">
     <label>${esc(f.label)}</label>
     ${inputHTML(f, val, path)}
+    ${f.gallery ? `<button class="anim-gal" data-gal="${esc(f.gallery)}" data-galpath="${path}"
+      style="margin-top:8px">▦ サンプルを見ながら選ぶ</button>` : ''}
     ${f.hint ? `<div class="hint">${esc(f.hint)}</div>` : ''}
   </div>`;
 }
@@ -1028,6 +1124,20 @@ function elementPanel(b) {
 /* 要素パネルの操作 */
 $('#tab-edit').addEventListener('click', (e) => {
   if (e.target.closest('[data-elclose]')) { selectedEl = null; renderEditor(); highlight(); return; }
+  /* フィールドに付いたサンプル一覧ボタン（いまは装飾のみ） */
+  const fg = e.target.closest('[data-gal]');
+  if (fg) {
+    const bb = state.blocks.find((x) => x.id === selected);
+    if (!bb) return;
+    const key = fg.dataset.galpath.split('.').pop();
+    openDecoGallery(bb.props[key] || 'none', (picked) => {
+      bb.props[key] = picked;
+      renderEditor(); renderPreview(true); save();
+      flash(`装飾を「${(HERO_DECOS.find((d) => d[0] === picked) || [, picked])[1]}」にしました`);
+    });
+    return;
+  }
+
   const ag = e.target.closest('[data-animgal]');
   if (ag && selectedEl) {
     const b0 = state.blocks.find((x) => x.id === selected);

@@ -50,7 +50,7 @@ const blocks = [
 
   ['hero', {
     layout: 'cover', eyebrow: 'GARDEN CAFÉ', overlay: 46, anchor: 'top',
-    image: photo.exterior,
+    image: photo.exterior, deco: 'glass', decoStrength: 60, grain: true,
     title: '木漏れ日の下で、\nひと息を。',
     text: '緑に囲まれた小さな一軒。淹れたてのコーヒーと、季節の野菜のプレートを。',
     buttons: [
@@ -118,7 +118,7 @@ const blocks = [
   /* 写真をそのまま見せる間（ま）。テラスの紹介を兼ねる。 */
   ['hero', {
     layout: 'cover', eyebrow: 'TERRACE', overlay: 50, anchor: 'terrace',
-    image: photo.terrace,
+    image: photo.terrace, deco: 'dust', decoStrength: 55,
     title: '風の抜ける、\nテラス席。',
     text: '気持ちのよい日は、木々に囲まれた外の席でどうぞ。ペットとご一緒でも大丈夫です。',
     buttons: [],
