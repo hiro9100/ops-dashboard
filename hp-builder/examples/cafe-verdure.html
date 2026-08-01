@@ -148,6 +148,191 @@ p:last-child{margin-bottom:0}
 .hero.center.cover .hero-in,.hero.left.cover .hero-in{padding:clamp(24px,4vw,48px) 0}
 
 /* ==========================================================
+   コラージュ・ヒーロー
+   ①敷き詰めた背景 ②斜めに切り出した写真 ③縦書きの白い帯 の3層。
+   ========================================================== */
+.sec-collage{
+  position:relative;overflow:hidden;padding:0;
+  background:#0c0f14;color:#fff
+}
+.cg-s{min-height:min(72svh,620px)}
+.cg-m{min-height:min(86svh,800px)}
+.cg-l{min-height:100svh}
+
+/* ---- 敷き詰めた背景 ----
+   タイルは背景画像で描く（<img> を並べると data URI が枚数ぶん複製されて
+   書き出したHTMLが巨大になる）。多めに敷いて、はみ出しは隠す。 */
+.cwall{
+  position:absolute;inset:0;display:grid;gap:3px;
+  grid-template-columns:repeat(auto-fill,minmax(clamp(104px,13vw,200px),1fr));
+  grid-auto-rows:clamp(104px,14vh,180px);overflow:hidden;align-content:start
+}
+.cwall .cw{
+  display:block;background:#131820 center/cover no-repeat;
+  background-image:inherit
+}
+.cg-gray .cwall{filter:grayscale(.72) contrast(1.05)}
+.cwall::after{
+  content:"";position:absolute;inset:0;
+  background:linear-gradient(180deg,
+    rgba(8,11,16,calc(var(--cdark,.62) * 1.06)),
+    rgba(8,11,16,calc(var(--cdark,.62) * .82)) 45%,
+    rgba(8,11,16,calc(var(--cdark,.62) * 1.12)))
+}
+
+/* ---- 手前の斜め写真 ----
+   枠を傾け、中身は逆に戻して立たせる。傾けた分だけ角が内側に入るので
+   中身を --cov 倍にして隙間を消す（値は生成時に角度から計算）。 */
+.cfront{position:absolute;inset:0}
+.cpic{
+  position:absolute;margin:0;aspect-ratio:1;overflow:hidden;width:var(--w,30%);
+  box-shadow:0 34px 70px -30px rgba(0,0,0,.72);
+  opacity:0;transform:rotate(var(--rot,0deg)) scale(.9) translateY(26px);
+  transition:opacity .9s cubic-bezier(.2,.7,.3,1),transform .9s cubic-bezier(.2,.7,.3,1);
+  transition-delay:var(--d,0ms)
+}
+.sec-collage.in .cpic{opacity:1;transform:rotate(var(--rot,0deg)) scale(1) translateY(0)}
+.cpic-in{display:block;width:100%;height:100%;overflow:hidden;
+  transform:rotate(calc(var(--rot,0deg) * -1)) scale(var(--cov,1.42))}
+.cpic img{width:100%;height:100%;object-fit:cover;display:block}
+.cpic .ph{background:linear-gradient(135deg,var(--c-primary),var(--c-accent))}
+
+/* ---- 縦書きの白い帯 ----
+   1行＝1列。日本語の縦書きは右から読むので row-reverse で並べる。
+   字は writing-mode ではなく1文字ずつ積む。縦書き用の字送りを持たない
+   フォントだと漢字の送りがゼロになり、字が重なって潰れるため。 */
+.cband{
+  position:absolute;top:0;bottom:0;z-index:6;
+  display:flex;flex-direction:row-reverse;align-items:flex-start;
+  gap:clamp(5px,.8vw,12px);padding:clamp(20px,4vh,56px) clamp(12px,2.6vw,46px);
+  pointer-events:none
+}
+.cband-r{right:0}
+.cband-l{left:0;align-items:flex-end}
+.cb{
+  display:flex;flex-direction:column;align-items:center;
+  background:#fff;color:#111;font-family:var(--font-head);
+  font-weight:900;font-size:clamp(19px,2.4vw,36px);
+  padding:clamp(12px,1.8vh,22px) clamp(6px,.8vw,12px);
+  box-shadow:0 22px 44px -22px rgba(0,0,0,.6);
+  /* 列ごとに少しずらすと、貼り紙らしい表情になる */
+  margin-top:calc(var(--i) * clamp(10px,2.4vh,34px));
+  clip-path:inset(0 0 100% 0);
+  transition:clip-path .95s cubic-bezier(.16,.84,.3,1);
+  transition-delay:calc(var(--i) * 140ms + 200ms)
+}
+.cband-l .cb{margin-top:0;margin-bottom:calc(var(--i) * clamp(10px,2.4vh,34px))}
+.sec-collage.in .cb{clip-path:inset(0 0 0 0)}
+.cbc{
+  display:block;width:1em;height:1em;line-height:1;text-align:center;
+  margin-bottom:.14em
+}
+.cbc:last-child{margin-bottom:0}
+.cbc.sp{height:.5em}
+/* 長音や括弧は横向きの字なので、縦に積むときは90°回す */
+.cbc.rot{transform:rotate(90deg)}
+/* 句読点は枡の右上に寄せるのが縦書きの決まり */
+.cbc.cor{transform:translate(.36em,-.4em);margin-bottom:-.5em}
+
+/* ゆっくり浮かせる。枠ごとに周期をずらす */
+.cg-float.in .cpic{animation:cg-bob ease-in-out infinite alternate}
+.cg-float.in .cpic:nth-child(1){animation-duration:7.5s}
+.cg-float.in .cpic:nth-child(2){animation-duration:9s;animation-delay:-2s}
+.cg-float.in .cpic:nth-child(3){animation-duration:8.2s;animation-delay:-4s}
+.cg-float.in .cpic:nth-child(4){animation-duration:10s;animation-delay:-1s}
+.cg-float.in .cpic:nth-child(5){animation-duration:8.8s;animation-delay:-3s}
+@keyframes cg-bob{
+  from{transform:rotate(var(--rot,0deg)) translateY(0)}
+  to{transform:rotate(var(--rot,0deg)) translateY(-16px)}
+}
+
+@media(max-width:760px){
+  .cwall{grid-auto-rows:clamp(96px,13vh,150px)}
+  /* 画面が狭いと写真が小さくなりすぎるので、大きめに出す */
+  .cpic{width:calc(var(--w,30%) * 1.5)}
+  .cb{font-size:clamp(17px,5.4vw,26px)}
+  .cband{padding:clamp(16px,3vh,34px) clamp(8px,3vw,20px)}
+}
+
+/* ==========================================================
+   スクロール連動ヒーロー
+   長い区間（--pin）をとり、その中で中身を画面に貼り付ける。
+   進み具合は JS が --p（0〜1）で渡し、動きはここに書く。
+   ========================================================== */
+.hsc{padding:0;height:var(--pin,200vh);overflow:visible}
+.hsc-in{
+  position:sticky;top:0;height:100svh;overflow:hidden;
+  display:grid;align-items:center
+}
+.hsc .hero-bg{z-index:0}
+.hsc .wrap{position:relative;z-index:2;width:100%}
+/* 暗幕は .hero.cover::before に入っているが、スクロール型では
+   その擬似要素が「縦に長いセクション」に付くため一緒に流れてしまう。
+   貼り付く側（.wrap）に置き直す。 */
+.hsc.cover::before{display:none}
+.hsc.cover .wrap::before{
+  content:"";position:absolute;top:-50vh;bottom:-50vh;left:50%;width:100vw;
+  transform:translateX(-50%);z-index:-1;pointer-events:none;
+  background:radial-gradient(62vw 46vh at 50% 50%,rgba(0,0,0,.38),rgba(0,0,0,0) 74%)
+}
+
+/* ---- 写真が縮んで枠に収まる ----
+   全画面 → 角の丸い1枚の写真へ。まわりに背景色の余白が生まれる。 */
+.hsc-zoomout .hero-bg{
+  inset:calc(var(--p,0) * 7vh) calc(var(--p,0) * 9vw);
+  border-radius:calc(var(--p,0) * 26px);overflow:hidden;
+  box-shadow:0 calc(var(--p,0) * 50px) calc(var(--p,0) * 90px) calc(var(--p,0) * -40px) rgba(0,0,0,.5)
+}
+.hsc-zoomout .hero-bg img{transform:scale(calc(1 + var(--p,0) * .06))}
+.hsc-zoomout .hero-in{
+  transform:translate3d(0,calc(var(--p,0) * -6vh),0) scale(calc(1 - var(--p,0) * .12));
+  opacity:calc(1 - var(--p,0) * 1.25)
+}
+
+/* ---- 写真と文字がずれて流れる ---- */
+.hsc-parallax .hero-bg img{transform:scale(1.22) translate3d(0,calc(var(--p,0) * 13vh),0)}
+.hsc-parallax .hero-in{
+  transform:translate3d(0,calc(var(--p,0) * -22vh),0);
+  opacity:calc(1 - var(--p,0) * 1.15)
+}
+
+/* ---- 幕が上下に開く ----
+   最初は背景色の板が写真を覆っていて、スクロールで上下に割れる。 */
+.hsc-curtain .hsc-in::before,.hsc-curtain .hsc-in::after{
+  content:"";position:absolute;left:0;right:0;height:50.5%;z-index:3;
+  background:var(--c-dark);pointer-events:none
+}
+.hsc-curtain .hsc-in::before{top:0;transform:translate3d(0,calc(var(--p,0) * -100%),0)}
+.hsc-curtain .hsc-in::after{bottom:0;transform:translate3d(0,calc(var(--p,0) * 100%),0)}
+.hsc-curtain .wrap{z-index:4}
+.hsc-curtain .hero-in{
+  transform:translate3d(0,calc(var(--p,0) * -4vh),0);
+  opacity:calc(1 - var(--p,0) * .9)
+}
+
+/* ---- 文字の中から写真が広がる ----
+   写真は等倍のまま置き、その上に「文字の形だけ穴が開いた板」をかぶせて
+   穴のほうを広げる。穴は SVG なので何倍にしても輪郭がぼやけない。
+   板は常に画面より大きい（最小 140vmax）ので、外側が透けることはない。 */
+.hsc-maskzoom .mzo{
+  position:absolute;inset:0;z-index:3;pointer-events:none;
+  background:var(--c-dark);
+  --k:calc(140vmax + var(--p,0) * 3600vmax);
+  -webkit-mask-image:var(--mzsvg);mask-image:var(--mzsvg);
+  -webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;
+  -webkit-mask-position:center;mask-position:center;
+  -webkit-mask-size:var(--k) var(--k);mask-size:var(--k) var(--k);
+  opacity:calc(1 - max(0,(var(--p,0) - .88)) * 8.4)
+}
+.hsc-maskzoom .hero-in{opacity:calc(max(0,var(--p,0) - .86) * 7.2)}
+.hsc-maskzoom .hero-bg img{transform:scale(calc(1.14 - var(--p,0) * .14))}
+
+@media (max-width:760px){
+  .hsc-zoomout .hero-bg{inset:calc(var(--p,0) * 3vh) calc(var(--p,0) * 4vw)}
+  .hsc-maskzoom .mzo{--k:calc(140vmax + var(--p,0) * 2400vmax)}
+}
+
+/* ==========================================================
    ヒーローの装飾レイヤー
    z-index は 0。写真(.hero-bg)より後に置くので写真の上に出るが、
    文字を守る暗幕(.hero.cover::before, z-index:1)より下に入る。
@@ -248,6 +433,24 @@ p:last-child{margin-bottom:0}
   transform:translate3d(calc(var(--mx,0) * 7px),calc(var(--my,0) * 7px),0);
   transition:transform .7s cubic-bezier(.16,.8,.3,1)
 }
+
+
+/* ---- カーソルについてくる丸 ----
+   位置は left/top で決める（transform の % は自分の大きさ基準なので使えない）。
+   画面の外に出たら小さくたたむ。 */
+[data-deco="cursor"] .cur{
+  left:var(--px,50%);top:var(--py,45%);
+  width:clamp(96px,9vw,132px);aspect-ratio:1;border-radius:50%;
+  display:grid;place-items:center;
+  transform:translate(-50%,-50%) scale(var(--curs,1));
+  background:var(--c-primary);color:var(--c-on-primary,#fff);
+  transition:transform .5s cubic-bezier(.16,.84,.3,1)
+}
+[data-deco="cursor"] .cur b{
+  font-family:var(--font-head);font-size:12px;font-weight:900;
+  letter-spacing:.18em;text-align:center;padding:0 8px
+}
+@media (hover:none){[data-deco="cursor"] .cur{left:50%;top:auto;bottom:8%;transition:none}}
 
 /* ---- フィルムの粒状感（他の装飾と重ねられる） ---- */
 .deco .grain{
@@ -359,6 +562,82 @@ p:last-child{margin-bottom:0}
   .menu-cols,.menu-cols.c2{grid-template-columns:1fr;gap:36px}
   .mi dt b{font-size:15px}
 }
+
+/* ---------- お知らせ・イベント ---------- */
+.nws{list-style:none;margin:0;padding:0;border-top:1px solid var(--c-border)}
+.nws-i{border-bottom:1px solid var(--c-border)}
+.nws-i a{
+  display:flex;align-items:baseline;gap:clamp(12px,2vw,28px);
+  padding:clamp(16px,2.2vh,24px) 4px;text-decoration:none;color:inherit;
+  transition:opacity .2s,padding-left .25s
+}
+.nws-i a:hover{opacity:.65;padding-left:10px}
+.nws-i time{
+  font-size:13px;font-weight:700;letter-spacing:.06em;color:var(--c-muted);
+  white-space:nowrap;font-variant-numeric:tabular-nums;flex:0 0 auto
+}
+.nws-c{
+  font-size:11px;font-weight:800;letter-spacing:.1em;white-space:nowrap;flex:0 0 auto;
+  border:1px solid var(--c-border);border-radius:999px;padding:3px 11px;color:var(--c-muted)
+}
+.nws-i b{font-size:15.5px;font-weight:600;line-height:1.6;flex:1;min-width:0}
+.sec-news .btn-row{margin-top:clamp(24px,4vh,44px)}
+@media(max-width:640px){
+  .nws-i a{flex-wrap:wrap;gap:8px 12px}
+  .nws-i b{flex:0 0 100%}
+}
+
+/* ---------- フロアガイド ---------- */
+.flr{display:grid;gap:clamp(28px,5vh,64px)}
+.flr-i{
+  display:grid;grid-template-columns:1.05fr 1fr;gap:clamp(20px,4vw,56px);align-items:center
+}
+.flr-i:nth-child(even){direction:rtl}
+.flr-i:nth-child(even) > *{direction:ltr}
+.flr-pic{
+  aspect-ratio:16/10;overflow:hidden;border-radius:var(--radius);
+  background:linear-gradient(135deg,var(--c-primary),var(--c-accent))
+}
+.flr-pic img{width:100%;height:100%;object-fit:cover;display:block}
+.flr-n{
+  display:block;font-family:var(--font-head);font-size:clamp(34px,5vw,64px);
+  font-weight:900;line-height:1;letter-spacing:.02em;color:var(--c-primary);
+  margin-bottom:clamp(8px,1.6vh,16px)
+}
+.flr-b h3{margin:0 0 10px;font-size:clamp(17px,2vw,22px);font-weight:700;line-height:1.5}
+.flr-b p{margin:0;color:var(--c-muted);font-size:14.5px;line-height:1.9}
+@media(max-width:760px){
+  .flr-i,.flr-i:nth-child(even){grid-template-columns:1fr;direction:ltr}
+}
+
+/* ---------- 流れる文字（マーキー） ----------
+   同じ並びを2組ならべ、1組ぶん動かして先頭に戻す。
+   継ぎ目で一瞬止まるのを防ぐため、2組目は1組目の真後ろに置く。 */
+.sec-marquee{padding:0;overflow:hidden}
+.mq-in{display:flex;width:max-content;text-decoration:none;color:inherit;
+  padding:clamp(14px,2.4vh,30px) 0}
+.mq-run{
+  display:flex;align-items:center;flex:0 0 auto;
+  animation:mq-flow var(--mq-dur,22s) linear infinite;will-change:transform
+}
+.mq-r .mq-run{animation-direction:reverse}
+@keyframes mq-flow{from{transform:translate3d(0,0,0)}to{transform:translate3d(-100%,0,0)}}
+.mq-w,.mq-s{
+  font-family:var(--font-head);font-weight:900;white-space:nowrap;
+  font-size:var(--mq-size,96px);line-height:1.05;letter-spacing:.01em
+}
+.mq-w{padding:0 .18em}
+.mq-s{padding:0 .1em;opacity:.5;font-size:calc(var(--mq-size,96px) * .5)}
+/* 中を抜いた文字。線だけになるぶん、うるさくならずに大きく置ける。
+   color を transparent にすると currentColor の線まで透明になるので、
+   色はそのままにして「塗りだけ」を消す。 */
+.mq-line .mq-w{
+  -webkit-text-fill-color:transparent;
+  -webkit-text-stroke:1.5px currentColor;
+  paint-order:stroke fill
+}
+.mq-in:hover .mq-run{animation-play-state:paused}
+@media(max-width:760px){.mq-w,.mq-s{font-size:calc(var(--mq-size,96px) * .55)}}
 
 /* ---------- FAQ ---------- */
 .faq{max-width:800px;margin:0 auto;display:grid;gap:12px}
@@ -741,10 +1020,17 @@ p:last-child{margin-bottom:0}
 
 /* ---------- スロット式カウンター ---------- */
 .slots{display:grid;gap:24px;text-align:center}
+/* 桁は縦に回すので transform がかかる。background-clip:text は
+   変形した子孫の文字には効かず、数字がまるごと消える（実測で確認）。
+   ここは単色で塗る。 */
 .slot{display:inline-flex;font-family:Menlo,monospace;font-weight:800;
   font-size:clamp(30px,5.4vw,56px);line-height:1.1;overflow:hidden;
-  background:linear-gradient(140deg,var(--c-primary),var(--c-accent));
-  -webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent}
+  color:var(--c-text);-webkit-text-fill-color:currentColor}
+/* メインカラーが明るいと、背景に対して数字が沈む（緑#00f04b と #f4f4f4 で
+   コントラスト比 1.41 だった）。文字色を少し混ぜて、どの配色でも読める濃さにする。 */
+.slot .col u{color:color-mix(in srgb,var(--c-primary) 62%,var(--c-text))}
+.bg-primary .slot,.bg-dark .slot{color:inherit}
+.bg-primary .slot .col u,.bg-dark .slot .col u{color:inherit}
 .slot .col{height:1.1em;overflow:hidden}
 .slot .col u{display:block;text-decoration:none;transition:transform 1.6s cubic-bezier(.16,1,.3,1)}
 .slot .fix{opacity:.6}
@@ -866,6 +1152,60 @@ p:last-child{margin-bottom:0}
   .ftr-in{flex-direction:column;align-items:flex-start}
 }
 
+
+/* ---------- 縦の罫線（ページ全体） ----------
+   左・中央・右に細い線を通すと、全体が図面のように締まる。
+   スクロールしても動かないよう、画面に固定する。 */
+.has-rules::before{
+  content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:
+    linear-gradient(var(--c-border),var(--c-border)) left top/1px 100% no-repeat,
+    linear-gradient(var(--c-border),var(--c-border)) center top/1px 100% no-repeat,
+    linear-gradient(var(--c-border),var(--c-border)) right top/1px 100% no-repeat;
+  opacity:.75
+}
+.has-rules .sec,.has-rules .hero,.has-rules .hdr,.has-rules .ftr{position:relative;z-index:1}
+@media(max-width:760px){.has-rules::before{background-position:left top,right top;
+  background-size:1px 100%,1px 100%;background-repeat:no-repeat}}
+
+/* ==========================================================
+   仕上げの作法
+   高い制作費のサイトと、そうでないサイトの差は、
+   派手さより「反応の速さ」と「出方の段差」に出る。
+   ========================================================== */
+
+/* ---------- ホバー ----------
+   ゆっくり薄くなるとためらって見える。ほぼ即時に落として、戻りだけ緩める。 */
+a:not(.btn):not(.logo):hover{opacity:.42;transition:opacity .06s cubic-bezier(.165,.84,.44,1)}
+a:not(.btn):not(.logo){transition:opacity .5s cubic-bezier(.165,.84,.44,1)}
+/* 画像は長めに、ごくわずかだけ寄る。動きが大きいと安く見える */
+.gal figure,.flr-pic,.hs-card,.card .hero-media,.about-media,.cpic{overflow:hidden}
+.gal figure img,.flr-pic img,.hs-card img,.card .hero-media img{
+  transition:transform .9s cubic-bezier(.165,.84,.44,1)}
+.gal figure:hover img,.flr-i:hover .flr-pic img,.hs-card:hover img,.card:hover .hero-media img{
+  transform:scale(1.055)}
+
+/* ---------- 出現の段差 ----------
+   ブロックごと一度に出すと「表示された」で終わる。
+   見出し・説明・中身を少しずつずらすと、組み上がって見える。 */
+.rv .sec-head > *,
+.rv .grid > *,.rv .nws-i,.rv .flr-i,.rv .plan,.rv .faq details,.rv .btn-row{
+  opacity:0;transform:translate3d(0,20px,0);
+  transition:opacity .7s var(--ta-ease,ease),transform .9s var(--ta-ease,ease)
+}
+.rv.in .sec-head > *,
+.rv.in .grid > *,.rv.in .nws-i,.rv.in .flr-i,.rv.in .plan,.rv.in .faq details,.rv.in .btn-row{
+  opacity:1;transform:none
+}
+.rv .sec-head > *:nth-child(2){transition-delay:.07s}
+.rv .sec-head > *:nth-child(3){transition-delay:.14s}
+.rv .grid > *:nth-child(1),.rv .nws-i:nth-child(1),.rv .flr-i:nth-child(1),.rv .plan:nth-child(1){transition-delay:.12s}
+.rv .grid > *:nth-child(2),.rv .nws-i:nth-child(2),.rv .flr-i:nth-child(2),.rv .plan:nth-child(2){transition-delay:.2s}
+.rv .grid > *:nth-child(3),.rv .nws-i:nth-child(3),.rv .flr-i:nth-child(3),.rv .plan:nth-child(3){transition-delay:.28s}
+.rv .grid > *:nth-child(4),.rv .nws-i:nth-child(4),.rv .flr-i:nth-child(4){transition-delay:.36s}
+.rv .grid > *:nth-child(n+5),.rv .nws-i:nth-child(n+5),.rv .flr-i:nth-child(n+5){transition-delay:.44s}
+.rv .btn-row{transition-delay:.5s}
+
 /* ---------- 動きを減らす設定への配慮 ---------- */
 @media (prefers-reduced-motion: reduce){
   *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;
@@ -873,15 +1213,18 @@ p:last-child{margin-bottom:0}
   [data-ta] .ch{opacity:1!important;transform:none!important;filter:none!important;visibility:visible!important}
   [data-ta].ta-fillgrad{background-size:100% 100%,100% 100%!important}
   .ia-on{opacity:1!important;transform:none!important;filter:none!important;clip-path:none!important}
-  .rv{opacity:1!important;transform:none!important}
+  .rv,.rv .sec-head > *,.rv .grid > *,.rv .nws-i,.rv .flr-i,.rv .plan,
+  .rv .faq details,.rv .btn-row{opacity:1!important;transform:none!important;transition-delay:0s!important}
   /* 装飾は「止まった1枚の絵」として残す。消すと画面が寂しくなるため */
-  .deco b,.deco .sk,.deco .grain{animation:none!important}
+  .deco b,.deco .sk,.deco .grain,.cg-float.in .cpic,.mq-run{animation:none!important}
+  .cpic,.sec-collage .cpic{opacity:1!important;transform:rotate(var(--rot,0deg))!important}
+  .cb{clip-path:none!important}
   .hero.dk-depth .hero-bg img,.hero.dk-depth .hero-in{transform:none!important}
 }
 
 </style>
 </head>
-<body class="tpl-shop sty-edit" data-anim="fadeup" data-reveal="1">
+<body class="tpl-shop sty-edit" data-anim="fadeup" data-reveal="1" data-smooth="1">
 
 <header class="hdr sticky">
   <div class="wrap hdr-in">
@@ -1361,6 +1704,62 @@ p:last-child{margin-bottom:0}
   }
   function watchScroll(fn){ onScroll.push(fn); }
 
+
+  /* ---------- 慣性スクロール ----------
+     高いサイトの「手触り」はほぼこれ。ホイールを1回まわしたあと、
+     指を離しても少し滑ってから止まる。
+
+     よくある実装は中身を wrapper ごと transform でずらす方式だが、
+     それだと position:sticky が効かなくなる。このツールは貼り付く
+     ブロック（横流し・スクロール連動ヒーロー・積み重なるカード）を
+     多く持つので、ページ本来のスクロール位置そのものを滑らかに
+     動かす方式にした。sticky も IntersectionObserver もそのまま動く。 */
+  if(body.dataset.smooth === '1' && !reduce && matchMedia('(hover:hover)').matches){
+    var sTo = scrollY, sAt = scrollY, sRaf = 0, sWheel = 0;
+    var sMax = function(){ return Math.max(0, d.documentElement.scrollHeight - innerHeight); };
+    function sLoop(){
+      sAt += (sTo - sAt) * .12;
+      if(Math.abs(sTo - sAt) < .5){ sAt = sTo; sRaf = 0; scrollTo(0, sAt); return; }
+      scrollTo(0, sAt);
+      sRaf = requestAnimationFrame(sLoop);
+    }
+    addEventListener('wheel', function(e){
+      if(e.ctrlKey || e.defaultPrevented) return;
+      /* 中でスクロールできる箱の上では、そちらに任せる */
+      var n = e.target;
+      while(n && n !== body){
+        if(n.scrollHeight - n.clientHeight > 4 && /auto|scroll/.test(getComputedStyle(n).overflowY)) return;
+        n = n.parentElement;
+      }
+      e.preventDefault();
+      sTo = Math.max(0, Math.min(sMax(), sTo + e.deltaY));
+      sWheel = performance.now();
+      if(!sRaf) sRaf = requestAnimationFrame(sLoop);
+    }, {passive:false});
+    /* キーボードやアンカーで飛んだときは、目標を今の位置に合わせ直す */
+    addEventListener('scroll', function(){
+      if(!sRaf && performance.now() - sWheel > 150){ sTo = sAt = scrollY; }
+    }, {passive:true});
+    addEventListener('resize', function(){ sTo = sAt = scrollY; }, {passive:true});
+  }
+
+  /* ---------- スクロール連動ヒーロー ----------
+     区間の進み具合を --p（0〜1）で渡すだけ。動きはCSS側に任せる。 */
+  [].slice.call(d.querySelectorAll('[data-heroscroll]')).forEach(function(sec){
+    var last = -1;
+    function upd(){
+      var p = progress(sec);
+      /* 小数3桁で足りる。毎フレーム同じ値を書き込むと無駄に再計算が走る */
+      var v = Math.round(p * 1000) / 1000;
+      if(v === last) return;
+      last = v;
+      sec.style.setProperty('--p', v);
+    }
+    watchScroll(upd);
+    upd();
+  });
+
+
   var css = function(name, fb){
     var v = getComputedStyle(d.documentElement).getPropertyValue(name).trim();
     return v || fb;
@@ -1681,7 +2080,7 @@ p:last-child{margin-bottom:0}
   }
 
   /* ---------- 画面に入ったら再生 ---------- */
-  var watch = [].slice.call(d.querySelectorAll('[data-ta]:not(.in), .ia-on, .rv, .draw-wrap, [data-slot]'));
+  var watch = [].slice.call(d.querySelectorAll('[data-ta]:not(.in), .ia-on, .rv, .draw-wrap, [data-slot], [data-collage]'));
   if(!('IntersectionObserver' in window) || reduce){
     watch.forEach(function(el){ el.classList.add('in'); if(el.hasAttribute('data-slot')) runSlot(el); });
   }else{

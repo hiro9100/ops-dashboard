@@ -11,7 +11,8 @@ let state = null;      // { template, meta, theme, blocks:[{id,type,props}] }
 let selected = null;   // 編集中のブロックID
 let selectedEl = null; // 編集中の要素 {role, kind, name}
 let uidSeq = 0;
-const DEFAULT_MOTION = { anim: 'fadeup', dur: 900, stagger: 40, ease: 'cubic-bezier(.2,.7,.3,1)', reveal: true };
+const DEFAULT_MOTION = { anim: 'fadeup', dur: 900, stagger: 40, ease: 'cubic-bezier(.2,.7,.3,1)',
+  reveal: true, smooth: true };
 const uid = () => `b${Date.now().toString(36)}${(uidSeq++).toString(36)}`;
 const closed = new Set(); // 折りたたんでいる繰り返し項目
 
@@ -236,7 +237,7 @@ ${themeCSS(state.theme)}
 ${SITE_CSS}
 </style>
 </head>
-<body class="${esc(bodyClass())}" data-anim="${esc(state.motion.anim)}" data-reveal="${state.motion.reveal ? 1 : 0}">
+<body class="${esc(bodyClass())}" data-anim="${esc(state.motion.anim)}" data-reveal="${state.motion.reveal ? 1 : 0}" data-smooth="${state.motion.smooth ? 1 : 0}">
 
 ${exportBody()}
 
@@ -382,6 +383,7 @@ function renderPreview(now = false) {
     pdoc.body.className = bodyClass();
     pdoc.body.setAttribute('data-anim', state.motion.anim);
     pdoc.body.setAttribute('data-reveal', state.motion.reveal ? '1' : '0');
+    pdoc.body.setAttribute('data-smooth', state.motion.smooth ? '1' : '0');
     pdoc.body.innerHTML = bodyHTML();
     // 生成されたトップレベル要素とブロックを対応づける（クリックで選択できるように）
     [...pdoc.body.children].forEach((el, i) => {
@@ -1411,6 +1413,8 @@ const MOTION_FIELDS = [
   { key: 'stagger', label: '1文字ごとのずらし', type: 'range', min: 0, max: 200, suffix: 'ms' },
   { key: 'ease', label: 'イージング（速度の変化）', type: 'select', options: MOTION_EASES },
   { key: 'reveal', label: 'ブロックをスクロールで出現させる', type: 'toggle' },
+  { key: 'smooth', label: '慣性スクロール（少し滑って止まる）', type: 'toggle',
+    hint: 'マウスの環境だけで効きます。指の操作と「動きを減らす」設定では切れます' },
 ];
 
 function renderDesign() {

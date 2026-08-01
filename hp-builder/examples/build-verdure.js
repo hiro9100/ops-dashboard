@@ -200,7 +200,7 @@ ${themeCSS}
 ${SITE_CSS}
 </style>
 </head>
-<body class="tpl-shop sty-edit" data-anim="${esc(motion.anim)}" data-reveal="${motion.reveal ? 1 : 0}">
+<body class="tpl-shop sty-edit" data-anim="${esc(motion.anim)}" data-reveal="${motion.reveal ? 1 : 0}" data-smooth="1">
 
 ${body}
 

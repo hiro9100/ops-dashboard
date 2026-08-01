@@ -1638,6 +1638,44 @@ p:last-child{margin-bottom:0}
 @media(max-width:760px){.has-rules::before{background-position:left top,right top;
   background-size:1px 100%,1px 100%;background-repeat:no-repeat}}
 
+/* ==========================================================
+   仕上げの作法
+   高い制作費のサイトと、そうでないサイトの差は、
+   派手さより「反応の速さ」と「出方の段差」に出る。
+   ========================================================== */
+
+/* ---------- ホバー ----------
+   ゆっくり薄くなるとためらって見える。ほぼ即時に落として、戻りだけ緩める。 */
+a:not(.btn):not(.logo):hover{opacity:.42;transition:opacity .06s cubic-bezier(.165,.84,.44,1)}
+a:not(.btn):not(.logo){transition:opacity .5s cubic-bezier(.165,.84,.44,1)}
+/* 画像は長めに、ごくわずかだけ寄る。動きが大きいと安く見える */
+.gal figure,.flr-pic,.hs-card,.card .hero-media,.about-media,.cpic{overflow:hidden}
+.gal figure img,.flr-pic img,.hs-card img,.card .hero-media img{
+  transition:transform .9s cubic-bezier(.165,.84,.44,1)}
+.gal figure:hover img,.flr-i:hover .flr-pic img,.hs-card:hover img,.card:hover .hero-media img{
+  transform:scale(1.055)}
+
+/* ---------- 出現の段差 ----------
+   ブロックごと一度に出すと「表示された」で終わる。
+   見出し・説明・中身を少しずつずらすと、組み上がって見える。 */
+.rv .sec-head > *,
+.rv .grid > *,.rv .nws-i,.rv .flr-i,.rv .plan,.rv .faq details,.rv .btn-row{
+  opacity:0;transform:translate3d(0,20px,0);
+  transition:opacity .7s var(--ta-ease,ease),transform .9s var(--ta-ease,ease)
+}
+.rv.in .sec-head > *,
+.rv.in .grid > *,.rv.in .nws-i,.rv.in .flr-i,.rv.in .plan,.rv.in .faq details,.rv.in .btn-row{
+  opacity:1;transform:none
+}
+.rv .sec-head > *:nth-child(2){transition-delay:.07s}
+.rv .sec-head > *:nth-child(3){transition-delay:.14s}
+.rv .grid > *:nth-child(1),.rv .nws-i:nth-child(1),.rv .flr-i:nth-child(1),.rv .plan:nth-child(1){transition-delay:.12s}
+.rv .grid > *:nth-child(2),.rv .nws-i:nth-child(2),.rv .flr-i:nth-child(2),.rv .plan:nth-child(2){transition-delay:.2s}
+.rv .grid > *:nth-child(3),.rv .nws-i:nth-child(3),.rv .flr-i:nth-child(3),.rv .plan:nth-child(3){transition-delay:.28s}
+.rv .grid > *:nth-child(4),.rv .nws-i:nth-child(4),.rv .flr-i:nth-child(4){transition-delay:.36s}
+.rv .grid > *:nth-child(n+5),.rv .nws-i:nth-child(n+5),.rv .flr-i:nth-child(n+5){transition-delay:.44s}
+.rv .btn-row{transition-delay:.5s}
+
 /* ---------- 動きを減らす設定への配慮 ---------- */
 @media (prefers-reduced-motion: reduce){
   *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;
@@ -1645,7 +1683,8 @@ p:last-child{margin-bottom:0}
   [data-ta] .ch{opacity:1!important;transform:none!important;filter:none!important;visibility:visible!important}
   [data-ta].ta-fillgrad{background-size:100% 100%,100% 100%!important}
   .ia-on{opacity:1!important;transform:none!important;filter:none!important;clip-path:none!important}
-  .rv{opacity:1!important;transform:none!important}
+  .rv,.rv .sec-head > *,.rv .grid > *,.rv .nws-i,.rv .flr-i,.rv .plan,
+  .rv .faq details,.rv .btn-row{opacity:1!important;transform:none!important;transition-delay:0s!important}
   /* 装飾は「止まった1枚の絵」として残す。消すと画面が寂しくなるため */
   .deco b,.deco .sk,.deco .grain,.cg-float.in .cpic,.mq-run{animation:none!important}
   .cpic,.sec-collage .cpic{opacity:1!important;transform:rotate(var(--rot,0deg))!important}
@@ -1881,6 +1920,45 @@ const SITE_JS = `
     requestAnimationFrame(function(){ for(var i=0;i<onScroll.length;i++) onScroll[i](); ticking = false; });
   }
   function watchScroll(fn){ onScroll.push(fn); }
+
+
+  /* ---------- 慣性スクロール ----------
+     高いサイトの「手触り」はほぼこれ。ホイールを1回まわしたあと、
+     指を離しても少し滑ってから止まる。
+
+     よくある実装は中身を wrapper ごと transform でずらす方式だが、
+     それだと position:sticky が効かなくなる。このツールは貼り付く
+     ブロック（横流し・スクロール連動ヒーロー・積み重なるカード）を
+     多く持つので、ページ本来のスクロール位置そのものを滑らかに
+     動かす方式にした。sticky も IntersectionObserver もそのまま動く。 */
+  if(body.dataset.smooth === '1' && !reduce && matchMedia('(hover:hover)').matches){
+    var sTo = scrollY, sAt = scrollY, sRaf = 0, sWheel = 0;
+    var sMax = function(){ return Math.max(0, d.documentElement.scrollHeight - innerHeight); };
+    function sLoop(){
+      sAt += (sTo - sAt) * .12;
+      if(Math.abs(sTo - sAt) < .5){ sAt = sTo; sRaf = 0; scrollTo(0, sAt); return; }
+      scrollTo(0, sAt);
+      sRaf = requestAnimationFrame(sLoop);
+    }
+    addEventListener('wheel', function(e){
+      if(e.ctrlKey || e.defaultPrevented) return;
+      /* 中でスクロールできる箱の上では、そちらに任せる */
+      var n = e.target;
+      while(n && n !== body){
+        if(n.scrollHeight - n.clientHeight > 4 && /auto|scroll/.test(getComputedStyle(n).overflowY)) return;
+        n = n.parentElement;
+      }
+      e.preventDefault();
+      sTo = Math.max(0, Math.min(sMax(), sTo + e.deltaY));
+      sWheel = performance.now();
+      if(!sRaf) sRaf = requestAnimationFrame(sLoop);
+    }, {passive:false});
+    /* キーボードやアンカーで飛んだときは、目標を今の位置に合わせ直す */
+    addEventListener('scroll', function(){
+      if(!sRaf && performance.now() - sWheel > 150){ sTo = sAt = scrollY; }
+    }, {passive:true});
+    addEventListener('resize', function(){ sTo = sAt = scrollY; }, {passive:true});
+  }
 
   /* ---------- スクロール連動ヒーロー ----------
      区間の進み具合を --p（0〜1）で渡すだけ。動きはCSS側に任せる。 */
@@ -4826,7 +4904,8 @@ let state = null;      // { template, meta, theme, blocks:[{id,type,props}] }
 let selected = null;   // 編集中のブロックID
 let selectedEl = null; // 編集中の要素 {role, kind, name}
 let uidSeq = 0;
-const DEFAULT_MOTION = { anim: 'fadeup', dur: 900, stagger: 40, ease: 'cubic-bezier(.2,.7,.3,1)', reveal: true };
+const DEFAULT_MOTION = { anim: 'fadeup', dur: 900, stagger: 40, ease: 'cubic-bezier(.2,.7,.3,1)',
+  reveal: true, smooth: true };
 const uid = () => `b${Date.now().toString(36)}${(uidSeq++).toString(36)}`;
 const closed = new Set(); // 折りたたんでいる繰り返し項目
 
@@ -5051,7 +5130,7 @@ ${themeCSS(state.theme)}
 ${SITE_CSS}
 </style>
 </head>
-<body class="${esc(bodyClass())}" data-anim="${esc(state.motion.anim)}" data-reveal="${state.motion.reveal ? 1 : 0}">
+<body class="${esc(bodyClass())}" data-anim="${esc(state.motion.anim)}" data-reveal="${state.motion.reveal ? 1 : 0}" data-smooth="${state.motion.smooth ? 1 : 0}">
 
 ${exportBody()}
 
@@ -5197,6 +5276,7 @@ function renderPreview(now = false) {
     pdoc.body.className = bodyClass();
     pdoc.body.setAttribute('data-anim', state.motion.anim);
     pdoc.body.setAttribute('data-reveal', state.motion.reveal ? '1' : '0');
+    pdoc.body.setAttribute('data-smooth', state.motion.smooth ? '1' : '0');
     pdoc.body.innerHTML = bodyHTML();
     // 生成されたトップレベル要素とブロックを対応づける（クリックで選択できるように）
     [...pdoc.body.children].forEach((el, i) => {
@@ -6226,6 +6306,8 @@ const MOTION_FIELDS = [
   { key: 'stagger', label: '1文字ごとのずらし', type: 'range', min: 0, max: 200, suffix: 'ms' },
   { key: 'ease', label: 'イージング（速度の変化）', type: 'select', options: MOTION_EASES },
   { key: 'reveal', label: 'ブロックをスクロールで出現させる', type: 'toggle' },
+  { key: 'smooth', label: '慣性スクロール（少し滑って止まる）', type: 'toggle',
+    hint: 'マウスの環境だけで効きます。指の操作と「動きを減らす」設定では切れます' },
 ];
 
 function renderDesign() {
