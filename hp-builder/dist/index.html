@@ -943,6 +943,9 @@ p:last-child{margin-bottom:0}
 
 /* ---------- 特徴 / カード ---------- */
 .grid{display:grid;gap:24px}
+/* 格子の子は既定で min-width:auto。中身が縮まないと桁が広がるので、
+   縮める許可を明示しておく（保険） */
+.grid > *{min-width:0}
 .grid.c2{grid-template-columns:repeat(2,1fr)}
 .grid.c3{grid-template-columns:repeat(3,1fr)}
 .grid.c4{grid-template-columns:repeat(4,1fr)}
@@ -1032,6 +1035,15 @@ p:last-child{margin-bottom:0}
   .menu-cols,.menu-cols.c2{grid-template-columns:1fr;gap:36px}
   .mi dt b{font-size:15px}
 }
+
+/* 「( 01 )」形式の番号。丸で囲むより引いた印象になり、
+   説明が主役のカードに向く。 */
+.card .pnum{
+  display:block;font-family:var(--font-head);font-weight:700;
+  font-size:13px;letter-spacing:.14em;color:var(--c-muted);
+  margin-bottom:clamp(10px,1.6vh,18px)
+}
+.sty-bold .card .pnum{color:var(--c-primary)}
 
 /* ---------- お知らせ・イベント ---------- */
 .nws{list-style:none;margin:0;padding:0;border-top:1px solid var(--c-border)}
@@ -1269,6 +1281,10 @@ p:last-child{margin-bottom:0}
 [data-ta].ta-fadeup.in .ch{animation:ta-fadeup var(--ta-dur) var(--ta-ease) calc(var(--ta-delay,0s) + var(--i)*var(--ta-stagger)) both}
 
 [data-ta].ta-maskline .ln{overflow:hidden;padding-bottom:.08em}
+/* 行マスクだけは1行ぜんぶが1つの .ch になる。.ch には white-space:pre が
+   かかっているため、そのままだと長い行が折り返せず、カードの最小幅が
+   行の長さぶんに広がってレイアウトが破裂する（実測で確認）。ここだけ戻す。 */
+[data-ta].ta-maskline .ch{white-space:normal;display:block}
 @keyframes ta-maskline{from{transform:translateY(110%)}to{transform:none}}
 [data-ta].ta-maskline.in .ch{animation:ta-maskline var(--ta-dur) var(--ta-ease) calc(var(--ta-delay,0s) + var(--i)*var(--ta-stagger)) both}
 
@@ -2705,7 +2721,8 @@ ${maskLayer}${guts}
     icon: '◆',
     fields: [
       FIELD.eyebrow, FIELD.title, FIELD.text, FIELD.cols,
-      { key: 'style', label: 'カードの形式', type: 'select', options: [['icon', 'アイコン'], ['num', '番号（手順）'], ['image', '画像']] },
+      { key: 'style', label: 'カードの形式', type: 'select',
+        options: [['icon', 'アイコン'], ['num', '番号（手順）'], ['paren', '( 01 ) 形式の番号'], ['image', '画像']] },
       { key: 'items', label: '項目', type: 'list', addLabel: '項目を追加', titleKey: 'title',
         item: [
           { key: 'icon', label: 'アイコン（絵文字）', type: 'text' },
@@ -2730,7 +2747,9 @@ ${maskLayer}${guts}
     <div class="grid ${p.cols || 'c3'}">
 ${(p.items || []).map((it, i) => `      <div class="card"${el(p, `card${i}`, 'ia', `カード${i + 1}`)}>
         ${p.style === 'image' ? `<div class="hero-media" style="aspect-ratio:16/10;margin-bottom:18px" data-elname="カード画像"${imgSlot(`items.${i}.image`)}>${media(it.image, it.title)}</div>` : ''}
-        ${p.style === 'num' ? `<span class="num">${i + 1}</span>` : p.style === 'image' ? '' : `<span class="ic">${esc(it.icon || '◆')}</span>`}
+        ${p.style === 'num' ? `<span class="num">${i + 1}</span>`
+          : p.style === 'paren' ? `<span class="pnum">( ${String(i + 1).padStart(2, '0')} )</span>`
+          : p.style === 'image' ? '' : `<span class="ic">${esc(it.icon || '◆')}</span>`}
         ${it.title ? `<h3${el(p, `card${i}.title`, 'ta', 'カード見出し', `items.${i}.title`)}>${esc(it.title)}</h3>` : ''}
         ${it.text ? `<p${el(p, `card${i}.text`, 'ta', 'カード説明', `items.${i}.text`)}>${nl2br(it.text)}</p>` : ''}
       </div>`).join('\n')}

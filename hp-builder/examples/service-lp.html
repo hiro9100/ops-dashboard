@@ -1,6 +1,25 @@
-/* 生成されるサイトに適用されるCSS。プレビューと書き出しHTMLの両方で使う。
-   file:// でも動くように fetch せず JS 文字列として持つ。 */
-const SITE_CSS = `
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ホームページを、プロンプトなしで。｜かんたんHP作成ツール</title>
+<meta name="description" content="テンプレートを選んで、文字と写真を差し替えるだけ。制作会社のサイトと同じ作法の動きを持ったホームページが、HTML1ファイルで手に入ります。">
+<meta property="og:title" content="ホームページを、プロンプトなしで。｜かんたんHP作成ツール">
+<meta property="og:description" content="テンプレートを選んで、文字と写真を差し替えるだけ。制作会社のサイトと同じ作法の動きを持ったホームページが、HTML1ファイルで手に入ります。">
+<meta property="og:type" content="website">
+<style>
+:root{
+  --c-primary:#ed646f;--c-accent:#f69ea5;--c-bg:#fafafa;
+  --c-surface:#ffffff;--c-text:#27272a;--c-muted:#71717a;
+  --c-border:#e4e4e7;--c-dark:#27272a;
+  --radius:12px;--max:1200px;
+  --font:"Helvetica Neue",Arial,"Hiragino Kaku Gothic ProN","Hiragino Sans",Meiryo,sans-serif;--font-head:"Helvetica Neue",Arial,"Hiragino Kaku Gothic ProN","Hiragino Sans",Meiryo,sans-serif;
+  --c-on-primary:#ffffff;--c-on-accent:#111111;
+  --c-on-dark:#ffffff;
+  --ta-dur:0.95s;--ta-stagger:0.036s;--ta-ease:cubic-bezier(.16,1,.3,1);
+}
+
 *,*::before,*::after{box-sizing:border-box}
 html{scroll-behavior:smooth}
 body{
@@ -1208,11 +1227,223 @@ a:not(.btn):not(.logo){transition:opacity .5s cubic-bezier(.165,.84,.44,1)}
   .cb{clip-path:none!important}
   .hero.dk-depth .hero-bg img,.hero.dk-depth .hero-in{transform:none!important}
 }
-`;
 
-/* 書き出したHTMLでも動く最小限のJS
-   ① ハンバーガーメニュー ② 文字アニメーション ③ ブロックの出現 */
-const SITE_JS = `
+</style>
+</head>
+<body class="tpl-corporate" data-anim="maskline" data-reveal="1" data-smooth="1">
+
+<header class="hdr sticky">
+  <div class="wrap hdr-in">
+    <a class="logo" href="#">PAGE STUDIO</a>
+    <nav class="nav"><a href="#solutions">できること</a><a href="#templates">テンプレート</a><a href="#price">料金</a><a href="#faq">よくある質問</a></nav>
+    <a class="btn sm" href="#cta">無料ではじめる</a>
+    <button class="hdr-toggle" aria-label="メニュー">☰</button>
+  </div>
+</header>
+
+<section class="hero center" id="top">
+  <div class="wrap">
+    <div class="hero-in">
+      <span class="eyebrow" data-ta>NO PROMPT, NO CODE</span>
+      <h1 class="hero-title" data-ta data-anim="maskline">ホームページを、<br>プロンプトなしで。</h1>
+      <p class="hero-text" data-ta data-anim="fadeup" data-delay="260">テンプレートを選んで、文字と写真を差し替えるだけ。制作会社が使うのと同じ作法の動きが、はじめから入っています。</p>
+    <div class="btn-row ">
+      <a class="btn" href="#cta">無料ではじめる</a>
+      <a class="btn ghost" href="#solutions">できることを見る</a>
+    </div>
+    </div>
+  </div>
+</section>
+
+<section class="sec sec-slotstats bg-surface" id="numbers">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow" data-ta>WHAT’S INSIDE</span>
+    </div>
+    <div class="slots grid c4">
+      <div><span class="slot" data-slot="14"></span><small>テンプレート</small></div>
+      <div><span class="slot" data-slot="25"></span><small>追加できるブロック</small></div>
+      <div><span class="slot" data-slot="14"></span><small>配色パレット</small></div>
+      <div><span class="slot" data-slot="24"></span><small>文字と要素の動き</small></div>
+    </div>
+  </div>
+</section>
+
+<section class="sec sec-features" id="solutions">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow" data-ta>SOLUTIONS</span>
+      <h2 class="sec-title" data-ta>ホームページ作りの、<br>こんなところで止まりませんか。</h2>
+      <p class="sec-sub" data-ta>止まる場所は、だいたい決まっています。そこを先に外しました。</p>
+    </div>
+    <div class="grid c3">
+      <div class="card" data-ia>
+        
+        <span class="pnum">( 01 )</span>
+        <h3 data-ta>何を書けばいいか分からない</h3>
+        <p data-ta>プロンプトは要りません。テンプレートには業種ごとの文章がすでに入っていて、自分の言葉に差し替えるだけで形になります。</p>
+      </div>
+      <div class="card" data-ia>
+        
+        <span class="pnum">( 02 )</span>
+        <h3 data-ta>触ると崩れるのが怖い</h3>
+        <p data-ta>文字はプレビューの上でダブルクリック、写真は枠をタップして選ぶだけ。崩れたら Ctrl+Z で戻せます。40回ぶん覚えています。</p>
+      </div>
+      <div class="card" data-ia>
+        
+        <span class="pnum">( 03 )</span>
+        <h3 data-ta>公開のしかたが分からない</h3>
+        <p data-ta>書き出しはHTML1ファイル。サーバーに置くだけで公開できます。ビルドもデータベースも要りません。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="sec sec-about bg-surface" id="edit">
+  <div class="wrap">
+    <div class="about-in">
+      <div class="about-media" data-ia data-anim="wipe"><span class="ph" aria-hidden="true"></span></div>
+      <div class="about-body">
+        <span class="eyebrow" data-ta>( 01 )</span>
+        <h2 class="sec-title" data-ta>選んで、差し替えるだけ。</h2>
+        <div><p>テンプレートは実物のプレビューで選べます。名前だけの一覧ではありません。</p>
+          <p>ブロックはドラッグで並べ替え。追加するときも、実際に描かれた見本が並ぶので、「入れてみたら思っていたのと違う」が起きません。</p>
+          <p>スマホからも編集できます。写真はカメラロールからそのまま入ります。</p></div>
+    <div class="btn-row ">
+      <a class="btn ghost" href="#templates">テンプレートを見る</a>
+    </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="sec sec-about" id="motion">
+  <div class="wrap">
+    <div class="about-in rev">
+      <div class="about-media" data-ia data-anim="tilt3d"><span class="ph" aria-hidden="true"></span></div>
+      <div class="about-body">
+        <span class="eyebrow" data-ta>( 02 )</span>
+        <h2 class="sec-title" data-ta>動きは、<br>作法まで持ってきました。</h2>
+        <div><p>ホイールを止めたあと少し滑って止まる慣性スクロール。見出し・説明・カードが 0.07秒ずつずれて組み上がる出現。</p>
+          <p>ホバーは薄くなるのが 0.06秒、戻りが 0.5秒。ゆっくり薄くなるとためらって見えます。</p>
+          <p>寸法は画面幅に比例します。1440pxを基準に、広い画面では文字も余白も一緒に育ちます。</p></div>
+    <div class="btn-row ">
+      <a class="btn ghost" href="#templates">動きの一覧を見る</a>
+    </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="pinsec bg-surface" data-hscroll
+  style="height:380vh" id="templates">
+  <div class="pin-in">
+    <div class="hs-head"><div class="wrap">
+      <span class="eyebrow" data-ta>TEMPLATES</span>
+      <h2 class="sec-title" style="margin:0" data-ta>14種のテンプレート</h2>
+    </div></div>
+    <div class="hs-track">
+      <div class="hs-card"><em>01</em><b>採用・コーポレート</b></div>
+      <div class="hs-card"><em>02</em><b>ショップ・カフェ</b></div>
+      <div class="hs-card"><em>03</em><b>複合施設・商業施設</b></div>
+      <div class="hs-card"><em>04</em><b>クリニック・サロン</b></div>
+      <div class="hs-card"><em>05</em><b>解体・建設・職人</b></div>
+      <div class="hs-card"><em>06</em><b>SNS動画・クリエイティブ</b></div>
+    </div>
+  </div>
+</section>
+
+<section class="sec sec-marquee bg-primary" style="--mq-dur:26s;--mq-size:92px">
+<div class="mq-in"><div class="mq-run"><span class="mq-w">NO PROMPT</span><span class="mq-s">✳</span><span class="mq-w">NO PROMPT</span><span class="mq-s">✳</span><span class="mq-w">NO PROMPT</span><span class="mq-s">✳</span><span class="mq-w">NO PROMPT</span><span class="mq-s">✳</span><span class="mq-w">NO PROMPT</span><span class="mq-s">✳</span><span class="mq-w">NO PROMPT</span><span class="mq-s">✳</span></div><div class="mq-run" aria-hidden="true"><span class="mq-w">NO PROMPT</span><span class="mq-s">✳</span><span class="mq-w">NO PROMPT</span><span class="mq-s">✳</span><span class="mq-w">NO PROMPT</span><span class="mq-s">✳</span><span class="mq-w">NO PROMPT</span><span class="mq-s">✳</span><span class="mq-w">NO PROMPT</span><span class="mq-s">✳</span><span class="mq-w">NO PROMPT</span><span class="mq-s">✳</span></div></div>
+</section>
+
+<section class="sec sec-pricing" id="price">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow" data-ta>PRICE</span>
+      <h2 class="sec-title" data-ta>ずっと無料で使えます</h2>
+      <p class="sec-sub" data-ta>書き出したHTMLはあなたのものです。ロゴも広告も入りません。</p>
+    </div>
+    <div class="grid c3">
+      <div class="plan feat" data-ia>
+        <span class="tag">いまはこれだけ</span>
+        <h3 data-ta>FREE</h3>
+        <div class="price">¥0</div>
+        <ul><li>テンプレート14種</li><li>ブロック25種</li><li>HTML1ファイル書き出し</li><li>商用利用OK</li></ul>
+        <a class="btn" href="#cta">はじめる</a>
+      </div>
+      <div class="plan" data-ia>
+        
+        <h3 data-ta>テンプレート追加</h3>
+        <div class="price">準備中</div>
+        <ul><li>業種別のテンプレート</li><li>配色パレットの追加</li><li>作例つき</li></ul>
+        <a class="btn ghost" href="#cta">通知を受け取る</a>
+      </div>
+      <div class="plan" data-ia>
+        
+        <h3 data-ta>制作代行</h3>
+        <div class="price">ご相談</div>
+        <ul><li>写真・文章の用意</li><li>独自ドメインの設定</li><li>公開までの代行</li></ul>
+        <a class="btn ghost" href="#cta">相談する</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="sec sec-faq bg-surface" id="faq">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow" data-ta>FAQ</span>
+      <h2 class="sec-title" data-ta>よくあるご質問</h2>
+    </div>
+    <div class="faq">
+      <details open>
+        <summary>プログラミングの知識は要りますか？</summary>
+        <div class="a">要りません。文字はプレビューの上でダブルクリック、写真は枠をタップして選ぶだけです。コードを開く必要は一度もありません。</div>
+      </details>
+      <details>
+        <summary>作ったサイトはどこに公開できますか？</summary>
+        <div class="a">HTML1ファイルで書き出されるので、レンタルサーバー、Netlify、GitHub Pages など、どこにでも置けます。ビルドもデータベースも不要です。</div>
+      </details>
+      <details>
+        <summary>スマホだけで作れますか？</summary>
+        <div class="a">作れます。820px以下では編集画面が1画面＋下から出るシートに切り替わります。写真もカメラロールからそのまま入ります。</div>
+      </details>
+      <details>
+        <summary>写真がないのですが。</summary>
+        <div class="a">写真が無い枠にはプレースホルダが出るので、まず文章だけで形にできます。写真は後から差し替えられます。</div>
+      </details>
+      <details>
+        <summary>作ったデータは他のパソコンでも開けますか？</summary>
+        <div class="a">保存先がブラウザの中なので、いまは引き継げません。HTMLを書き出して持ち運んでください。ここは次に直します。</div>
+      </details>
+    </div>
+  </div>
+</section>
+
+<section class="sec sec-cta bg-primary" id="cta">
+  <div class="wrap">
+    <div class="cta-in">
+      <h2 class="sec-title" data-ta>まずは1ページ、<br>作ってみてください。</h2>
+      <p data-ta>登録もインストールも要りません。開いた瞬間から編集できます。</p>
+    <div class="btn-row center">
+      <a class="btn ghost" href="#">無料ではじめる</a>
+    </div>
+    </div>
+  </div>
+</section>
+
+<footer class="ftr">
+  <div class="wrap">
+    <div class="ftr-in">
+      <span class="logo">PAGE STUDIO</span>
+      <nav class="ftr-nav"><a href="#solutions">できること</a><a href="#templates">テンプレート</a><a href="#price">料金</a><a href="#faq">よくある質問</a></nav>
+    </div>
+    <div class="copy">© 2026 PAGE STUDIO</div>
+  </div>
+</footer>
+
+<script>
 (function(){
   /* ---------- ハンバーガーメニュー ---------- */
   var t=document.querySelector('.hdr-toggle'),n=document.querySelector('.hdr .nav');
@@ -1832,4 +2063,6 @@ const SITE_JS = `
     watch.forEach(function(el){ io.observe(el); });
   }
 })();
-`;
+</script>
+</body>
+</html>

@@ -383,7 +383,8 @@ ${maskLayer}${guts}
     icon: '◆',
     fields: [
       FIELD.eyebrow, FIELD.title, FIELD.text, FIELD.cols,
-      { key: 'style', label: 'カードの形式', type: 'select', options: [['icon', 'アイコン'], ['num', '番号（手順）'], ['image', '画像']] },
+      { key: 'style', label: 'カードの形式', type: 'select',
+        options: [['icon', 'アイコン'], ['num', '番号（手順）'], ['paren', '( 01 ) 形式の番号'], ['image', '画像']] },
       { key: 'items', label: '項目', type: 'list', addLabel: '項目を追加', titleKey: 'title',
         item: [
           { key: 'icon', label: 'アイコン（絵文字）', type: 'text' },
@@ -408,7 +409,9 @@ ${maskLayer}${guts}
     <div class="grid ${p.cols || 'c3'}">
 ${(p.items || []).map((it, i) => `      <div class="card"${el(p, `card${i}`, 'ia', `カード${i + 1}`)}>
         ${p.style === 'image' ? `<div class="hero-media" style="aspect-ratio:16/10;margin-bottom:18px" data-elname="カード画像"${imgSlot(`items.${i}.image`)}>${media(it.image, it.title)}</div>` : ''}
-        ${p.style === 'num' ? `<span class="num">${i + 1}</span>` : p.style === 'image' ? '' : `<span class="ic">${esc(it.icon || '◆')}</span>`}
+        ${p.style === 'num' ? `<span class="num">${i + 1}</span>`
+          : p.style === 'paren' ? `<span class="pnum">( ${String(i + 1).padStart(2, '0')} )</span>`
+          : p.style === 'image' ? '' : `<span class="ic">${esc(it.icon || '◆')}</span>`}
         ${it.title ? `<h3${el(p, `card${i}.title`, 'ta', 'カード見出し', `items.${i}.title`)}>${esc(it.title)}</h3>` : ''}
         ${it.text ? `<p${el(p, `card${i}.text`, 'ta', 'カード説明', `items.${i}.text`)}>${nl2br(it.text)}</p>` : ''}
       </div>`).join('\n')}
