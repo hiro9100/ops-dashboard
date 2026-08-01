@@ -209,6 +209,54 @@ const FIELD = {
 };
 
 /* ============================================================
+   コラージュ・ヒーロー
+   写真を敷き詰めた背景に、斜めに切り出した写真と、
+   縦書きの白い帯を重ねる型。報道・イベント・採用の顔に効く。
+
+   手前の写真の置き場所は決め打ちで持つ。実行時に乱数で散らすと
+   読み込むたびに絵が変わって落ち着かないため。
+   [左%, 上%, 幅%, 傾き°, 重なり順, 出るまでの待ちms] */
+const COLLAGE_SLOTS = [
+  [3, 4, 34, -38, 3, 120],
+  [56, -2, 26, 42, 2, 260],
+  [37, 40, 32, -42, 3, 400],
+  [74, 46, 22, 38, 2, 540],
+  [13, 60, 20, 44, 1, 680],
+];
+
+/* 枠を θ 傾けて中身を戻すと、四隅が内側に食い込んで余白が出る。
+   |sinθ|+|cosθ| 倍にしておけば、どの角度でも隙間なく埋まる。 */
+function coverScale(deg) {
+  const r = (deg * Math.PI) / 180;
+  return (Math.abs(Math.sin(r)) + Math.abs(Math.cos(r))).toFixed(3);
+}
+
+/* 縦書きは font に頼らない。
+   writing-mode に任せると、縦書き用の字送り（vmtx）を持たないフォントで
+   漢字の送りがゼロになり、字が重なって潰れる（実測で確認）。
+   1文字ずつ積むことで、どのフォントでも同じ見た目になる。 */
+const V_ROTATE = 'ー〜～（）「」『』【】〔〕〈〉《》＜＞()[]{}<>=+－-—…';
+const V_CORNER = '、。，．';
+
+function vChar(ch) {
+  if (ch === ' ' || ch === '\u3000') return '      <i class="cbc sp"></i>';
+  const cls = V_ROTATE.includes(ch) ? ' rot' : (V_CORNER.includes(ch) ? ' cor' : '');
+  return `      <i class="cbc${cls}">${esc(ch)}</i>`;
+}
+
+/* 1行＝1列。日本語の縦書きは右から読むので、
+   最初の行がいちばん右に来るように並べる（CSS 側で row-reverse）。 */
+function bands(text, side) {
+  const cols = String(text || '').split('\n').map((t) => t.trim()).filter(Boolean);
+  if (!cols.length) return '';
+  return `    <div class="cband cband-${side}">
+${cols.map((t, i) => `      <span class="cb" style="--i:${i}">
+${[...t].map(vChar).join('\n')}
+      </span>`).join('\n')}
+    </div>`;
+}
+
+/* ============================================================
    ブロック本体
    ============================================================ */
 const BLOCKS = {
@@ -577,6 +625,72 @@ ${form}
       ${p.title ? `<h2 class="sec-title" style="text-align:${p.align === 'left' ? 'left' : 'center'}"${el(p, 'title', 'ta', '見出し', 'title')}>${nl2br(p.title)}</h2>` : ''}
       <div${ed('body', '本文')}>${(p.body || '').split(/\n{2,}/).filter(Boolean).map((t) => `<p>${nl2br(t)}</p>`).join('\n        ')}</div>
     </div>`),
+  },
+
+  /* ---------------- コラージュ・ヒーロー ---------------- */
+  collage: {
+    label: 'コラージュ（縦書き＋斜め写真）',
+    icon: '◈',
+    tag: '演出',
+    about: '写真を敷き詰めた背景に、斜めの写真と縦書きの白い帯を重ねます。イベント・採用・特集の顔に。',
+    fields: [
+      { key: 'bandR', label: '縦書きの帯（右寄せ・1行＝1列）', type: 'textarea', rows: 3,
+        hint: '1行で1列。日本語の縦書きなので、最初の行がいちばん右に来ます' },
+      { key: 'bandL', label: '縦書きの帯（左寄せ・1行＝1列）', type: 'textarea', rows: 3 },
+      { key: 'photos', label: '写真', type: 'list', addLabel: '写真を追加', titleKey: 'alt',
+        item: [
+          { key: 'src', label: '画像', type: 'image' },
+          { key: 'alt', label: '説明（代替テキスト）', type: 'text' },
+        ] },
+      { key: 'front', label: '手前に斜めで出す枚数', type: 'range', min: 2, max: 5 },
+      { key: 'dark', label: '背景の暗さ', type: 'range', min: 20, max: 85, suffix: '%' },
+      { key: 'gray', label: '背景の色を抜く', type: 'toggle' },
+      { key: 'float', label: 'ゆっくり浮かせる', type: 'toggle' },
+      { key: 'tall', label: '高さ', type: 'select',
+        options: [['s', '低め'], ['m', 'ふつう'], ['l', '画面いっぱい']] },
+      FIELD.anchor,
+    ],
+    defaults: {
+      bandR: '社会を良くしたい、\nその挑戦を加速する',
+      bandL: '社会課題へ挑む\nピッチコンテスト',
+      front: 3, dark: 62, gray: true, float: true, tall: 'l', anchor: 'top',
+      photos: [
+        { src: '', alt: '写真1' }, { src: '', alt: '写真2' }, { src: '', alt: '写真3' },
+        { src: '', alt: '写真4' }, { src: '', alt: '写真5' }, { src: '', alt: '写真6' },
+      ],
+    },
+    render: (p) => {
+      const pics = (p.photos || []).filter((x) => x && x.src);
+      const nFront = Math.max(2, Math.min(5, p.front || 3));
+      /* 同じ画像を何十枚も <img> で書くと、data URI がその数だけ複製されて
+         書き出したHTMLが何MBにも膨らむ。URIはCSS変数として1回だけ置き、
+         タイルは変数を参照するだけにする。 */
+      /* style 属性の中なので、URL を囲む引用符はそのまま書けない */
+      const vars = pics.map((it, i) => `--cp${i}:url(&quot;${esc(it.src)}&quot;)`).join(';');
+      const n = pics.length;
+      /* 画面が広いほど列が増えるので、余らせるくらい多めに敷いて溢れは隠す */
+      const wall = Array.from({ length: 72 }, (_, i) =>
+        `      <span class="cw"${n ? ` style="background-image:var(--cp${i % n})"` : ''}></span>`).join('\n');
+      const front = COLLAGE_SLOTS.slice(0, nFront).map(([x, y, w, rot, z, d], i) => {
+        const it = pics[i % Math.max(1, n)] || { src: '', alt: '' };
+        return `      <figure class="cpic" style="left:${x}%;top:${y}%;--w:${w}%;--rot:${rot}deg;`
+          + `--cov:${coverScale(rot)};z-index:${z};--d:${d}ms"${el(p, `pic${i}`, 'ia', `手前の写真${i + 1}`)}`
+          + `${imgSlot(`photos.${i}.src`)}><span class="cpic-in">${media(it.src, it.alt)}</span></figure>`;
+      }).join('\n');
+      const cls = ['sec', 'sec-collage', `cg-${p.tall || 'l'}`, p.gray ? 'cg-gray' : '',
+        p.float ? 'cg-float' : ''].filter(Boolean).join(' ');
+      return `<section class="${cls}"${attr('id', p.anchor)} data-collage`
+        + ` style="--cdark:${(p.dark ?? 62) / 100}${vars ? ';' + vars : ''}">
+  <div class="cwall">
+${wall}
+  </div>
+  <div class="cfront">
+${front}
+  </div>
+${bands(p.bandR, 'r')}
+${bands(p.bandL, 'l')}
+</section>`;
+    },
   },
 
   /* ---------------- お品書き（価格表） ---------------- */
@@ -1156,7 +1270,7 @@ ${slides}
 
 /* 追加メニューに出す順番（ヘッダー・フッターは常設なので除く） */
 const ADDABLE = [
-  'hero', 'features', 'about', 'gallery', 'menu', 'pricing', 'faq', 'cta', 'contact', 'rich',
+  'hero', 'collage', 'features', 'about', 'gallery', 'menu', 'pricing', 'faq', 'cta', 'contact', 'rich',
   'slides', 'product3d', 'exploded', 'hscroll', 'stackcards', 'timeline', 'clipreveal',
   'carousel3d', 'slotstats', 'svgdraw', 'shift',
 ];

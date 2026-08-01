@@ -618,6 +618,113 @@ p:last-child{margin-bottom:0}
 .hero.center.cover .hero-in,.hero.left.cover .hero-in{padding:clamp(24px,4vw,48px) 0}
 
 /* ==========================================================
+   コラージュ・ヒーロー
+   ①敷き詰めた背景 ②斜めに切り出した写真 ③縦書きの白い帯 の3層。
+   ========================================================== */
+.sec-collage{
+  position:relative;overflow:hidden;padding:0;
+  background:#0c0f14;color:#fff
+}
+.cg-s{min-height:min(72svh,620px)}
+.cg-m{min-height:min(86svh,800px)}
+.cg-l{min-height:100svh}
+
+/* ---- 敷き詰めた背景 ----
+   タイルは背景画像で描く（<img> を並べると data URI が枚数ぶん複製されて
+   書き出したHTMLが巨大になる）。多めに敷いて、はみ出しは隠す。 */
+.cwall{
+  position:absolute;inset:0;display:grid;gap:3px;
+  grid-template-columns:repeat(auto-fill,minmax(clamp(104px,13vw,200px),1fr));
+  grid-auto-rows:clamp(104px,14vh,180px);overflow:hidden;align-content:start
+}
+.cwall .cw{
+  display:block;background:#131820 center/cover no-repeat;
+  background-image:inherit
+}
+.cg-gray .cwall{filter:grayscale(.72) contrast(1.05)}
+.cwall::after{
+  content:"";position:absolute;inset:0;
+  background:linear-gradient(180deg,
+    rgba(8,11,16,calc(var(--cdark,.62) * 1.06)),
+    rgba(8,11,16,calc(var(--cdark,.62) * .82)) 45%,
+    rgba(8,11,16,calc(var(--cdark,.62) * 1.12)))
+}
+
+/* ---- 手前の斜め写真 ----
+   枠を傾け、中身は逆に戻して立たせる。傾けた分だけ角が内側に入るので
+   中身を --cov 倍にして隙間を消す（値は生成時に角度から計算）。 */
+.cfront{position:absolute;inset:0}
+.cpic{
+  position:absolute;margin:0;aspect-ratio:1;overflow:hidden;width:var(--w,30%);
+  box-shadow:0 34px 70px -30px rgba(0,0,0,.72);
+  opacity:0;transform:rotate(var(--rot,0deg)) scale(.9) translateY(26px);
+  transition:opacity .9s cubic-bezier(.2,.7,.3,1),transform .9s cubic-bezier(.2,.7,.3,1);
+  transition-delay:var(--d,0ms)
+}
+.sec-collage.in .cpic{opacity:1;transform:rotate(var(--rot,0deg)) scale(1) translateY(0)}
+.cpic-in{display:block;width:100%;height:100%;overflow:hidden;
+  transform:rotate(calc(var(--rot,0deg) * -1)) scale(var(--cov,1.42))}
+.cpic img{width:100%;height:100%;object-fit:cover;display:block}
+.cpic .ph{background:linear-gradient(135deg,var(--c-primary),var(--c-accent))}
+
+/* ---- 縦書きの白い帯 ----
+   1行＝1列。日本語の縦書きは右から読むので row-reverse で並べる。
+   字は writing-mode ではなく1文字ずつ積む。縦書き用の字送りを持たない
+   フォントだと漢字の送りがゼロになり、字が重なって潰れるため。 */
+.cband{
+  position:absolute;top:0;bottom:0;z-index:6;
+  display:flex;flex-direction:row-reverse;align-items:flex-start;
+  gap:clamp(5px,.8vw,12px);padding:clamp(20px,4vh,56px) clamp(12px,2.6vw,46px);
+  pointer-events:none
+}
+.cband-r{right:0}
+.cband-l{left:0;align-items:flex-end}
+.cb{
+  display:flex;flex-direction:column;align-items:center;
+  background:#fff;color:#111;font-family:var(--font-head);
+  font-weight:900;font-size:clamp(19px,2.4vw,36px);
+  padding:clamp(12px,1.8vh,22px) clamp(6px,.8vw,12px);
+  box-shadow:0 22px 44px -22px rgba(0,0,0,.6);
+  /* 列ごとに少しずらすと、貼り紙らしい表情になる */
+  margin-top:calc(var(--i) * clamp(10px,2.4vh,34px));
+  clip-path:inset(0 0 100% 0);
+  transition:clip-path .95s cubic-bezier(.16,.84,.3,1);
+  transition-delay:calc(var(--i) * 140ms + 200ms)
+}
+.cband-l .cb{margin-top:0;margin-bottom:calc(var(--i) * clamp(10px,2.4vh,34px))}
+.sec-collage.in .cb{clip-path:inset(0 0 0 0)}
+.cbc{
+  display:block;width:1em;height:1em;line-height:1;text-align:center;
+  margin-bottom:.14em
+}
+.cbc:last-child{margin-bottom:0}
+.cbc.sp{height:.5em}
+/* 長音や括弧は横向きの字なので、縦に積むときは90°回す */
+.cbc.rot{transform:rotate(90deg)}
+/* 句読点は枡の右上に寄せるのが縦書きの決まり */
+.cbc.cor{transform:translate(.36em,-.4em);margin-bottom:-.5em}
+
+/* ゆっくり浮かせる。枠ごとに周期をずらす */
+.cg-float.in .cpic{animation:cg-bob ease-in-out infinite alternate}
+.cg-float.in .cpic:nth-child(1){animation-duration:7.5s}
+.cg-float.in .cpic:nth-child(2){animation-duration:9s;animation-delay:-2s}
+.cg-float.in .cpic:nth-child(3){animation-duration:8.2s;animation-delay:-4s}
+.cg-float.in .cpic:nth-child(4){animation-duration:10s;animation-delay:-1s}
+.cg-float.in .cpic:nth-child(5){animation-duration:8.8s;animation-delay:-3s}
+@keyframes cg-bob{
+  from{transform:rotate(var(--rot,0deg)) translateY(0)}
+  to{transform:rotate(var(--rot,0deg)) translateY(-16px)}
+}
+
+@media(max-width:760px){
+  .cwall{grid-auto-rows:clamp(96px,13vh,150px)}
+  /* 画面が狭いと写真が小さくなりすぎるので、大きめに出す */
+  .cpic{width:calc(var(--w,30%) * 1.5)}
+  .cb{font-size:clamp(17px,5.4vw,26px)}
+  .cband{padding:clamp(16px,3vh,34px) clamp(8px,3vw,20px)}
+}
+
+/* ==========================================================
    スクロール連動ヒーロー
    長い区間（--pin）をとり、その中で中身を画面に貼り付ける。
    進み具合は JS が --p（0〜1）で渡し、動きはここに書く。
@@ -1423,7 +1530,9 @@ p:last-child{margin-bottom:0}
   .ia-on{opacity:1!important;transform:none!important;filter:none!important;clip-path:none!important}
   .rv{opacity:1!important;transform:none!important}
   /* 装飾は「止まった1枚の絵」として残す。消すと画面が寂しくなるため */
-  .deco b,.deco .sk,.deco .grain{animation:none!important}
+  .deco b,.deco .sk,.deco .grain,.cg-float.in .cpic{animation:none!important}
+  .cpic,.sec-collage .cpic{opacity:1!important;transform:rotate(var(--rot,0deg))!important}
+  .cb{clip-path:none!important}
   .hero.dk-depth .hero-bg img,.hero.dk-depth .hero-in{transform:none!important}
 }
 `;
@@ -1993,7 +2102,7 @@ const SITE_JS = `
   }
 
   /* ---------- 画面に入ったら再生 ---------- */
-  var watch = [].slice.call(d.querySelectorAll('[data-ta]:not(.in), .ia-on, .rv, .draw-wrap, [data-slot]'));
+  var watch = [].slice.call(d.querySelectorAll('[data-ta]:not(.in), .ia-on, .rv, .draw-wrap, [data-slot], [data-collage]'));
   if(!('IntersectionObserver' in window) || reduce){
     watch.forEach(function(el){ el.classList.add('in'); if(el.hasAttribute('data-slot')) runSlot(el); });
   }else{
@@ -2225,6 +2334,54 @@ const FIELD = {
     { key: 'style', label: '見た目', type: 'select', options: [['primary', 'メイン'], ['ghost', '枠線'], ['accent', 'アクセント']] },
   ],
 };
+
+/* ============================================================
+   コラージュ・ヒーロー
+   写真を敷き詰めた背景に、斜めに切り出した写真と、
+   縦書きの白い帯を重ねる型。報道・イベント・採用の顔に効く。
+
+   手前の写真の置き場所は決め打ちで持つ。実行時に乱数で散らすと
+   読み込むたびに絵が変わって落ち着かないため。
+   [左%, 上%, 幅%, 傾き°, 重なり順, 出るまでの待ちms] */
+const COLLAGE_SLOTS = [
+  [3, 4, 34, -38, 3, 120],
+  [56, -2, 26, 42, 2, 260],
+  [37, 40, 32, -42, 3, 400],
+  [74, 46, 22, 38, 2, 540],
+  [13, 60, 20, 44, 1, 680],
+];
+
+/* 枠を θ 傾けて中身を戻すと、四隅が内側に食い込んで余白が出る。
+   |sinθ|+|cosθ| 倍にしておけば、どの角度でも隙間なく埋まる。 */
+function coverScale(deg) {
+  const r = (deg * Math.PI) / 180;
+  return (Math.abs(Math.sin(r)) + Math.abs(Math.cos(r))).toFixed(3);
+}
+
+/* 縦書きは font に頼らない。
+   writing-mode に任せると、縦書き用の字送り（vmtx）を持たないフォントで
+   漢字の送りがゼロになり、字が重なって潰れる（実測で確認）。
+   1文字ずつ積むことで、どのフォントでも同じ見た目になる。 */
+const V_ROTATE = 'ー〜～（）「」『』【】〔〕〈〉《》＜＞()[]{}<>=+－-—…';
+const V_CORNER = '、。，．';
+
+function vChar(ch) {
+  if (ch === ' ' || ch === '\u3000') return '      <i class="cbc sp"></i>';
+  const cls = V_ROTATE.includes(ch) ? ' rot' : (V_CORNER.includes(ch) ? ' cor' : '');
+  return `      <i class="cbc${cls}">${esc(ch)}</i>`;
+}
+
+/* 1行＝1列。日本語の縦書きは右から読むので、
+   最初の行がいちばん右に来るように並べる（CSS 側で row-reverse）。 */
+function bands(text, side) {
+  const cols = String(text || '').split('\n').map((t) => t.trim()).filter(Boolean);
+  if (!cols.length) return '';
+  return `    <div class="cband cband-${side}">
+${cols.map((t, i) => `      <span class="cb" style="--i:${i}">
+${[...t].map(vChar).join('\n')}
+      </span>`).join('\n')}
+    </div>`;
+}
 
 /* ============================================================
    ブロック本体
@@ -2595,6 +2752,72 @@ ${form}
       ${p.title ? `<h2 class="sec-title" style="text-align:${p.align === 'left' ? 'left' : 'center'}"${el(p, 'title', 'ta', '見出し', 'title')}>${nl2br(p.title)}</h2>` : ''}
       <div${ed('body', '本文')}>${(p.body || '').split(/\n{2,}/).filter(Boolean).map((t) => `<p>${nl2br(t)}</p>`).join('\n        ')}</div>
     </div>`),
+  },
+
+  /* ---------------- コラージュ・ヒーロー ---------------- */
+  collage: {
+    label: 'コラージュ（縦書き＋斜め写真）',
+    icon: '◈',
+    tag: '演出',
+    about: '写真を敷き詰めた背景に、斜めの写真と縦書きの白い帯を重ねます。イベント・採用・特集の顔に。',
+    fields: [
+      { key: 'bandR', label: '縦書きの帯（右寄せ・1行＝1列）', type: 'textarea', rows: 3,
+        hint: '1行で1列。日本語の縦書きなので、最初の行がいちばん右に来ます' },
+      { key: 'bandL', label: '縦書きの帯（左寄せ・1行＝1列）', type: 'textarea', rows: 3 },
+      { key: 'photos', label: '写真', type: 'list', addLabel: '写真を追加', titleKey: 'alt',
+        item: [
+          { key: 'src', label: '画像', type: 'image' },
+          { key: 'alt', label: '説明（代替テキスト）', type: 'text' },
+        ] },
+      { key: 'front', label: '手前に斜めで出す枚数', type: 'range', min: 2, max: 5 },
+      { key: 'dark', label: '背景の暗さ', type: 'range', min: 20, max: 85, suffix: '%' },
+      { key: 'gray', label: '背景の色を抜く', type: 'toggle' },
+      { key: 'float', label: 'ゆっくり浮かせる', type: 'toggle' },
+      { key: 'tall', label: '高さ', type: 'select',
+        options: [['s', '低め'], ['m', 'ふつう'], ['l', '画面いっぱい']] },
+      FIELD.anchor,
+    ],
+    defaults: {
+      bandR: '社会を良くしたい、\nその挑戦を加速する',
+      bandL: '社会課題へ挑む\nピッチコンテスト',
+      front: 3, dark: 62, gray: true, float: true, tall: 'l', anchor: 'top',
+      photos: [
+        { src: '', alt: '写真1' }, { src: '', alt: '写真2' }, { src: '', alt: '写真3' },
+        { src: '', alt: '写真4' }, { src: '', alt: '写真5' }, { src: '', alt: '写真6' },
+      ],
+    },
+    render: (p) => {
+      const pics = (p.photos || []).filter((x) => x && x.src);
+      const nFront = Math.max(2, Math.min(5, p.front || 3));
+      /* 同じ画像を何十枚も <img> で書くと、data URI がその数だけ複製されて
+         書き出したHTMLが何MBにも膨らむ。URIはCSS変数として1回だけ置き、
+         タイルは変数を参照するだけにする。 */
+      /* style 属性の中なので、URL を囲む引用符はそのまま書けない */
+      const vars = pics.map((it, i) => `--cp${i}:url(&quot;${esc(it.src)}&quot;)`).join(';');
+      const n = pics.length;
+      /* 画面が広いほど列が増えるので、余らせるくらい多めに敷いて溢れは隠す */
+      const wall = Array.from({ length: 72 }, (_, i) =>
+        `      <span class="cw"${n ? ` style="background-image:var(--cp${i % n})"` : ''}></span>`).join('\n');
+      const front = COLLAGE_SLOTS.slice(0, nFront).map(([x, y, w, rot, z, d], i) => {
+        const it = pics[i % Math.max(1, n)] || { src: '', alt: '' };
+        return `      <figure class="cpic" style="left:${x}%;top:${y}%;--w:${w}%;--rot:${rot}deg;`
+          + `--cov:${coverScale(rot)};z-index:${z};--d:${d}ms"${el(p, `pic${i}`, 'ia', `手前の写真${i + 1}`)}`
+          + `${imgSlot(`photos.${i}.src`)}><span class="cpic-in">${media(it.src, it.alt)}</span></figure>`;
+      }).join('\n');
+      const cls = ['sec', 'sec-collage', `cg-${p.tall || 'l'}`, p.gray ? 'cg-gray' : '',
+        p.float ? 'cg-float' : ''].filter(Boolean).join(' ');
+      return `<section class="${cls}"${attr('id', p.anchor)} data-collage`
+        + ` style="--cdark:${(p.dark ?? 62) / 100}${vars ? ';' + vars : ''}">
+  <div class="cwall">
+${wall}
+  </div>
+  <div class="cfront">
+${front}
+  </div>
+${bands(p.bandR, 'r')}
+${bands(p.bandL, 'l')}
+</section>`;
+    },
   },
 
   /* ---------------- お品書き（価格表） ---------------- */
@@ -3174,7 +3397,7 @@ ${slides}
 
 /* 追加メニューに出す順番（ヘッダー・フッターは常設なので除く） */
 const ADDABLE = [
-  'hero', 'features', 'about', 'gallery', 'menu', 'pricing', 'faq', 'cta', 'contact', 'rich',
+  'hero', 'collage', 'features', 'about', 'gallery', 'menu', 'pricing', 'faq', 'cta', 'contact', 'rich',
   'slides', 'product3d', 'exploded', 'hscroll', 'stackcards', 'timeline', 'clipreveal',
   'carousel3d', 'slotstats', 'svgdraw', 'shift',
 ];
