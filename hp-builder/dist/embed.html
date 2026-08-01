@@ -619,6 +619,84 @@ p:last-child{margin-bottom:0}
 .hero.center.cover .hero-in,.hero.left.cover .hero-in{padding:clamp(24px,4vw,48px) 0}
 
 /* ==========================================================
+   スクロール連動ヒーロー
+   長い区間（--pin）をとり、その中で中身を画面に貼り付ける。
+   進み具合は JS が --p（0〜1）で渡し、動きはここに書く。
+   ========================================================== */
+.hsc{padding:0;height:var(--pin,200vh);overflow:visible}
+.hsc-in{
+  position:sticky;top:0;height:100svh;overflow:hidden;
+  display:grid;align-items:center
+}
+.hsc .hero-bg{z-index:0}
+.hsc .wrap{position:relative;z-index:2;width:100%}
+/* 暗幕は .hero.cover::before に入っているが、スクロール型では
+   その擬似要素が「縦に長いセクション」に付くため一緒に流れてしまう。
+   貼り付く側（.wrap）に置き直す。 */
+.hsc.cover::before{display:none}
+.hsc.cover .wrap::before{
+  content:"";position:absolute;top:-50vh;bottom:-50vh;left:50%;width:100vw;
+  transform:translateX(-50%);z-index:-1;pointer-events:none;
+  background:radial-gradient(62vw 46vh at 50% 50%,rgba(0,0,0,.38),rgba(0,0,0,0) 74%)
+}
+
+/* ---- 写真が縮んで枠に収まる ----
+   全画面 → 角の丸い1枚の写真へ。まわりに背景色の余白が生まれる。 */
+.hsc-zoomout .hero-bg{
+  inset:calc(var(--p,0) * 7vh) calc(var(--p,0) * 9vw);
+  border-radius:calc(var(--p,0) * 26px);overflow:hidden;
+  box-shadow:0 calc(var(--p,0) * 50px) calc(var(--p,0) * 90px) calc(var(--p,0) * -40px) rgba(0,0,0,.5)
+}
+.hsc-zoomout .hero-bg img{transform:scale(calc(1 + var(--p,0) * .06))}
+.hsc-zoomout .hero-in{
+  transform:translate3d(0,calc(var(--p,0) * -6vh),0) scale(calc(1 - var(--p,0) * .12));
+  opacity:calc(1 - var(--p,0) * 1.25)
+}
+
+/* ---- 写真と文字がずれて流れる ---- */
+.hsc-parallax .hero-bg img{transform:scale(1.22) translate3d(0,calc(var(--p,0) * 13vh),0)}
+.hsc-parallax .hero-in{
+  transform:translate3d(0,calc(var(--p,0) * -22vh),0);
+  opacity:calc(1 - var(--p,0) * 1.15)
+}
+
+/* ---- 幕が上下に開く ----
+   最初は背景色の板が写真を覆っていて、スクロールで上下に割れる。 */
+.hsc-curtain .hsc-in::before,.hsc-curtain .hsc-in::after{
+  content:"";position:absolute;left:0;right:0;height:50.5%;z-index:3;
+  background:var(--c-dark);pointer-events:none
+}
+.hsc-curtain .hsc-in::before{top:0;transform:translate3d(0,calc(var(--p,0) * -100%),0)}
+.hsc-curtain .hsc-in::after{bottom:0;transform:translate3d(0,calc(var(--p,0) * 100%),0)}
+.hsc-curtain .wrap{z-index:4}
+.hsc-curtain .hero-in{
+  transform:translate3d(0,calc(var(--p,0) * -4vh),0);
+  opacity:calc(1 - var(--p,0) * .9)
+}
+
+/* ---- 文字の中から写真が広がる ----
+   写真は等倍のまま置き、その上に「文字の形だけ穴が開いた板」をかぶせて
+   穴のほうを広げる。穴は SVG なので何倍にしても輪郭がぼやけない。
+   板は常に画面より大きい（最小 140vmax）ので、外側が透けることはない。 */
+.hsc-maskzoom .mzo{
+  position:absolute;inset:0;z-index:3;pointer-events:none;
+  background:var(--c-dark);
+  --k:calc(140vmax + var(--p,0) * 3600vmax);
+  -webkit-mask-image:var(--mzsvg);mask-image:var(--mzsvg);
+  -webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;
+  -webkit-mask-position:center;mask-position:center;
+  -webkit-mask-size:var(--k) var(--k);mask-size:var(--k) var(--k);
+  opacity:calc(1 - max(0,(var(--p,0) - .88)) * 8.4)
+}
+.hsc-maskzoom .hero-in{opacity:calc(max(0,var(--p,0) - .86) * 7.2)}
+.hsc-maskzoom .hero-bg img{transform:scale(calc(1.14 - var(--p,0) * .14))}
+
+@media (max-width:760px){
+  .hsc-zoomout .hero-bg{inset:calc(var(--p,0) * 3vh) calc(var(--p,0) * 4vw)}
+  .hsc-maskzoom .mzo{--k:calc(140vmax + var(--p,0) * 2400vmax)}
+}
+
+/* ==========================================================
    ヒーローの装飾レイヤー
    z-index は 0。写真(.hero-bg)より後に置くので写真の上に出るが、
    文字を守る暗幕(.hero.cover::before, z-index:1)より下に入る。
@@ -1579,6 +1657,23 @@ const SITE_JS = `
   }
   function watchScroll(fn){ onScroll.push(fn); }
 
+  /* ---------- スクロール連動ヒーロー ----------
+     区間の進み具合を --p（0〜1）で渡すだけ。動きはCSS側に任せる。 */
+  [].slice.call(d.querySelectorAll('[data-heroscroll]')).forEach(function(sec){
+    var last = -1;
+    function upd(){
+      var p = progress(sec);
+      /* 小数3桁で足りる。毎フレーム同じ値を書き込むと無駄に再計算が走る */
+      var v = Math.round(p * 1000) / 1000;
+      if(v === last) return;
+      last = v;
+      sec.style.setProperty('--p', v);
+    }
+    watchScroll(upd);
+    upd();
+  });
+
+
   var css = function(name, fb){
     var v = getComputedStyle(d.documentElement).getPropertyValue(name).trim();
     return v || fb;
@@ -2002,6 +2097,16 @@ const IMAGE_ANIMS = [
    文字を守る暗幕（.hero.cover::before）より下に敷くので、
    どれを選んでも見出しが読めなくなることはない。
    ============================================================ */
+/* スクロールに連動するヒーローの型。
+   区間を長くとって中身を貼り付け（sticky）、進み具合 0→1 で動かす。 */
+const HERO_SCROLLS = [
+  ['none', 'なし（ふつうのヒーロー）'],
+  ['zoomout', '写真が縮んで枠に収まる'],
+  ['parallax', '写真と文字がずれて流れる'],
+  ['curtain', '幕が上下に開く'],
+  ['maskzoom', '文字の中から写真が広がる'],
+];
+
 const HERO_DECOS = [
   ['none', 'なし'],
   ['clouds', 'ふわふわ雲'],
@@ -2036,6 +2141,27 @@ function blobs(list, withColor) {
     `    <i style="left:${x}%;top:${y}%;width:${w}vw;--pk:${pk}"><b style="--dx:${dx}px;--dy:${dy}px;`
     + `--ds:${ds};animation-duration:${dur}s;animation-delay:${delay}s;opacity:${op}`
     + `${withColor ? `;--col:${color}` : ''}"></b></i>`).join('\n');
+}
+
+/* 「文字の中から写真が広がる」型の覆い。
+   写真を文字で塗る（background-clip:text）やり方は、拡大すると
+   写真が引き伸ばされて粗くなる。そこで写真は等倍のまま置いておき、
+   その上に「文字の形だけ穴が開いた板」をかぶせて、穴のほうを広げる。
+   穴の形は SVG なので、何倍に広げても輪郭がぼやけない。 */
+function maskZoomLayer(p) {
+  const raw = String(p.title || '').split('\n')[0].trim() || 'HELLO';
+  const t = raw.replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+  /* 長い見出しでも枠からはみ出さないよう、文字数で大きさを決める */
+  const size = Math.max(120, Math.min(420, Math.round(3400 / Math.max(2, raw.length))));
+  /* CSS の mask は、画像を渡すと「明るさ」ではなく「不透明度」で見る。
+     黒い文字を置いただけでは穴にならないので、SVG の中で先に抜いておく。 */
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 4000 4000">`
+    + `<defs><mask id="h"><rect width="4000" height="4000" fill="#fff"/>`
+    + `<text x="2000" y="2000" fill="#000" text-anchor="middle" dominant-baseline="central" `
+    + `font-family="sans-serif" font-weight="900" font-size="${size}">${t}</text></mask></defs>`
+    + `<rect width="4000" height="4000" fill="#000" mask="url(%23h)"/></svg>`;
+  return `  <div class="mzo" aria-hidden="true" style="--mzsvg:url(&quot;data:image/svg+xml,`
+    + `${encodeURIComponent(svg).replace(/'/g, '%27').replace(/"/g, '%22').replace(/%2523/g, '%23')}&quot;)"></div>\n`;
 }
 
 /* 装飾レイヤーのHTML。強さは --deco-k（0〜1.5）で全体にかかる */
@@ -2156,6 +2282,10 @@ const BLOCKS = {
       { key: 'image', label: '画像URL', type: 'image' },
       { key: 'overlay', label: '背景画像の暗さ', type: 'range', min: 0, max: 90, suffix: '%',
         showIf: (p) => p.layout === 'cover' },
+      { key: 'scroll', label: 'スクロール連動', type: 'select', options: HERO_SCROLLS, gallery: 'scroll',
+        hint: '選ぶとヒーローが画面に貼り付き、スクロールの進み具合で動きます' },
+      { key: 'scrollLen', label: '動ききるまでの長さ', type: 'range', min: 120, max: 320, suffix: '%',
+        showIf: (p) => p.scroll && p.scroll !== 'none' },
       { key: 'deco', label: '装飾の動き', type: 'select', options: HERO_DECOS, gallery: 'deco',
         hint: 'ポインタ追従は指の環境では自動で止まります' },
       { key: 'decoStrength', label: '装飾の強さ', type: 'range', min: 10, max: 100, suffix: '%',
@@ -2170,6 +2300,7 @@ const BLOCKS = {
       text: 'サービスの魅力を1〜2行で。訪れた人が「自分に関係ある」と感じる言葉を置きましょう。',
       image: '', overlay: 55, bg: '', anchor: 'top',
       deco: 'none', decoStrength: 60, grain: false,
+      scroll: 'none', scrollLen: 200,
       buttons: [
         { label: '無料で相談する', href: '#contact', style: 'primary' },
         { label: 'くわしく見る', href: '#features', style: 'ghost' },
@@ -2193,9 +2324,22 @@ ${buttons(p.buttons)}`;
       <div class="hero-media"${el(p, 'image', 'ia', '画像')}${imgSlot('image')}>${media(p.image, p.title)}</div>
     </div>`
         : `    <div class="hero-in">\n${body}\n    </div>`;
-      return `<section class="${cls}"${attr('id', p.anchor)}${needsPointer ? ' data-hpt' : ''}>
-${bg}${decoLayer(p)}  <div class="wrap">
+      /* スクロール連動のときは、長い区間の中に中身を貼り付ける（sticky）。
+         区間の進み具合を --p（0〜1）としてCSSに渡し、動きはCSS側で書く。 */
+      const sc = p.scroll && p.scroll !== 'none' ? p.scroll : '';
+      const guts = `${bg}${decoLayer(p)}  <div class="wrap">
 ${inner}
+  </div>`;
+      if (!sc) {
+        return `<section class="${cls}"${attr('id', p.anchor)}${needsPointer ? ' data-hpt' : ''}>
+${guts}
+</section>`;
+      }
+      const maskLayer = sc === 'maskzoom' ? maskZoomLayer(p) : '';
+      return `<section class="${cls} hsc hsc-${esc(sc)}"${attr('id', p.anchor)}${needsPointer ? ' data-hpt' : ''}`
+        + ` data-heroscroll style="--pin:${Math.max(120, Math.min(320, p.scrollLen ?? 200))}vh">
+  <div class="hsc-in">
+${maskLayer}${guts}
   </div>
 </section>`;
     },
@@ -4671,6 +4815,10 @@ body{margin:0;background:#0d1016;padding:14px;
 .dc-scale{width:1100px;transform:scale(.2655);transform-origin:top left;
   color:var(--c-text);background:var(--c-bg)}
 .dc-scale .hero{min-height:700px;padding:0;display:grid;align-items:center}
+/* 一覧の中では貼り付け（sticky）を切る。切らないと縮小枠の中で
+   区間の高さ（200vh）がそのまま出て、カードが縦に伸びてしまう。 */
+.dc-scale .hsc{height:auto}
+.dc-scale .hsc-in{position:static;height:700px}
 .dc-scale .hero-title{font-size:52px}
 .dc-scale [data-ta] .ch,.dc-scale .rv{opacity:1!important;transform:none!important}
 .dc-meta{padding:10px 12px 12px;color:#e7ebf0}
@@ -4706,11 +4854,24 @@ const DECO_ABOUT = {
   silk: '絹のような光の帯が、ゆっくり横切ります。',
 };
 
+const SCROLL_ABOUT = {
+  none: 'スクロールしても動きません。ふつうのヒーローです。',
+  zoomout: '全画面の写真が、スクロールで角の丸い1枚に収まります。',
+  parallax: '写真はゆっくり、文字は速く流れて奥行きが出ます。',
+  curtain: '閉じた幕が上下に割れて、写真が現れます。',
+  maskzoom: '見出しの形に開いた穴が広がり、画面いっぱいの写真になります。',
+};
+
 let decoPick = null;
 
-function openDecoGallery(current, onPick) {
+/* kind: 'deco'（装飾）/ 'scroll'（スクロール連動）。
+   どちらも「ヒーローを縮めて並べる」点は同じなので、一覧は共通にする。 */
+function openDecoGallery(kind, current, onPick) {
   decoPick = onPick;
-  $('#animTitle').textContent = 'ヒーローの装飾を選ぶ';
+  const list = kind === 'scroll' ? HERO_SCROLLS : HERO_DECOS;
+  const about = kind === 'scroll' ? SCROLL_ABOUT : DECO_ABOUT;
+  $('#animTitle').textContent = kind === 'scroll'
+    ? 'スクロール連動のしかたを選ぶ' : 'ヒーローの装飾を選ぶ';
 
   /* 見本は「いま編集中のヒーロー」から作る。文言も写真もそのまま使うので、
      自分のページでどう見えるかが分かる。 */
@@ -4718,15 +4879,17 @@ function openDecoGallery(current, onPick) {
   const base = b && b.type === 'hero' ? b.props
     : (state.blocks.find((x) => x.type === 'hero') || { props: BLOCKS.hero.defaults }).props;
 
-  const cards = HERO_DECOS.map(([k, label]) => {
-    const props = Object.assign({}, base, {
-      deco: k, anchor: '', anims: {},
-      layout: base.layout === 'cover' ? 'cover' : 'cover',   // 見本は背景写真ありで揃える
-    });
+  const cards = list.map(([k, label]) => {
+    /* スクロール連動は「途中の1コマ」を静止画で見せる。実際に貼り付けると
+       一覧の中では動かせないので、進み具合 --p を決め打ちで入れる。 */
+    const props = Object.assign({}, base, { anchor: '', anims: {}, layout: 'cover' },
+      kind === 'scroll' ? { scroll: k } : { deco: k });
+    const frozen = kind === 'scroll' && k !== 'none'
+      ? ' style="--p:.45"' : '';
     return `<div class="dc${k === current ? ' on' : ''}" data-k="${esc(k)}" role="button" tabindex="0">
       <span class="dc-hit"></span>
-      <div class="dc-prev"><div class="dc-scale ${esc(bodyClass())}">${BLOCKS.hero.render(props)}</div></div>
-      <div class="dc-meta"><b>${esc(label)}</b><small>${esc(DECO_ABOUT[k] || '')}</small></div>
+      <div class="dc-prev"><div class="dc-scale ${esc(bodyClass())}"${frozen}>${BLOCKS.hero.render(props)}</div></div>
+      <div class="dc-meta"><b>${esc(label)}</b><small>${esc(about[k] || '')}</small></div>
     </div>`;
   }).join('');
 
@@ -4919,11 +5082,14 @@ $('#tab-edit').addEventListener('click', (e) => {
   if (fg) {
     const bb = state.blocks.find((x) => x.id === selected);
     if (!bb) return;
+    const kind = fg.dataset.gal;
     const key = fg.dataset.galpath.split('.').pop();
-    openDecoGallery(bb.props[key] || 'none', (picked) => {
+    openDecoGallery(kind, bb.props[key] || 'none', (picked) => {
       bb.props[key] = picked;
       renderEditor(); renderPreview(true); save();
-      flash(`装飾を「${(HERO_DECOS.find((d) => d[0] === picked) || [, picked])[1]}」にしました`);
+      const list = kind === 'scroll' ? HERO_SCROLLS : HERO_DECOS;
+      flash(`${kind === 'scroll' ? 'スクロール連動' : '装飾'}を`
+        + `「${(list.find((d) => d[0] === picked) || [, picked])[1]}」にしました`);
     });
     return;
   }

@@ -78,6 +78,16 @@ const IMAGE_ANIMS = [
    文字を守る暗幕（.hero.cover::before）より下に敷くので、
    どれを選んでも見出しが読めなくなることはない。
    ============================================================ */
+/* スクロールに連動するヒーローの型。
+   区間を長くとって中身を貼り付け（sticky）、進み具合 0→1 で動かす。 */
+const HERO_SCROLLS = [
+  ['none', 'なし（ふつうのヒーロー）'],
+  ['zoomout', '写真が縮んで枠に収まる'],
+  ['parallax', '写真と文字がずれて流れる'],
+  ['curtain', '幕が上下に開く'],
+  ['maskzoom', '文字の中から写真が広がる'],
+];
+
 const HERO_DECOS = [
   ['none', 'なし'],
   ['clouds', 'ふわふわ雲'],
@@ -112,6 +122,27 @@ function blobs(list, withColor) {
     `    <i style="left:${x}%;top:${y}%;width:${w}vw;--pk:${pk}"><b style="--dx:${dx}px;--dy:${dy}px;`
     + `--ds:${ds};animation-duration:${dur}s;animation-delay:${delay}s;opacity:${op}`
     + `${withColor ? `;--col:${color}` : ''}"></b></i>`).join('\n');
+}
+
+/* 「文字の中から写真が広がる」型の覆い。
+   写真を文字で塗る（background-clip:text）やり方は、拡大すると
+   写真が引き伸ばされて粗くなる。そこで写真は等倍のまま置いておき、
+   その上に「文字の形だけ穴が開いた板」をかぶせて、穴のほうを広げる。
+   穴の形は SVG なので、何倍に広げても輪郭がぼやけない。 */
+function maskZoomLayer(p) {
+  const raw = String(p.title || '').split('\n')[0].trim() || 'HELLO';
+  const t = raw.replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+  /* 長い見出しでも枠からはみ出さないよう、文字数で大きさを決める */
+  const size = Math.max(120, Math.min(420, Math.round(3400 / Math.max(2, raw.length))));
+  /* CSS の mask は、画像を渡すと「明るさ」ではなく「不透明度」で見る。
+     黒い文字を置いただけでは穴にならないので、SVG の中で先に抜いておく。 */
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 4000 4000">`
+    + `<defs><mask id="h"><rect width="4000" height="4000" fill="#fff"/>`
+    + `<text x="2000" y="2000" fill="#000" text-anchor="middle" dominant-baseline="central" `
+    + `font-family="sans-serif" font-weight="900" font-size="${size}">${t}</text></mask></defs>`
+    + `<rect width="4000" height="4000" fill="#000" mask="url(%23h)"/></svg>`;
+  return `  <div class="mzo" aria-hidden="true" style="--mzsvg:url(&quot;data:image/svg+xml,`
+    + `${encodeURIComponent(svg).replace(/'/g, '%27').replace(/"/g, '%22').replace(/%2523/g, '%23')}&quot;)"></div>\n`;
 }
 
 /* 装飾レイヤーのHTML。強さは --deco-k（0〜1.5）で全体にかかる */
@@ -232,6 +263,10 @@ const BLOCKS = {
       { key: 'image', label: '画像URL', type: 'image' },
       { key: 'overlay', label: '背景画像の暗さ', type: 'range', min: 0, max: 90, suffix: '%',
         showIf: (p) => p.layout === 'cover' },
+      { key: 'scroll', label: 'スクロール連動', type: 'select', options: HERO_SCROLLS, gallery: 'scroll',
+        hint: '選ぶとヒーローが画面に貼り付き、スクロールの進み具合で動きます' },
+      { key: 'scrollLen', label: '動ききるまでの長さ', type: 'range', min: 120, max: 320, suffix: '%',
+        showIf: (p) => p.scroll && p.scroll !== 'none' },
       { key: 'deco', label: '装飾の動き', type: 'select', options: HERO_DECOS, gallery: 'deco',
         hint: 'ポインタ追従は指の環境では自動で止まります' },
       { key: 'decoStrength', label: '装飾の強さ', type: 'range', min: 10, max: 100, suffix: '%',
@@ -246,6 +281,7 @@ const BLOCKS = {
       text: 'サービスの魅力を1〜2行で。訪れた人が「自分に関係ある」と感じる言葉を置きましょう。',
       image: '', overlay: 55, bg: '', anchor: 'top',
       deco: 'none', decoStrength: 60, grain: false,
+      scroll: 'none', scrollLen: 200,
       buttons: [
         { label: '無料で相談する', href: '#contact', style: 'primary' },
         { label: 'くわしく見る', href: '#features', style: 'ghost' },
@@ -269,9 +305,22 @@ ${buttons(p.buttons)}`;
       <div class="hero-media"${el(p, 'image', 'ia', '画像')}${imgSlot('image')}>${media(p.image, p.title)}</div>
     </div>`
         : `    <div class="hero-in">\n${body}\n    </div>`;
-      return `<section class="${cls}"${attr('id', p.anchor)}${needsPointer ? ' data-hpt' : ''}>
-${bg}${decoLayer(p)}  <div class="wrap">
+      /* スクロール連動のときは、長い区間の中に中身を貼り付ける（sticky）。
+         区間の進み具合を --p（0〜1）としてCSSに渡し、動きはCSS側で書く。 */
+      const sc = p.scroll && p.scroll !== 'none' ? p.scroll : '';
+      const guts = `${bg}${decoLayer(p)}  <div class="wrap">
 ${inner}
+  </div>`;
+      if (!sc) {
+        return `<section class="${cls}"${attr('id', p.anchor)}${needsPointer ? ' data-hpt' : ''}>
+${guts}
+</section>`;
+      }
+      const maskLayer = sc === 'maskzoom' ? maskZoomLayer(p) : '';
+      return `<section class="${cls} hsc hsc-${esc(sc)}"${attr('id', p.anchor)}${needsPointer ? ' data-hpt' : ''}`
+        + ` data-heroscroll style="--pin:${Math.max(120, Math.min(320, p.scrollLen ?? 200))}vh">
+  <div class="hsc-in">
+${maskLayer}${guts}
   </div>
 </section>`;
     },

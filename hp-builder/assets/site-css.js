@@ -119,6 +119,84 @@ p:last-child{margin-bottom:0}
 .hero.center.cover .hero-in,.hero.left.cover .hero-in{padding:clamp(24px,4vw,48px) 0}
 
 /* ==========================================================
+   スクロール連動ヒーロー
+   長い区間（--pin）をとり、その中で中身を画面に貼り付ける。
+   進み具合は JS が --p（0〜1）で渡し、動きはここに書く。
+   ========================================================== */
+.hsc{padding:0;height:var(--pin,200vh);overflow:visible}
+.hsc-in{
+  position:sticky;top:0;height:100svh;overflow:hidden;
+  display:grid;align-items:center
+}
+.hsc .hero-bg{z-index:0}
+.hsc .wrap{position:relative;z-index:2;width:100%}
+/* 暗幕は .hero.cover::before に入っているが、スクロール型では
+   その擬似要素が「縦に長いセクション」に付くため一緒に流れてしまう。
+   貼り付く側（.wrap）に置き直す。 */
+.hsc.cover::before{display:none}
+.hsc.cover .wrap::before{
+  content:"";position:absolute;top:-50vh;bottom:-50vh;left:50%;width:100vw;
+  transform:translateX(-50%);z-index:-1;pointer-events:none;
+  background:radial-gradient(62vw 46vh at 50% 50%,rgba(0,0,0,.38),rgba(0,0,0,0) 74%)
+}
+
+/* ---- 写真が縮んで枠に収まる ----
+   全画面 → 角の丸い1枚の写真へ。まわりに背景色の余白が生まれる。 */
+.hsc-zoomout .hero-bg{
+  inset:calc(var(--p,0) * 7vh) calc(var(--p,0) * 9vw);
+  border-radius:calc(var(--p,0) * 26px);overflow:hidden;
+  box-shadow:0 calc(var(--p,0) * 50px) calc(var(--p,0) * 90px) calc(var(--p,0) * -40px) rgba(0,0,0,.5)
+}
+.hsc-zoomout .hero-bg img{transform:scale(calc(1 + var(--p,0) * .06))}
+.hsc-zoomout .hero-in{
+  transform:translate3d(0,calc(var(--p,0) * -6vh),0) scale(calc(1 - var(--p,0) * .12));
+  opacity:calc(1 - var(--p,0) * 1.25)
+}
+
+/* ---- 写真と文字がずれて流れる ---- */
+.hsc-parallax .hero-bg img{transform:scale(1.22) translate3d(0,calc(var(--p,0) * 13vh),0)}
+.hsc-parallax .hero-in{
+  transform:translate3d(0,calc(var(--p,0) * -22vh),0);
+  opacity:calc(1 - var(--p,0) * 1.15)
+}
+
+/* ---- 幕が上下に開く ----
+   最初は背景色の板が写真を覆っていて、スクロールで上下に割れる。 */
+.hsc-curtain .hsc-in::before,.hsc-curtain .hsc-in::after{
+  content:"";position:absolute;left:0;right:0;height:50.5%;z-index:3;
+  background:var(--c-dark);pointer-events:none
+}
+.hsc-curtain .hsc-in::before{top:0;transform:translate3d(0,calc(var(--p,0) * -100%),0)}
+.hsc-curtain .hsc-in::after{bottom:0;transform:translate3d(0,calc(var(--p,0) * 100%),0)}
+.hsc-curtain .wrap{z-index:4}
+.hsc-curtain .hero-in{
+  transform:translate3d(0,calc(var(--p,0) * -4vh),0);
+  opacity:calc(1 - var(--p,0) * .9)
+}
+
+/* ---- 文字の中から写真が広がる ----
+   写真は等倍のまま置き、その上に「文字の形だけ穴が開いた板」をかぶせて
+   穴のほうを広げる。穴は SVG なので何倍にしても輪郭がぼやけない。
+   板は常に画面より大きい（最小 140vmax）ので、外側が透けることはない。 */
+.hsc-maskzoom .mzo{
+  position:absolute;inset:0;z-index:3;pointer-events:none;
+  background:var(--c-dark);
+  --k:calc(140vmax + var(--p,0) * 3600vmax);
+  -webkit-mask-image:var(--mzsvg);mask-image:var(--mzsvg);
+  -webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;
+  -webkit-mask-position:center;mask-position:center;
+  -webkit-mask-size:var(--k) var(--k);mask-size:var(--k) var(--k);
+  opacity:calc(1 - max(0,(var(--p,0) - .88)) * 8.4)
+}
+.hsc-maskzoom .hero-in{opacity:calc(max(0,var(--p,0) - .86) * 7.2)}
+.hsc-maskzoom .hero-bg img{transform:scale(calc(1.14 - var(--p,0) * .14))}
+
+@media (max-width:760px){
+  .hsc-zoomout .hero-bg{inset:calc(var(--p,0) * 3vh) calc(var(--p,0) * 4vw)}
+  .hsc-maskzoom .mzo{--k:calc(140vmax + var(--p,0) * 2400vmax)}
+}
+
+/* ==========================================================
    ヒーローの装飾レイヤー
    z-index は 0。写真(.hero-bg)より後に置くので写真の上に出るが、
    文字を守る暗幕(.hero.cover::before, z-index:1)より下に入る。
@@ -1078,6 +1156,23 @@ const SITE_JS = `
     requestAnimationFrame(function(){ for(var i=0;i<onScroll.length;i++) onScroll[i](); ticking = false; });
   }
   function watchScroll(fn){ onScroll.push(fn); }
+
+  /* ---------- スクロール連動ヒーロー ----------
+     区間の進み具合を --p（0〜1）で渡すだけ。動きはCSS側に任せる。 */
+  [].slice.call(d.querySelectorAll('[data-heroscroll]')).forEach(function(sec){
+    var last = -1;
+    function upd(){
+      var p = progress(sec);
+      /* 小数3桁で足りる。毎フレーム同じ値を書き込むと無駄に再計算が走る */
+      var v = Math.round(p * 1000) / 1000;
+      if(v === last) return;
+      last = v;
+      sec.style.setProperty('--p', v);
+    }
+    watchScroll(upd);
+    upd();
+  });
+
 
   var css = function(name, fb){
     var v = getComputedStyle(d.documentElement).getPropertyValue(name).trim();
