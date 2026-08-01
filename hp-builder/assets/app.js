@@ -677,7 +677,7 @@ body{margin:0;background:#0d1016;padding:14px;
 .gc-prev{height:176px;overflow:hidden;position:relative;background:var(--c-bg);
   border-bottom:1px solid #2a2f3a}
 .gc-scale{width:1180px;transform:scale(.226);transform-origin:top left;
-  pointer-events:none}
+  pointer-events:none;color:var(--c-text);background:var(--c-bg)}
 .gc-meta{padding:11px 13px 13px}
 .gc-meta b{font-size:13px;display:inline-block;margin-right:7px}
 .gc-meta i{font-style:normal;font-size:10px;font-weight:800;color:#9db4ff;
@@ -760,7 +760,7 @@ body{margin:0;background:#0d1016;padding:14px;
 .ag-card:hover{border-color:#4c8dff;transform:translateY(-2px)}
 .ag-card.on{border-color:#4c8dff;box-shadow:0 0 0 1px #4c8dff inset}
 .ag-stage{height:88px;display:grid;place-items:center;overflow:hidden;
-  background:var(--c-bg);border-bottom:1px solid #2a2f3a;padding:8px}
+  background:var(--c-bg);color:var(--c-text);border-bottom:1px solid #2a2f3a;padding:8px}
 .ag-txt{font-size:18px;font-weight:800;color:var(--c-text);font-family:var(--font-head);
   --ta-dur:.9s;--ta-stagger:.05s;--ta-ease:cubic-bezier(.2,.7,.3,1);--ta-delay:0s}
 .ag-img{width:96px;height:62px;border-radius:8px;
@@ -1280,7 +1280,10 @@ const MOTION_FIELDS = [
 ];
 
 function renderDesign() {
-  $('#tab-design').innerHTML = THEME_FIELDS.map(([g, fs]) =>
+  $('#tab-design').innerHTML =
+    `<div class="sec-label">配色</div>
+     <button class="anim-gal" id="btnPalGal" style="margin:0 0 14px">▦ 配色を一覧から選ぶ</button>`
+    + THEME_FIELDS.map(([g, fs]) =>
     `<div class="sec-label">${g}</div>` + fs.map((f) => {
       const path = `theme.${f.key}`;
       const val = state.theme[f.key];
@@ -1340,6 +1343,7 @@ function themeInput(e) {
 $('#tab-design').addEventListener('input', themeInput);
 $('#tab-design').addEventListener('click', (e) => {
   if (e.target.id === 'btnReplayAnim') renderPreview(true);
+  if (e.target.id === 'btnPalGal') { renderPalGrid(); openModal('#palModal'); return; }
   if (e.target.id === 'btnAnimGal') {
     openAnimGallery('ta', state.motion.anim, (key) => {
       state.motion.anim = key;
@@ -1361,7 +1365,8 @@ $$('.tabs button').forEach((b) => b.addEventListener('click', () => switchTab(b.
    テンプレート選択
    ================================================================ */
 /* テーマの色などを、まとめて style 属性に書ける形にする（カードごとに配色を変えるため） */
-function themeVars(t) {
+function themeVars(t, override) {
+  if (override) t = Object.assign({}, t, override);
   return [
     `--c-primary:${t.primary}`, `--c-accent:${t.accent}`, `--c-bg:${t.bg}`,
     `--c-surface:${t.surface}`, `--c-text:${t.text}`, `--c-muted:${t.muted}`,
@@ -1384,7 +1389,8 @@ body{margin:0;background:#0d1016;padding:14px;
 .tc:hover{border-color:#4c8dff;transform:translateY(-3px)}
 .tc-hit{position:absolute;inset:0;z-index:5}
 .tc-prev{height:250px;overflow:hidden;border-bottom:1px solid #2a2f3a}
-.tc-scale{width:1300px;transform:scale(.246);transform-origin:top left;pointer-events:none}
+.tc-scale{width:1300px;transform:scale(.246);transform-origin:top left;pointer-events:none;
+  color:var(--c-text);background:var(--c-bg)}
 .tc-meta{padding:12px 14px 15px}
 .tc-meta b{font-size:14px;display:block;margin-bottom:4px}
 .tc-meta small{color:#98a2b3;font-size:11.5px;line-height:1.65;display:block}
@@ -1395,6 +1401,82 @@ body{margin:0;background:#0d1016;padding:14px;
 .tc-scale .pinsec{height:auto!important}
 .tc-scale .pin-in{position:static;height:520px}
 `;
+
+/* ================================================================
+   配色の一覧
+   いまのページの上から2〜3ブロックを、各パレットの色で描いて見比べる。
+   ================================================================ */
+const PAL_GAL_CSS = `
+body{margin:0;background:#0d1016;padding:14px;
+  font-family:"Helvetica Neue",Arial,"Hiragino Sans",Meiryo,sans-serif}
+.pg{display:grid;grid-template-columns:repeat(auto-fill,minmax(268px,1fr));gap:14px}
+.pc{display:block;width:100%;padding:0;cursor:pointer;color:#e7ebf0;font:inherit;position:relative;
+  background:#171a21;border:1px solid #2a2f3a;border-radius:12px;overflow:hidden;
+  transition:border-color .15s,transform .15s}
+.pc:hover{border-color:#4c8dff;transform:translateY(-3px)}
+.pc.on{border-color:#4c8dff;box-shadow:0 0 0 1px #4c8dff inset}
+.pc-hit{position:absolute;inset:0;z-index:5}
+.pc-prev{height:208px;overflow:hidden;border-bottom:1px solid #2a2f3a}
+.pc-scale{width:1300px;transform:scale(.206);transform-origin:top left;pointer-events:none;
+  color:var(--c-text);background:var(--c-bg)}
+.pc-meta{padding:11px 13px 14px}
+.pc-meta b{font-size:13px;display:block;margin-bottom:3px}
+.pc-meta small{color:#98a2b3;font-size:11px;line-height:1.6;display:block}
+.pc-sw{display:flex;gap:4px;margin-top:9px}
+.pc-sw i{width:15px;height:15px;border-radius:4px;border:1px solid rgba(255,255,255,.18)}
+.pc-scale [data-ta] .ch,.pc-scale .rv{opacity:1!important;transform:none!important}
+.pc-scale .pinsec{height:auto!important}
+.pc-scale .pin-in{position:static;height:460px}
+.pc-scale .sl{position:static;transform:none!important;height:auto;padding:40px}
+.pc-scale .sl-stage{position:static;transform:none!important}
+`;
+
+function currentPaletteKey() {
+  const t = state.theme;
+  const hit = PALETTES.find((p) => p.c.primary.toLowerCase() === String(t.primary).toLowerCase()
+                                && p.c.bg.toLowerCase() === String(t.bg).toLowerCase());
+  return hit ? hit.name : '';
+}
+
+function renderPalGrid() {
+  /* いまのページの上のほうを、そのまま色だけ変えて見せる */
+  const sample = state.blocks.slice(0, 3)
+    .map((b) => BLOCKS[b.type].render(b.props)).join('');
+  const cur = currentPaletteKey();
+
+  const cards = PALETTES.map((pal, i) => `<div class="pc${pal.name === cur ? ' on' : ''}" data-pal="${i}" role="button" tabindex="0">
+      <span class="pc-hit"></span>
+      <div class="pc-prev" style="background:${pal.c.bg}">
+        <div class="pc-scale ${esc(bodyClass())}" style="${themeVars(state.theme, pal.c)}">${sample}</div>
+      </div>
+      <div class="pc-meta"><b>${esc(pal.name)}</b><small>${esc(pal.desc)}</small>
+        <span class="pc-sw">${[pal.c.primary, pal.c.accent, pal.c.bg, pal.c.surface, pal.c.text]
+          .map((c) => `<i style="background:${c}"></i>`).join('')}</span>
+      </div>
+    </div>`).join('');
+
+  const f = $('#palFrame');
+  f.srcdoc = `<!DOCTYPE html><html lang="ja"><head><meta charset="utf-8">
+<style>${SITE_CSS}\n${PAL_GAL_CSS}</style></head>
+<body><div class="pg">${cards}</div></body></html>`;
+  f.addEventListener('load', () => {
+    f.contentDocument.addEventListener('click', (e) => {
+      const i = e.target.closest('.pc')?.dataset.pal;
+      if (i != null) applyPalette(+i);
+    });
+  }, { once: true });
+}
+
+function applyPalette(i) {
+  const pal = PALETTES[i];
+  if (!pal) return;
+  Object.assign(state.theme, pal.c);   // 色だけ差し替え、丸み・幅・フォントは残す
+  closeModal('#palModal');
+  renderDesign(); renderPreview(true); save();
+  flash(`配色を「${pal.name}」にしました`);
+}
+
+$('#palClose').addEventListener('click', () => closeModal('#palModal'));
 
 function renderTplGrid() {
   const cards = Object.entries(TEMPLATES).map(([k, t]) => {

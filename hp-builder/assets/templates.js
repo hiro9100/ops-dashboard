@@ -11,6 +11,69 @@ const FONTS = [
 
 const fontStack = (key) => (FONTS.find((f) => f[0] === key) || FONTS[0])[2];
 
+/* ============================================================
+   配色パレット
+   構成はそのままに、色だけ差し替えるためのもの。
+   角の丸み・幅・フォントは今の設定を引き継ぐ。
+   ============================================================ */
+const PALETTES = [
+  { name: '白と黒に赤', desc: '硬派なコーポレート・採用',
+    c: { primary:'#e0001b', accent:'#111111', bg:'#ffffff', surface:'#f4f4f4',
+         text:'#111111', muted:'#6b6b6b', border:'#d8d8d8', dark:'#111111' } },
+
+  { name: 'トマトと深緑', desc: '暗い青緑にテラコッタ。食・工房',
+    c: { primary:'#c94324', accent:'#d0683e', bg:'#1b2d33', surface:'#254447',
+         text:'#f2ebe4', muted:'#a3b1ae', border:'#43574b', dark:'#122127' } },
+
+  { name: '水中の青', desc: '深い青。展示・写真・静かなブランド',
+    c: { primary:'#486f76', accent:'#244b6d', bg:'#092e3e', surface:'#122931',
+         text:'#e6eef0', muted:'#8fa6ac', border:'#1e3d48', dark:'#061f2a' } },
+
+  { name: '濃紺と黄', desc: '製品・イベント。強い訴求',
+    c: { primary:'#ffd400', accent:'#4f7cff', bg:'#0b1020', surface:'#141b30',
+         text:'#eef2ff', muted:'#93a0c4', border:'#25304e', dark:'#05070f' } },
+
+  { name: '生成りと墨', desc: '和・工芸・ブランド',
+    c: { primary:'#a8412c', accent:'#8a7f6d', bg:'#faf7f2', surface:'#f2ece2',
+         text:'#1c1a17', muted:'#6d6459', border:'#e0d7c8', dark:'#1c1a17' } },
+
+  { name: '青と橙', desc: '会社・士業。清潔で読みやすい',
+    c: { primary:'#2563eb', accent:'#f59e0b', bg:'#ffffff', surface:'#f5f8fc',
+         text:'#0f172a', muted:'#64748b', border:'#e3e9f0', dark:'#0f172a' } },
+
+  { name: 'コーヒーとミルク', desc: 'カフェ・小さなお店',
+    c: { primary:'#b4693b', accent:'#5c7a5c', bg:'#fffdfa', surface:'#f7f0e6',
+         text:'#3a2f26', muted:'#7d6d5f', border:'#e8ddcf', dark:'#3a2f26' } },
+
+  { name: '黒とシアン', desc: 'クリエイター・テック',
+    c: { primary:'#22d3ee', accent:'#f472b6', bg:'#0b0f14', surface:'#12181f',
+         text:'#e8edf2', muted:'#93a1b1', border:'#212b36', dark:'#05080b' } },
+
+  { name: '墨と金', desc: '和モダン・高級感',
+    c: { primary:'#c9a227', accent:'#e8d9a8', bg:'#0d0d0f', surface:'#16161a',
+         text:'#f2efe6', muted:'#9a978d', border:'#2a2a30', dark:'#08080a' } },
+
+  { name: '淡い緑', desc: 'クリニック・サロン。安心感',
+    c: { primary:'#2f9e8f', accent:'#88ccbf', bg:'#ffffff', surface:'#f1f8f6',
+         text:'#22352f', muted:'#6c817a', border:'#dcece7', dark:'#22352f' } },
+
+  { name: '白と藍', desc: '和・涼やか。旅館・工芸',
+    c: { primary:'#1f3f6e', accent:'#7c9cc4', bg:'#fbfbfa', surface:'#eef1f5',
+         text:'#16223a', muted:'#5f6d84', border:'#dde3ea', dark:'#16223a' } },
+
+  { name: '灰とライム', desc: 'SaaS・スタートアップ',
+    c: { primary:'#84cc16', accent:'#3f6212', bg:'#fafaf9', surface:'#f2f2f0',
+         text:'#1c1c1a', muted:'#6b6b66', border:'#e2e2de', dark:'#1c1c1a' } },
+
+  { name: '桜とクリーム', desc: 'サロン・スクール。やわらかい',
+    c: { primary:'#d4708a', accent:'#e8b4a0', bg:'#fffbf9', surface:'#fdf1ee',
+         text:'#3b2a2e', muted:'#8a7175', border:'#f2ddd8', dark:'#3b2a2e' } },
+
+  { name: '深紫と藤', desc: '美容・ナイト・音楽',
+    c: { primary:'#a78bfa', accent:'#f0abfc', bg:'#12101c', surface:'#1c182b',
+         text:'#eee9f7', muted:'#9d95b5', border:'#2e2842', dark:'#0a0812' } },
+];
+
 const TEMPLATES = {
   /* ============ 採用・コーポレート（白黒＋赤） ============ */
   recruit: {
