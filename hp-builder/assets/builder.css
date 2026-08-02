@@ -356,12 +356,18 @@ input,select,textarea{font:inherit}
 .cat-bar button:hover{color:var(--tx);border-color:#3a4150}
 .cat-bar button.on{background:var(--pri);border-color:var(--pri);color:#fff}
 .gal-wrap{
-  flex:1;min-height:0;border:1px solid var(--line);border-radius:10px;
-  overflow:hidden;background:#0d1016
+  /* 高さは枠じたいが持つ。中の iframe は場所取りをしないので
+     （縮める都合で浮かせている）、枠が 0 に潰れないようにする。 */
+  flex:1;min-height:56vh;border:1px solid var(--line);border-radius:10px;
+  overflow:hidden;background:#0d1016;
+  /* 見本の iframe は広い幅で描いてから縮めるので、置き場所の基準が要る。
+     縮めても場所取りは元の大きさのままなので、浮かせないと
+     上の行（積み上がりの帯など）が押しつぶされる。 */
+  position:relative
 }
-.gal-wrap iframe{width:100%;height:100%;min-height:56vh;border:0;display:block}
+.gal-wrap iframe{width:100%;height:100%;border:0;display:block}
 @media(max-width:820px){
-  .gal-wrap iframe{min-height:52vh}
+  .gal-wrap{min-height:52vh}
   .modal-box.wide{max-width:100%}
 }
 

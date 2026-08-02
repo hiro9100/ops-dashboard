@@ -363,12 +363,18 @@ input,select,textarea{font:inherit}
 .cat-bar button:hover{color:var(--tx);border-color:#3a4150}
 .cat-bar button.on{background:var(--pri);border-color:var(--pri);color:#fff}
 .gal-wrap{
-  flex:1;min-height:0;border:1px solid var(--line);border-radius:10px;
-  overflow:hidden;background:#0d1016
+  /* 高さは枠じたいが持つ。中の iframe は場所取りをしないので
+     （縮める都合で浮かせている）、枠が 0 に潰れないようにする。 */
+  flex:1;min-height:56vh;border:1px solid var(--line);border-radius:10px;
+  overflow:hidden;background:#0d1016;
+  /* 見本の iframe は広い幅で描いてから縮めるので、置き場所の基準が要る。
+     縮めても場所取りは元の大きさのままなので、浮かせないと
+     上の行（積み上がりの帯など）が押しつぶされる。 */
+  position:relative
 }
-.gal-wrap iframe{width:100%;height:100%;min-height:56vh;border:0;display:block}
+.gal-wrap iframe{width:100%;height:100%;border:0;display:block}
 @media(max-width:820px){
-  .gal-wrap iframe{min-height:52vh}
+  .gal-wrap{min-height:52vh}
   .modal-box.wide{max-width:100%}
 }
 
@@ -1658,7 +1664,10 @@ p:last-child{margin-bottom:0}
 .tl-item p{margin:0;color:var(--c-muted);font-size:14px}
 
 /* ---------- 円形マスクで切り替え ---------- */
-.clip-box{position:relative;height:100vh;overflow:hidden}
+/* width が要る。親の .pin-in は place-items:center なので、
+   指定しないと中身なり（＝中は全部 position:absolute なので 0）に潰れ、
+   まっさらな帯だけが出る。 */
+.clip-box{position:relative;width:100%;height:100vh;overflow:hidden}
 .clip-side{position:absolute;inset:0;display:grid;place-items:center;text-align:center;padding:0 24px}
 .clip-a{background:var(--c-surface)}
 .clip-b{background:linear-gradient(140deg,var(--c-primary),var(--c-accent));color:#fff;
@@ -5118,6 +5127,12 @@ const PUBLISH = {
    同じ features でも、アイコン3列と ( 01 ) 形式では別の型として並べる。
    テンプレートが「1ページまるごと」なのに対して、こちらは「1段ずつ」。
 
+   名前は「使い道」ではなく「かたち」で付ける。
+   「よくある質問」ではなく「押すと開く一覧」、
+   「会社紹介」ではなく「写真 左 ／ 文章 右」。
+   使い道は人によって違うが、かたちは見たままなので迷わない。
+   何に使えるかは about に添える。
+
    見本は BLOCKS[type].render() で実物を描くので、
    ここに書いた差分がそのまま見た目に出る。
    ================================================================ */
@@ -5125,42 +5140,42 @@ const PUBLISH = {
 /* ---------------- ヒーロー（1段目） ---------------- */
 const HERO_PRESETS = [
   { key: 'center', type: 'hero', label: '中央ぞろえ',
-    about: 'いちばん素直な型。文章が主役のとき。',
+    about: 'いちばん素直な形。文章が主役のとき。',
     props: { layout: 'center' } },
 
   { key: 'left', type: 'hero', label: '左ぞろえ',
     about: '読み出しが速い。文章が長めのときに。',
     props: { layout: 'left' } },
 
-  { key: 'split', type: 'hero', label: '左右に画像',
+  { key: 'split', type: 'hero', label: '文章 左 ／ 写真 右',
     about: '文章と写真を同じ重さで見せる。',
     props: { layout: 'split' } },
 
-  { key: 'cover', type: 'hero', label: '写真いっぱい',
-    about: '写真の力で見せる。文字は写真の上に重なる。',
+  { key: 'cover', type: 'hero', label: '写真いっぱい・文字を重ねる',
+    about: '写真の力で見せる。文字は写真の上に乗る。',
     props: { layout: 'cover' } },
 
-  { key: 'cover-glass', type: 'hero', label: '写真＋すりガラス',
+  { key: 'cover-glass', type: 'hero', label: '写真いっぱい＋すりガラスの円',
     about: 'ポインタに追いてガラスの円が動く。指の環境では自動で止まる。',
     props: { layout: 'cover', deco: 'glass', decoStrength: 70 } },
 
-  { key: 'center-clouds', type: 'hero', label: 'ふわふわ雲',
+  { key: 'center-clouds', type: 'hero', label: '中央ぞろえ＋ふわふわ雲',
     about: 'やわらかい色のかたまりがゆっくり漂う。',
     props: { layout: 'center', deco: 'clouds', decoStrength: 60 } },
 
-  { key: 'center-aurora', type: 'hero', label: 'オーロラ',
+  { key: 'center-aurora', type: 'hero', label: '中央ぞろえ＋オーロラ',
     about: '背後で光の帯がゆっくり流れる。暗い配色と相性がいい。',
     props: { layout: 'center', deco: 'aurora', decoStrength: 65 } },
 
-  { key: 'center-dust', type: 'hero', label: '光の粒',
+  { key: 'center-dust', type: 'hero', label: '中央ぞろえ＋光の粒',
     about: '細かい粒がゆっくり昇る。静かに動かしたいとき。',
     props: { layout: 'center', deco: 'dust', decoStrength: 55 } },
 
-  { key: 'cover-cursor', type: 'hero', label: '写真＋追従する丸',
+  { key: 'cover-cursor', type: 'hero', label: '写真いっぱい＋追従する丸',
     about: 'ポインタを追う丸の中だけ、文字が反転して見える。',
     props: { layout: 'cover', deco: 'cursor', decoStrength: 60, decoLabel: 'SCROLL' } },
 
-  { key: 'scroll-zoomout', type: 'hero', label: 'スクロールで写真が縮む',
+  { key: 'scroll-zoomout', type: 'hero', label: '写真いっぱい → 縮んで枠に収まる',
     about: '全画面の写真が、スクロールにつれて枠の中に収まっていく。',
     props: { layout: 'cover', scroll: 'zoomout', scrollLen: 200 } },
 
@@ -5168,96 +5183,130 @@ const HERO_PRESETS = [
     about: '写真がゆっくり、文字が速く動いて奥行きが出る。',
     props: { layout: 'cover', scroll: 'parallax', scrollLen: 200 } },
 
-  { key: 'scroll-curtain', type: 'hero', label: '幕が上下に開く',
-    about: 'スクロールに合わせて上下の幕が開き、写真が現れる。',
+  { key: 'scroll-curtain', type: 'hero', label: '上下の幕が開いて写真が出る',
+    about: 'スクロールに合わせて幕が開く。',
     props: { layout: 'cover', scroll: 'curtain', scrollLen: 200 } },
 
   { key: 'scroll-maskzoom', type: 'hero', label: '文字の中から写真が広がる',
     about: '文字の内側から写真が広がって全画面になる。いちばん派手。',
     props: { layout: 'cover', scroll: 'maskzoom', scrollLen: 240 } },
 
-  { key: 'collage', type: 'collage', label: 'コラージュ（縦書き）',
+  { key: 'collage', type: 'collage', label: '写真を敷き詰める＋縦書きの帯',
     about: '敷き詰めた写真に、斜めの写真と縦書きの帯を重ねる。',
     props: {} },
 ];
 
-/* ---------------- 2段目から下 ---------------- */
+/* ---------------- 2段目から下 ----------------
+
+   group は「かたち」で分ける。使い道（飲食店向け・サロン向け）では分けない。
+   同じ「押すと開く一覧」を、質問にも料金の内訳にも使う人がいる。 */
+const SECTION_GROUPS = [
+  ['all', 'すべて'],
+  ['写真', '写真'],
+  ['カード', '横に並べる'],
+  ['一覧', '縦に並べる'],
+  ['文章', '文章・帯'],
+  ['その他', 'その他'],
+];
+
 const SECTION_PRESETS = [
-  /* --- 基本 --- */
-  { key: 'features-icon', type: 'features', label: '特徴（アイコン3列）',
-    about: 'サービスの強みを3つ並べる、いちばん使う型。',
-    props: { style: 'icon', cols: 'c3' } },
-
-  { key: 'features-num', type: 'features', label: '特徴（番号つき・手順）',
-    about: '順番に意味があるとき。ご利用の流れなどに。',
-    props: { style: 'num', cols: 'c3' } },
-
-  { key: 'features-paren', type: 'features', label: '特徴（( 01 ) 形式・2列）',
-    about: '番号を控えめに置く型。落ち着いて見える。',
-    props: { style: 'paren', cols: 'c2' } },
-
-  { key: 'features-image', type: 'features', label: '特徴（画像つき）',
-    about: '写真で見せたいとき。3つの事例紹介などに。',
-    props: { style: 'image', cols: 'c3' } },
-
-  { key: 'about-left', type: 'about', label: '紹介（画像が左）',
-    about: '写真1枚と文章を並べる。会社紹介や店舗紹介に。',
+  /* ============ 写真 ============ */
+  { key: 'about-left', type: 'about', group: '写真', label: '写真 左 ／ 文章 右',
+    about: '写真1枚に説明を添える。店や会社の紹介に。',
     props: { reverse: false } },
 
-  { key: 'about-right', type: 'about', label: '紹介（画像が右）',
-    about: '同じ型の左右ちがい。続けて使うと交互になって流れが出る。',
+  { key: 'about-right', type: 'about', group: '写真', label: '写真 右 ／ 文章 左',
+    about: '左右ちがい。上と続けて使うと交互になって流れが出る。',
     props: { reverse: true } },
 
-  { key: 'gallery', type: 'gallery', label: 'ギャラリー', about: '写真を並べて見せる。', props: {} },
-  { key: 'menu', type: 'menu', label: 'お品書き（価格表）',
-    about: '品名と値段を並べる。飲食店やサロンに。', props: {} },
-  { key: 'floors', type: 'floors', label: 'フロアガイド',
-    about: '階ごとの案内。複合施設や商業ビルに。', props: {} },
-  { key: 'news', type: 'news', label: 'お知らせ・イベント',
-    about: '日付つきの一覧。更新して使う欄。', props: {} },
-  { key: 'pricing', type: 'pricing', label: '料金プラン',
-    about: '3つ並べて真ん中を目立たせる型。', props: { cols: 'c3' } },
-  { key: 'faq', type: 'faq', label: 'よくある質問',
-    about: '押すと開く。問い合わせを減らしたいとき。', props: {} },
-  { key: 'cta', type: 'cta', label: 'CTA（行動を促す帯）',
-    about: '色を敷いて、次にしてほしいことを1つだけ置く。', props: { bg: 'primary' } },
-  { key: 'contact', type: 'contact', label: 'お問い合わせ',
-    about: '入力欄と送信ボタン。送信先は編集画面で設定する。', props: {} },
-  { key: 'rich', type: 'rich', label: '自由テキスト',
-    about: '決まった型に収まらない文章を置く欄。', props: {} },
-  { key: 'slotstats', type: 'slotstats', label: '数字カウンター',
-    about: '画面に入ると数字が回って止まる。実績を出すとき。', props: { cols: 'c3' } },
+  { key: 'gallery', type: 'gallery', group: '写真', label: '写真を格子に並べる',
+    about: '同じ大きさの枠に敷き詰める。ギャラリー。', props: {} },
 
-  /* --- スクロール連動 --- */
-  { key: 'hscroll', type: 'hscroll', label: '横に流れるギャラリー',
+  { key: 'hscroll', type: 'hscroll', group: '写真', label: '写真を横一列（横に流れる）',
     about: '縦に読むと横に流れる。作品や事例を並べるとき。', props: {} },
-  { key: 'stackcards', type: 'stackcards', label: '積み重なるカード',
-    about: 'カードが手前に重なっていく。話を順に見せるとき。', props: {} },
-  { key: 'timeline', type: 'timeline', label: 'タイムライン',
+
+  { key: 'collage-mid', type: 'collage', group: '写真', label: '写真を敷き詰めた帯',
+    about: '大小の写真を隙間なく敷く。途中に挟んでも効く。', props: {} },
+
+  { key: 'clipreveal', type: 'clipreveal', group: '写真', label: '写真が円で切り替わる',
+    about: '円が広がって次の写真に入れ替わる。', props: {} },
+
+  /* ============ 横に並べる（カード） ============ */
+  { key: 'features-icon', type: 'features', group: 'カード', label: 'カード3つ（絵柄つき）',
+    about: 'いちばん使う形。伝えたいことを3つに分ける。',
+    props: { style: 'icon', cols: 'c3' } },
+
+  { key: 'features-num', type: 'features', group: 'カード', label: 'カード3つ（1・2・3）',
+    about: '番号が大きく出る。順番に意味があるとき。',
+    props: { style: 'num', cols: 'c3' } },
+
+  { key: 'features-paren', type: 'features', group: 'カード', label: 'カード2つ（( 01 ) つき）',
+    about: '番号を控えめに置く形。落ち着いて見える。',
+    props: { style: 'paren', cols: 'c2' } },
+
+  { key: 'features-image', type: 'features', group: 'カード', label: 'カード3つ（写真つき）',
+    about: '上に写真、下に説明。事例や商品を並べるとき。',
+    props: { style: 'image', cols: 'c3' } },
+
+  { key: 'pricing', type: 'pricing', group: 'カード', label: 'カード3つ（値段つき・中央を強調）',
+    about: '真ん中だけ目立たせる形。', props: { cols: 'c3' } },
+
+  { key: 'stackcards', type: 'stackcards', group: 'カード', label: 'カードが重なっていく',
+    about: 'スクロールで手前に積み上がる。順に見せたいとき。', props: {} },
+
+  { key: 'carousel3d', type: 'carousel3d', group: 'カード', label: 'カードが円をえがいてまわる',
+    about: '奥行きのある並び。写真が多いとき。', props: {} },
+
+  /* ============ 縦に並べる（一覧） ============ */
+  { key: 'menu', type: 'menu', group: '一覧', label: '名前と値段の一覧',
+    about: '左に品名、右に値段。お品書き・メニュー表に。', props: {} },
+
+  { key: 'news', type: 'news', group: '一覧', label: '日付つきの一覧',
+    about: '日付と見出しが縦に並ぶ。お知らせや予定に。', props: {} },
+
+  { key: 'faq', type: 'faq', group: '一覧', label: '押すと開く一覧',
+    about: '見出しだけ並べて、押すと答えが出る。長い説明をたたむとき。', props: {} },
+
+  { key: 'floors', type: 'floors', group: '一覧', label: '段ごとの一覧（フロア案内）',
+    about: '階数と内容を縦に並べる。', props: {} },
+
+  { key: 'timeline', type: 'timeline', group: '一覧', label: '縦線でつながる一覧',
     about: '線が伸びながら項目が現れる。沿革や流れに。', props: {} },
-  { key: 'clipreveal', type: 'clipreveal', label: '円形マスクで切り替え',
-    about: '円が広がって次の画面に入れ替わる。', props: {} },
-  { key: 'slides', type: 'slides', label: 'スライドページ',
-    about: '1画面ずつめくる。資料のように見せるとき。', props: {} },
 
-  /* --- 3D・図解 --- */
-  { key: 'product3d', type: 'product3d', label: '3D製品ビュー',
-    about: 'スクロールで製品がまわる。物を売るとき。', props: {} },
-  { key: 'exploded', type: 'exploded', label: '分解図が組み上がる',
-    about: 'ばらけた層がスクロールで重なって1つになる。', props: {} },
-  { key: 'carousel3d', type: 'carousel3d', label: '3Dカルーセル',
-    about: '円をえがいて並んだ面がまわる。', props: {} },
-  { key: 'svgdraw', type: 'svgdraw', label: '線が引かれるグラフ',
-    about: '折れ線がその場で描かれる。数字の変化を見せるとき。', props: {} },
+  { key: 'slotstats', type: 'slotstats', group: '一覧', label: '大きな数字を3つ',
+    about: '画面に入ると数字が回って止まる。実績を出すとき。',
+    props: { cols: 'c3' } },
 
-  /* --- 演出 --- */
-  { key: 'marquee', type: 'marquee', label: '流れる文字',
-    about: '大きな文字が横に流れ続ける帯。区切りに置く。',
+  { key: 'svgdraw', type: 'svgdraw', group: '一覧', label: '折れ線グラフ',
+    about: '線がその場で描かれる。数字の変化を見せるとき。', props: {} },
+
+  /* ============ 文章・帯 ============ */
+  { key: 'rich', type: 'rich', group: '文章', label: '文章だけ',
+    about: '決まった形に収まらない文章を置く欄。', props: {} },
+
+  { key: 'shift', type: 'shift', group: '文章', label: '画面いっぱいに1行',
+    about: '大きな文字を1行だけ置いて、間を作る。', props: {} },
+
+  { key: 'marquee', type: 'marquee', group: '文章', label: '横に流れる大きな文字',
+    about: '文字が横に流れ続ける帯。区切りに置く。',
     props: { bg: 'primary' } },
-  { key: 'shift', type: 'shift', label: '全画面メッセージ',
-    about: '画面いっぱいに1行だけ置いて、間を作る。', props: {} },
-  { key: 'collage-mid', type: 'collage', label: 'コラージュ',
-    about: '写真を敷き詰めた帯。途中に挟んでも効く。', props: {} },
+
+  { key: 'cta', type: 'cta', group: '文章', label: '色を敷いた帯＋ボタン',
+    about: '次にしてほしいことを1つだけ置く。予約や電話に。',
+    props: { bg: 'primary' } },
+
+  /* ============ その他 ============ */
+  { key: 'contact', type: 'contact', group: 'その他', label: '入力フォーム',
+    about: '名前・連絡先・本文と送信ボタン。送信先はあとで設定する。', props: {} },
+
+  { key: 'slides', type: 'slides', group: 'その他', label: '1画面ずつめくる',
+    about: '資料のように、1枚ずつ切り替わる。', props: {} },
+
+  { key: 'product3d', type: 'product3d', group: 'その他', label: '立体の品物がまわる',
+    about: 'スクロールで向きが変わる。物を売るとき。', props: {} },
+
+  { key: 'exploded', type: 'exploded', group: 'その他', label: 'ばらけた層が組み上がる',
+    about: '重なって1つになる図。中身や工程を見せるとき。', props: {} },
 ];
 
 </script>
@@ -6393,39 +6442,100 @@ let addCat = 'all';
 
 /* サンプル用のCSS。スクロール連動のブロックは動かないので、
    代表的な瞬間で止めて見えるようにする。 */
-const GALLERY_CSS = `
-body{margin:0;background:#0d1016;padding:14px;
+/* 見本は、いつも「広い画面の並び」で描く。
+
+   見本の中身は生成サイトと同じCSSなので、メディアクエリが効く。
+   iframe を画面幅のまま置くと、スマホでは iframe 自体が狭いと判定されて、
+   「写真 左 ／ 文章 右」が縦積みで出てしまう。名前とかたちが食い違って、
+   かたちで選べなくなる。
+   そこで iframe を GAL_W の幅で描かせ、丸ごと縮めて枠に収める。
+   縮む分、カードの文字や余白は 1/縮尺 倍にして、画面上の見た目を保つ。 */
+const GAL_W = 1180;
+
+function galGeom(f) {
+  const wrap = f.parentElement;
+  const W = wrap.clientWidth || 900;
+  const H = wrap.clientHeight || 480;
+  return { W, H, gs: Math.min(1, W / GAL_W), cols: W < 520 ? 1 : W < 900 ? 2 : 3 };
+}
+
+/* iframe を広い幅で描かせて、枠のぶんだけ縮める */
+function sizeGalFrame(f, g) {
+  f.style.position = 'absolute';
+  f.style.top = '0';
+  f.style.left = '0';
+  f.style.width = `${GAL_W}px`;
+  f.style.minHeight = '0';
+  f.style.height = `${Math.round(g.H / g.gs)}px`;
+  f.style.transformOrigin = 'top left';
+  f.style.transform = `scale(${g.gs})`;
+}
+
+const galleryCSS = (g) => {
+  const u = (px) => Math.round(px / g.gs);   // 画面上で px ぶんに見える大きさ
+  return `
+body{margin:0;background:#0d1016;padding:${u(14)}px;
   font-family:"Helvetica Neue",Arial,"Hiragino Sans",Meiryo,sans-serif}
-.gg{display:grid;grid-template-columns:repeat(auto-fill,minmax(268px,1fr));gap:14px}
+.gg{display:grid;grid-template-columns:repeat(${g.cols},1fr);gap:${u(14)}px;
+  align-items:start}   /* 高さは各カードの中身なりに。そろえると下が空く */
 .gc{display:block;width:100%;padding:0;text-align:left;cursor:pointer;position:relative;
-  background:#171a21;border:1px solid #2a2f3a;border-radius:12px;overflow:hidden;
+  background:#171a21;border:${u(1)}px solid #2a2f3a;border-radius:${u(12)}px;overflow:hidden;
   transition:border-color .15s,transform .15s;color:#e7ebf0;font:inherit}
 .gc-hit{position:absolute;inset:0;z-index:5}
-.gc:hover{border-color:#4c8dff;transform:translateY(-3px)}
-.gc-prev{height:176px;overflow:hidden;position:relative;background:var(--c-bg);
-  border-bottom:1px solid #2a2f3a}
-.gc-scale{width:1180px;transform:scale(.226);transform-origin:top left;
+.gc:hover{border-color:#4c8dff;transform:translateY(-${u(3)}px)}
+/* 高さと中の縮尺は、下の script が実寸から決める。
+   ここに書くのは、その値が入るまでの見た目だけ */
+.gc-prev{height:${u(176)}px;overflow:hidden;position:relative;background:var(--c-bg);
+  border-bottom:${u(1)}px solid #2a2f3a}
+.gc-scale{width:${GAL_W}px;transform:scale(var(--s,1));transform-origin:top left;
   pointer-events:none;color:var(--c-text);background:var(--c-bg)}
-.gc-meta{padding:11px 13px 13px}
-.gc-meta b{font-size:13px;display:inline-block;margin-right:7px}
-.gc-meta i{font-style:normal;font-size:10px;font-weight:800;color:#9db4ff;
-  border:1px solid #33436b;border-radius:4px;padding:1px 6px;vertical-align:1px}
-.gc-meta small{display:block;color:#98a2b3;font-size:11px;line-height:1.6;margin-top:5px}
+.gc-meta{padding:${u(11)}px ${u(13)}px ${u(13)}px}
+.gc-meta b{font-size:${u(13)}px;display:inline-block;margin-right:${u(7)}px}
+.gc-meta i{font-style:normal;font-size:${u(10)}px;font-weight:800;color:#9db4ff;
+  border:${u(1)}px solid #33436b;border-radius:${u(4)}px;padding:${u(1)}px ${u(6)}px}
+.gc-meta small{display:block;color:#98a2b3;font-size:${u(11)}px;line-height:1.6;
+  margin-top:${u(5)}px}
 
 /* --- サンプルの中で、動く前提の見た目を止める --- */
 .gc-scale .pinsec{height:auto!important}
-.gc-scale .pin-in{position:static;height:640px}
+/* 画面いっぱい前提のブロックは、見本では低くする。
+   そのままだと上端しか写らず、真っ白なカードに見える（実際にそうなった） */
+.gc-scale .pin-in{position:static;height:360px}
 .gc-scale .stackcard{position:static;height:auto;min-height:150px}
 .gc-scale .stack{gap:14px}
-.gc-scale .clip-box{height:640px}
+.gc-scale .clip-box{height:360px}
 .gc-scale .clip-b{clip-path:circle(34% at 50% 50%)}
-.gc-scale .shift-pane{min-height:640px}
+/* 見本では手前の文字だけ出す。奥の文字も出すと、円の中で重なって読めない */
+.gc-scale .clip-b .in-txt{display:none}
+.gc-scale .shift-pane{min-height:360px}
 .gc-scale .tl-rail::after{transform:scaleY(.55)}
 .gc-scale .tl-item::before{border-color:var(--c-primary);background:var(--c-primary)}
 .gc-scale .hs-track{transform:translateX(-40px)}
 .gc-scale .sec{padding:44px 0}
 .gc-scale .slot{font-size:44px}
 .gc-scale [data-ta] .ch,.gc-scale .rv{opacity:1!important;transform:none!important}
+`;
+};
+
+/* 見本の枠に、1ブロックまるごとを収める。
+   カードの幅は列数で変わるので、実際に測ってから中の縮尺を決める。
+   縦に長すぎるブロック（全画面のものなど）は上限で切る。 */
+const fitJS = (g) => `
+(function () {
+  var MAXH = ${Math.round(240 / g.gs)};
+  function fit() {
+    document.querySelectorAll('.gc-prev').forEach(function (box) {
+      var inner = box.firstElementChild;
+      if (!inner) return;
+      var s = box.clientWidth / ${GAL_W};
+      inner.style.setProperty('--s', s);
+      box.style.height = Math.min(Math.round(inner.offsetHeight * s), MAXH) + 'px';
+    });
+  }
+  fit();
+  /* 写真が後から入ると高さが変わる。読み終わりで測り直す */
+  addEventListener('load', fit);
+})();
 `;
 
 function galleryTypes() {
@@ -6455,10 +6565,12 @@ function renderGallery() {
     </div>`;
   }).join('');
 
+  const g = galGeom(f);
+  sizeGalFrame(f, g);
   f.srcdoc = `<!DOCTYPE html><html lang="ja"><head><meta charset="utf-8">
-<style>${themeCSS(state.theme)}\n${SITE_CSS}\n${GALLERY_CSS}</style></head>
+<style>${themeCSS(state.theme)}\n${SITE_CSS}\n${galleryCSS(g)}</style></head>
 <body class="${esc(bodyClass())}"><div class="gg">${cards}</div>
-<script>${SITE_JS}<\/script></body></html>`;
+<script>${SITE_JS}<\/script><script>${fitJS(g)}<\/script></body></html>`;
 
   f.addEventListener('load', () => {
     const gdoc = f.contentDocument;
@@ -7524,6 +7636,11 @@ $('#ezToTpl').addEventListener('click', () => {
    ================================================================ */
 let bldBefore = null;   // 「やめる」で戻すための、開始前の状態
 let bldCat = 'all';
+/* 積んだ順に、選んだ型の名前を覚えておく。
+   ブロックの種別名（「特徴」「紹介」）ではなく、選んだときに見えていた
+   名前（「カード3つ（絵柄つき）」）を上の帯に出すため。
+   保存する中身には入れない（作るときだけの覚書）。 */
+const bldNames = new Map();
 
 /* 型の見本は実物を描く。中身は BLOCKS の初期値そのままなので、
    ここで組んだ差分だけが型ごとの違いになる。 */
@@ -7537,15 +7654,16 @@ const bldStep = () => (state && state.blocks.some((b) => b.type === 'hero' || b.
 
 function bldList() {
   if (bldStep() === 'hero') return HERO_PRESETS;
-  return SECTION_PRESETS.filter((p) =>
-    bldCat === 'all' || catOf(BLOCKS[p.type]) === bldCat);
+  /* 分けかたは「かたち」。使い道（飲食店向けなど）では分けない */
+  return SECTION_PRESETS.filter((p) => bldCat === 'all' || p.group === bldCat);
 }
 
 function renderBldStrip() {
   /* header と footer は最初から入っていて選ぶものではないので出さない */
   const picked = state.blocks.filter((b) => b.type !== 'header' && b.type !== 'footer');
   $('#bldStrip').innerHTML = picked
-    .map((b, i) => `<span><i>${i + 1}</i>${esc(BLOCKS[b.type].label)}</span>`).join('');
+    .map((b, i) => `<span><i>${i + 1}</i>${esc(bldNames.get(b.id) || BLOCKS[b.type].label)}</span>`)
+    .join('');
   $('#bldStrip').scrollLeft = 99999;
   $('#bldBack').disabled = picked.length === 0;
   $('#bldDone').disabled = picked.length === 0;
@@ -7553,17 +7671,16 @@ function renderBldStrip() {
 
 function renderBldHead() {
   const hero = bldStep() === 'hero';
-  const n = state.blocks.filter((b) => b.type !== 'header' && b.type !== 'footer').length;
-  $('#bldTitle').textContent = hero ? '① ヒーローを選ぶ' : `${n + 1}段目を選ぶ`;
+  $('#bldTitle').textContent = hero ? '① ヒーローを選ぶ' : '② ブロックを選ぶ';
   /* スマホでは説明が長いほど見本が見えなくなるので、要点だけにする */
   $('#bldSub').textContent = hero
     ? 'いちばん上に来る、顔になる部分です。'
-    : '選ぶと下に積まれます。終わったら「これで完成」。';
+    : '選ぶと下に積まれます。順番はあとから変えられます。';
   $('#bldCatBar').hidden = hero;
 }
 
 function renderBldCats() {
-  $('#bldCatBar').innerHTML = CATS.map(([k, l]) =>
+  $('#bldCatBar').innerHTML = SECTION_GROUPS.map(([k, l]) =>
     `<button data-cat="${k}" class="${bldCat === k ? 'on' : ''}">${l}</button>`).join('');
 }
 
@@ -7576,10 +7693,12 @@ function renderBldGallery() {
         <small>${esc(p.about)}</small></div>
     </div>`).join('');
 
+  const g = galGeom(f);
+  sizeGalFrame(f, g);
   f.srcdoc = `<!DOCTYPE html><html lang="ja"><head><meta charset="utf-8">
-<style>${themeCSS(state.theme)}\n${SITE_CSS}\n${GALLERY_CSS}</style></head>
+<style>${themeCSS(state.theme)}\n${SITE_CSS}\n${galleryCSS(g)}</style></head>
 <body class="${esc(bodyClass())}"><div class="gg">${cards}</div>
-<script>${SITE_JS}<\/script></body></html>`;
+<script>${SITE_JS}<\/script><script>${fitJS(g)}<\/script></body></html>`;
 
   /* srcdoc を差し替えるたびに load が来るので、毎回付け直す
      （once で1回だけにすると、2段目以降が反応しなくなる） */
@@ -7602,6 +7721,7 @@ function pickPreset(key) {
   const p = (bldStep() === 'hero' ? HERO_PRESETS : SECTION_PRESETS).find((x) => x.key === key);
   if (!p) return;
   const nb = makeBlock(p.type, p.props);
+  bldNames.set(nb.id, p.label);
   const fi = state.blocks.findIndex((b) => b.type === 'footer');
   state.blocks.splice(fi < 0 ? state.blocks.length : fi, 0, nb);
   selected = nb.id;
@@ -7615,6 +7735,7 @@ function bldUndo() {
   const last = picked[picked.length - 1];
   if (!last) return;
   state.blocks = state.blocks.filter((b) => b.id !== last.id);
+  bldNames.delete(last.id);
   selected = state.blocks[0]?.id || null;
   selectedEl = null;
   refresh();
@@ -7624,6 +7745,7 @@ function bldUndo() {
 function openBuildFlow() {
   bldBefore = state ? clone(state) : null;
   bldCat = 'all';
+  bldNames.clear();
   state = buildCustomState();
   selected = state.blocks[0].id;
   selectedEl = null;

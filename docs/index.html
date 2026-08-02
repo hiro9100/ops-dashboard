@@ -997,7 +997,10 @@ p:last-child{margin-bottom:0}
 .tl-item p{margin:0;color:var(--c-muted);font-size:14px}
 
 /* ---------- 円形マスクで切り替え ---------- */
-.clip-box{position:relative;height:100vh;overflow:hidden}
+/* width が要る。親の .pin-in は place-items:center なので、
+   指定しないと中身なり（＝中は全部 position:absolute なので 0）に潰れ、
+   まっさらな帯だけが出る。 */
+.clip-box{position:relative;width:100%;height:100vh;overflow:hidden}
 .clip-side{position:absolute;inset:0;display:grid;place-items:center;text-align:center;padding:0 24px}
 .clip-a{background:var(--c-surface)}
 .clip-b{background:linear-gradient(140deg,var(--c-primary),var(--c-accent));color:#fff;

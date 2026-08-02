@@ -791,39 +791,100 @@ let addCat = 'all';
 
 /* サンプル用のCSS。スクロール連動のブロックは動かないので、
    代表的な瞬間で止めて見えるようにする。 */
-const GALLERY_CSS = `
-body{margin:0;background:#0d1016;padding:14px;
+/* 見本は、いつも「広い画面の並び」で描く。
+
+   見本の中身は生成サイトと同じCSSなので、メディアクエリが効く。
+   iframe を画面幅のまま置くと、スマホでは iframe 自体が狭いと判定されて、
+   「写真 左 ／ 文章 右」が縦積みで出てしまう。名前とかたちが食い違って、
+   かたちで選べなくなる。
+   そこで iframe を GAL_W の幅で描かせ、丸ごと縮めて枠に収める。
+   縮む分、カードの文字や余白は 1/縮尺 倍にして、画面上の見た目を保つ。 */
+const GAL_W = 1180;
+
+function galGeom(f) {
+  const wrap = f.parentElement;
+  const W = wrap.clientWidth || 900;
+  const H = wrap.clientHeight || 480;
+  return { W, H, gs: Math.min(1, W / GAL_W), cols: W < 520 ? 1 : W < 900 ? 2 : 3 };
+}
+
+/* iframe を広い幅で描かせて、枠のぶんだけ縮める */
+function sizeGalFrame(f, g) {
+  f.style.position = 'absolute';
+  f.style.top = '0';
+  f.style.left = '0';
+  f.style.width = `${GAL_W}px`;
+  f.style.minHeight = '0';
+  f.style.height = `${Math.round(g.H / g.gs)}px`;
+  f.style.transformOrigin = 'top left';
+  f.style.transform = `scale(${g.gs})`;
+}
+
+const galleryCSS = (g) => {
+  const u = (px) => Math.round(px / g.gs);   // 画面上で px ぶんに見える大きさ
+  return `
+body{margin:0;background:#0d1016;padding:${u(14)}px;
   font-family:"Helvetica Neue",Arial,"Hiragino Sans",Meiryo,sans-serif}
-.gg{display:grid;grid-template-columns:repeat(auto-fill,minmax(268px,1fr));gap:14px}
+.gg{display:grid;grid-template-columns:repeat(${g.cols},1fr);gap:${u(14)}px;
+  align-items:start}   /* 高さは各カードの中身なりに。そろえると下が空く */
 .gc{display:block;width:100%;padding:0;text-align:left;cursor:pointer;position:relative;
-  background:#171a21;border:1px solid #2a2f3a;border-radius:12px;overflow:hidden;
+  background:#171a21;border:${u(1)}px solid #2a2f3a;border-radius:${u(12)}px;overflow:hidden;
   transition:border-color .15s,transform .15s;color:#e7ebf0;font:inherit}
 .gc-hit{position:absolute;inset:0;z-index:5}
-.gc:hover{border-color:#4c8dff;transform:translateY(-3px)}
-.gc-prev{height:176px;overflow:hidden;position:relative;background:var(--c-bg);
-  border-bottom:1px solid #2a2f3a}
-.gc-scale{width:1180px;transform:scale(.226);transform-origin:top left;
+.gc:hover{border-color:#4c8dff;transform:translateY(-${u(3)}px)}
+/* 高さと中の縮尺は、下の script が実寸から決める。
+   ここに書くのは、その値が入るまでの見た目だけ */
+.gc-prev{height:${u(176)}px;overflow:hidden;position:relative;background:var(--c-bg);
+  border-bottom:${u(1)}px solid #2a2f3a}
+.gc-scale{width:${GAL_W}px;transform:scale(var(--s,1));transform-origin:top left;
   pointer-events:none;color:var(--c-text);background:var(--c-bg)}
-.gc-meta{padding:11px 13px 13px}
-.gc-meta b{font-size:13px;display:inline-block;margin-right:7px}
-.gc-meta i{font-style:normal;font-size:10px;font-weight:800;color:#9db4ff;
-  border:1px solid #33436b;border-radius:4px;padding:1px 6px;vertical-align:1px}
-.gc-meta small{display:block;color:#98a2b3;font-size:11px;line-height:1.6;margin-top:5px}
+.gc-meta{padding:${u(11)}px ${u(13)}px ${u(13)}px}
+.gc-meta b{font-size:${u(13)}px;display:inline-block;margin-right:${u(7)}px}
+.gc-meta i{font-style:normal;font-size:${u(10)}px;font-weight:800;color:#9db4ff;
+  border:${u(1)}px solid #33436b;border-radius:${u(4)}px;padding:${u(1)}px ${u(6)}px}
+.gc-meta small{display:block;color:#98a2b3;font-size:${u(11)}px;line-height:1.6;
+  margin-top:${u(5)}px}
 
 /* --- サンプルの中で、動く前提の見た目を止める --- */
 .gc-scale .pinsec{height:auto!important}
-.gc-scale .pin-in{position:static;height:640px}
+/* 画面いっぱい前提のブロックは、見本では低くする。
+   そのままだと上端しか写らず、真っ白なカードに見える（実際にそうなった） */
+.gc-scale .pin-in{position:static;height:360px}
 .gc-scale .stackcard{position:static;height:auto;min-height:150px}
 .gc-scale .stack{gap:14px}
-.gc-scale .clip-box{height:640px}
+.gc-scale .clip-box{height:360px}
 .gc-scale .clip-b{clip-path:circle(34% at 50% 50%)}
-.gc-scale .shift-pane{min-height:640px}
+/* 見本では手前の文字だけ出す。奥の文字も出すと、円の中で重なって読めない */
+.gc-scale .clip-b .in-txt{display:none}
+.gc-scale .shift-pane{min-height:360px}
 .gc-scale .tl-rail::after{transform:scaleY(.55)}
 .gc-scale .tl-item::before{border-color:var(--c-primary);background:var(--c-primary)}
 .gc-scale .hs-track{transform:translateX(-40px)}
 .gc-scale .sec{padding:44px 0}
 .gc-scale .slot{font-size:44px}
 .gc-scale [data-ta] .ch,.gc-scale .rv{opacity:1!important;transform:none!important}
+`;
+};
+
+/* 見本の枠に、1ブロックまるごとを収める。
+   カードの幅は列数で変わるので、実際に測ってから中の縮尺を決める。
+   縦に長すぎるブロック（全画面のものなど）は上限で切る。 */
+const fitJS = (g) => `
+(function () {
+  var MAXH = ${Math.round(240 / g.gs)};
+  function fit() {
+    document.querySelectorAll('.gc-prev').forEach(function (box) {
+      var inner = box.firstElementChild;
+      if (!inner) return;
+      var s = box.clientWidth / ${GAL_W};
+      inner.style.setProperty('--s', s);
+      box.style.height = Math.min(Math.round(inner.offsetHeight * s), MAXH) + 'px';
+    });
+  }
+  fit();
+  /* 写真が後から入ると高さが変わる。読み終わりで測り直す */
+  addEventListener('load', fit);
+})();
 `;
 
 function galleryTypes() {
@@ -853,10 +914,12 @@ function renderGallery() {
     </div>`;
   }).join('');
 
+  const g = galGeom(f);
+  sizeGalFrame(f, g);
   f.srcdoc = `<!DOCTYPE html><html lang="ja"><head><meta charset="utf-8">
-<style>${themeCSS(state.theme)}\n${SITE_CSS}\n${GALLERY_CSS}</style></head>
+<style>${themeCSS(state.theme)}\n${SITE_CSS}\n${galleryCSS(g)}</style></head>
 <body class="${esc(bodyClass())}"><div class="gg">${cards}</div>
-<script>${SITE_JS}<\/script></body></html>`;
+<script>${SITE_JS}<\/script><script>${fitJS(g)}<\/script></body></html>`;
 
   f.addEventListener('load', () => {
     const gdoc = f.contentDocument;
@@ -1922,6 +1985,11 @@ $('#ezToTpl').addEventListener('click', () => {
    ================================================================ */
 let bldBefore = null;   // 「やめる」で戻すための、開始前の状態
 let bldCat = 'all';
+/* 積んだ順に、選んだ型の名前を覚えておく。
+   ブロックの種別名（「特徴」「紹介」）ではなく、選んだときに見えていた
+   名前（「カード3つ（絵柄つき）」）を上の帯に出すため。
+   保存する中身には入れない（作るときだけの覚書）。 */
+const bldNames = new Map();
 
 /* 型の見本は実物を描く。中身は BLOCKS の初期値そのままなので、
    ここで組んだ差分だけが型ごとの違いになる。 */
@@ -1935,15 +2003,16 @@ const bldStep = () => (state && state.blocks.some((b) => b.type === 'hero' || b.
 
 function bldList() {
   if (bldStep() === 'hero') return HERO_PRESETS;
-  return SECTION_PRESETS.filter((p) =>
-    bldCat === 'all' || catOf(BLOCKS[p.type]) === bldCat);
+  /* 分けかたは「かたち」。使い道（飲食店向けなど）では分けない */
+  return SECTION_PRESETS.filter((p) => bldCat === 'all' || p.group === bldCat);
 }
 
 function renderBldStrip() {
   /* header と footer は最初から入っていて選ぶものではないので出さない */
   const picked = state.blocks.filter((b) => b.type !== 'header' && b.type !== 'footer');
   $('#bldStrip').innerHTML = picked
-    .map((b, i) => `<span><i>${i + 1}</i>${esc(BLOCKS[b.type].label)}</span>`).join('');
+    .map((b, i) => `<span><i>${i + 1}</i>${esc(bldNames.get(b.id) || BLOCKS[b.type].label)}</span>`)
+    .join('');
   $('#bldStrip').scrollLeft = 99999;
   $('#bldBack').disabled = picked.length === 0;
   $('#bldDone').disabled = picked.length === 0;
@@ -1951,17 +2020,16 @@ function renderBldStrip() {
 
 function renderBldHead() {
   const hero = bldStep() === 'hero';
-  const n = state.blocks.filter((b) => b.type !== 'header' && b.type !== 'footer').length;
-  $('#bldTitle').textContent = hero ? '① ヒーローを選ぶ' : `${n + 1}段目を選ぶ`;
+  $('#bldTitle').textContent = hero ? '① ヒーローを選ぶ' : '② ブロックを選ぶ';
   /* スマホでは説明が長いほど見本が見えなくなるので、要点だけにする */
   $('#bldSub').textContent = hero
     ? 'いちばん上に来る、顔になる部分です。'
-    : '選ぶと下に積まれます。終わったら「これで完成」。';
+    : '選ぶと下に積まれます。順番はあとから変えられます。';
   $('#bldCatBar').hidden = hero;
 }
 
 function renderBldCats() {
-  $('#bldCatBar').innerHTML = CATS.map(([k, l]) =>
+  $('#bldCatBar').innerHTML = SECTION_GROUPS.map(([k, l]) =>
     `<button data-cat="${k}" class="${bldCat === k ? 'on' : ''}">${l}</button>`).join('');
 }
 
@@ -1974,10 +2042,12 @@ function renderBldGallery() {
         <small>${esc(p.about)}</small></div>
     </div>`).join('');
 
+  const g = galGeom(f);
+  sizeGalFrame(f, g);
   f.srcdoc = `<!DOCTYPE html><html lang="ja"><head><meta charset="utf-8">
-<style>${themeCSS(state.theme)}\n${SITE_CSS}\n${GALLERY_CSS}</style></head>
+<style>${themeCSS(state.theme)}\n${SITE_CSS}\n${galleryCSS(g)}</style></head>
 <body class="${esc(bodyClass())}"><div class="gg">${cards}</div>
-<script>${SITE_JS}<\/script></body></html>`;
+<script>${SITE_JS}<\/script><script>${fitJS(g)}<\/script></body></html>`;
 
   /* srcdoc を差し替えるたびに load が来るので、毎回付け直す
      （once で1回だけにすると、2段目以降が反応しなくなる） */
@@ -2000,6 +2070,7 @@ function pickPreset(key) {
   const p = (bldStep() === 'hero' ? HERO_PRESETS : SECTION_PRESETS).find((x) => x.key === key);
   if (!p) return;
   const nb = makeBlock(p.type, p.props);
+  bldNames.set(nb.id, p.label);
   const fi = state.blocks.findIndex((b) => b.type === 'footer');
   state.blocks.splice(fi < 0 ? state.blocks.length : fi, 0, nb);
   selected = nb.id;
@@ -2013,6 +2084,7 @@ function bldUndo() {
   const last = picked[picked.length - 1];
   if (!last) return;
   state.blocks = state.blocks.filter((b) => b.id !== last.id);
+  bldNames.delete(last.id);
   selected = state.blocks[0]?.id || null;
   selectedEl = null;
   refresh();
@@ -2022,6 +2094,7 @@ function bldUndo() {
 function openBuildFlow() {
   bldBefore = state ? clone(state) : null;
   bldCat = 'all';
+  bldNames.clear();
   state = buildCustomState();
   selected = state.blocks[0].id;
   selectedEl = null;

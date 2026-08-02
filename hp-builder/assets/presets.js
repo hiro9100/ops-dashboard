@@ -5,6 +5,12 @@
    同じ features でも、アイコン3列と ( 01 ) 形式では別の型として並べる。
    テンプレートが「1ページまるごと」なのに対して、こちらは「1段ずつ」。
 
+   名前は「使い道」ではなく「かたち」で付ける。
+   「よくある質問」ではなく「押すと開く一覧」、
+   「会社紹介」ではなく「写真 左 ／ 文章 右」。
+   使い道は人によって違うが、かたちは見たままなので迷わない。
+   何に使えるかは about に添える。
+
    見本は BLOCKS[type].render() で実物を描くので、
    ここに書いた差分がそのまま見た目に出る。
    ================================================================ */
@@ -12,42 +18,42 @@
 /* ---------------- ヒーロー（1段目） ---------------- */
 const HERO_PRESETS = [
   { key: 'center', type: 'hero', label: '中央ぞろえ',
-    about: 'いちばん素直な型。文章が主役のとき。',
+    about: 'いちばん素直な形。文章が主役のとき。',
     props: { layout: 'center' } },
 
   { key: 'left', type: 'hero', label: '左ぞろえ',
     about: '読み出しが速い。文章が長めのときに。',
     props: { layout: 'left' } },
 
-  { key: 'split', type: 'hero', label: '左右に画像',
+  { key: 'split', type: 'hero', label: '文章 左 ／ 写真 右',
     about: '文章と写真を同じ重さで見せる。',
     props: { layout: 'split' } },
 
-  { key: 'cover', type: 'hero', label: '写真いっぱい',
-    about: '写真の力で見せる。文字は写真の上に重なる。',
+  { key: 'cover', type: 'hero', label: '写真いっぱい・文字を重ねる',
+    about: '写真の力で見せる。文字は写真の上に乗る。',
     props: { layout: 'cover' } },
 
-  { key: 'cover-glass', type: 'hero', label: '写真＋すりガラス',
+  { key: 'cover-glass', type: 'hero', label: '写真いっぱい＋すりガラスの円',
     about: 'ポインタに追いてガラスの円が動く。指の環境では自動で止まる。',
     props: { layout: 'cover', deco: 'glass', decoStrength: 70 } },
 
-  { key: 'center-clouds', type: 'hero', label: 'ふわふわ雲',
+  { key: 'center-clouds', type: 'hero', label: '中央ぞろえ＋ふわふわ雲',
     about: 'やわらかい色のかたまりがゆっくり漂う。',
     props: { layout: 'center', deco: 'clouds', decoStrength: 60 } },
 
-  { key: 'center-aurora', type: 'hero', label: 'オーロラ',
+  { key: 'center-aurora', type: 'hero', label: '中央ぞろえ＋オーロラ',
     about: '背後で光の帯がゆっくり流れる。暗い配色と相性がいい。',
     props: { layout: 'center', deco: 'aurora', decoStrength: 65 } },
 
-  { key: 'center-dust', type: 'hero', label: '光の粒',
+  { key: 'center-dust', type: 'hero', label: '中央ぞろえ＋光の粒',
     about: '細かい粒がゆっくり昇る。静かに動かしたいとき。',
     props: { layout: 'center', deco: 'dust', decoStrength: 55 } },
 
-  { key: 'cover-cursor', type: 'hero', label: '写真＋追従する丸',
+  { key: 'cover-cursor', type: 'hero', label: '写真いっぱい＋追従する丸',
     about: 'ポインタを追う丸の中だけ、文字が反転して見える。',
     props: { layout: 'cover', deco: 'cursor', decoStrength: 60, decoLabel: 'SCROLL' } },
 
-  { key: 'scroll-zoomout', type: 'hero', label: 'スクロールで写真が縮む',
+  { key: 'scroll-zoomout', type: 'hero', label: '写真いっぱい → 縮んで枠に収まる',
     about: '全画面の写真が、スクロールにつれて枠の中に収まっていく。',
     props: { layout: 'cover', scroll: 'zoomout', scrollLen: 200 } },
 
@@ -55,94 +61,128 @@ const HERO_PRESETS = [
     about: '写真がゆっくり、文字が速く動いて奥行きが出る。',
     props: { layout: 'cover', scroll: 'parallax', scrollLen: 200 } },
 
-  { key: 'scroll-curtain', type: 'hero', label: '幕が上下に開く',
-    about: 'スクロールに合わせて上下の幕が開き、写真が現れる。',
+  { key: 'scroll-curtain', type: 'hero', label: '上下の幕が開いて写真が出る',
+    about: 'スクロールに合わせて幕が開く。',
     props: { layout: 'cover', scroll: 'curtain', scrollLen: 200 } },
 
   { key: 'scroll-maskzoom', type: 'hero', label: '文字の中から写真が広がる',
     about: '文字の内側から写真が広がって全画面になる。いちばん派手。',
     props: { layout: 'cover', scroll: 'maskzoom', scrollLen: 240 } },
 
-  { key: 'collage', type: 'collage', label: 'コラージュ（縦書き）',
+  { key: 'collage', type: 'collage', label: '写真を敷き詰める＋縦書きの帯',
     about: '敷き詰めた写真に、斜めの写真と縦書きの帯を重ねる。',
     props: {} },
 ];
 
-/* ---------------- 2段目から下 ---------------- */
+/* ---------------- 2段目から下 ----------------
+
+   group は「かたち」で分ける。使い道（飲食店向け・サロン向け）では分けない。
+   同じ「押すと開く一覧」を、質問にも料金の内訳にも使う人がいる。 */
+const SECTION_GROUPS = [
+  ['all', 'すべて'],
+  ['写真', '写真'],
+  ['カード', '横に並べる'],
+  ['一覧', '縦に並べる'],
+  ['文章', '文章・帯'],
+  ['その他', 'その他'],
+];
+
 const SECTION_PRESETS = [
-  /* --- 基本 --- */
-  { key: 'features-icon', type: 'features', label: '特徴（アイコン3列）',
-    about: 'サービスの強みを3つ並べる、いちばん使う型。',
-    props: { style: 'icon', cols: 'c3' } },
-
-  { key: 'features-num', type: 'features', label: '特徴（番号つき・手順）',
-    about: '順番に意味があるとき。ご利用の流れなどに。',
-    props: { style: 'num', cols: 'c3' } },
-
-  { key: 'features-paren', type: 'features', label: '特徴（( 01 ) 形式・2列）',
-    about: '番号を控えめに置く型。落ち着いて見える。',
-    props: { style: 'paren', cols: 'c2' } },
-
-  { key: 'features-image', type: 'features', label: '特徴（画像つき）',
-    about: '写真で見せたいとき。3つの事例紹介などに。',
-    props: { style: 'image', cols: 'c3' } },
-
-  { key: 'about-left', type: 'about', label: '紹介（画像が左）',
-    about: '写真1枚と文章を並べる。会社紹介や店舗紹介に。',
+  /* ============ 写真 ============ */
+  { key: 'about-left', type: 'about', group: '写真', label: '写真 左 ／ 文章 右',
+    about: '写真1枚に説明を添える。店や会社の紹介に。',
     props: { reverse: false } },
 
-  { key: 'about-right', type: 'about', label: '紹介（画像が右）',
-    about: '同じ型の左右ちがい。続けて使うと交互になって流れが出る。',
+  { key: 'about-right', type: 'about', group: '写真', label: '写真 右 ／ 文章 左',
+    about: '左右ちがい。上と続けて使うと交互になって流れが出る。',
     props: { reverse: true } },
 
-  { key: 'gallery', type: 'gallery', label: 'ギャラリー', about: '写真を並べて見せる。', props: {} },
-  { key: 'menu', type: 'menu', label: 'お品書き（価格表）',
-    about: '品名と値段を並べる。飲食店やサロンに。', props: {} },
-  { key: 'floors', type: 'floors', label: 'フロアガイド',
-    about: '階ごとの案内。複合施設や商業ビルに。', props: {} },
-  { key: 'news', type: 'news', label: 'お知らせ・イベント',
-    about: '日付つきの一覧。更新して使う欄。', props: {} },
-  { key: 'pricing', type: 'pricing', label: '料金プラン',
-    about: '3つ並べて真ん中を目立たせる型。', props: { cols: 'c3' } },
-  { key: 'faq', type: 'faq', label: 'よくある質問',
-    about: '押すと開く。問い合わせを減らしたいとき。', props: {} },
-  { key: 'cta', type: 'cta', label: 'CTA（行動を促す帯）',
-    about: '色を敷いて、次にしてほしいことを1つだけ置く。', props: { bg: 'primary' } },
-  { key: 'contact', type: 'contact', label: 'お問い合わせ',
-    about: '入力欄と送信ボタン。送信先は編集画面で設定する。', props: {} },
-  { key: 'rich', type: 'rich', label: '自由テキスト',
-    about: '決まった型に収まらない文章を置く欄。', props: {} },
-  { key: 'slotstats', type: 'slotstats', label: '数字カウンター',
-    about: '画面に入ると数字が回って止まる。実績を出すとき。', props: { cols: 'c3' } },
+  { key: 'gallery', type: 'gallery', group: '写真', label: '写真を格子に並べる',
+    about: '同じ大きさの枠に敷き詰める。ギャラリー。', props: {} },
 
-  /* --- スクロール連動 --- */
-  { key: 'hscroll', type: 'hscroll', label: '横に流れるギャラリー',
+  { key: 'hscroll', type: 'hscroll', group: '写真', label: '写真を横一列（横に流れる）',
     about: '縦に読むと横に流れる。作品や事例を並べるとき。', props: {} },
-  { key: 'stackcards', type: 'stackcards', label: '積み重なるカード',
-    about: 'カードが手前に重なっていく。話を順に見せるとき。', props: {} },
-  { key: 'timeline', type: 'timeline', label: 'タイムライン',
+
+  { key: 'collage-mid', type: 'collage', group: '写真', label: '写真を敷き詰めた帯',
+    about: '大小の写真を隙間なく敷く。途中に挟んでも効く。', props: {} },
+
+  { key: 'clipreveal', type: 'clipreveal', group: '写真', label: '写真が円で切り替わる',
+    about: '円が広がって次の写真に入れ替わる。', props: {} },
+
+  /* ============ 横に並べる（カード） ============ */
+  { key: 'features-icon', type: 'features', group: 'カード', label: 'カード3つ（絵柄つき）',
+    about: 'いちばん使う形。伝えたいことを3つに分ける。',
+    props: { style: 'icon', cols: 'c3' } },
+
+  { key: 'features-num', type: 'features', group: 'カード', label: 'カード3つ（1・2・3）',
+    about: '番号が大きく出る。順番に意味があるとき。',
+    props: { style: 'num', cols: 'c3' } },
+
+  { key: 'features-paren', type: 'features', group: 'カード', label: 'カード2つ（( 01 ) つき）',
+    about: '番号を控えめに置く形。落ち着いて見える。',
+    props: { style: 'paren', cols: 'c2' } },
+
+  { key: 'features-image', type: 'features', group: 'カード', label: 'カード3つ（写真つき）',
+    about: '上に写真、下に説明。事例や商品を並べるとき。',
+    props: { style: 'image', cols: 'c3' } },
+
+  { key: 'pricing', type: 'pricing', group: 'カード', label: 'カード3つ（値段つき・中央を強調）',
+    about: '真ん中だけ目立たせる形。', props: { cols: 'c3' } },
+
+  { key: 'stackcards', type: 'stackcards', group: 'カード', label: 'カードが重なっていく',
+    about: 'スクロールで手前に積み上がる。順に見せたいとき。', props: {} },
+
+  { key: 'carousel3d', type: 'carousel3d', group: 'カード', label: 'カードが円をえがいてまわる',
+    about: '奥行きのある並び。写真が多いとき。', props: {} },
+
+  /* ============ 縦に並べる（一覧） ============ */
+  { key: 'menu', type: 'menu', group: '一覧', label: '名前と値段の一覧',
+    about: '左に品名、右に値段。お品書き・メニュー表に。', props: {} },
+
+  { key: 'news', type: 'news', group: '一覧', label: '日付つきの一覧',
+    about: '日付と見出しが縦に並ぶ。お知らせや予定に。', props: {} },
+
+  { key: 'faq', type: 'faq', group: '一覧', label: '押すと開く一覧',
+    about: '見出しだけ並べて、押すと答えが出る。長い説明をたたむとき。', props: {} },
+
+  { key: 'floors', type: 'floors', group: '一覧', label: '段ごとの一覧（フロア案内）',
+    about: '階数と内容を縦に並べる。', props: {} },
+
+  { key: 'timeline', type: 'timeline', group: '一覧', label: '縦線でつながる一覧',
     about: '線が伸びながら項目が現れる。沿革や流れに。', props: {} },
-  { key: 'clipreveal', type: 'clipreveal', label: '円形マスクで切り替え',
-    about: '円が広がって次の画面に入れ替わる。', props: {} },
-  { key: 'slides', type: 'slides', label: 'スライドページ',
-    about: '1画面ずつめくる。資料のように見せるとき。', props: {} },
 
-  /* --- 3D・図解 --- */
-  { key: 'product3d', type: 'product3d', label: '3D製品ビュー',
-    about: 'スクロールで製品がまわる。物を売るとき。', props: {} },
-  { key: 'exploded', type: 'exploded', label: '分解図が組み上がる',
-    about: 'ばらけた層がスクロールで重なって1つになる。', props: {} },
-  { key: 'carousel3d', type: 'carousel3d', label: '3Dカルーセル',
-    about: '円をえがいて並んだ面がまわる。', props: {} },
-  { key: 'svgdraw', type: 'svgdraw', label: '線が引かれるグラフ',
-    about: '折れ線がその場で描かれる。数字の変化を見せるとき。', props: {} },
+  { key: 'slotstats', type: 'slotstats', group: '一覧', label: '大きな数字を3つ',
+    about: '画面に入ると数字が回って止まる。実績を出すとき。',
+    props: { cols: 'c3' } },
 
-  /* --- 演出 --- */
-  { key: 'marquee', type: 'marquee', label: '流れる文字',
-    about: '大きな文字が横に流れ続ける帯。区切りに置く。',
+  { key: 'svgdraw', type: 'svgdraw', group: '一覧', label: '折れ線グラフ',
+    about: '線がその場で描かれる。数字の変化を見せるとき。', props: {} },
+
+  /* ============ 文章・帯 ============ */
+  { key: 'rich', type: 'rich', group: '文章', label: '文章だけ',
+    about: '決まった形に収まらない文章を置く欄。', props: {} },
+
+  { key: 'shift', type: 'shift', group: '文章', label: '画面いっぱいに1行',
+    about: '大きな文字を1行だけ置いて、間を作る。', props: {} },
+
+  { key: 'marquee', type: 'marquee', group: '文章', label: '横に流れる大きな文字',
+    about: '文字が横に流れ続ける帯。区切りに置く。',
     props: { bg: 'primary' } },
-  { key: 'shift', type: 'shift', label: '全画面メッセージ',
-    about: '画面いっぱいに1行だけ置いて、間を作る。', props: {} },
-  { key: 'collage-mid', type: 'collage', label: 'コラージュ',
-    about: '写真を敷き詰めた帯。途中に挟んでも効く。', props: {} },
+
+  { key: 'cta', type: 'cta', group: '文章', label: '色を敷いた帯＋ボタン',
+    about: '次にしてほしいことを1つだけ置く。予約や電話に。',
+    props: { bg: 'primary' } },
+
+  /* ============ その他 ============ */
+  { key: 'contact', type: 'contact', group: 'その他', label: '入力フォーム',
+    about: '名前・連絡先・本文と送信ボタン。送信先はあとで設定する。', props: {} },
+
+  { key: 'slides', type: 'slides', group: 'その他', label: '1画面ずつめくる',
+    about: '資料のように、1枚ずつ切り替わる。', props: {} },
+
+  { key: 'product3d', type: 'product3d', group: 'その他', label: '立体の品物がまわる',
+    about: 'スクロールで向きが変わる。物を売るとき。', props: {} },
+
+  { key: 'exploded', type: 'exploded', group: 'その他', label: 'ばらけた層が組み上がる',
+    about: '重なって1つになる図。中身や工程を見せるとき。', props: {} },
 ];
