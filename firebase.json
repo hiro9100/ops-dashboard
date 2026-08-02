@@ -1,6 +1,6 @@
 {
   "hosting": {
-    "public": "../../docs",
+    "public": "docs",
     "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
     "cleanUrls": true,
     "rewrites": [
@@ -8,7 +8,10 @@
       { "source": "/api/publish", "function": { "functionId": "publishSite", "region": "asia-northeast1" } }
     ]
   },
-  "storage": { "rules": "storage.rules" },
-  "firestore": { "rules": "firestore.rules", "indexes": "firestore.indexes.json" },
-  "functions": { "source": "functions" }
+  "storage": { "rules": "hp-builder/firebase/storage.rules" },
+  "firestore": {
+    "rules": "hp-builder/firebase/firestore.rules",
+    "indexes": "hp-builder/firebase/firestore.indexes.json"
+  },
+  "functions": { "source": "hp-builder/firebase/functions" }
 }

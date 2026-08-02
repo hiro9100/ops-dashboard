@@ -79,12 +79,16 @@ jobs:
             console.log(`鍵を確認しました: ${j.client_email}`);
           '
 
+      # firebase.json はリポジトリ直下に置いてある。
+      # Hosting は firebase.json より上のフォルダを配信できず、配信するのは
+      # 直下の docs/ なので、設定もここに無いと「outside of project directory」で
+      # 止まる（実際に起きた）。ルールと Function の実体は hp-builder/firebase/。
       - name: Firebase へ出す
-        working-directory: hp-builder/firebase
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/sa.json
         run: |
-          npm --prefix functions ci --no-audit --no-fund || npm --prefix functions install
+          FN=hp-builder/firebase/functions
+          npm --prefix "$FN" ci --no-audit --no-fund || npm --prefix "$FN" install
           # 出すものを名指しする。指定しないと Extensions まで確認しに行き、
           # 使っていないのに、その API の反映待ちで 403 になって止まる（実際に起きた）。
           npx --yes firebase-tools@14 deploy --project bildy-4e45e --non-interactive \

@@ -41,6 +41,18 @@
 Storage と Firestore は、**ブラウザからは読み書きできません**（ルールで全部拒否）。
 出入りはすべて Function を通ります。
 
+## 設定ファイルの置き場所
+
+`firebase.json` と `.firebaserc` は**リポジトリの直下**にあります。ここだけ
+このフォルダの外です。Hosting は `firebase.json` より上のフォルダを配信できず、
+配信するのは直下の `docs/` なので、設定が下の階層にあると
+「`../../docs` is outside of project directory」で止まります。
+
+ルール（`storage.rules` / `firestore.rules`）と Function の中身は
+このフォルダのままで、直下の `firebase.json` から名指ししています。
+
+どの手順も**リポジトリの直下で** `firebase deploy` を実行します。
+
 ## 出す手順
 
 3通りあります。**パソコンが無くても出せます。**
@@ -98,8 +110,8 @@ Actions タブ → 「Firebase へ出す」 → Run workflow
 ```
 git clone -b claude/hp-creator-template-tool-ohuuqb \
   https://github.com/hiro9100/ops-dashboard.git && \
-cd ops-dashboard/hp-builder && node build-site.js && \
-cd firebase && npm --prefix functions install && \
+cd ops-dashboard && node hp-builder/build-site.js && \
+npm --prefix hp-builder/firebase/functions install && \
 npx --yes firebase-tools@14 deploy --project bildy-4e45e
 ```
 
@@ -109,10 +121,8 @@ npx --yes firebase-tools@14 deploy --project bildy-4e45e
 npm i -g firebase-tools
 firebase login
 
-cd hp-builder
-node build-site.js
-cd firebase
-npm --prefix functions install
+node hp-builder/build-site.js
+npm --prefix hp-builder/firebase/functions install
 firebase deploy
 ```
 
