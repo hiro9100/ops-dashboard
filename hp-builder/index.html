@@ -70,6 +70,38 @@
 
 <div class="sheet-veil" id="veil" hidden></div>
 
+<!-- ================= かんたんモード（起動時の正面） ================= -->
+<div class="modal" id="easyModal" hidden>
+  <div class="modal-box">
+    <div class="ez-dots" id="ezDots"></div>
+    <h2 id="ezTitle">どんなお店・会社ですか？</h2>
+    <p class="modal-sub" id="ezSub">近いものを1つ選んでください。あとから全部変えられます。</p>
+
+    <div id="ezStep1">
+      <div class="ez-grid" id="ezInds"></div>
+    </div>
+
+    <div id="ezStep2" hidden>
+      <input class="ez-input" id="ezName" type="text" maxlength="40"
+             placeholder="例：カフェ ヴェルデュール" autocomplete="organization">
+    </div>
+
+    <div id="ezStep3" hidden>
+      <button class="ez-drop" id="ezPick">
+        <b>写真をえらぶ</b>
+        <small>まとめて選べます。3〜6枚あるときれいに収まります</small>
+      </button>
+      <div class="ez-thumbs" id="ezThumbs"></div>
+    </div>
+
+    <div class="modal-foot">
+      <button class="tb-btn" id="ezToTpl">テンプレートから選ぶ</button>
+      <button class="tb-btn" id="ezBack" hidden>もどる</button>
+      <button class="tb-btn primary" id="ezNext" hidden>つぎへ</button>
+    </div>
+  </div>
+</div>
+
 <!-- ================= テンプレート選択 ================= -->
 <div class="modal" id="tplModal" hidden>
   <div class="modal-box wide">
@@ -77,6 +109,7 @@
     <p class="modal-sub">選ぶと、いまの内容は置きかわります。あとから中身は自由に変えられます。</p>
     <div class="gal-wrap"><iframe id="tplFrame" title="テンプレートのサンプル"></iframe></div>
     <div class="modal-foot">
+      <button class="tb-btn" id="tplToEasy">かんたんに作る</button>
       <button class="tb-btn" id="tplToBuild">部分ごとに選んで組む</button>
       <button class="tb-btn" id="tplClose">閉じる</button>
     </div>
@@ -147,6 +180,7 @@
 <script src="assets/blocks.js"></script>
 <script src="assets/templates.js"></script>
 <script src="assets/presets.js"></script>
+<script src="assets/easy.js"></script>
 <script src="assets/app.js"></script>
 </body>
 </html>

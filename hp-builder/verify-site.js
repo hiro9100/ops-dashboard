@@ -50,9 +50,15 @@ const note = (ok, msg) => { console.log(`${ok ? '  ok ' : '  NG '} ${msg}`); if 
     page.on('console', (m) => { if (m.type() === 'error') errs.push(m.text()); });
     const resp = await page.goto(base + p, { waitUntil: 'load' });
     await page.waitForTimeout(1200);
-    /* ビルダーは起動直後にテンプレート選択が開く。実際の使い方どおり1つ選んでから見る */
+    /* ビルダーは起動直後にかんたんモードが開く。
+       ここでは編集画面そのものを見たいので、業種を1つ選んで抜ける */
     if (p === '/app/') {
-      await page.frameLocator('#tplFrame').locator('.tc').first().click();
+      await page.click('#ezInds button');
+      await page.waitForTimeout(900);
+      await page.fill('#ezName', 'テスト商店');
+      await page.click('#ezNext');          // 写真の画面へ
+      await page.waitForTimeout(900);
+      await page.click('#ezNext');          // 写真なしで完成
       await page.waitForTimeout(1500);
     }
     note(resp.status() === 200, `${p} → ${resp.status()}`);

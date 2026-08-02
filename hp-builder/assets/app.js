@@ -1674,6 +1674,141 @@ const openModal = (id) => { $(id).hidden = false; };
 const closeModal = (id) => { $(id).hidden = true; };
 
 /* ================================================================
+   かんたんモード — 業種 → 店名 → 写真 → 完成
+
+   ホームページを持っていない人が対象なので、決めることを3つに絞る。
+   文章・配色・写真の配置は、こちらで埋める。
+   ================================================================ */
+let ezStep = 1;
+let ezInd = null;
+let ezName = '';
+let ezPhotos = [];      // データURLの配列
+
+const ezPicker = document.createElement('input');
+ezPicker.type = 'file';
+ezPicker.accept = 'image/*';
+ezPicker.multiple = true;
+
+function renderEz() {
+  $('#ezDots').innerHTML = [1, 2, 3].map((i) => `<i class="${i <= ezStep ? 'on' : ''}"></i>`).join('');
+  $('#ezStep1').hidden = ezStep !== 1;
+  $('#ezStep2').hidden = ezStep !== 2;
+  $('#ezStep3').hidden = ezStep !== 3;
+  $('#ezBack').hidden = ezStep === 1;
+  $('#ezToTpl').hidden = ezStep !== 1;
+  $('#ezNext').hidden = ezStep === 1;
+
+  if (ezStep === 1) {
+    $('#ezTitle').textContent = 'どんなお店・会社ですか？';
+    $('#ezSub').textContent = '近いものを1つ選んでください。あとから全部変えられます。';
+  } else if (ezStep === 2) {
+    $('#ezTitle').textContent = 'お名前を教えてください';
+    $('#ezSub').textContent = 'お店・会社の名前です。ページの見出しとロゴに入ります。';
+    $('#ezNext').textContent = 'つぎへ';
+    $('#ezNext').disabled = !$('#ezName').value.trim();
+  } else {
+    $('#ezTitle').textContent = '写真をえらんでください';
+    $('#ezSub').textContent = ezPhotos.length
+      ? `${ezPhotos.length}枚を配置しました。色も写真に合わせています。`
+      : '無くても作れます。あとから1枚ずつ差し替えられます。';
+    $('#ezNext').textContent = ezPhotos.length ? 'これで完成' : '写真はあとで';
+    $('#ezNext').disabled = false;
+  }
+}
+
+function renderEzInds() {
+  $('#ezInds').innerHTML = INDUSTRIES.map((i) =>
+    `<button data-ind="${esc(i.key)}"><b>${i.icon}</b>${esc(i.label)}</button>`).join('');
+}
+
+/* 業種・店名・写真がそろうたびに組み直す。
+   途中でも常に「いまの答えでの完成形」がプレビューに出ている状態にする。 */
+async function ezRebuild() {
+  if (!ezInd) return;
+  const ind = INDUSTRIES.find((i) => i.key === ezInd);
+  const st = buildEasyState(ezInd, ezName, ezPhotos);
+  if (ezPhotos.length) st.theme = await paletteFromPhotos(st.theme, ezPhotos);
+  fillPhotos(st, ezPhotos);
+  state = st;
+  selected = state.blocks[1]?.id || state.blocks[0]?.id;
+  selectedEl = null;
+  closed.clear();
+  refresh();
+  return ind;
+}
+
+function openEasy() {
+  ezStep = 1; ezInd = null; ezName = ''; ezPhotos = [];
+  $('#ezName').value = '';
+  $('#ezThumbs').innerHTML = '';
+  renderEzInds();
+  renderEz();
+  closeModal('#tplModal');
+  openModal('#easyModal');
+}
+
+$('#ezInds').addEventListener('click', async (e) => {
+  const k = e.target.closest('button')?.dataset.ind;
+  if (!k) return;
+  ezInd = k;
+  await ezRebuild();
+  ezStep = 2;
+  renderEz();
+  $('#ezName').focus();
+});
+
+$('#ezName').addEventListener('input', () => {
+  ezName = $('#ezName').value.trim();
+  $('#ezNext').disabled = !ezName;
+});
+$('#ezName').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && ezName) $('#ezNext').click();
+});
+
+$('#ezPick').addEventListener('click', () => ezPicker.click());
+ezPicker.addEventListener('change', async () => {
+  const files = [...ezPicker.files].filter((f) => f.type.startsWith('image/'));
+  ezPicker.value = '';
+  if (!files.length) return;
+  flash('写真を読み込んでいます…');
+  for (const f of files) {
+    try { ezPhotos.push(await toDataURL(f)); } catch { /* 読めない1枚は飛ばす */ }
+  }
+  $('#ezThumbs').innerHTML = ezPhotos
+    .map((src) => `<img src="${esc(src)}" alt="">`).join('');
+  await ezRebuild();
+  renderEz();
+  flash(`${ezPhotos.length}枚を配置しました`);
+});
+
+$('#ezBack').addEventListener('click', () => {
+  ezStep = Math.max(1, ezStep - 1);
+  renderEz();
+});
+
+$('#ezNext').addEventListener('click', async () => {
+  if (ezStep === 2) {
+    await ezRebuild();
+    ezStep = 3;
+    renderEz();
+    return;
+  }
+  closeModal('#easyModal');
+  if (isMobile()) closeSheets();
+  refresh();
+  resetHistory();
+  flash(ezPhotos.length
+    ? `できました。写真${ezPhotos.length}枚を入れて、色も合わせています`
+    : 'できました。写真はいつでも足せます');
+});
+
+$('#ezToTpl').addEventListener('click', () => {
+  closeModal('#easyModal');
+  renderTplGrid();
+  openModal('#tplModal');
+});
+
+/* ================================================================
    部分ごとに選んで組む
 
    テンプレートが「1ページまるごと」なのに対して、こちらは1段ずつ積む。
@@ -1795,6 +1930,7 @@ function openBuildFlow() {
 }
 
 $('#tplToBuild').addEventListener('click', openBuildFlow);
+$('#tplToEasy').addEventListener('click', openEasy);
 $('#bldBack').addEventListener('click', bldUndo);
 $('#bldCatBar').addEventListener('click', (e) => {
   const c = e.target.closest('button')?.dataset.cat;
@@ -1934,11 +2070,12 @@ addEventListener('resize', () => { if (!isMobile()) closeSheets(); });
     refresh();
     resetHistory();
   } else {
-    renderTplGrid();
-    openModal('#tplModal');
+    /* 初回はかんたんモードを正面に出す。
+       テンプレート一覧は、そこから「テンプレートから選ぶ」で行ける。 */
     state = buildState('corporate');
     selected = state.blocks[1].id;
     refresh();
     resetHistory();
+    openEasy();
   }
 })();

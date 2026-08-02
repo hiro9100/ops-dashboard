@@ -365,6 +365,48 @@ input,select,textarea{font:inherit}
 }
 
 /* ==========================================================
+   かんたんモード
+   3画面しかないので、1画面あたりの要素をぎりぎりまで減らす。
+   指で押す前提なので、当たり判定を大きく取る。
+   ========================================================== */
+.ez-dots{display:flex;gap:6px;margin-bottom:16px}
+.ez-dots i{flex:1;height:3px;border-radius:2px;background:var(--line);transition:background .25s}
+.ez-dots i.on{background:var(--pri)}
+
+.ez-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:9px}
+.ez-grid button{
+  display:flex;align-items:center;gap:10px;text-align:left;
+  background:var(--panel2);border:1px solid var(--line);border-radius:12px;
+  padding:15px 14px;font-size:13px;font-weight:700;color:var(--tx);
+  transition:border-color .15s,transform .15s
+}
+.ez-grid button:hover{border-color:var(--pri);transform:translateY(-2px)}
+.ez-grid button b{font-size:21px;font-weight:400;line-height:1}
+
+.ez-input{
+  width:100%;box-sizing:border-box;background:var(--panel2);
+  border:1px solid var(--line);border-radius:12px;color:var(--tx);
+  padding:17px 16px;font-size:17px;font-family:inherit
+}
+.ez-input:focus{outline:0;border-color:var(--pri)}
+
+.ez-drop{
+  width:100%;display:block;text-align:center;cursor:pointer;
+  background:var(--panel2);border:1.5px dashed var(--line);border-radius:14px;
+  padding:30px 18px;color:var(--tx);transition:border-color .15s,background .15s
+}
+.ez-drop:hover{border-color:var(--pri);background:#1b2029}
+.ez-drop b{display:block;font-size:15px;margin-bottom:5px}
+.ez-drop small{color:var(--tx2);font-size:11.5px;line-height:1.6}
+
+.ez-thumbs{display:flex;flex-wrap:wrap;gap:7px;margin-top:13px}
+.ez-thumbs:empty{display:none}
+.ez-thumbs img{
+  width:62px;height:62px;object-fit:cover;border-radius:9px;
+  border:1px solid var(--line);display:block
+}
+
+/* ==========================================================
    部分ごとに選んで組む — いま何段目まで積んだかの帯
    ========================================================== */
 .bld-strip{
