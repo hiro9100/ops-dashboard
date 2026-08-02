@@ -30,7 +30,7 @@ const meta = {
 
 const blocks = [
   ['header', {
-    logo: 'PAGE STUDIO', sticky: true, cta: '無料ではじめる', ctaHref: '#cta',
+    logo: 'PAGE STUDIO', sticky: true, cta: '無料ではじめる', ctaHref: './app/',
     nav: [
       { label: 'できること', href: '#solutions' },
       { label: 'テンプレート', href: '#templates' },
@@ -45,7 +45,7 @@ const blocks = [
     text: 'テンプレートを選んで、文字と写真を差し替えるだけ。'
       + '制作会社が使うのと同じ作法の動きが、はじめから入っています。',
     buttons: [
-      { label: '無料ではじめる', href: '#cta', style: 'primary' },
+      { label: '無料ではじめる', href: './app/', style: 'primary' },
       { label: 'できることを見る', href: '#solutions', style: 'ghost' },
     ],
     anims: { title: { a: 'maskline' }, text: { a: 'fadeup', d: 260 } },
@@ -88,7 +88,7 @@ const blocks = [
       + 'ブロックはドラッグで並べ替え。追加するときも、実際に描かれた見本が並ぶので、'
       + '「入れてみたら思っていたのと違う」が起きません。\n\n'
       + 'スマホからも編集できます。写真はカメラロールからそのまま入ります。',
-    buttons: [{ label: 'テンプレートを見る', href: '#templates', style: 'ghost' }],
+    buttons: [{ label: 'テンプレートを見る', href: './app/', style: 'ghost' }],
     anims: { image: { a: 'wipe' } },
   }],
 
@@ -99,7 +99,7 @@ const blocks = [
       + '見出し・説明・カードが 0.07秒ずつずれて組み上がる出現。\n\n'
       + 'ホバーは薄くなるのが 0.06秒、戻りが 0.5秒。ゆっくり薄くなるとためらって見えます。\n\n'
       + '寸法は画面幅に比例します。1440pxを基準に、広い画面では文字も余白も一緒に育ちます。',
-    buttons: [{ label: '動きの一覧を見る', href: '#templates', style: 'ghost' }],
+    buttons: [{ label: '動きの一覧を見る', href: './demo/hero-deco.html', style: 'ghost' }],
     anims: { image: { a: 'tilt3d' } },
   }],
 
@@ -128,7 +128,7 @@ const blocks = [
     items: [
       { name: 'FREE', price: '¥0', unit: '',
         features: 'テンプレート14種\nブロック25種\nHTML1ファイル書き出し\n商用利用OK',
-        btn: 'はじめる', href: '#cta', featured: true, tag: 'いまはこれだけ' },
+        btn: 'はじめる', href: './app/', featured: true, tag: 'いまはこれだけ' },
       { name: 'テンプレート追加', price: '準備中', unit: '',
         features: '業種別のテンプレート\n配色パレットの追加\n作例つき',
         btn: '通知を受け取る', href: '#cta', featured: false, tag: '' },
@@ -163,7 +163,7 @@ const blocks = [
     title: 'まずは1ページ、\n作ってみてください。',
     text: '登録もインストールも要りません。開いた瞬間から編集できます。',
     bg: 'primary', anchor: 'cta',
-    buttons: [{ label: '無料ではじめる', href: '#', style: 'ghost' }],
+    buttons: [{ label: '無料ではじめる', href: './app/', style: 'ghost' }],
   }],
 
   ['footer', {

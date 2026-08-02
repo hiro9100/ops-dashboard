@@ -207,13 +207,45 @@ SVGとGIFは描き直すと壊れる（ベクタ / アニメーション）の�
 ```
 hp-builder/
 ├── index.html              編集画面
-└── assets/
-    ├── builder.css         編集画面のUI
-    ├── app.js              編集画面のロジック（状態管理・プレビュー・書き出し）
-    ├── blocks.js           ブロック定義（編集項目 ＋ HTML生成）
-    ├── templates.js        テンプレート定義（配色・初期の中身）
-    └── site-css.js         生成されるサイトのCSS
+├── build.js                assets/ を1ファイルに束ねて dist/ を作る
+├── build-site.js           公開用の一式を docs/ に組み立てる
+├── verify-site.js          docs/ をHTTPで配信して公開後と同じ条件で確かめる
+├── assets/
+│   ├── builder.css         編集画面のUI
+│   ├── app.js              編集画面のロジック（状態管理・プレビュー・書き出し）
+│   ├── blocks.js           ブロック定義（編集項目 ＋ HTML生成）
+│   ├── templates.js        テンプレート定義（配色・初期の中身）
+│   └── site-css.js         生成されるサイトのCSS
+├── examples/               作例のビルドスクリプトと出力
+└── docs/                   公開用（build-site.js が作る。手で触らない）
 ```
+
+## 公開する
+
+`docs/` に、そのまま置けば動く一式が入ります。ビルドもサーバー処理も要りません。
+
+```
+node build-site.js     # docs/ を組み立てる
+node verify-site.js    # 公開後と同じHTTP越しに確認（要 playwright）
+```
+
+できあがり：
+
+| パス | 中身 |
+| --- | --- |
+| `docs/index.html` | サービスLP（入口） |
+| `docs/app/index.html` | 編集ツール本体（1ファイル） |
+| `docs/demo/` | 作例4種と、その入口ページ |
+
+**GitHub Pages で出す** — Settings → Pages → Source を「Deploy from a branch」、
+ブランチを選び、フォルダに **`/docs`** を指定。数分で
+`https://<ユーザー名>.github.io/<リポジトリ名>/` に出ます。
+
+**それ以外** — Netlify・Vercel・レンタルサーバーのいずれも、`docs/` の中身を
+そのままアップロードするだけです。ビルドコマンドの設定は要りません。
+
+`docs/.nojekyll` は、GitHub Pages が既定で通す Jekyll を止めるための空ファイルです
+（`_` で始まる名前などが消されるのを防ぎます）。
 
 ## 増やしたいとき
 

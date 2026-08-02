@@ -2631,7 +2631,7 @@ const BLOCKS = {
     },
     render: (p) => `<header class="hdr${p.sticky ? ' sticky' : ''}">
   <div class="wrap hdr-in">
-    <a class="logo" href="#"${ed('logo', 'サイト名')}>${p.logoImage ? img(p.logoImage, p.logo) : ''}${esc(p.logo)}</a>
+    <a class="logo" href="#top"${ed('logo', 'サイト名')}>${p.logoImage ? img(p.logoImage, p.logo) : ''}${esc(p.logo)}</a>
     <nav class="nav">${(p.nav || []).filter((n) => n.label).map((n) => `<a href="${esc(n.href || '#')}">${esc(n.label)}</a>`).join('')}</nav>
     ${p.cta ? `<a class="btn sm" href="${esc(p.ctaHref || '#')}">${esc(p.cta)}</a>` : ''}
     <button class="hdr-toggle" aria-label="メニュー">☰</button>
