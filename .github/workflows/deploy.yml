@@ -54,11 +54,19 @@ jobs:
           # ここで形だけ確かめて、何が起きたか言えるようにしておく。
           node -e '
             const fs = require("fs");
+            const s = fs.readFileSync(process.env.RUNNER_TEMP + "/sa.json", "utf8");
             let j;
-            try { j = JSON.parse(fs.readFileSync(process.env.RUNNER_TEMP + "/sa.json", "utf8")); }
+            try { j = JSON.parse(s); }
             catch (e) {
-              console.error("秘密の値がJSONとして読めません。貼り付けが途中で切れている可能性があります。");
-              console.error("{ から } まで全部が入っているか確かめてください。");
+              // 鍵そのものは出さない。何が起きたか分かるだけの手がかりを出す。
+              const t = s.trim();
+              console.error("秘密の値がJSONとして読めません。");
+              console.error(`  長さ            ${s.length} 文字`);
+              console.error(`  先頭が { か     ${t.startsWith("{") ? "はい" : "いいえ（ここが原因の可能性が高い）"}`);
+              console.error(`  末尾が } か     ${t.endsWith("}") ? "はい" : "いいえ（途中で切れています）"}`);
+              console.error(`  全角の引用符    ${/[“”„]/.test(s) ? "あり（スマホが引用符を変換しています）" : "なし"}`);
+              console.error(`  private_key の語 ${s.includes("private_key") ? "あり" : "なし（別のファイルかもしれません）"}`);
+              console.error(`  読めなかった理由 ${e.message}`);
               process.exit(1);
             }
             for (const k of ["type", "project_id", "private_key", "client_email"]) {
