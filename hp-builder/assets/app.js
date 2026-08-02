@@ -1076,6 +1076,18 @@ body{margin:0;background:#0d1016;padding:14px;
 .dc-scale .hsc-in{position:static;height:700px}
 .dc-scale .hero-title{font-size:52px}
 .dc-scale [data-ta] .ch,.dc-scale .rv{opacity:1!important;transform:none!important}
+/* ヘッダーの見本は、いつも広い画面の並びで見せる。
+   この一覧の iframe はスマホでは狭いので、そのままだとメニューが
+   ハンバーガーに化けて、どの型を選んでも同じ絵になってしまう。 */
+.dc-scale .nav{display:flex;position:static;flex-direction:row;align-items:center;
+  gap:28px;background:none;border:0;padding:0;margin-left:auto}
+.dc-scale .nav a{padding:0;border:0}
+.dc-scale .hdr .btn{display:inline-flex}
+.dc-scale .hdr-toggle{display:none}
+.dc-scale .hdr-in{height:72px}
+/* ヘッダーの見本は、バーとその下が少し見えれば足りる */
+.dc-hdr{height:96px}
+.dc-hdr .hero{min-height:420px}
 .dc-meta{padding:10px 12px 12px;color:#e7ebf0}
 .dc-meta b{font-size:13px;display:block}
 .dc-meta small{color:#98a2b3;font-size:11px;line-height:1.6;display:block;margin-top:3px}
@@ -1117,16 +1129,38 @@ const SCROLL_ABOUT = {
   maskzoom: '見出しの形に開いた穴が広がり、画面いっぱいの写真になります。',
 };
 
+const HDR_ABOUT = {
+  line: '地の色に細い線。いちばん素直で、どんなページにも合います。',
+  solid: 'メインカラーで塗ります。色をはっきり出したいとき。文字は白になります。',
+  glass: '下の中身が透けます。写真の多いページと相性がいい。',
+  clear: '地も線もなし。ヒーローとひと続きに見えます。',
+  over: 'ヒーローの上に乗せます。写真が画面の上端から始まります。写真のときは自動で白字になります。',
+  float: '角の丸い島が浮きます。軽く見せたいとき。',
+};
+
+const GAL_KINDS = {
+  deco: { list: () => HERO_DECOS, about: DECO_ABOUT, what: '装飾',
+    title: 'ヒーローの装飾を選ぶ',
+    sub: 'くり返し再生されます。カードにマウスを乗せる（タップする）とすぐ再生します。' },
+  scroll: { list: () => HERO_SCROLLS, about: SCROLL_ABOUT, what: 'スクロール連動',
+    title: 'スクロール連動のしかたを選ぶ',
+    sub: 'スクロールの途中の一場面で止めて並べています。' },
+  hdr: { list: () => HDR_BARS, about: HDR_ABOUT, what: 'ヘッダーのバー',
+    title: 'ヘッダーのバーを選ぶ',
+    sub: 'いまのヘッダーを、それぞれの型で出しています。下はヒーローの頭です。' },
+};
+
 let decoPick = null;
 
-/* kind: 'deco'（装飾）/ 'scroll'（スクロール連動）。
-   どちらも「ヒーローを縮めて並べる」点は同じなので、一覧は共通にする。 */
+/* kind: 'deco'（装飾）/ 'scroll'（スクロール連動）/ 'hdr'（ヘッダーのバー）。
+   どれも「上のほうを縮めて並べる」点は同じなので、一覧は共通にする。 */
 function openDecoGallery(kind, current, onPick) {
   decoPick = onPick;
-  const list = kind === 'scroll' ? HERO_SCROLLS : HERO_DECOS;
-  const about = kind === 'scroll' ? SCROLL_ABOUT : DECO_ABOUT;
-  $('#animTitle').textContent = kind === 'scroll'
-    ? 'スクロール連動のしかたを選ぶ' : 'ヒーローの装飾を選ぶ';
+  const k = GAL_KINDS[kind] || GAL_KINDS.deco;
+  const list = k.list();
+  const about = k.about;
+  $('#animTitle').textContent = k.title;
+  $('#animSub').textContent = k.sub;
 
   /* 見本は「いま編集中のヒーロー」から作る。文言も写真もそのまま使うので、
      自分のページでどう見えるかが分かる。 */
@@ -1134,17 +1168,29 @@ function openDecoGallery(kind, current, onPick) {
   const base = b && b.type === 'hero' ? b.props
     : (state.blocks.find((x) => x.type === 'hero') || { props: BLOCKS.hero.defaults }).props;
 
-  const cards = list.map(([k, label]) => {
-    /* スクロール連動は「途中の1コマ」を静止画で見せる。実際に貼り付けると
-       一覧の中では動かせないので、進み具合 --p を決め打ちで入れる。 */
-    const props = Object.assign({}, base, { anchor: '', anims: {}, layout: 'cover' },
-      kind === 'scroll' ? { scroll: k } : { deco: k });
-    const frozen = kind === 'scroll' && k !== 'none'
-      ? ' style="--p:.45"' : '';
-    return `<div class="dc${k === current ? ' on' : ''}" data-k="${esc(k)}" role="button" tabindex="0">
+  /* ヘッダーの見本は、いま使っているヘッダーの上にヒーローの頭を敷いて作る。
+     すりガラスや無色は、下に何かが無いと違いが出ないため。 */
+  const hb = state.blocks.find((x) => x.type === 'header');
+  const hprops = hb ? hb.props : BLOCKS.header.defaults;
+
+  const cards = list.map(([key, label]) => {
+    let sample;
+    if (kind === 'hdr') {
+      sample = BLOCKS.header.render(Object.assign({}, hprops, { bar: key, sticky: false }))
+        + BLOCKS.hero.render(Object.assign({}, base,
+          { anchor: '', anims: {}, scroll: 'none', layout: 'cover' }));
+    } else {
+      /* スクロール連動は「途中の1コマ」を静止画で見せる。実際に貼り付けると
+         一覧の中では動かせないので、進み具合 --p を決め打ちで入れる。 */
+      sample = BLOCKS.hero.render(Object.assign({}, base, { anchor: '', anims: {}, layout: 'cover' },
+        kind === 'scroll' ? { scroll: key } : { deco: key }));
+    }
+    const frozen = kind === 'scroll' && key !== 'none' ? ' style="--p:.45"' : '';
+    return `<div class="dc${key === current ? ' on' : ''}" data-k="${esc(key)}" role="button" tabindex="0">
       <span class="dc-hit"></span>
-      <div class="dc-prev"><div class="dc-scale ${esc(bodyClass())}"${frozen}>${BLOCKS.hero.render(props)}</div></div>
-      <div class="dc-meta"><b>${esc(label)}</b><small>${esc(about[k] || '')}</small></div>
+      <div class="dc-prev${kind === 'hdr' ? ' dc-hdr' : ''}">
+        <div class="dc-scale ${esc(bodyClass())}"${frozen}>${sample}</div></div>
+      <div class="dc-meta"><b>${esc(label)}</b><small>${esc(about[key] || '')}</small></div>
     </div>`;
   }).join('');
 
@@ -1339,12 +1385,11 @@ $('#tab-edit').addEventListener('click', (e) => {
     if (!bb) return;
     const kind = fg.dataset.gal;
     const key = fg.dataset.galpath.split('.').pop();
-    openDecoGallery(kind, bb.props[key] || 'none', (picked) => {
+    const gk = GAL_KINDS[kind] || GAL_KINDS.deco;
+    openDecoGallery(kind, bb.props[key] || (kind === 'hdr' ? 'line' : 'none'), (picked) => {
       bb.props[key] = picked;
       renderEditor(); renderPreview(true); save();
-      const list = kind === 'scroll' ? HERO_SCROLLS : HERO_DECOS;
-      flash(`${kind === 'scroll' ? 'スクロール連動' : '装飾'}を`
-        + `「${(list.find((d) => d[0] === picked) || [, picked])[1]}」にしました`);
+      flash(`${gk.what}を「${(gk.list().find((d) => d[0] === picked) || [, picked])[1]}」にしました`);
     });
     return;
   }

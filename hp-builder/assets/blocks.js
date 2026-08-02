@@ -88,6 +88,19 @@ const HERO_SCROLLS = [
   ['maskzoom', '文字の中から写真が広がる'],
 ];
 
+/* ヘッダーのバーの型。
+   既定の line は、これを足す前の見た目そのもの（地の色＋下の線、
+   固定しているときは半透明のすりガラス）。前に作ったページの見え方を
+   変えないため、既定はここから動かさない。 */
+const HDR_BARS = [
+  ['line', '線だけ（既定）'],
+  ['solid', 'ベタ塗り'],
+  ['glass', 'すりガラス'],
+  ['clear', '無色（透ける）'],
+  ['over', 'ヒーローに重ねる'],
+  ['float', '浮かぶ島'],
+];
+
 const HERO_DECOS = [
   ['none', 'なし'],
   ['clouds', 'ふわふわ雲'],
@@ -268,9 +281,14 @@ const BLOCKS = {
     icon: '▤',
     unique: true, // 1ページに1つだけ
     fields: [
+      { key: 'bar', label: 'バーの型', type: 'select', options: HDR_BARS, gallery: 'hdr',
+        hint: 'ベタ塗りはメインカラーで塗って、文字を白にします' },
       { key: 'logo', label: 'サイト名 / ロゴ文字', type: 'text' },
       { key: 'logoImage', label: 'ロゴ画像URL（任意）', type: 'image' },
-      { key: 'sticky', label: 'スクロールしても上に固定', type: 'toggle' },
+      /* 重ねる型は、ヒーローの上に置くために流れから外している。
+         固定と両立しないので、効かない設定は出さない。 */
+      { key: 'sticky', label: 'スクロールしても上に固定', type: 'toggle',
+        showIf: (p) => p.bar !== 'over' },
       { key: 'nav', label: 'メニュー', type: 'list', addLabel: 'メニューを追加',
         titleKey: 'label',
         item: [
@@ -281,7 +299,7 @@ const BLOCKS = {
       { key: 'ctaHref', label: 'ボタンのリンク先', type: 'text' },
     ],
     defaults: {
-      logo: 'YOUR LOGO', logoImage: '', sticky: true,
+      bar: 'line', logo: 'YOUR LOGO', logoImage: '', sticky: true,
       nav: [
         { label: 'サービス', href: '#features' },
         { label: '私たちについて', href: '#about' },
@@ -290,7 +308,7 @@ const BLOCKS = {
       ],
       cta: 'お問い合わせ', ctaHref: '#contact',
     },
-    render: (p) => `<header class="hdr${p.sticky ? ' sticky' : ''}">
+    render: (p) => `<header class="hdr bar-${esc(p.bar || 'line')}${p.sticky ? ' sticky' : ''}">
   <div class="wrap hdr-in">
     <a class="logo" href="#top"${ed('logo', 'サイト名')}>${p.logoImage ? img(p.logoImage, p.logo) : ''}${esc(p.logo)}</a>
     <nav class="nav">${(p.nav || []).filter((n) => n.label).map((n) => `<a href="${esc(n.href || '#')}">${esc(n.label)}</a>`).join('')}</nav>

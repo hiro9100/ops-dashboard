@@ -83,7 +83,10 @@ p:last-child{margin-bottom:0}
   position:relative;z-index:50;background:var(--c-bg);
   border-bottom:1px solid var(--c-border)
 }
-.hdr.sticky{position:sticky;top:0;background:color-mix(in srgb,var(--c-bg) 86%,transparent);backdrop-filter:blur(12px)}
+.hdr.sticky{position:sticky;top:0}
+/* 固定しているときは、下の中身が透けたほうが窮屈にならない。
+   これは line（既定）だけの振る舞い。ほかの型は自分の地を持っている。 */
+.hdr.bar-line.sticky{background:color-mix(in srgb,var(--c-bg) 86%,transparent);backdrop-filter:blur(12px)}
 .hdr-in{display:flex;align-items:center;gap:24px;height:72px}
 .logo{font-weight:800;font-size:19px;letter-spacing:.02em;display:flex;align-items:center;gap:10px}
 .logo img{height:32px;width:auto}
@@ -776,6 +779,59 @@ p:last-child{margin-bottom:0}
 .tpl-studio .hdr{border-bottom-color:rgba(255,255,255,.12)}
 
 /* ==========================================================
+   ヘッダーのバーの型
+
+   ここはスタイルやテンプレートの味付け（.sty-* / .tpl-*）より
+   後ろに置く。同じ強さの指定なので、後ろに書いたほうが勝つ。
+   「無色」を選んだのに味付けの線が残る、といったことを防ぐ。
+   ========================================================== */
+.hdr.bar-glass{background:color-mix(in srgb,var(--c-bg) 72%,transparent);
+  backdrop-filter:blur(14px);border-bottom-color:color-mix(in srgb,var(--c-border) 60%,transparent)}
+
+.hdr.bar-clear{background:transparent;border-bottom-color:transparent}
+
+/* ヒーローの上に重ねる。バーのぶんの場所を取らないので、
+   写真が画面の上端から始まる。
+   位置の基準は初期包含ブロック（ページの左上）。見本の中では
+   .dc-scale に transform が掛かっており、そちらが基準になるので、
+   カードからはみ出さない。 */
+.hdr.bar-over{position:absolute;top:0;left:0;right:0;
+  background:transparent;border-bottom-color:transparent}
+/* 下が写真のヒーローのときだけ白字にする。判定は site.js が行う
+   （前の兄弟から次を見る CSS は、まだ全部の端末で当てにできない）。 */
+.hdr.bar-over.on-photo{color:#fff}
+.hdr.bar-over.on-photo .nav a{color:rgba(255,255,255,.82)}
+.hdr.bar-over.on-photo .nav a:hover{color:#fff}
+.hdr.bar-over.on-photo .hdr-toggle{border-color:rgba(255,255,255,.45)}
+@media(max-width:640px){
+  /* たたんだメニューは地が要る。透明のままだと写真の上で読めない */
+  .hdr.bar-over .nav{background:var(--c-bg);color:var(--c-text)}
+  .hdr.bar-over.on-photo .nav a{color:var(--c-muted)}
+}
+
+/* メインカラーで塗る。地が濃くなるので、載る文字はすべて反転させる */
+.hdr.bar-solid{background:var(--c-primary);border-bottom-color:transparent;
+  color:var(--c-on-primary,#fff)}
+.hdr.bar-solid .nav a{color:color-mix(in srgb,var(--c-on-primary,#fff) 82%,transparent)}
+.hdr.bar-solid .nav a:hover{color:var(--c-on-primary,#fff)}
+.hdr.bar-solid .hdr-toggle{border-color:color-mix(in srgb,var(--c-on-primary,#fff) 45%,transparent)}
+/* ボタンは地に埋もれるので、白抜きにして残す */
+.hdr.bar-solid .btn{background:var(--c-on-primary,#fff);color:var(--c-primary);box-shadow:none}
+.hdr.bar-solid .btn:hover{box-shadow:0 10px 24px -12px rgba(0,0,0,.5)}
+
+/* 帯ではなく、角の丸い島が浮いて見える型。
+   島の地は擬似要素で敷く。.hdr-in は .wrap でもあり、その左右の余白は
+   画面幅で決まっているので、そこに背景を付けるとスマホで端まで届いてしまう。 */
+.hdr.bar-float{background:transparent;border-bottom-color:transparent}
+.hdr.bar-float .hdr-in{position:relative;height:62px;margin-top:12px;margin-bottom:12px}
+.hdr.bar-float .hdr-in::before{
+  content:"";position:absolute;left:10px;right:10px;top:0;bottom:0;z-index:-1;
+  background:color-mix(in srgb,var(--c-bg) 82%,transparent);backdrop-filter:blur(14px);
+  border:1px solid var(--c-border);border-radius:999px;
+  box-shadow:0 18px 40px -24px rgba(15,23,42,.55)
+}
+
+/* ==========================================================
    文字アニメーション
    [data-ta] が付いた見出しを、JSが1文字ずつ span に分割する。
    画面に入ると .in が付いて再生される。
@@ -1354,6 +1410,14 @@ a:not(.btn):not(.logo){transition:opacity .5s cubic-bezier(.165,.84,.44,1)}
   if(t&&n){t.onclick=function(){n.classList.toggle('open')};}
   document.querySelectorAll('.nav a').forEach(function(a){
     a.addEventListener('click',function(){ if(n) n.classList.remove('open'); });
+  });
+
+  /* ---------- 重ねるヘッダーの文字色 ----------
+     すぐ下が写真のヒーローなら白字にする。地の明るいヒーローに
+     白字を出すと読めないので、下を見てから決める。 */
+  document.querySelectorAll('.hdr.bar-over').forEach(function(h){
+    var nx = h.nextElementSibling;
+    if(nx && nx.matches('.hero.cover, .hsc.cover, .collage')) h.classList.add('on-photo');
   });
 
   var d=document, body=d.body;
