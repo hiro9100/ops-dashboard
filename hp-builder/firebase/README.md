@@ -60,13 +60,21 @@ JSONファイルがダウンロードされます。
 `firebase-adminsdk-...@bildy-4e45e.iam.gserviceaccount.com` の行を編集して、
 次のロールを足します。
 
-| ロール | 何のため |
-| --- | --- |
-| Firebase Admin | Hosting とルールを出す |
-| Cloud Functions 管理者 | Function を出す |
-| サービス アカウント ユーザー | Function を動かす役を渡す |
-| Cloud Build 編集者 | Function を組み立てる |
-| Artifact Registry 管理者 | 組み立てたものを置く |
+| ロール | 役割ID（検索欄に貼ると早い） | 何のため |
+| --- | --- | --- |
+| Firebase Admin | `roles/firebase.admin` | Hosting とルールを出す |
+| Cloud Functions 管理者 | `roles/cloudfunctions.admin` | Function を出す |
+| サービス アカウント ユーザー | `roles/iam.serviceAccountUser` | Function を動かす役を渡す |
+| Cloud Build 編集者 | `roles/cloudbuild.builds.editor` | Function を組み立てる |
+| Artifact Registry 管理者 | `roles/artifactregistry.admin` | 組み立てたものを置く |
+| Service Usage 管理者 | `roles/serviceusage.serviceUsageAdmin` | 初回に必要なAPIを有効化する |
+
+最後の1つは初回だけ効きます。これが無いと、1回目のデプロイが
+「APIが有効になっていない」で止まります。
+
+秘密鍵はパスワードと同じものです。リポジトリには絶対に入れず、
+GitHub の Secret 欄にだけ貼ってください。漏れたと思ったら、
+Firebase コンソールの同じ画面でその鍵を削除して作り直せます。
 
 **3. GitHub に入れる**
 
