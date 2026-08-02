@@ -11,16 +11,21 @@
 
    合言葉そのものは保存せず、ハッシュだけを持つ。
    ================================================================ */
+/* 読み込みは、使うものだけを名指しする。
+   firebase-functions/v2 や firebase-admin を丸ごと読むと、使っていない
+   Realtime Database まで引きずり込み、その依存が足りずに
+   「Functions codebase could not be analyzed」で落ちる（実際に起きた）。 */
 const crypto = require('crypto');
 const { onRequest } = require('firebase-functions/v2/https');
-const { setGlobalOptions } = require('firebase-functions/v2');
-const admin = require('firebase-admin');
+const { initializeApp } = require('firebase-admin/app');
+const { getFirestore, FieldValue } = require('firebase-admin/firestore');
+const { getStorage } = require('firebase-admin/storage');
 
-admin.initializeApp();
-setGlobalOptions({ region: 'asia-northeast1', maxInstances: 10 });
+initializeApp();
 
-const db = admin.firestore();
-const bucket = () => admin.storage().bucket();
+const REGION = 'asia-northeast1';
+const db = getFirestore();
+const bucket = () => getStorage().bucket();
 
 /* ---------------- 制限 ----------------
    他人のHTMLを自分のドメインで配るので、置きっぱなしにはできない。 */
@@ -61,13 +66,13 @@ async function takeNewSiteSlot(ip) {
     const snap = await tx.get(ref);
     const n = snap.exists ? (snap.data().n || 0) : 0;
     if (n >= MAX_NEW_PER_DAY) return false;
-    tx.set(ref, { n: n + 1, day, at: admin.firestore.FieldValue.serverTimestamp() });
+    tx.set(ref, { n: n + 1, day, at: FieldValue.serverTimestamp() });
     return true;
   });
 }
 
 /* ---------------- 預かる ---------------- */
-exports.publishSite = onRequest({ cors: false, memory: '512MiB' }, async (req, res) => {
+exports.publishSite = onRequest({ region: REGION, maxInstances: 10, cors: false, memory: '512MiB' }, async (req, res) => {
   cors(res, req.headers.origin);
   if (req.method === 'OPTIONS') return res.status(204).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'POST でお願いします' });
@@ -117,8 +122,8 @@ exports.publishSite = onRequest({ cors: false, memory: '512MiB' }, async (req, r
       title: String(title || '').slice(0, 120),
       tokenHash: sha(tok),
       bytes: Buffer.byteLength(html, 'utf8'),
-      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-      ...(isNew ? { createdAt: admin.firestore.FieldValue.serverTimestamp() } : {}),
+      updatedAt: FieldValue.serverTimestamp(),
+      ...(isNew ? { createdAt: FieldValue.serverTimestamp() } : {}),
     }, { merge: true });
 
     const url = `https://${process.env.GCLOUD_PROJECT}.web.app/s/${id}`;
@@ -132,7 +137,7 @@ exports.publishSite = onRequest({ cors: false, memory: '512MiB' }, async (req, r
 });
 
 /* ---------------- 返す ---------------- */
-exports.serveSite = onRequest({ cors: false, memory: '256MiB' }, async (req, res) => {
+exports.serveSite = onRequest({ region: REGION, maxInstances: 10, cors: false, memory: '256MiB' }, async (req, res) => {
   try {
     /* Hosting からは元のパスがそのまま来る（/s/xxx あるいは /s/xxx/） */
     const id = decodeURIComponent(String(req.path || '')).split('/').filter(Boolean)[1] || '';
