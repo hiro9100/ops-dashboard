@@ -347,6 +347,9 @@ input,select,textarea{font:inherit}
    ブロック追加ギャラリー
    ========================================================== */
 .cat-bar{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:14px}
+/* display を指定した時点で、標準の [hidden]{display:none} に勝ってしまう。
+   hidden を付けても消えないので、こちらで打ち消す。 */
+.cat-bar[hidden]{display:none}
 .cat-bar button{
   background:var(--panel2);border:1px solid var(--line);border-radius:999px;
   padding:6px 15px;font-size:12px;font-weight:700;color:var(--tx2);transition:.15s
@@ -362,6 +365,23 @@ input,select,textarea{font:inherit}
   .gal-wrap iframe{min-height:52vh}
   .modal-box.wide{max-width:100%}
 }
+
+/* ==========================================================
+   部分ごとに選んで組む — いま何段目まで積んだかの帯
+   ========================================================== */
+.bld-strip{
+  display:flex;gap:6px;overflow-x:auto;padding-bottom:9px;margin-bottom:12px;
+  scrollbar-width:thin
+}
+.bld-strip:empty{display:none}
+.bld-strip span{
+  flex:none;display:inline-flex;align-items:center;gap:6px;
+  background:var(--panel2);border:1px solid var(--line);border-radius:999px;
+  padding:5px 12px;font-size:11.5px;font-weight:700;color:var(--tx2);white-space:nowrap
+}
+.bld-strip span i{font-style:normal;color:var(--pri);font-size:10.5px}
+/* 直前に積んだものが分かるように、最後の1つだけ色を付ける */
+.bld-strip span:last-child{border-color:var(--pri);color:var(--tx)}
 
 /* アニメーションのサンプル一覧を開くボタン */
 .anim-gal{
@@ -380,6 +400,7 @@ ${SITE_CSS}
 <style>${themeCSS(state.theme)}\n${SITE_CSS}\n${DECO_GAL_CSS}</style>
 <style>${SITE_CSS}\n${PAL_GAL_CSS}</style>
 <style>${SITE_CSS}\n${TPL_GAL_CSS}</style>
+<style>${themeCSS(state.theme)}\n${SITE_CSS}\n${GALLERY_CSS}</style>
 <div class="app">
   <!-- ================= 上部バー ================= -->
   <header class="topbar">
@@ -448,7 +469,26 @@ ${SITE_CSS}
     <h2>テンプレートを選ぶ</h2>
     <p class="modal-sub">選ぶと、いまの内容は置きかわります。あとから中身は自由に変えられます。</p>
     <div class="gal-wrap"><iframe id="tplFrame" title="テンプレートのサンプル"></iframe></div>
-    <div class="modal-foot"><button class="tb-btn" id="tplClose">閉じる</button></div>
+    <div class="modal-foot">
+      <button class="tb-btn" id="tplToBuild">部分ごとに選んで組む</button>
+      <button class="tb-btn" id="tplClose">閉じる</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= 部分ごとに選んで組む ================= -->
+<div class="modal" id="buildModal" hidden>
+  <div class="modal-box wide">
+    <h2 id="bldTitle">ヒーローを選ぶ</h2>
+    <p class="modal-sub" id="bldSub"></p>
+    <div class="bld-strip" id="bldStrip"></div>
+    <div class="cat-bar" id="bldCatBar"></div>
+    <div class="gal-wrap"><iframe id="bldFrame" title="部分の見本"></iframe></div>
+    <div class="modal-foot">
+      <button class="tb-btn" id="bldCancel">やめる</button>
+      <button class="tb-btn" id="bldBack">1つ戻す</button>
+      <button class="tb-btn primary" id="bldDone">これで完成</button>
+    </div>
   </div>
 </div>
 
@@ -4910,6 +4950,158 @@ const TEMPLATES = {
 
 </script>
 <script>
+/* ===== assets/presets.js ===== */
+/* ================================================================
+   部分ごとに選んで組むための「型」
+
+   1つの型 = ブロック種別 ＋ 初期値からの差分。
+   同じ features でも、アイコン3列と ( 01 ) 形式では別の型として並べる。
+   テンプレートが「1ページまるごと」なのに対して、こちらは「1段ずつ」。
+
+   見本は BLOCKS[type].render() で実物を描くので、
+   ここに書いた差分がそのまま見た目に出る。
+   ================================================================ */
+
+/* ---------------- ヒーロー（1段目） ---------------- */
+const HERO_PRESETS = [
+  { key: 'center', type: 'hero', label: '中央ぞろえ',
+    about: 'いちばん素直な型。文章が主役のとき。',
+    props: { layout: 'center' } },
+
+  { key: 'left', type: 'hero', label: '左ぞろえ',
+    about: '読み出しが速い。文章が長めのときに。',
+    props: { layout: 'left' } },
+
+  { key: 'split', type: 'hero', label: '左右に画像',
+    about: '文章と写真を同じ重さで見せる。',
+    props: { layout: 'split' } },
+
+  { key: 'cover', type: 'hero', label: '写真いっぱい',
+    about: '写真の力で見せる。文字は写真の上に重なる。',
+    props: { layout: 'cover' } },
+
+  { key: 'cover-glass', type: 'hero', label: '写真＋すりガラス',
+    about: 'ポインタに追いてガラスの円が動く。指の環境では自動で止まる。',
+    props: { layout: 'cover', deco: 'glass', decoStrength: 70 } },
+
+  { key: 'center-clouds', type: 'hero', label: 'ふわふわ雲',
+    about: 'やわらかい色のかたまりがゆっくり漂う。',
+    props: { layout: 'center', deco: 'clouds', decoStrength: 60 } },
+
+  { key: 'center-aurora', type: 'hero', label: 'オーロラ',
+    about: '背後で光の帯がゆっくり流れる。暗い配色と相性がいい。',
+    props: { layout: 'center', deco: 'aurora', decoStrength: 65 } },
+
+  { key: 'center-dust', type: 'hero', label: '光の粒',
+    about: '細かい粒がゆっくり昇る。静かに動かしたいとき。',
+    props: { layout: 'center', deco: 'dust', decoStrength: 55 } },
+
+  { key: 'cover-cursor', type: 'hero', label: '写真＋追従する丸',
+    about: 'ポインタを追う丸の中だけ、文字が反転して見える。',
+    props: { layout: 'cover', deco: 'cursor', decoStrength: 60, decoLabel: 'SCROLL' } },
+
+  { key: 'scroll-zoomout', type: 'hero', label: 'スクロールで写真が縮む',
+    about: '全画面の写真が、スクロールにつれて枠の中に収まっていく。',
+    props: { layout: 'cover', scroll: 'zoomout', scrollLen: 200 } },
+
+  { key: 'scroll-parallax', type: 'hero', label: '写真と文字がずれて流れる',
+    about: '写真がゆっくり、文字が速く動いて奥行きが出る。',
+    props: { layout: 'cover', scroll: 'parallax', scrollLen: 200 } },
+
+  { key: 'scroll-curtain', type: 'hero', label: '幕が上下に開く',
+    about: 'スクロールに合わせて上下の幕が開き、写真が現れる。',
+    props: { layout: 'cover', scroll: 'curtain', scrollLen: 200 } },
+
+  { key: 'scroll-maskzoom', type: 'hero', label: '文字の中から写真が広がる',
+    about: '文字の内側から写真が広がって全画面になる。いちばん派手。',
+    props: { layout: 'cover', scroll: 'maskzoom', scrollLen: 240 } },
+
+  { key: 'collage', type: 'collage', label: 'コラージュ（縦書き）',
+    about: '敷き詰めた写真に、斜めの写真と縦書きの帯を重ねる。',
+    props: {} },
+];
+
+/* ---------------- 2段目から下 ---------------- */
+const SECTION_PRESETS = [
+  /* --- 基本 --- */
+  { key: 'features-icon', type: 'features', label: '特徴（アイコン3列）',
+    about: 'サービスの強みを3つ並べる、いちばん使う型。',
+    props: { style: 'icon', cols: 'c3' } },
+
+  { key: 'features-num', type: 'features', label: '特徴（番号つき・手順）',
+    about: '順番に意味があるとき。ご利用の流れなどに。',
+    props: { style: 'num', cols: 'c3' } },
+
+  { key: 'features-paren', type: 'features', label: '特徴（( 01 ) 形式・2列）',
+    about: '番号を控えめに置く型。落ち着いて見える。',
+    props: { style: 'paren', cols: 'c2' } },
+
+  { key: 'features-image', type: 'features', label: '特徴（画像つき）',
+    about: '写真で見せたいとき。3つの事例紹介などに。',
+    props: { style: 'image', cols: 'c3' } },
+
+  { key: 'about-left', type: 'about', label: '紹介（画像が左）',
+    about: '写真1枚と文章を並べる。会社紹介や店舗紹介に。',
+    props: { reverse: false } },
+
+  { key: 'about-right', type: 'about', label: '紹介（画像が右）',
+    about: '同じ型の左右ちがい。続けて使うと交互になって流れが出る。',
+    props: { reverse: true } },
+
+  { key: 'gallery', type: 'gallery', label: 'ギャラリー', about: '写真を並べて見せる。', props: {} },
+  { key: 'menu', type: 'menu', label: 'お品書き（価格表）',
+    about: '品名と値段を並べる。飲食店やサロンに。', props: {} },
+  { key: 'floors', type: 'floors', label: 'フロアガイド',
+    about: '階ごとの案内。複合施設や商業ビルに。', props: {} },
+  { key: 'news', type: 'news', label: 'お知らせ・イベント',
+    about: '日付つきの一覧。更新して使う欄。', props: {} },
+  { key: 'pricing', type: 'pricing', label: '料金プラン',
+    about: '3つ並べて真ん中を目立たせる型。', props: { cols: 'c3' } },
+  { key: 'faq', type: 'faq', label: 'よくある質問',
+    about: '押すと開く。問い合わせを減らしたいとき。', props: {} },
+  { key: 'cta', type: 'cta', label: 'CTA（行動を促す帯）',
+    about: '色を敷いて、次にしてほしいことを1つだけ置く。', props: { bg: 'primary' } },
+  { key: 'contact', type: 'contact', label: 'お問い合わせ',
+    about: '入力欄と送信ボタン。送信先は編集画面で設定する。', props: {} },
+  { key: 'rich', type: 'rich', label: '自由テキスト',
+    about: '決まった型に収まらない文章を置く欄。', props: {} },
+  { key: 'slotstats', type: 'slotstats', label: '数字カウンター',
+    about: '画面に入ると数字が回って止まる。実績を出すとき。', props: { cols: 'c3' } },
+
+  /* --- スクロール連動 --- */
+  { key: 'hscroll', type: 'hscroll', label: '横に流れるギャラリー',
+    about: '縦に読むと横に流れる。作品や事例を並べるとき。', props: {} },
+  { key: 'stackcards', type: 'stackcards', label: '積み重なるカード',
+    about: 'カードが手前に重なっていく。話を順に見せるとき。', props: {} },
+  { key: 'timeline', type: 'timeline', label: 'タイムライン',
+    about: '線が伸びながら項目が現れる。沿革や流れに。', props: {} },
+  { key: 'clipreveal', type: 'clipreveal', label: '円形マスクで切り替え',
+    about: '円が広がって次の画面に入れ替わる。', props: {} },
+  { key: 'slides', type: 'slides', label: 'スライドページ',
+    about: '1画面ずつめくる。資料のように見せるとき。', props: {} },
+
+  /* --- 3D・図解 --- */
+  { key: 'product3d', type: 'product3d', label: '3D製品ビュー',
+    about: 'スクロールで製品がまわる。物を売るとき。', props: {} },
+  { key: 'exploded', type: 'exploded', label: '分解図が組み上がる',
+    about: 'ばらけた層がスクロールで重なって1つになる。', props: {} },
+  { key: 'carousel3d', type: 'carousel3d', label: '3Dカルーセル',
+    about: '円をえがいて並んだ面がまわる。', props: {} },
+  { key: 'svgdraw', type: 'svgdraw', label: '線が引かれるグラフ',
+    about: '折れ線がその場で描かれる。数字の変化を見せるとき。', props: {} },
+
+  /* --- 演出 --- */
+  { key: 'marquee', type: 'marquee', label: '流れる文字',
+    about: '大きな文字が横に流れ続ける帯。区切りに置く。',
+    props: { bg: 'primary' } },
+  { key: 'shift', type: 'shift', label: '全画面メッセージ',
+    about: '画面いっぱいに1行だけ置いて、間を作る。', props: {} },
+  { key: 'collage-mid', type: 'collage', label: 'コラージュ',
+    about: '写真を敷き詰めた帯。途中に挟んでも効く。', props: {} },
+];
+
+</script>
+<script>
 /* ===== assets/app.js ===== */
 /* ================================================================
    かんたんHP作成ツール — 編集画面のロジック
@@ -4950,6 +5142,26 @@ function buildState(tplKey) {
     rules: !!t.rules,
     motion: clone(DEFAULT_MOTION),
     blocks: t.blocks.map((b) => makeBlock(b.type, b.props)),
+  };
+}
+
+/* 部分ごとに組むときの出発点。
+   ヘッダーとフッターだけ置いた空のページにする。この2つは
+   「選ぶもの」ではなくどのページにも要るので、最初から入れておく。
+   配色は無彩色寄りの corporate を借りる（あとでデザインタブから変えられる）。 */
+function buildCustomState() {
+  return {
+    template: 'custom',
+    meta: {
+      title: 'My Website',
+      description: 'このサイトの説明を入れてください。検索結果やSNSでの共有時に表示されます。',
+      lang: 'ja',
+    },
+    theme: clone(TEMPLATES.corporate.theme),
+    style: '',
+    rules: false,
+    motion: clone(DEFAULT_MOTION),
+    blocks: [makeBlock('header'), makeBlock('footer')],
   };
 }
 
@@ -5130,7 +5342,9 @@ const bodyClass = () => `tpl-${state.template}${state.style ? ` sty-${state.styl
 const bodyHTML = () => state.blocks.map((b) => BLOCKS[b.type].render(b.props)).join('\n\n');
 
 /* 書き出し時は編集画面専用の属性を取り除く（動作に必要な data-ta/-ia/-anim/-delay は残す） */
-const exportBody = () => bodyHTML().replace(/ data-(?:el|elname|elkind|prop)="[^"]*"/g, '');
+/* 書き出しでは編集用の目印を全部落とす。imgprop も忘れずに
+   （落とし忘れると、画像枠の属性が書き出したHTMLに残る） */
+const exportBody = () => bodyHTML().replace(/ data-(?:el|elname|elkind|prop|imgprop)="[^"]*"/g, '');
 
 /* 書き出し用の完成HTML（1ファイルで動く） */
 function fullHTML() {
@@ -6563,6 +6777,153 @@ function renderTplGrid() {
 }
 const openModal = (id) => { $(id).hidden = false; };
 const closeModal = (id) => { $(id).hidden = true; };
+
+/* ================================================================
+   部分ごとに選んで組む
+
+   テンプレートが「1ページまるごと」なのに対して、こちらは1段ずつ積む。
+   1段目はヒーロー、2段目からは自由。選ぶたびに後ろのプレビューが伸びるので、
+   出来上がりを見ながら次を決められる。
+
+   途中でやめても元に戻せるよう、開始時の state を控えておく。
+   ================================================================ */
+let bldBefore = null;   // 「やめる」で戻すための、開始前の状態
+let bldCat = 'all';
+
+/* 型の見本は実物を描く。中身は BLOCKS の初期値そのままなので、
+   ここで組んだ差分だけが型ごとの違いになる。 */
+function presetSample(p) {
+  const def = BLOCKS[p.type];
+  return def.render(Object.assign(clone(def.defaults), clone(p.props)));
+}
+
+const bldStep = () => (state && state.blocks.some((b) => b.type === 'hero' || b.type === 'collage')
+  ? 'section' : 'hero');
+
+function bldList() {
+  if (bldStep() === 'hero') return HERO_PRESETS;
+  return SECTION_PRESETS.filter((p) =>
+    bldCat === 'all' || catOf(BLOCKS[p.type]) === bldCat);
+}
+
+function renderBldStrip() {
+  /* header と footer は最初から入っていて選ぶものではないので出さない */
+  const picked = state.blocks.filter((b) => b.type !== 'header' && b.type !== 'footer');
+  $('#bldStrip').innerHTML = picked
+    .map((b, i) => `<span><i>${i + 1}</i>${esc(BLOCKS[b.type].label)}</span>`).join('');
+  $('#bldStrip').scrollLeft = 99999;
+  $('#bldBack').disabled = picked.length === 0;
+  $('#bldDone').disabled = picked.length === 0;
+}
+
+function renderBldHead() {
+  const hero = bldStep() === 'hero';
+  const n = state.blocks.filter((b) => b.type !== 'header' && b.type !== 'footer').length;
+  $('#bldTitle').textContent = hero ? '① ヒーローを選ぶ' : `${n + 1}段目を選ぶ`;
+  /* スマホでは説明が長いほど見本が見えなくなるので、要点だけにする */
+  $('#bldSub').textContent = hero
+    ? 'いちばん上に来る、顔になる部分です。'
+    : '選ぶと下に積まれます。終わったら「これで完成」。';
+  $('#bldCatBar').hidden = hero;
+}
+
+function renderBldCats() {
+  $('#bldCatBar').innerHTML = CATS.map(([k, l]) =>
+    `<button data-cat="${k}" class="${bldCat === k ? 'on' : ''}">${l}</button>`).join('');
+}
+
+function renderBldGallery() {
+  const f = $('#bldFrame');
+  const cards = bldList().map((p) => `<div class="gc" data-key="${esc(p.key)}" role="button" tabindex="0">
+      <span class="gc-hit"></span>
+      <div class="gc-prev"><div class="gc-scale">${presetSample(p)}</div></div>
+      <div class="gc-meta"><b>${esc(p.label)}</b>
+        <small>${esc(p.about)}</small></div>
+    </div>`).join('');
+
+  f.srcdoc = `<!DOCTYPE html><html lang="ja"><head><meta charset="utf-8">
+<style>${themeCSS(state.theme)}\n${SITE_CSS}\n${GALLERY_CSS}</style></head>
+<body class="${esc(bodyClass())}"><div class="gg">${cards}</div>
+<script>${SITE_JS}<\/script></body></html>`;
+
+  /* srcdoc を差し替えるたびに load が来るので、毎回付け直す
+     （once で1回だけにすると、2段目以降が反応しなくなる） */
+  f.onload = () => {
+    f.contentDocument.addEventListener('click', (e) => {
+      const k = e.target.closest('.gc')?.dataset.key;
+      if (k) pickPreset(k);
+    });
+  };
+}
+
+function refreshBld() {
+  renderBldHead();
+  renderBldCats();
+  renderBldStrip();
+  renderBldGallery();
+}
+
+function pickPreset(key) {
+  const p = (bldStep() === 'hero' ? HERO_PRESETS : SECTION_PRESETS).find((x) => x.key === key);
+  if (!p) return;
+  const nb = makeBlock(p.type, p.props);
+  const fi = state.blocks.findIndex((b) => b.type === 'footer');
+  state.blocks.splice(fi < 0 ? state.blocks.length : fi, 0, nb);
+  selected = nb.id;
+  selectedEl = null;
+  refresh();          // 後ろのプレビューも伸ばして、積み上がりが見えるようにする
+  refreshBld();
+}
+
+function bldUndo() {
+  const picked = state.blocks.filter((b) => b.type !== 'header' && b.type !== 'footer');
+  const last = picked[picked.length - 1];
+  if (!last) return;
+  state.blocks = state.blocks.filter((b) => b.id !== last.id);
+  selected = state.blocks[0]?.id || null;
+  selectedEl = null;
+  refresh();
+  refreshBld();
+}
+
+function openBuildFlow() {
+  bldBefore = state ? clone(state) : null;
+  bldCat = 'all';
+  state = buildCustomState();
+  selected = state.blocks[0].id;
+  selectedEl = null;
+  closed.clear();
+  closeModal('#tplModal');
+  refresh();
+  openModal('#buildModal');
+  refreshBld();
+}
+
+$('#tplToBuild').addEventListener('click', openBuildFlow);
+$('#bldBack').addEventListener('click', bldUndo);
+$('#bldCatBar').addEventListener('click', (e) => {
+  const c = e.target.closest('button')?.dataset.cat;
+  if (!c) return;
+  bldCat = c;
+  renderBldCats();
+  renderBldGallery();
+});
+$('#bldCancel').addEventListener('click', () => {
+  if (bldBefore) { state = bldBefore; selected = state.blocks[1]?.id || state.blocks[0]?.id; }
+  bldBefore = null;
+  selectedEl = null;
+  closeModal('#buildModal');
+  refresh();
+});
+$('#bldDone').addEventListener('click', () => {
+  bldBefore = null;
+  closeModal('#buildModal');
+  if (isMobile()) closeSheets();
+  refresh();
+  resetHistory();     // 組み上げたところを起点にする
+  const n = state.blocks.filter((b) => b.type !== 'header' && b.type !== 'footer').length;
+  flash(`${n}段のページを組みました。ここから中身を書き替えられます`);
+});
 
 let askBeforeSwitch = false; // 起動直後の選択では確認しない
 

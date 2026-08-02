@@ -76,7 +76,26 @@
     <h2>テンプレートを選ぶ</h2>
     <p class="modal-sub">選ぶと、いまの内容は置きかわります。あとから中身は自由に変えられます。</p>
     <div class="gal-wrap"><iframe id="tplFrame" title="テンプレートのサンプル"></iframe></div>
-    <div class="modal-foot"><button class="tb-btn" id="tplClose">閉じる</button></div>
+    <div class="modal-foot">
+      <button class="tb-btn" id="tplToBuild">部分ごとに選んで組む</button>
+      <button class="tb-btn" id="tplClose">閉じる</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= 部分ごとに選んで組む ================= -->
+<div class="modal" id="buildModal" hidden>
+  <div class="modal-box wide">
+    <h2 id="bldTitle">ヒーローを選ぶ</h2>
+    <p class="modal-sub" id="bldSub"></p>
+    <div class="bld-strip" id="bldStrip"></div>
+    <div class="cat-bar" id="bldCatBar"></div>
+    <div class="gal-wrap"><iframe id="bldFrame" title="部分の見本"></iframe></div>
+    <div class="modal-foot">
+      <button class="tb-btn" id="bldCancel">やめる</button>
+      <button class="tb-btn" id="bldBack">1つ戻す</button>
+      <button class="tb-btn primary" id="bldDone">これで完成</button>
+    </div>
   </div>
 </div>
 
@@ -127,6 +146,7 @@
 <script src="assets/site-css.js"></script>
 <script src="assets/blocks.js"></script>
 <script src="assets/templates.js"></script>
+<script src="assets/presets.js"></script>
 <script src="assets/app.js"></script>
 </body>
 </html>

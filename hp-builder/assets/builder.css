@@ -345,6 +345,9 @@ input,select,textarea{font:inherit}
    ブロック追加ギャラリー
    ========================================================== */
 .cat-bar{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:14px}
+/* display を指定した時点で、標準の [hidden]{display:none} に勝ってしまう。
+   hidden を付けても消えないので、こちらで打ち消す。 */
+.cat-bar[hidden]{display:none}
 .cat-bar button{
   background:var(--panel2);border:1px solid var(--line);border-radius:999px;
   padding:6px 15px;font-size:12px;font-weight:700;color:var(--tx2);transition:.15s
@@ -360,6 +363,23 @@ input,select,textarea{font:inherit}
   .gal-wrap iframe{min-height:52vh}
   .modal-box.wide{max-width:100%}
 }
+
+/* ==========================================================
+   部分ごとに選んで組む — いま何段目まで積んだかの帯
+   ========================================================== */
+.bld-strip{
+  display:flex;gap:6px;overflow-x:auto;padding-bottom:9px;margin-bottom:12px;
+  scrollbar-width:thin
+}
+.bld-strip:empty{display:none}
+.bld-strip span{
+  flex:none;display:inline-flex;align-items:center;gap:6px;
+  background:var(--panel2);border:1px solid var(--line);border-radius:999px;
+  padding:5px 12px;font-size:11.5px;font-weight:700;color:var(--tx2);white-space:nowrap
+}
+.bld-strip span i{font-style:normal;color:var(--pri);font-size:10.5px}
+/* 直前に積んだものが分かるように、最後の1つだけ色を付ける */
+.bld-strip span:last-child{border-color:var(--pri);color:var(--tx)}
 
 /* アニメーションのサンプル一覧を開くボタン */
 .anim-gal{

@@ -40,6 +40,26 @@ function buildState(tplKey) {
   };
 }
 
+/* 部分ごとに組むときの出発点。
+   ヘッダーとフッターだけ置いた空のページにする。この2つは
+   「選ぶもの」ではなくどのページにも要るので、最初から入れておく。
+   配色は無彩色寄りの corporate を借りる（あとでデザインタブから変えられる）。 */
+function buildCustomState() {
+  return {
+    template: 'custom',
+    meta: {
+      title: 'My Website',
+      description: 'このサイトの説明を入れてください。検索結果やSNSでの共有時に表示されます。',
+      lang: 'ja',
+    },
+    theme: clone(TEMPLATES.corporate.theme),
+    style: '',
+    rules: false,
+    motion: clone(DEFAULT_MOTION),
+    blocks: [makeBlock('header'), makeBlock('footer')],
+  };
+}
+
 /* 動きの初期設定 */
 const MOTION_EASES = [
   ['cubic-bezier(.2,.7,.3,1)', 'なめらか（標準）'],
@@ -217,7 +237,9 @@ const bodyClass = () => `tpl-${state.template}${state.style ? ` sty-${state.styl
 const bodyHTML = () => state.blocks.map((b) => BLOCKS[b.type].render(b.props)).join('\n\n');
 
 /* 書き出し時は編集画面専用の属性を取り除く（動作に必要な data-ta/-ia/-anim/-delay は残す） */
-const exportBody = () => bodyHTML().replace(/ data-(?:el|elname|elkind|prop)="[^"]*"/g, '');
+/* 書き出しでは編集用の目印を全部落とす。imgprop も忘れずに
+   （落とし忘れると、画像枠の属性が書き出したHTMLに残る） */
+const exportBody = () => bodyHTML().replace(/ data-(?:el|elname|elkind|prop|imgprop)="[^"]*"/g, '');
 
 /* 書き出し用の完成HTML（1ファイルで動く） */
 function fullHTML() {
@@ -1650,6 +1672,153 @@ function renderTplGrid() {
 }
 const openModal = (id) => { $(id).hidden = false; };
 const closeModal = (id) => { $(id).hidden = true; };
+
+/* ================================================================
+   部分ごとに選んで組む
+
+   テンプレートが「1ページまるごと」なのに対して、こちらは1段ずつ積む。
+   1段目はヒーロー、2段目からは自由。選ぶたびに後ろのプレビューが伸びるので、
+   出来上がりを見ながら次を決められる。
+
+   途中でやめても元に戻せるよう、開始時の state を控えておく。
+   ================================================================ */
+let bldBefore = null;   // 「やめる」で戻すための、開始前の状態
+let bldCat = 'all';
+
+/* 型の見本は実物を描く。中身は BLOCKS の初期値そのままなので、
+   ここで組んだ差分だけが型ごとの違いになる。 */
+function presetSample(p) {
+  const def = BLOCKS[p.type];
+  return def.render(Object.assign(clone(def.defaults), clone(p.props)));
+}
+
+const bldStep = () => (state && state.blocks.some((b) => b.type === 'hero' || b.type === 'collage')
+  ? 'section' : 'hero');
+
+function bldList() {
+  if (bldStep() === 'hero') return HERO_PRESETS;
+  return SECTION_PRESETS.filter((p) =>
+    bldCat === 'all' || catOf(BLOCKS[p.type]) === bldCat);
+}
+
+function renderBldStrip() {
+  /* header と footer は最初から入っていて選ぶものではないので出さない */
+  const picked = state.blocks.filter((b) => b.type !== 'header' && b.type !== 'footer');
+  $('#bldStrip').innerHTML = picked
+    .map((b, i) => `<span><i>${i + 1}</i>${esc(BLOCKS[b.type].label)}</span>`).join('');
+  $('#bldStrip').scrollLeft = 99999;
+  $('#bldBack').disabled = picked.length === 0;
+  $('#bldDone').disabled = picked.length === 0;
+}
+
+function renderBldHead() {
+  const hero = bldStep() === 'hero';
+  const n = state.blocks.filter((b) => b.type !== 'header' && b.type !== 'footer').length;
+  $('#bldTitle').textContent = hero ? '① ヒーローを選ぶ' : `${n + 1}段目を選ぶ`;
+  /* スマホでは説明が長いほど見本が見えなくなるので、要点だけにする */
+  $('#bldSub').textContent = hero
+    ? 'いちばん上に来る、顔になる部分です。'
+    : '選ぶと下に積まれます。終わったら「これで完成」。';
+  $('#bldCatBar').hidden = hero;
+}
+
+function renderBldCats() {
+  $('#bldCatBar').innerHTML = CATS.map(([k, l]) =>
+    `<button data-cat="${k}" class="${bldCat === k ? 'on' : ''}">${l}</button>`).join('');
+}
+
+function renderBldGallery() {
+  const f = $('#bldFrame');
+  const cards = bldList().map((p) => `<div class="gc" data-key="${esc(p.key)}" role="button" tabindex="0">
+      <span class="gc-hit"></span>
+      <div class="gc-prev"><div class="gc-scale">${presetSample(p)}</div></div>
+      <div class="gc-meta"><b>${esc(p.label)}</b>
+        <small>${esc(p.about)}</small></div>
+    </div>`).join('');
+
+  f.srcdoc = `<!DOCTYPE html><html lang="ja"><head><meta charset="utf-8">
+<style>${themeCSS(state.theme)}\n${SITE_CSS}\n${GALLERY_CSS}</style></head>
+<body class="${esc(bodyClass())}"><div class="gg">${cards}</div>
+<script>${SITE_JS}<\/script></body></html>`;
+
+  /* srcdoc を差し替えるたびに load が来るので、毎回付け直す
+     （once で1回だけにすると、2段目以降が反応しなくなる） */
+  f.onload = () => {
+    f.contentDocument.addEventListener('click', (e) => {
+      const k = e.target.closest('.gc')?.dataset.key;
+      if (k) pickPreset(k);
+    });
+  };
+}
+
+function refreshBld() {
+  renderBldHead();
+  renderBldCats();
+  renderBldStrip();
+  renderBldGallery();
+}
+
+function pickPreset(key) {
+  const p = (bldStep() === 'hero' ? HERO_PRESETS : SECTION_PRESETS).find((x) => x.key === key);
+  if (!p) return;
+  const nb = makeBlock(p.type, p.props);
+  const fi = state.blocks.findIndex((b) => b.type === 'footer');
+  state.blocks.splice(fi < 0 ? state.blocks.length : fi, 0, nb);
+  selected = nb.id;
+  selectedEl = null;
+  refresh();          // 後ろのプレビューも伸ばして、積み上がりが見えるようにする
+  refreshBld();
+}
+
+function bldUndo() {
+  const picked = state.blocks.filter((b) => b.type !== 'header' && b.type !== 'footer');
+  const last = picked[picked.length - 1];
+  if (!last) return;
+  state.blocks = state.blocks.filter((b) => b.id !== last.id);
+  selected = state.blocks[0]?.id || null;
+  selectedEl = null;
+  refresh();
+  refreshBld();
+}
+
+function openBuildFlow() {
+  bldBefore = state ? clone(state) : null;
+  bldCat = 'all';
+  state = buildCustomState();
+  selected = state.blocks[0].id;
+  selectedEl = null;
+  closed.clear();
+  closeModal('#tplModal');
+  refresh();
+  openModal('#buildModal');
+  refreshBld();
+}
+
+$('#tplToBuild').addEventListener('click', openBuildFlow);
+$('#bldBack').addEventListener('click', bldUndo);
+$('#bldCatBar').addEventListener('click', (e) => {
+  const c = e.target.closest('button')?.dataset.cat;
+  if (!c) return;
+  bldCat = c;
+  renderBldCats();
+  renderBldGallery();
+});
+$('#bldCancel').addEventListener('click', () => {
+  if (bldBefore) { state = bldBefore; selected = state.blocks[1]?.id || state.blocks[0]?.id; }
+  bldBefore = null;
+  selectedEl = null;
+  closeModal('#buildModal');
+  refresh();
+});
+$('#bldDone').addEventListener('click', () => {
+  bldBefore = null;
+  closeModal('#buildModal');
+  if (isMobile()) closeSheets();
+  refresh();
+  resetHistory();     // 組み上げたところを起点にする
+  const n = state.blocks.filter((b) => b.type !== 'header' && b.type !== 'footer').length;
+  flash(`${n}段のページを組みました。ここから中身を書き替えられます`);
+});
 
 let askBeforeSwitch = false; // 起動直後の選択では確認しない
 
