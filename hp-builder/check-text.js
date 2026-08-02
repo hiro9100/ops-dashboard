@@ -9,9 +9,31 @@
 const fs = require('fs');
 const path = require('path');
 
-const ROOT = __dirname;
-const FILES = ['assets/blocks.js', 'assets/templates.js', 'assets/presets.js',
-  'assets/easy.js', 'assets/app.js', 'assets/site-css.js', 'index.html'];
+/* 見る範囲は、手で書いたファイル全部。
+   画面に出る文字だけを見ていたら、ワークフローのエラーメッセージに
+   ハングルが紛れ込んでいた（自分で書いて、自分で気づけなかった）。
+   人が読むところは、置き場所を問わず全部見る。 */
+const ROOT = path.join(__dirname, '..');
+const ROOTS = ['hp-builder', '.github'];
+const EXT = new Set(['.js', '.html', '.md', '.yml', '.yaml', '.json']);
+/* 機械が作ったものは見ない（元になったファイルの方を見ている） */
+const SKIP_DIR = new Set(['node_modules', '.git', 'docs', 'dist']);
+const GENERATED = /^hp-builder\/examples\/.*\.html$/;
+/* このファイル自身は見ない。探している文字を、探すために持っているから */
+const SELF = 'hp-builder/check-text.js';
+
+function collect(dir, out = []) {
+  for (const e of fs.readdirSync(path.join(ROOT, dir), { withFileTypes: true })) {
+    const rel = `${dir}/${e.name}`;
+    if (e.isDirectory()) {
+      if (!SKIP_DIR.has(e.name)) collect(rel, out);
+    } else if (EXT.has(path.extname(e.name)) && !GENERATED.test(rel) && rel !== SELF) {
+      out.push(rel);
+    }
+  }
+  return out;
+}
+const FILES = ROOTS.flatMap((d) => collect(d));
 
 /* 日本語の文章に混ざっていたら困る文字 */
 const FOREIGN = /[가-힣ᄀ-ᇿЀ-ӿ؀-ۿ฀-๿]/;
@@ -36,7 +58,8 @@ const GLUE = /[.#/\-_'@:]/;                       // これが隣にあれば名
 
 /* 日本語の文の中にそのまま出てきても不自然でない、決まった名前 */
 const ALLOW = new Set(['www', 'htdocs', 'index', 'html', 'css', 'src', 'href',
-  'iframe', 'srcdoc', 'canvas', 'px', 'vw', 'vh', 'em', 'rem']);
+  'iframe', 'srcdoc', 'canvas', 'px', 'vw', 'vh', 'em', 'rem',
+  'sticky', 'playwright', 'npm', 'node', 'firebase']);
 
 function strayEnglish(s) {
   const hits = [];

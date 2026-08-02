@@ -94,8 +94,34 @@ jobs:
           npx --yes firebase-tools@14 deploy --project bildy-4e45e --non-interactive \
             --only hosting,functions,storage,firestore
 
-      - name: 出したもの
+      # deploy が「成功」で終わっても、一部の Function が作られていないこと
+      # がある（2つの Function が同じ置き場バケツを同時に作ろうとして 409 に
+      # なり、publishSite だけ落ちたのに全体は成功扱いだった）。
+      # 出したものを実際に叩いて、動いていることを確かめる。
+      - name: 動いているか確かめる
         run: |
-          echo "https://bildy-4e45e.web.app/        サービスLP"
-          echo "https://bildy-4e45e.web.app/app/    編集ツール"
-          echo "https://bildy-4e45e.web.app/s/<ID>  公開されたページ"
+          ng=0
+          check () {   # check <URL> <期待するコード> <説明>
+            code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 30 "$1" || echo 000)
+            if [ "$code" = "$2" ]; then
+              echo "  ok   $3  ($1 → $code)"
+            else
+              echo "  NG   $3  ($1 → $code、$2 のはず)"; ng=$((ng+1))
+            fi
+          }
+          B=https://bildy-4e45e.web.app
+          check "$B/"                 200 "サービスLP"
+          check "$B/app/"             200 "編集ツール"
+          check "$B/demo/"            200 "見本の一覧"
+          # 中身の無いサイトIDは、配信の Function が 404 の画面を返す
+          check "$B/s/nothing-here"   404 "公開ページの配信（serveSite）"
+          # 受け口は POST 専用。GET で 405 が返れば、Function が生きている
+          check "$B/api/publish"      405 "公開の受け口（publishSite）"
+          if [ "$ng" -gt 0 ]; then
+            echo "出したはずのものが $ng 件、応答していません。" >&2
+            exit 1
+          fi
+          echo ""
+          echo "$B/        サービスLP"
+          echo "$B/app/    編集ツール"
+          echo "$B/s/<ID>  公開されたページ"
