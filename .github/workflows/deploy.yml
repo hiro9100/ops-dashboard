@@ -85,7 +85,10 @@ jobs:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/sa.json
         run: |
           npm --prefix functions ci --no-audit --no-fund || npm --prefix functions install
-          npx --yes firebase-tools@14 deploy --project bildy-4e45e --non-interactive
+          # 出すものを名指しする。指定しないと Extensions まで確認しに行き、
+          # 使っていないのに、その API の反映待ちで 403 になって止まる（実際に起きた）。
+          npx --yes firebase-tools@14 deploy --project bildy-4e45e --non-interactive \
+            --only hosting,functions,storage,firestore
 
       - name: 出したもの
         run: |
