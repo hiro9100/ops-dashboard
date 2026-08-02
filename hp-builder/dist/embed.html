@@ -436,7 +436,10 @@ input,select,textarea{font:inherit}
   margin-top:13px;padding:13px 15px;border-radius:11px;
   background:var(--panel2);border:1px solid var(--line);font-size:12.5px;line-height:1.8
 }
-.pub-live a{color:var(--pri);word-break:break-all}
+.pub-live a{color:var(--pri);word-break:break-all;display:block;margin:5px 0 0}
+.pub-live b{display:block;font-size:11.5px;color:var(--tx2);font-weight:700}
+.pub-live small{display:block;color:var(--tx2);font-size:11.5px;line-height:1.7;margin-top:10px}
+.pub-acts{display:flex;flex-wrap:wrap;gap:7px;margin-top:12px}
 
 /* ==========================================================
    部分ごとに選んで組む — いま何段目まで積んだかの帯
@@ -5089,6 +5092,26 @@ const TEMPLATES = {
 
 </script>
 <script>
+/* ===== assets/publish-config.js ===== */
+/* ================================================================
+   公開先の設定
+
+   ここの値は公開して問題ない。ブラウザに配られる前提のもので、
+   実際の守りは Cloud Function 側の合言葉と、Storage / Firestore の
+   ルール（どちらもブラウザからは触れない）で行っている。
+
+   endpoint を空にすると、雲への公開は選択肢に出なくなり、
+   これまでどおり「自分で置く」だけになる。
+   ================================================================ */
+const PUBLISH = {
+  /* 預ける先 */
+  endpoint: 'https://bildy-4e45e.web.app/api/publish',
+  /* 公開されたページのアドレスの頭。独自ドメインを足したら、ここも足す */
+  siteBase: 'https://bildy-4e45e.web.app/s/',
+};
+
+</script>
+<script>
 /* ===== assets/presets.js ===== */
 /* ================================================================
    部分ごとに選んで組むための「型」
@@ -5866,7 +5889,7 @@ function bodyImages(html) {
 /* 写真を番号に置き換えた state を返す。
    本文に出てこない写真（表示されない項目に入っているものなど）は、
    参照しようがないのでそのまま持たせる。 */
-function slimState(imgs) {
+function slimState(imgs, forPublish) {
   const idx = new Map(imgs.map((s, i) => [s, i]));
   const walk = (o) => {
     for (const k in o) {
@@ -5877,6 +5900,10 @@ function slimState(imgs) {
   };
   const s = clone(state);
   walk(s);
+  /* 公開する版から合言葉を外す。公開ページは誰でも保存できるので、
+     入れたままだと拾った人がそのサイトを上書きできてしまう。
+     手元にダウンロードする版には残す（それが持ち主の証明になる）。 */
+  if (forPublish) delete s.meta.editToken;
   return s;
 }
 
@@ -5895,11 +5922,11 @@ function fattenState(s, imgs) {
   return s;
 }
 
-function fullHTML() {
+function fullHTML(forPublish) {
   const m = state.meta;
   const body = exportBody();
   /* 組み立て情報。<\/script> が中に現れると、そこでタグが閉じてしまうので逃がす */
-  const data = JSON.stringify(slimState(bodyImages(body))).replace(/<\//g, '<\\/');
+  const data = JSON.stringify(slimState(bodyImages(body), forPublish)).replace(/<\//g, '<\\/');
   return `<!DOCTYPE html>
 <html lang="${esc(m.lang || 'ja')}">
 <head>
@@ -7727,8 +7754,54 @@ const HOSTS = [
   },
 ];
 
+/* ---------------- そのまま公開する（Firebase 経由） ----------------
+   ここだけが唯一の通信で、あとは今までどおり手元で完結している。
+   設定が空なら、この道は選択肢に出さない。 */
+const cloudReady = () => typeof PUBLISH === 'object' && !!PUBLISH.endpoint;
+
+async function postSite(html) {
+  let r;
+  try {
+    r = await fetch(PUBLISH.endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        siteId: state.meta.siteId || '',
+        editToken: state.meta.editToken || '',
+        title: state.meta.title || '',
+        html,
+      }),
+    });
+  } catch {
+    /* 通信できないときのブラウザの言い分は英語で出る。
+       そのまま見せても何をすればいいか分からないので、言い換える。 */
+    throw new Error('つながりませんでした。電波の入るところでもう一度お試しください');
+  }
+  let j = {};
+  try { j = await r.json(); } catch { /* 下で扱う */ }
+  if (!r.ok) throw new Error(j.error || `公開できませんでした（${r.status}）`);
+  return j;
+}
+
+async function publishToCloud() {
+  const first = !state.meta.siteId;
+  let res = await postSite(fullHTML(true));
+
+  state.meta.siteId = res.siteId;
+  if (res.editToken) state.meta.editToken = res.editToken;
+  state.meta.siteUrl = res.url;
+
+  /* 初回はアドレスが決まる前に送っているので、canonical が入っていない。
+     決まったアドレスを入れて、もう一度だけ送り直す。 */
+  if (first) { try { await postSite(fullHTML(true)); } catch { /* 中身は載っているので続行 */ } }
+
+  save('publish');
+  return res.url;
+}
+
 let pubStep = 1;
 let pubHost = null;
+let pubBusy = false;
 
 function renderPub() {
   $('#pubDots').innerHTML = [1, 2, 3].map((i) => `<i class="${i <= pubStep ? 'on' : ''}"></i>`).join('');
@@ -7741,9 +7814,12 @@ function renderPub() {
   if (pubStep === 1) {
     $('#pubTitle').textContent = 'どこに公開しますか？';
     $('#pubSub').textContent = 'はじめてなら、いちばん上をおすすめします。';
-    $('#pubHosts').innerHTML = HOSTS.map((h) => `<button data-host="${esc(h.key)}">
+    const cloud = cloudReady() ? [`<button data-host="cloud">
+      <b>このまま公開する<em>おすすめ</em></b>
+      <small>押すだけで終わります。登録も、ファイルの置き場所も要りません。</small></button>`] : [];
+    $('#pubHosts').innerHTML = cloud.concat(HOSTS.map((h) => `<button data-host="${esc(h.key)}">
       <b>${esc(h.name)}${h.tag ? `<em>${esc(h.tag)}</em>` : ''}</b>
-      <small>${esc(h.about)}</small></button>`).join('');
+      <small>${esc(h.about)}</small></button>`)).join('');
   } else if (pubStep === 2) {
     const h = HOSTS.find((x) => x.key === pubHost);
     const folder = (state.meta.title || 'mysite').replace(/[\\/:*?"<>|\s]+/g, '-').slice(0, 24);
@@ -7755,10 +7831,15 @@ function renderPub() {
     </li>`).join('');
     $('#pubNext').textContent = '公開できた';
   } else {
+    /* こちらで預かっているサイトは、住所も更新も自動。
+       自分で置いた人は、住所を手で控えてもらう。 */
+    const mine = !!state.meta.siteId;
     $('#pubTitle').textContent = '公開できました';
     $('#pubSub').textContent = '';
+    $('#pubUrl').hidden = mine;
+    $('.pub-note').hidden = mine;
     $('#pubUrl').value = state.meta.siteUrl || '';
-    $('#pubNext').textContent = '保存して閉じる';
+    $('#pubNext').textContent = mine ? '閉じる' : '保存して閉じる';
     renderPubLive();
   }
 }
@@ -7768,8 +7849,34 @@ function renderPubLive() {
   const box = $('#pubLive');
   box.hidden = !u;
   if (!u) return;
-  box.innerHTML = `いまのアドレス<br><a href="${esc(u)}" target="_blank" rel="noopener">${esc(u)}</a>
-    <br><br>次に直したときは、また書き出して同じ場所に上書きしてください。`;
+  const mine = !!state.meta.siteId;
+  box.innerHTML = `<b>あなたのホームページ</b>
+    <a href="${esc(u)}" target="_blank" rel="noopener">${esc(u)}</a>
+    <div class="pub-acts">
+      <button class="tb-btn" id="pubCopy">アドレスをコピー</button>
+      <button class="tb-btn" id="pubOpen">開いてみる</button>
+      ${mine ? '<button class="tb-btn primary" id="pubAgain">直したので更新する</button>' : ''}
+    </div>
+    ${mine ? '<small>更新すると、同じアドレスのまま中身だけ入れ替わります。</small>'
+           : '<small>次に直したときは、また書き出して同じ場所に上書きしてください。</small>'}`;
+
+  $('#pubCopy').addEventListener('click', async () => {
+    try { await navigator.clipboard.writeText(u); flash('アドレスをコピーしました'); }
+    catch { flash('コピーできませんでした。長押しで選んでください'); }
+  });
+  $('#pubOpen').addEventListener('click', () => open(u, '_blank', 'noopener'));
+  const again = $('#pubAgain');
+  if (again) {
+    again.addEventListener('click', async () => {
+      if (pubBusy) return;
+      pubBusy = true;
+      again.disabled = true;
+      again.textContent = '更新しています…';
+      try { await publishToCloud(); flash('更新しました'); }
+      catch (err) { flash(String(err.message || err)); }
+      finally { pubBusy = false; renderPub(); }
+    });
+  }
 }
 
 function openPublish() {
@@ -7785,9 +7892,32 @@ $('#pubBack').addEventListener('click', () => {
   pubStep = Math.max(1, pubStep - 1);
   renderPub();
 });
-$('#pubHosts').addEventListener('click', (e) => {
-  const k = e.target.closest('button')?.dataset.host;
-  if (!k) return;
+$('#pubHosts').addEventListener('click', async (e) => {
+  const b = e.target.closest('button');
+  const k = b?.dataset.host;
+  if (!k || pubBusy) return;
+
+  if (k === 'cloud') {
+    pubBusy = true;
+    b.disabled = true;
+    const label = b.querySelector('b');
+    const was = label.innerHTML;
+    label.textContent = '公開しています…';
+    try {
+      await publishToCloud();
+      pubStep = 3;
+      renderPub();
+      flash('公開しました');
+    } catch (err) {
+      label.innerHTML = was;
+      b.disabled = false;
+      flash(String(err.message || err));
+    } finally {
+      pubBusy = false;
+    }
+    return;
+  }
+
   pubHost = k;
   pubStep = 2;
   renderPub();

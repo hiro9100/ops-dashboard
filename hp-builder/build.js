@@ -24,7 +24,7 @@ html = inject(html,
 
 /* JS を順番どおりに差し込む */
 const scripts = ['assets/site-css.js', 'assets/blocks.js', 'assets/templates.js',
-                 'assets/presets.js', 'assets/easy.js', 'assets/app.js'];
+                 'assets/publish-config.js', 'assets/presets.js', 'assets/easy.js', 'assets/app.js'];
 for (const s of scripts) {
   html = inject(html,
     `<script src="${s}"></script>`,

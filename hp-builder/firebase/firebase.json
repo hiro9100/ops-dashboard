@@ -1,0 +1,14 @@
+{
+  "hosting": {
+    "public": "../../docs",
+    "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
+    "cleanUrls": true,
+    "rewrites": [
+      { "source": "/s/**", "function": { "functionId": "serveSite", "region": "asia-northeast1" } },
+      { "source": "/api/publish", "function": { "functionId": "publishSite", "region": "asia-northeast1" } }
+    ]
+  },
+  "storage": { "rules": "storage.rules" },
+  "firestore": { "rules": "firestore.rules", "indexes": "firestore.indexes.json" },
+  "functions": { "source": "functions" }
+}

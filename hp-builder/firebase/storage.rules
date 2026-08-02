@@ -1,0 +1,15 @@
+rules_version = '2';
+
+/* 公開されたHTMLの置き場。ブラウザから直接は触らせない。
+
+   書き込みは Cloud Function だけ（合言葉を確認してから書く）。
+   読み出しも Function 経由にする。直接読めるようにすると
+   firebasestorage.googleapis.com の長いURLが表に出てしまい、
+   それが「お店の住所」として拾われてしまうため。 */
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}
