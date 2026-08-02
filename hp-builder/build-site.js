@@ -1,6 +1,9 @@
-/* 公開用の一式を docs/ に組み立てる。
-   GitHub Pages はリポジトリの docs/ をそのまま配信できるので、
-   ここに置いておけば「設定で docs/ を選ぶ」だけで公開できる。
+/* 公開用の一式を組み立てる。
+
+   出力先はリポジトリの直下の docs/。ここは動かせない。
+   GitHub Pages の「ブランチから配信」で選べるフォルダは
+   「/（リポジトリ直下）」か「/docs」の2つだけで、
+   hp-builder/docs のような深い場所は選択肢に出てこない（実際の画面で確認）。
 
    Netlify や普通のレンタルサーバーにアップする場合も、
    docs/ の中身をそのまま上げれば動く（ビルドもサーバー処理も不要）。
@@ -12,7 +15,7 @@ const path = require('path');
 const { execFileSync } = require('child_process');
 
 const ROOT = __dirname;
-const OUT = path.join(ROOT, 'docs');
+const OUT = path.join(ROOT, '..', 'docs');
 
 /* 先に各ページを作り直しておく（中身が古いまま公開されるのを防ぐ） */
 for (const s of ['build.js', 'examples/build-service-lp.js', 'examples/build-verdure.js',

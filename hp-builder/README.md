@@ -216,13 +216,15 @@ hp-builder/
 │   ├── blocks.js           ブロック定義（編集項目 ＋ HTML生成）
 │   ├── templates.js        テンプレート定義（配色・初期の中身）
 │   └── site-css.js         生成されるサイトのCSS
-├── examples/               作例のビルドスクリプトと出力
-└── docs/                   公開用（build-site.js が作る。手で触らない）
+└── examples/               作例のビルドスクリプトと出力
+
+（公開用の出力はリポジトリ直下の docs/。build-site.js が作るので手で触らない）
 ```
 
 ## 公開する
 
-`docs/` に、そのまま置けば動く一式が入ります。ビルドもサーバー処理も要りません。
+リポジトリ直下の `docs/` に、そのまま置けば動く一式が入ります。
+ビルドもサーバー処理も要りません。
 
 ```
 node build-site.js     # docs/ を組み立てる
@@ -240,6 +242,10 @@ node verify-site.js    # 公開後と同じHTTP越しに確認（要 playwright�
 **GitHub Pages で出す** — Settings → Pages → Source を「Deploy from a branch」、
 ブランチを選び、フォルダに **`/docs`** を指定。数分で
 `https://<ユーザー名>.github.io/<リポジトリ名>/` に出ます。
+
+出力先がリポジトリ直下なのはこのためです。ここで選べるフォルダは
+「/（リポジトリ直下）」と「/docs」の2つだけで、`hp-builder/docs` のような
+深い場所は選択肢に出てきません。
 
 **それ以外** — Netlify・Vercel・レンタルサーバーのいずれも、`docs/` の中身を
 そのままアップロードするだけです。ビルドコマンドの設定は要りません。

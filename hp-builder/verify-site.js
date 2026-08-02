@@ -17,7 +17,7 @@ try {
   process.exit(2);
 }
 
-const ROOT = path.join(__dirname, 'docs');
+const ROOT = path.join(__dirname, '..', 'docs');
 const TYPES = { '.html': 'text/html; charset=utf-8', '.css': 'text/css', '.js': 'text/javascript' };
 
 const server = http.createServer((req, res) => {
