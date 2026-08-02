@@ -43,19 +43,73 @@ Storage と Firestore は、**ブラウザからは読み書きできません**
 
 ## 出す手順
 
-Firebase CLI が要ります。`npm i -g firebase-tools` のあと `firebase login`。
+3通りあります。**パソコンが無くても出せます。**
+
+### A. GitHub の画面から（スマホでも押せる・おすすめ）
+
+一度だけ秘密の値を入れれば、以後はボタン1つです。
+
+**1. 鍵を作る**（Firebase コンソール）
+
+プロジェクトの設定 → **サービス アカウント** → 「新しい秘密鍵の生成」。
+JSONファイルがダウンロードされます。
+
+**2. その鍵に、出すための権限を足す**（Google Cloud コンソール）
+
+`console.cloud.google.com/iam-admin/iam` を開き、プロジェクトを `bildy-4e45e` に。
+`firebase-adminsdk-...@bildy-4e45e.iam.gserviceaccount.com` の行を編集して、
+次のロールを足します。
+
+| ロール | 何のため |
+| --- | --- |
+| Firebase Admin | Hosting とルールを出す |
+| Cloud Functions 管理者 | Function を出す |
+| サービス アカウント ユーザー | Function を動かす役を渡す |
+| Cloud Build 編集者 | Function を組み立てる |
+| Artifact Registry 管理者 | 組み立てたものを置く |
+
+**3. GitHub に入れる**
+
+リポジトリ → Settings → Secrets and variables → Actions → New repository secret
+
+- Name: `FIREBASE_SERVICE_ACCOUNT`
+- Secret: ダウンロードしたJSONの**中身を丸ごと**貼る
+
+**4. 走らせる**
+
+Actions タブ → 「Firebase へ出す」 → Run workflow
+
+以後は `hp-builder/` か `docs/` を変更して push するたびに自動で出ます。
+
+### B. Google Cloud Shell から（ブラウザだけ・その場でできる）
+
+`shell.cloud.google.com` を開くと、ログイン済みのターミナルがブラウザに出ます。
+鍵も権限の設定も要りません。これを1回貼るだけです。
+（作業中のブランチを指定しています。`main` には入っていません）
 
 ```
-cd hp-builder
-node build-site.js            # docs/ を作り直す（Hosting が配るのはこれ）
+git clone -b claude/hp-creator-template-tool-ohuuqb \
+  https://github.com/hiro9100/ops-dashboard.git && \
+cd ops-dashboard/hp-builder && node build-site.js && \
+cd firebase && npm --prefix functions install && \
+npx --yes firebase-tools@14 deploy --project bildy-4e45e
+```
 
+### C. パソコンから
+
+```
+npm i -g firebase-tools
+firebase login
+
+cd hp-builder
+node build-site.js
 cd firebase
 npm --prefix functions install
 firebase deploy
 ```
 
-`firebase deploy` は Hosting・Functions・Storage ルール・Firestore ルールを
-まとめて出します。初回は Functions の有効化に数分かかります。
+どれも Hosting・Functions・Storage ルール・Firestore ルールをまとめて出します。
+初回は Functions の有効化に数分かかります。
 
 出したあとに確認するところ:
 

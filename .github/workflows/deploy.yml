@@ -1,0 +1,66 @@
+# Firebase へ出す
+#
+# パソコンが無くても出せるようにするための仕掛け。
+# GitHub の画面から「Run workflow」を押すだけで、ここが代わりに
+# firebase deploy まで走らせる。スマホのブラウザからも押せる。
+#
+# 動かすには、リポジトリに FIREBASE_SERVICE_ACCOUNT という秘密の値が要る。
+# 入れ方は hp-builder/firebase/README.md に書いてある。
+
+name: Firebase へ出す
+
+on:
+  workflow_dispatch:          # 画面のボタンから手で走らせる
+  push:
+    branches: [claude/hp-creator-template-tool-ohuuqb]
+    paths:
+      - 'hp-builder/**'
+      - 'docs/**'
+      - '.github/workflows/deploy.yml'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      # 公開用の docs/ を作り直してから出す。
+      # 中身が古いまま出てしまうのを防ぐ。
+      - name: 公開用の一式を組み立てる
+        working-directory: hp-builder
+        run: node build-site.js
+
+      - name: 文字づかいを確かめる
+        working-directory: hp-builder
+        run: node check-text.js
+
+      # 秘密の値はシェルに直接展開せず、環境変数を経由して書き出す
+      # （中身に何が入っていても壊れないように）
+      - name: 認証情報を置く
+        env:
+          SA: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          if [ -z "$SA" ]; then
+            echo "FIREBASE_SERVICE_ACCOUNT が設定されていません。" >&2
+            echo "hp-builder/firebase/README.md の手順で入れてください。" >&2
+            exit 1
+          fi
+          printf '%s' "$SA" > "$RUNNER_TEMP/sa.json"
+
+      - name: Firebase へ出す
+        working-directory: hp-builder/firebase
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/sa.json
+        run: |
+          npm --prefix functions ci --no-audit --no-fund || npm --prefix functions install
+          npx --yes firebase-tools@14 deploy --project bildy-4e45e --non-interactive
+
+      - name: 出したもの
+        run: |
+          echo "https://bildy-4e45e.web.app/        サービスLP"
+          echo "https://bildy-4e45e.web.app/app/    編集ツール"
+          echo "https://bildy-4e45e.web.app/s/<ID>  公開されたページ"
