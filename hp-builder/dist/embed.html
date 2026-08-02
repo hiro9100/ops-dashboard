@@ -459,6 +459,7 @@ ${SITE_CSS}
       <button data-w="390px">スマホ</button>
     </div>
 
+    <button class="tb-btn" id="btnOpen">HTMLを開く</button>
     <button class="tb-btn" id="btnCode">HTMLを見る</button>
     <button class="tb-btn danger" id="btnReset">最初から</button>
     <button class="tb-btn primary" id="btnExport">HTMLを書き出す</button>
@@ -530,6 +531,7 @@ ${SITE_CSS}
     </div>
 
     <div class="modal-foot">
+      <button class="tb-btn" id="ezOpen">作ったHTMLを開く</button>
       <button class="tb-btn" id="ezToTpl">テンプレートから選ぶ</button>
       <button class="tb-btn" id="ezBack" hidden>もどる</button>
       <button class="tb-btn primary" id="ezNext" hidden>つぎへ</button>
@@ -5696,16 +5698,28 @@ function flash(msg) {
   clearTimeout(flash._t);
   flash._t = setTimeout(() => { el.textContent = ''; }, 1800);
 }
+/* 外から来た state を、いまの版で扱える形に整える。
+   自動保存からの復帰でも、書き出したHTMLの読み込みでも同じ手当てが要る。 */
+function migrate(s) {
+  if (!s) return null;
+  // 知らないブロックが混ざっていたら捨てる（定義を消した時の保険）
+  s.blocks = (s.blocks || []).filter((b) => BLOCKS[b.type]);
+  s.motion = Object.assign(clone(DEFAULT_MOTION), s.motion || {}); // 旧データ対策
+  if (s.style === undefined) s.style = (TEMPLATES[s.template] || {}).style || '';
+  s.meta = Object.assign({ title: 'My Website', description: '', lang: 'ja' }, s.meta || {});
+  /* id が重複していると、選択も並べ替えも別のブロックに効いてしまう */
+  const seen = new Set();
+  s.blocks.forEach((b) => {
+    if (!b.id || seen.has(b.id)) b.id = uid();
+    seen.add(b.id);
+  });
+  return s.blocks.length ? s : null;
+}
+
 function load() {
   try {
     const raw = localStorage.getItem(STORE_KEY);
-    if (!raw) return null;
-    const s = JSON.parse(raw);
-    // 知らないブロックが混ざっていたら捨てる（定義を消した時の保険）
-    s.blocks = (s.blocks || []).filter((b) => BLOCKS[b.type]);
-    s.motion = Object.assign(clone(DEFAULT_MOTION), s.motion || {}); // 旧データ対策
-    if (s.style === undefined) s.style = (TEMPLATES[s.template] || {}).style || '';
-    return s.blocks.length ? s : null;
+    return raw ? migrate(JSON.parse(raw)) : null;
   } catch (e) { return null; }
 }
 
@@ -5759,8 +5773,71 @@ const bodyHTML = () => state.blocks.map((b) => BLOCKS[b.type].render(b.props)).j
 const exportBody = () => bodyHTML().replace(/ data-(?:el|elname|elkind|prop|imgprop)="[^"]*"/g, '');
 
 /* 書き出し用の完成HTML（1ファイルで動く） */
+/* ================================================================
+   書き出したHTMLから編集を再開できるようにする
+
+   保存先がブラウザの中しかないと、機種を変えた時点で全部消える。
+   かといってサーバーは持たない方針なので、書き出したHTML自身に
+   組み立て情報を持たせて、それを読み込めば続きから編集できる形にした。
+   利用者が管理するファイルは、これまでどおり1枚のままで済む。
+
+   写真は本文にすでに入っているので、そのまま埋めると倍の重さになる。
+   本文に出てくるデータURLを順番に数えて、番号だけを持たせる。
+   ================================================================ */
+const SITE_DATA_ID = 'hp-builder-data';
+const IMG_REF = '@@hpimg:';
+
+/* 本文に出てくるデータURLを、出てきた順に重複なく集める */
+function bodyImages(html) {
+  const out = [];
+  const seen = new Set();
+  const re = /"(data:image\/[^"]+)"/g;
+  let m;
+  while ((m = re.exec(html))) {
+    if (seen.has(m[1])) continue;
+    seen.add(m[1]);
+    out.push(m[1]);
+  }
+  return out;
+}
+
+/* 写真を番号に置き換えた state を返す。
+   本文に出てこない写真（表示されない項目に入っているものなど）は、
+   参照しようがないのでそのまま持たせる。 */
+function slimState(imgs) {
+  const idx = new Map(imgs.map((s, i) => [s, i]));
+  const walk = (o) => {
+    for (const k in o) {
+      const v = o[k];
+      if (typeof v === 'string' && idx.has(v)) o[k] = IMG_REF + idx.get(v);
+      else if (v && typeof v === 'object') walk(v);
+    }
+  };
+  const s = clone(state);
+  walk(s);
+  return s;
+}
+
+/* 番号を写真に戻す */
+function fattenState(s, imgs) {
+  const walk = (o) => {
+    for (const k in o) {
+      const v = o[k];
+      if (typeof v === 'string' && v.startsWith(IMG_REF)) {
+        const i = Number(v.slice(IMG_REF.length));
+        o[k] = imgs[i] ?? '';
+      } else if (v && typeof v === 'object') walk(v);
+    }
+  };
+  walk(s);
+  return s;
+}
+
 function fullHTML() {
   const m = state.meta;
+  const body = exportBody();
+  /* 組み立て情報。<\/script> が中に現れると、そこでタグが閉じてしまうので逃がす */
+  const data = JSON.stringify(slimState(bodyImages(body))).replace(/<\//g, '<\\/');
   return `<!DOCTYPE html>
 <html lang="${esc(m.lang || 'ja')}">
 <head>
@@ -5778,11 +5855,30 @@ ${SITE_CSS}
 </head>
 <body class="${esc(bodyClass())}" data-anim="${esc(state.motion.anim)}" data-reveal="${state.motion.reveal ? 1 : 0}" data-smooth="${state.motion.smooth ? 1 : 0}">
 
-${exportBody()}
+${body}
 
 <script>${SITE_JS}<\/script>
+<!-- このファイルを編集ツールに読み込むと、続きから編集できます -->
+<script type="application/json" id="${SITE_DATA_ID}">${data}<\/script>
 </body>
 </html>`;
+}
+
+/* 書き出したHTMLを読んで state に戻す。
+   このツールが作ったものでなければ null を返す。 */
+function stateFromHTML(text) {
+  const doc = new DOMParser().parseFromString(text, 'text/html');
+  const tag = doc.getElementById(SITE_DATA_ID);
+  if (!tag) return null;
+  let s;
+  try { s = JSON.parse(tag.textContent); } catch { return null; }
+  if (!s || !Array.isArray(s.blocks)) return null;
+  /* 数える範囲は、書き出したときと同じ「本文だけ」に揃える。
+     生成サイトのCSSには data:image/svg+xml が1つ入っているので、
+     文書ぜんぶを数えると番号が1つずれる（実測で確認）。
+     style は head にあるので body を見れば外れるが、script は body の中にある。 */
+  const bodyOnly = doc.body.innerHTML.replace(/<script[\s\S]*?<\/script>/gi, '');
+  return fattenState(s, bodyImages(bodyOnly));
 }
 
 /* ================================================================
@@ -7213,6 +7309,9 @@ function renderEz() {
   $('#ezStep3').hidden = ezStep !== 3;
   $('#ezBack').hidden = ezStep === 1;
   $('#ezToTpl').hidden = ezStep !== 1;
+  /* 前に作ったHTMLを開く道は、この画面に置く。
+     起動直後はこの画面が上部バーを覆っていて、そちらのボタンを押せないため。 */
+  $('#ezOpen').hidden = ezStep !== 1;
   $('#ezNext').hidden = ezStep === 1;
 
   if (ezStep === 1) {
@@ -7502,8 +7601,59 @@ $('#btnExport').addEventListener('click', () => {
   a.download = 'index.html';
   a.click();
   setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-  flash('index.html を書き出しました');
+  /* このHTMLが控えも兼ねていることは、伝えないと気づけない */
+  flash('index.html を書き出しました。このファイルを開けば続きから編集できます');
 });
+/* ---------------- 書き出したHTMLを開いて続きから ---------------- */
+const htmlPicker = document.createElement('input');
+htmlPicker.type = 'file';
+htmlPicker.accept = 'text/html,.html,.htm';
+
+async function openSiteFile(file) {
+  if (!file) return;
+  let s = null;
+  try {
+    s = stateFromHTML(await file.text());
+  } catch { /* 下のメッセージへ */ }
+  if (!s) {
+    flash('このHTMLはこのツールで作ったものではないようです');
+    return;
+  }
+  if (!confirm('読み込むと、いまの内容は置きかわります。よろしいですか？')) return;
+  state = migrate(s);
+  selected = state.blocks[1]?.id || state.blocks[0]?.id;
+  selectedEl = null;
+  closed.clear();
+  closeModal('#easyModal');
+  closeModal('#tplModal');
+  closeModal('#buildModal');
+  if (isMobile()) closeSheets();
+  refresh();
+  resetHistory();
+  flash(`「${state.meta.title}」を読み込みました`);
+}
+
+$('#btnOpen').addEventListener('click', () => htmlPicker.click());
+$('#ezOpen').addEventListener('click', () => htmlPicker.click());
+htmlPicker.addEventListener('change', () => {
+  const f = htmlPicker.files[0];
+  htmlPicker.value = '';
+  openSiteFile(f);
+});
+
+/* 画面にHTMLを放り込んでも開ける（パソコン）。
+   写真は画像枠が受け取るので、ここではHTMLだけを相手にする。 */
+addEventListener('dragover', (e) => {
+  if ([...e.dataTransfer.items].some((i) => i.kind === 'file')) e.preventDefault();
+});
+addEventListener('drop', (e) => {
+  const f = [...(e.dataTransfer.files || [])]
+    .find((x) => /\.html?$/i.test(x.name) || x.type === 'text/html');
+  if (!f) return;
+  e.preventDefault();
+  openSiteFile(f);
+});
+
 $('#btnCode').addEventListener('click', () => { $('#codeArea').value = fullHTML(); openModal('#codeModal'); });
 $('#codeClose').addEventListener('click', () => closeModal('#codeModal'));
 $('#codeCopy').addEventListener('click', async () => {
