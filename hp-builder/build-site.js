@@ -35,11 +35,6 @@ const put = (from, to) => {
   return `${to}  (${Math.round(fs.statSync(path.join(OUT, to)).size / 1024)} KB)`;
 };
 
-/* すでに main の直下から公開されていたファイル。
-   Pages の配信元を /docs へ移すと、docs/ に無いものは全部404になる。
-   同じ名前で入れておけば、これまでのURLがそのまま生き続ける。 */
-const KEEP = ['ops-dashboard_6.html'];
-
 const made = [
   put('examples/service-lp.html', 'index.html'),          // 入口はサービスLP
   put('dist/index.html', 'app/index.html'),               // 編集ツール本体
@@ -48,16 +43,6 @@ const made = [
   put('examples/hero-scroll.html', 'demo/hero-scroll.html'),
   put('examples/hero-collage.html', 'demo/hero-collage.html'),
 ];
-
-for (const name of KEEP) {
-  const from = path.join(ROOT, '..', name);
-  if (fs.existsSync(from)) {
-    fs.copyFileSync(from, path.join(OUT, name));
-    made.push(`${name}  (これまでのURLを保つため同梱)`);
-  } else {
-    console.warn(`※ ${name} が見つからないので同梱していません`);
-  }
-}
 
 /* 見本の入口。デモを直接たどれるようにしておく */
 fs.writeFileSync(path.join(OUT, 'demo', 'index.html'), `<!DOCTYPE html>
