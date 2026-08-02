@@ -27,7 +27,8 @@
     <button class="tb-btn" id="btnOpen">HTMLを開く</button>
     <button class="tb-btn" id="btnCode">HTMLを見る</button>
     <button class="tb-btn danger" id="btnReset">最初から</button>
-    <button class="tb-btn primary" id="btnExport">HTMLを書き出す</button>
+    <button class="tb-btn" id="btnExport">HTMLを書き出す</button>
+    <button class="tb-btn primary" id="btnPublish">公開する</button>
   </header>
 
   <!-- ================= 左：ブロック一覧 ================= -->
@@ -65,7 +66,7 @@
     <button data-sheet="right" data-tab-to="edit"><span>✎</span>編集</button>
     <button data-sheet="right" data-tab-to="design"><span>◐</span>デザイン</button>
     <button id="mAdd"><span>＋</span>追加</button>
-    <button id="mExport"><span>↓</span>書き出す</button>
+    <button id="mPublish"><span>↑</span>公開</button>
   </nav>
 </div>
 
@@ -162,6 +163,37 @@
     <p class="modal-sub">くり返し再生されます。カードにマウスを乗せる（タップする）とすぐ再生します。</p>
     <div class="gal-wrap"><iframe id="animFrame" title="アニメーションのサンプル"></iframe></div>
     <div class="modal-foot"><button class="tb-btn" id="animClose">閉じる</button></div>
+  </div>
+</div>
+
+<!-- ================= 公開する ================= -->
+<div class="modal" id="pubModal" hidden>
+  <div class="modal-box">
+    <div class="ez-dots" id="pubDots"></div>
+    <h2 id="pubTitle">どこに公開しますか？</h2>
+    <p class="modal-sub" id="pubSub">はじめてなら、いちばん上をおすすめします。</p>
+
+    <div id="pubStep1">
+      <div class="pub-list" id="pubHosts"></div>
+    </div>
+
+    <div id="pubStep2" hidden>
+      <ol class="pub-steps" id="pubGuide"></ol>
+    </div>
+
+    <div id="pubStep3" hidden>
+      <p class="pub-note">公開できたら、そのアドレスを控えておきます。<br>
+        次からは「公開する」を押すと、更新のしかたがすぐ出ます。</p>
+      <input class="ez-input" id="pubUrl" type="url" inputmode="url"
+             placeholder="https://…" autocomplete="url">
+      <div class="pub-live" id="pubLive" hidden></div>
+    </div>
+
+    <div class="modal-foot">
+      <button class="tb-btn" id="pubBack" hidden>もどる</button>
+      <button class="tb-btn" id="pubClose">閉じる</button>
+      <button class="tb-btn primary" id="pubNext" hidden>つぎへ</button>
+    </div>
   </div>
 </div>
 

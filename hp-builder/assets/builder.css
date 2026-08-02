@@ -278,7 +278,8 @@ input,select,textarea{font:inherit}
     grid-template-rows:48px 1fr 60px;
     grid-template-areas:"top" "stage" "nav";
   }
-  .brand,.devices,#btnCode,#btnReset,#btnExport{display:none}
+  /* 公開は下のナビに置いたので、上のバーからは外す */
+  .brand,.devices,#btnCode,#btnReset,#btnExport,#btnPublish{display:none}
   .topbar{gap:8px;padding:0 10px}
   .tb-btn{padding:7px 12px;font-size:12px}
   .saved{min-width:0;font-size:11px}
@@ -405,6 +406,35 @@ input,select,textarea{font:inherit}
   width:62px;height:62px;object-fit:cover;border-radius:9px;
   border:1px solid var(--line);display:block
 }
+
+/* ==========================================================
+   公開する
+   ========================================================== */
+.pub-list{display:flex;flex-direction:column;gap:9px}
+.pub-list button{
+  display:block;width:100%;text-align:left;
+  background:var(--panel2);border:1px solid var(--line);border-radius:12px;
+  padding:15px 16px;color:var(--tx);transition:border-color .15s,transform .15s
+}
+.pub-list button:hover{border-color:var(--pri);transform:translateY(-2px)}
+.pub-list b{display:block;font-size:14px;margin-bottom:4px}
+.pub-list b em{
+  font-style:normal;font-size:10.5px;font-weight:800;color:var(--pri);
+  border:1px solid var(--pri);border-radius:4px;padding:1px 6px;margin-left:8px;vertical-align:1px
+}
+.pub-list small{display:block;color:var(--tx2);font-size:11.5px;line-height:1.7}
+
+.pub-steps{margin:0;padding:0 0 0 1.35em;color:var(--tx);font-size:13.5px;line-height:1.95}
+.pub-steps li{margin-bottom:13px}
+.pub-steps li::marker{color:var(--pri);font-weight:800}
+.pub-steps small{display:block;color:var(--tx2);font-size:11.5px;line-height:1.7;margin-top:2px}
+.pub-steps .tb-btn{margin-top:7px}
+.pub-note{color:var(--tx2);font-size:12.5px;line-height:1.85;margin:0 0 14px}
+.pub-live{
+  margin-top:13px;padding:13px 15px;border-radius:11px;
+  background:var(--panel2);border:1px solid var(--line);font-size:12.5px;line-height:1.8
+}
+.pub-live a{color:var(--pri);word-break:break-all}
 
 /* ==========================================================
    部分ごとに選んで組む — いま何段目まで積んだかの帯

@@ -34,6 +34,10 @@ const STRINGS = /'((?:[^'\\\n]|\\.)*)'|"((?:[^"\\\n]|\\.)*)"|`((?:[^`\\]|\\.)*)`
 const ENGLISH = /[a-z][a-z'-]{2,}/g;
 const GLUE = /[.#/\-_'@:]/;                       // これが隣にあれば名前であって文章ではない
 
+/* 日本語の文の中にそのまま出てきても不自然でない、決まった名前 */
+const ALLOW = new Set(['www', 'htdocs', 'index', 'html', 'css', 'src', 'href',
+  'iframe', 'srcdoc', 'canvas', 'px', 'vw', 'vh', 'em', 'rem']);
+
 function strayEnglish(s) {
   const hits = [];
   let m;
@@ -41,6 +45,7 @@ function strayEnglish(s) {
   while ((m = ENGLISH.exec(s))) {
     const before = s[m.index - 1] || '';
     const after = s[m.index + m[0].length] || '';
+    if (ALLOW.has(m[0])) continue;
     if (GLUE.test(before) || GLUE.test(after)) continue;
     if (/[A-Za-z]/.test(before) || /[A-Za-z]/.test(after)) continue;
     /* 空白をまたいだ隣が日本語なら、日本語の文に紛れ込んでいる */

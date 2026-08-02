@@ -328,7 +328,9 @@ function fullHTML() {
 <meta name="description" content="${esc(m.description)}">
 <meta property="og:title" content="${esc(m.title)}">
 <meta property="og:description" content="${esc(m.description)}">
-<meta property="og:type" content="website">
+<meta property="og:type" content="website">${m.siteUrl ? `
+<link rel="canonical" href="${esc(m.siteUrl)}">
+<meta property="og:url" content="${esc(m.siteUrl)}">` : ''}
 <style>
 ${themeCSS(state.theme)}
 ${SITE_CSS}
@@ -2085,6 +2087,148 @@ $('#btnExport').addEventListener('click', () => {
   /* このHTMLが控えも兼ねていることは、伝えないと気づけない */
   flash('index.html を書き出しました。このファイルを開けば続きから編集できます');
 });
+/* ================================================================
+   公開する
+
+   ここが対象の利用者にとって最後の、そしていちばん高い壁になる。
+   「HTMLを書き出しました」で放り出すと、その先に進めない。
+
+   ただし本当のワンタップ公開には、こちら側のサーバーが要る。
+   持たない方針なので、代わりに公開先まで手を引いて連れて行く。
+   手順は文章で説明するのではなく、1手ずつ画面に出して、
+   押すボタンをその場に置く。
+   ================================================================ */
+const HOSTS = [
+  {
+    key: 'netlify', name: 'Netlify Drop', tag: 'いちばん簡単',
+    about: 'フォルダを放り込むだけで、すぐアドレスがもらえます。無料。',
+    steps: (name) => [
+      { t: 'いまのページを書き出します。',
+        s: `${name} という名前のフォルダを作って、その中に入れてください。`,
+        btn: 'HTMLを書き出す', act: 'export' },
+      { t: 'Netlify Drop を開きます。',
+        s: '登録なしで試せます（続けて使うにはあとで無料の登録が要ります）。',
+        btn: 'Netlify Drop を開く', act: 'open', url: 'https://app.netlify.com/drop' },
+      { t: 'さきほどのフォルダを、画面の枠に放り込みます。',
+        s: 'ファイル1つではなく、フォルダごと放り込んでください。' },
+      { t: 'アドレスが出たら公開できています。',
+        s: '「〇〇.netlify.app」のような形です。次の画面で控えます。' },
+    ],
+  },
+  {
+    key: 'github', name: 'GitHub Pages', tag: '',
+    about: '無料。手数は少し多いですが、あとから更新しやすい形です。',
+    steps: () => [
+      { t: 'いまのページを書き出します。',
+        s: 'ファイル名は index.html のままにしてください。',
+        btn: 'HTMLを書き出す', act: 'export' },
+      { t: 'GitHub でリポジトリを1つ作ります（Public）。',
+        s: '登録が要ります。名前がそのままアドレスの一部になります。',
+        btn: 'リポジトリを作る', act: 'open', url: 'https://github.com/new' },
+      { t: '書き出した index.html をアップロードします。',
+        s: 'リポジトリの画面で「Add file」→「Upload files」。' },
+      { t: 'Settings → Pages で、Source を「Deploy from a branch」、フォルダを「/ (root)」にして Save。',
+        s: '数分で https://ユーザー名.github.io/リポジトリ名/ に出ます。' },
+    ],
+  },
+  {
+    key: 'server', name: 'いま持っているサーバー', tag: '',
+    about: 'レンタルサーバーや会社のサーバーに、すでに置き場所がある場合。',
+    steps: () => [
+      { t: 'いまのページを書き出します。',
+        s: 'ファイル名は index.html のままにしてください。',
+        btn: 'HTMLを書き出す', act: 'export' },
+      { t: 'FTPソフトや管理画面から、公開フォルダに置きます。',
+        s: 'public_html / htdocs / www などの名前のフォルダです。' },
+      { t: 'ブラウザでアドレスを開いて、表示されるか確かめます。',
+        s: '画像も文字もこの1ファイルに入っているので、他に上げるものはありません。' },
+    ],
+  },
+];
+
+let pubStep = 1;
+let pubHost = null;
+
+function renderPub() {
+  $('#pubDots').innerHTML = [1, 2, 3].map((i) => `<i class="${i <= pubStep ? 'on' : ''}"></i>`).join('');
+  $('#pubStep1').hidden = pubStep !== 1;
+  $('#pubStep2').hidden = pubStep !== 2;
+  $('#pubStep3').hidden = pubStep !== 3;
+  $('#pubBack').hidden = pubStep === 1;
+  $('#pubNext').hidden = pubStep === 1;
+
+  if (pubStep === 1) {
+    $('#pubTitle').textContent = 'どこに公開しますか？';
+    $('#pubSub').textContent = 'はじめてなら、いちばん上をおすすめします。';
+    $('#pubHosts').innerHTML = HOSTS.map((h) => `<button data-host="${esc(h.key)}">
+      <b>${esc(h.name)}${h.tag ? `<em>${esc(h.tag)}</em>` : ''}</b>
+      <small>${esc(h.about)}</small></button>`).join('');
+  } else if (pubStep === 2) {
+    const h = HOSTS.find((x) => x.key === pubHost);
+    const folder = (state.meta.title || 'mysite').replace(/[\\/:*?"<>|\s]+/g, '-').slice(0, 24);
+    $('#pubTitle').textContent = h.name;
+    $('#pubSub').textContent = '上から順に進めてください。';
+    $('#pubGuide').innerHTML = h.steps(folder).map((s) => `<li>${esc(s.t)}
+      ${s.s ? `<small>${esc(s.s)}</small>` : ''}
+      ${s.btn ? `<button class="tb-btn" data-act="${esc(s.act)}"${s.url ? ` data-url="${esc(s.url)}"` : ''}>${esc(s.btn)}</button>` : ''}
+    </li>`).join('');
+    $('#pubNext').textContent = '公開できた';
+  } else {
+    $('#pubTitle').textContent = '公開できました';
+    $('#pubSub').textContent = '';
+    $('#pubUrl').value = state.meta.siteUrl || '';
+    $('#pubNext').textContent = '保存して閉じる';
+    renderPubLive();
+  }
+}
+
+function renderPubLive() {
+  const u = state.meta.siteUrl;
+  const box = $('#pubLive');
+  box.hidden = !u;
+  if (!u) return;
+  box.innerHTML = `いまのアドレス<br><a href="${esc(u)}" target="_blank" rel="noopener">${esc(u)}</a>
+    <br><br>次に直したときは、また書き出して同じ場所に上書きしてください。`;
+}
+
+function openPublish() {
+  pubStep = state.meta.siteUrl ? 3 : 1;
+  pubHost = null;
+  renderPub();
+  openModal('#pubModal');
+}
+
+$('#btnPublish').addEventListener('click', openPublish);
+$('#pubClose').addEventListener('click', () => closeModal('#pubModal'));
+$('#pubBack').addEventListener('click', () => {
+  pubStep = Math.max(1, pubStep - 1);
+  renderPub();
+});
+$('#pubHosts').addEventListener('click', (e) => {
+  const k = e.target.closest('button')?.dataset.host;
+  if (!k) return;
+  pubHost = k;
+  pubStep = 2;
+  renderPub();
+});
+$('#pubGuide').addEventListener('click', (e) => {
+  const b = e.target.closest('button');
+  if (!b) return;
+  if (b.dataset.act === 'export') $('#btnExport').click();
+  if (b.dataset.act === 'open') open(b.dataset.url, '_blank', 'noopener');
+});
+$('#pubNext').addEventListener('click', () => {
+  if (pubStep === 2) { pubStep = 3; renderPub(); return; }
+  const u = $('#pubUrl').value.trim();
+  if (u && !/^https?:\/\//i.test(u)) { flash('https:// から始まるアドレスを入れてください'); return; }
+  state.meta.siteUrl = u;
+  save('siteUrl');
+  renderPage();
+  renderPreview(true);
+  closeModal('#pubModal');
+  flash(u ? '公開先を覚えました' : '閉じました');
+});
+
 /* ---------------- 書き出したHTMLを開いて続きから ---------------- */
 const htmlPicker = document.createElement('input');
 htmlPicker.type = 'file';
@@ -2202,7 +2346,7 @@ $('#mnav').addEventListener('click', (e) => {
   if (!b) return;
   if (b.dataset.sheet) openSheet(b.dataset.sheet, b.dataset.tabTo);
   else if (b.id === 'mAdd') { closeSheets(); openAddGallery(); }
-  else if (b.id === 'mExport') $('#btnExport').click();
+  else if (b.id === 'mPublish') { closeSheets(); openPublish(); }
 });
 $('#veil').addEventListener('click', closeSheets);
 $$('[data-closesheet]').forEach((b) => b.addEventListener('click', closeSheets));
