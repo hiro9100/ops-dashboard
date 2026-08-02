@@ -91,7 +91,11 @@ jobs:
           npm --prefix "$FN" ci --no-audit --no-fund || npm --prefix "$FN" install
           # 出すものを名指しする。指定しないと Extensions まで確認しに行き、
           # 使っていないのに、その API の反映待ちで 403 になって止まる（実際に起きた）。
-          npx --yes firebase-tools@14 deploy --project bildy-4e45e --non-interactive \
+          # --force は、Function を組み立てたときに残る古いイメージを
+          # 自動で捨てる設定を、確認を求めずに入れるため。無いと
+          # 「決められないので設定できなかった」で落ちる（実際に起きた）。
+          # 放っておくとイメージが貯まって毎月わずかに課金される。
+          npx --yes firebase-tools@14 deploy --project bildy-4e45e --non-interactive --force \
             --only hosting,functions,storage,firestore
 
       # deploy が「成功」で終わっても、一部の Function が作られていないこと
