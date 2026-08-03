@@ -199,7 +199,18 @@ input,select,textarea{font:inherit}
 }
 .img-f .pick:hover{border-color:var(--pri)}
 /* 絵をえらぶ。名前ではなく絵で選べるように、大きめに並べる */
-.ic-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:10px}
+.ic-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:10px}
+.ic-head{
+  font-size:12px;font-weight:800;color:var(--tx2);letter-spacing:.06em;
+  margin:20px 0 9px;padding-bottom:7px;border-bottom:1px solid var(--line)
+}
+.ic-head:first-child{margin-top:4px}
+.ic-find{
+  width:100%;padding:11px 13px;margin:0 0 6px;font:inherit;font-size:13px;
+  background:var(--panel2);border:1px solid var(--line);border-radius:9px;color:var(--tx)
+}
+.ic-find:focus{outline:none;border-color:var(--pri)}
+.ic-none{color:var(--tx2);font-size:13px;padding:22px 2px}
 .ic-cell{
   display:flex;flex-direction:column;align-items:center;gap:7px;padding:14px 8px;
   background:var(--panel2);border:1px solid var(--line);border-radius:10px;color:var(--tx)

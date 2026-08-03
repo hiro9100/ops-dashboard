@@ -1288,16 +1288,34 @@ function firstImage(props) {
   return '';
 }
 
-/* 絵を選ぶ一覧。名前ではなく絵で選べるように、小さく並べる */
+/* 絵を選ぶ一覧。名前ではなく絵で選べるように、小さく並べる。
+   100種を平らに並べると目で追えないので、組ごとに見出しを立て、
+   絞り込みの欄も置く。名前が思い浮かぶ人はそちらのほうが速い */
 let iconPick = null;
+let iconNow = null;
+function drawIconGrid(q = '') {
+  const key = q.trim().toLowerCase();
+  const hit = (k) => !key || k.includes(key) || ICONS[k].label.toLowerCase().includes(key);
+  const cell = (k) =>
+    `<button class="ic-cell${k === iconNow ? ' on' : ''}" data-ic="${k}" title="${esc(ICONS[k].label)}">
+      ${iconSVG(k)}<small>${esc(ICONS[k].label)}</small>
+    </button>`;
+  const html = ICON_BY_GROUP.map(([title, keys]) => {
+    const found = keys.filter(hit);
+    if (!found.length) return '';
+    return `<h3 class="ic-head">${esc(title)}</h3>
+      <div class="ic-grid">${found.map(cell).join('')}</div>`;
+  }).join('');
+  $('#iconGrid').innerHTML = html || '<p class="ic-none">見つかりませんでした。</p>';
+}
 function openIconGallery(path, current) {
   iconPick = path;
-  $('#iconGrid').innerHTML = ICON_LIST.map(([k, label]) =>
-    `<button class="ic-cell${k === current ? ' on' : ''}" data-ic="${k}" title="${esc(label)}">
-      ${iconSVG(k)}<small>${esc(label)}</small>
-    </button>`).join('');
+  iconNow = current;
+  $('#iconFind').value = '';
+  drawIconGrid('');
   openModal('#iconModal');
 }
+$('#iconFind').addEventListener('input', (e) => drawIconGrid(e.target.value));
 $('#iconGrid').addEventListener('click', (e) => {
   const k = e.target.closest('[data-ic]')?.dataset.ic;
   if (!k || !iconPick) return;
