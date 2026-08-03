@@ -967,6 +967,16 @@ ${p.note ? `    <p class="menu-note"${ed('note', '注記')}>${esc(p.note)}</p>` 
     icon: '▁',
     unique: true,
     fields: [
+      { key: 'style', label: 'フッターの型', type: 'select', gallery: 'ftr',
+        options: [
+          ['bar', '1行（左に名前・右にリンク）'], ['center', '中央ぞろえ'],
+          ['big', '大きめ（ひとこと＋リンク）'], ['light', '明るい地'],
+          ['cta', '最後にひと押し'], ['minimal', 'ひとことだけ'],
+        ] },
+      { key: 'text', label: 'ひとこと・住所など', type: 'textarea', rows: 2,
+        showIf: (p) => ['big', 'cta'].includes(p.style) },
+      { key: 'cta', label: 'ボタン文字', type: 'text', showIf: (p) => p.style === 'cta' },
+      { key: 'ctaHref', label: 'ボタンのリンク先', type: 'text', showIf: (p) => p.style === 'cta' },
       { key: 'logo', label: 'サイト名', type: 'text' },
       { key: 'links', label: 'リンク', type: 'list', addLabel: 'リンクを追加', titleKey: 'label',
         item: [
@@ -976,6 +986,7 @@ ${p.note ? `    <p class="menu-note"${ed('note', '注記')}>${esc(p.note)}</p>` 
       { key: 'copy', label: 'コピーライト', type: 'text' },
     ],
     defaults: {
+      style: 'bar', text: '', cta: '', ctaHref: '#contact',
       logo: 'YOUR LOGO',
       links: [
         { label: 'プライバシーポリシー', href: '#' },
@@ -984,15 +995,45 @@ ${p.note ? `    <p class="menu-note"${ed('note', '注記')}>${esc(p.note)}</p>` 
       ],
       copy: '© 2026 Your Company. All rights reserved.',
     },
-    render: (p) => `<footer class="ftr">
-  <div class="wrap">
-    <div class="ftr-in">
-      <span class="logo"${ed('logo', 'サイト名')}>${esc(p.logo)}</span>
-      <nav class="ftr-nav">${(p.links || []).filter((l) => l.label).map((l) => `<a href="${esc(l.href || '#')}">${esc(l.label)}</a>`).join('')}</nav>
+    /* 型ごとに中身の並びを変える。bar（既定）は、この型を足す前の
+       書き出しとまったく同じ形にしてある（前に作ったページを変えないため）。 */
+    render: (p) => {
+      const st = p.style || 'bar';
+      const logo = `<span class="logo"${ed('logo', 'サイト名')}>${esc(p.logo)}</span>`;
+      const links = (p.links || []).filter((l) => l.label)
+        .map((l) => `<a href="${esc(l.href || '#')}">${esc(l.label)}</a>`).join('');
+      const nav = `<nav class="ftr-nav">${links}</nav>`;
+      const copy = p.copy ? `<div class="copy"${ed('copy', 'コピーライト')}>${esc(p.copy)}</div>` : '';
+      const note = p.text ? `<p class="ftr-note"${ed('text', 'ひとこと')}>${nl2br(p.text)}</p>` : '';
+      const btn = p.cta ? `<a class="btn" href="${esc(p.ctaHref || '#')}"${ed('cta', 'ボタン文字')}>${esc(p.cta)}</a>` : '';
+
+      let inner;
+      if (st === 'minimal') {
+        inner = `    <div class="ftr-in">${logo}</div>\n    ${copy}`;
+      } else if (st === 'big') {
+        inner = `    <div class="ftr-cols">
+      <div class="ftr-lead">${logo}${note}</div>
+      ${nav}
     </div>
-    ${p.copy ? `<div class="copy"${ed('copy', 'コピーライト')}>${esc(p.copy)}</div>` : ''}
+    ${copy}`;
+      } else if (st === 'cta') {
+        inner = `    <div class="ftr-push">${note}${btn}</div>
+    <div class="ftr-in">${logo}${nav}</div>
+    ${copy}`;
+      } else {
+        /* bar / center / light は並びが同じで、見た目だけが違う */
+        inner = `    <div class="ftr-in">
+      ${logo}
+      ${nav}
+    </div>
+    ${copy}`;
+      }
+      return `<footer class="ftr ftr-${esc(st)}">
+  <div class="wrap">
+${inner}
   </div>
-</footer>`,
+</footer>`;
+    },
   },
   /* ================================================================
      ここから下は「スクロールに連動する」特別なブロック

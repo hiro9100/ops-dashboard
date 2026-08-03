@@ -1414,6 +1414,44 @@ p:last-child{margin-bottom:0}
 .ftr-nav a:hover{color:var(--c-on-dark,#fff)}
 .copy{margin-top:32px;padding-top:20px;border-top:1px solid rgba(255,255,255,.12);font-size:12.5px;opacity:.7}
 
+/* ---------- フッターの型 ----------
+   bar（既定）は上の指定のまま。ここから下は、その差分だけ。 */
+
+/* 中央ぞろえ */
+.ftr-center .ftr-in{flex-direction:column;justify-content:center;text-align:center;gap:18px}
+.ftr-center .ftr-nav{justify-content:center}
+.ftr-center .copy{text-align:center}
+
+/* 明るい地。濃い地の前提が崩れるので、文字と線の色を敷き直す */
+.ftr-light{background:var(--c-surface);color:var(--c-muted);border-top:1px solid var(--c-border)}
+.ftr-light .logo{color:var(--c-text)}
+.ftr-light .ftr-nav a:hover{color:var(--c-primary)}
+.ftr-light .copy{border-top-color:var(--c-border)}
+
+/* 大きめ。左に名前とひとこと、右にリンクを縦に並べる */
+.ftr-big{padding-top:72px}
+.ftr-cols{display:grid;grid-template-columns:1.4fr 1fr;gap:clamp(28px,4vw,72px)}
+.ftr-lead{max-width:420px}
+.ftr-note{margin:14px 0 0;line-height:1.9;font-size:13.5px}
+.ftr-big .ftr-nav{flex-direction:column;gap:12px;align-items:flex-start}
+
+/* 最後にひと押し。上に一言とボタンを置いてから、いつもの1行を出す */
+.ftr-push{
+  display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:20px;
+  padding-bottom:36px;margin-bottom:32px;border-bottom:1px solid rgba(255,255,255,.12)
+}
+.ftr-push .ftr-note{margin:0;font-size:clamp(17px,1.8vw,24px);font-weight:700;
+  color:var(--c-on-dark,#fff);line-height:1.6}
+
+/* ひとことだけ。細い帯にする */
+.ftr-minimal{padding:34px 0 30px}
+.ftr-minimal .ftr-in{justify-content:center}
+.ftr-minimal .copy{margin-top:14px;padding-top:0;border-top:0;text-align:center}
+
+@media(max-width:760px){
+  .ftr-cols{grid-template-columns:1fr;gap:28px}
+}
+
 /* ==========================================================
    デザインの型（テンプレートごとの造形）
    配色だけでは似た顔になるので、影・角・余白・見出しの構えを変える。
@@ -3797,6 +3835,16 @@ ${p.note ? `    <p class="menu-note"${ed('note', '注記')}>${esc(p.note)}</p>` 
     icon: '▁',
     unique: true,
     fields: [
+      { key: 'style', label: 'フッターの型', type: 'select', gallery: 'ftr',
+        options: [
+          ['bar', '1行（左に名前・右にリンク）'], ['center', '中央ぞろえ'],
+          ['big', '大きめ（ひとこと＋リンク）'], ['light', '明るい地'],
+          ['cta', '最後にひと押し'], ['minimal', 'ひとことだけ'],
+        ] },
+      { key: 'text', label: 'ひとこと・住所など', type: 'textarea', rows: 2,
+        showIf: (p) => ['big', 'cta'].includes(p.style) },
+      { key: 'cta', label: 'ボタン文字', type: 'text', showIf: (p) => p.style === 'cta' },
+      { key: 'ctaHref', label: 'ボタンのリンク先', type: 'text', showIf: (p) => p.style === 'cta' },
       { key: 'logo', label: 'サイト名', type: 'text' },
       { key: 'links', label: 'リンク', type: 'list', addLabel: 'リンクを追加', titleKey: 'label',
         item: [
@@ -3806,6 +3854,7 @@ ${p.note ? `    <p class="menu-note"${ed('note', '注記')}>${esc(p.note)}</p>` 
       { key: 'copy', label: 'コピーライト', type: 'text' },
     ],
     defaults: {
+      style: 'bar', text: '', cta: '', ctaHref: '#contact',
       logo: 'YOUR LOGO',
       links: [
         { label: 'プライバシーポリシー', href: '#' },
@@ -3814,15 +3863,45 @@ ${p.note ? `    <p class="menu-note"${ed('note', '注記')}>${esc(p.note)}</p>` 
       ],
       copy: '© 2026 Your Company. All rights reserved.',
     },
-    render: (p) => `<footer class="ftr">
-  <div class="wrap">
-    <div class="ftr-in">
-      <span class="logo"${ed('logo', 'サイト名')}>${esc(p.logo)}</span>
-      <nav class="ftr-nav">${(p.links || []).filter((l) => l.label).map((l) => `<a href="${esc(l.href || '#')}">${esc(l.label)}</a>`).join('')}</nav>
+    /* 型ごとに中身の並びを変える。bar（既定）は、この型を足す前の
+       書き出しとまったく同じ形にしてある（前に作ったページを変えないため）。 */
+    render: (p) => {
+      const st = p.style || 'bar';
+      const logo = `<span class="logo"${ed('logo', 'サイト名')}>${esc(p.logo)}</span>`;
+      const links = (p.links || []).filter((l) => l.label)
+        .map((l) => `<a href="${esc(l.href || '#')}">${esc(l.label)}</a>`).join('');
+      const nav = `<nav class="ftr-nav">${links}</nav>`;
+      const copy = p.copy ? `<div class="copy"${ed('copy', 'コピーライト')}>${esc(p.copy)}</div>` : '';
+      const note = p.text ? `<p class="ftr-note"${ed('text', 'ひとこと')}>${nl2br(p.text)}</p>` : '';
+      const btn = p.cta ? `<a class="btn" href="${esc(p.ctaHref || '#')}"${ed('cta', 'ボタン文字')}>${esc(p.cta)}</a>` : '';
+
+      let inner;
+      if (st === 'minimal') {
+        inner = `    <div class="ftr-in">${logo}</div>\n    ${copy}`;
+      } else if (st === 'big') {
+        inner = `    <div class="ftr-cols">
+      <div class="ftr-lead">${logo}${note}</div>
+      ${nav}
     </div>
-    ${p.copy ? `<div class="copy"${ed('copy', 'コピーライト')}>${esc(p.copy)}</div>` : ''}
+    ${copy}`;
+      } else if (st === 'cta') {
+        inner = `    <div class="ftr-push">${note}${btn}</div>
+    <div class="ftr-in">${logo}${nav}</div>
+    ${copy}`;
+      } else {
+        /* bar / center / light は並びが同じで、見た目だけが違う */
+        inner = `    <div class="ftr-in">
+      ${logo}
+      ${nav}
+    </div>
+    ${copy}`;
+      }
+      return `<footer class="ftr ftr-${esc(st)}">
+  <div class="wrap">
+${inner}
   </div>
-</footer>`,
+</footer>`;
+    },
   },
   /* ================================================================
      ここから下は「スクロールに連動する」特別なブロック
@@ -5695,6 +5774,35 @@ const SECTION_PRESETS = [
     about: '重なって1つになる図。中身や工程を見せるとき。', props: {} },
 ];
 
+/* ---------------- いちばん下（フッター） ----------------
+   ヒーロー・ブロックとは別の型として持つ。1ページに1つしか無く、
+   選ぶと差し替えではなく、いまのフッターの見た目だけが変わる。 */
+const FOOTER_PRESETS = [
+  { key: 'ftr-bar', type: 'footer', label: '1行（左に名前・右にリンク）',
+    about: 'いちばん素直な形。どのページにも合う。',
+    props: { style: 'bar' } },
+
+  { key: 'ftr-center', type: 'footer', label: '中央ぞろえ',
+    about: '名前・リンク・年を縦に真ん中で。静かに終わる。',
+    props: { style: 'center' } },
+
+  { key: 'ftr-big', type: 'footer', label: '大きめ（ひとこと＋リンク）',
+    about: '左にお店の一言、右にリンクを縦に並べる。住所や営業時間もここに。',
+    props: { style: 'big', text: '月〜金 10:00–19:00／土 10:00–17:00\n東京都〇〇区〇〇 1-2-3' } },
+
+  { key: 'ftr-light', type: 'footer', label: '明るい地',
+    about: '濃い地ではなく、薄い地に線を1本。全体を軽く見せたいとき。',
+    props: { style: 'light' } },
+
+  { key: 'ftr-cta', type: 'footer', label: '最後にひと押し',
+    about: '最後にもう一度、してほしいことを置く。予約や問い合わせに。',
+    props: { style: 'cta', text: 'ご相談はいつでもどうぞ。', cta: 'お問い合わせ', ctaHref: '#contact' } },
+
+  { key: 'ftr-minimal', type: 'footer', label: 'ひとことだけ',
+    about: '名前と年だけの細い帯。中身で見せたいとき。',
+    props: { style: 'minimal' } },
+];
+
 </script>
 <script>
 /* ===== assets/easy.js ===== */
@@ -7167,6 +7275,9 @@ body{margin:0;background:#0d1016;padding:14px;
 /* 形の見本は、抜けかたが分かればよい。数が多いので小さめに並べて、
    ひと目で見比べられるようにする */
 .dg.small{grid-template-columns:repeat(auto-fill,196px)}
+/* フッターの見本。丸ごと1つ入る高さにする */
+.dc-ftr{height:150px}
+.dc-ftr .dc-scale .ftr{padding-top:34px;padding-bottom:24px}
 .dc-shape{height:124px;overflow:hidden}
 /* 小さいカードに合わせて、見本の縮尺も落とす。
    合わせないと右と下が切れて、形が分からなくなる。 */
@@ -7223,6 +7334,15 @@ const HDR_ABOUT = {
   float: '角の丸い島が浮きます。軽く見せたいとき。',
 };
 
+const FTR_ABOUT = {
+  bar: '左に名前、右にリンク。いちばん素直な形。',
+  center: '名前・リンク・年を縦に真ん中で。静かに終わる。',
+  big: '左にひとこと、右にリンクを縦に。住所や営業時間もここに。',
+  light: '濃い地ではなく、薄い地に線を1本。全体を軽く見せたいとき。',
+  cta: '最後にもう一度、してほしいことを置く。',
+  minimal: '名前と年だけの細い帯。',
+};
+
 const SHAPE_ABOUT = {
   '': '切り抜きなし。枠のかたちのまま出ます。',
   round: '角を大きく丸めます。やわらかい印象に。',
@@ -7255,6 +7375,9 @@ const GAL_KINDS = {
   scroll: { list: () => HERO_SCROLLS, about: SCROLL_ABOUT, what: 'スクロール連動',
     title: 'スクロール連動のしかたを選ぶ',
     sub: 'スクロールの途中の一場面で止めて並べています。' },
+  ftr: { list: () => BLOCKS.footer.fields[0].options, about: FTR_ABOUT, what: 'フッターの型',
+    title: 'フッターの型を選ぶ',
+    sub: 'いまのフッターを、それぞれの型で出しています。' },
   shape: { list: () => FIELD.shape.options, about: SHAPE_ABOUT, what: '写真の形',
     title: '写真の形を選ぶ',
     sub: 'いまの写真で、抜けかたを並べています。' },
@@ -7298,10 +7421,14 @@ function openDecoGallery(kind, current, onPick) {
      すりガラスや無色は、下に何かが無いと違いが出ないため。 */
   const hb = state.blocks.find((x) => x.type === 'header');
   const hprops = hb ? hb.props : BLOCKS.header.defaults;
+  const fb = state.blocks.find((x) => x.type === 'footer');
+  const fprops = fb ? fb.props : BLOCKS.footer.defaults;
 
   const cards = list.map(([key, label]) => {
     let sample;
-    if (kind === 'shape') {
+    if (kind === 'ftr') {
+      sample = BLOCKS.footer.render(Object.assign({}, fprops, { style: key }));
+    } else if (kind === 'shape') {
       /* いま選んでいるブロックの写真を、その形で抜いて並べる。
          枠は生成サイトと同じ .about-media を使うので、実物どおりに出る。 */
       const im = firstImage(b0.props);
@@ -7322,7 +7449,7 @@ function openDecoGallery(kind, current, onPick) {
     const frozen = kind === 'scroll' && key !== 'none' ? ' style="--p:.45"' : '';
     return `<div class="dc${key === current ? ' on' : ''}" data-k="${esc(key)}" role="button" tabindex="0">
       <span class="dc-hit"></span>
-      <div class="dc-prev${kind === 'hdr' ? ' dc-hdr' : ''}${kind === 'shape' ? ' dc-shape' : ''}">
+      <div class="dc-prev${kind === 'hdr' ? ' dc-hdr' : ''}${kind === 'shape' ? ' dc-shape' : ''}${kind === 'ftr' ? ' dc-ftr' : ''}">
         <div class="dc-scale ${esc(bodyClass())}"${frozen}>${sample}</div></div>
       <div class="dc-meta"><b>${esc(label)}</b><small>${esc(about[key] || '')}</small></div>
     </div>`;
@@ -8476,11 +8603,21 @@ function presetSample(p) {
   return def.render(Object.assign(clone(def.defaults), clone(p.props)));
 }
 
-const bldStep = () => (state && state.blocks.some((b) => b.type === 'hero' || b.type === 'collage')
-  ? 'section' : 'hero');
+/* ヒーロー → ブロック → フッターの3段階。
+   フッターだけは「積む」ものではなく「差し替える」ものなので、
+   ブロックを選び終えたあとの最後の1画面にしている。 */
+let bldToFooter = false;
+
+const bldStep = () => {
+  if (bldToFooter) return 'footer';
+  return state && state.blocks.some((b) => b.type === 'hero' || b.type === 'collage')
+    ? 'section' : 'hero';
+};
 
 function bldList() {
-  if (bldStep() === 'hero') return HERO_PRESETS;
+  const st = bldStep();
+  if (st === 'hero') return HERO_PRESETS;
+  if (st === 'footer') return FOOTER_PRESETS;
   /* 分けかたは「かたち」。使い道（飲食店向けなど）では分けない */
   return SECTION_PRESETS.filter((p) => bldCat === 'all' || p.group === bldCat);
 }
@@ -8492,18 +8629,24 @@ function renderBldStrip() {
     .map((b, i) => `<span><i>${i + 1}</i>${esc(bldNames.get(b.id) || BLOCKS[b.type].label)}</span>`)
     .join('');
   $('#bldStrip').scrollLeft = 99999;
-  $('#bldBack').disabled = picked.length === 0;
-  $('#bldDone').disabled = picked.length === 0;
+  const foot = bldStep() === 'footer';
+  $('#bldBack').disabled = !foot && picked.length === 0;
+  $('#bldDone').disabled = !foot && picked.length === 0;
 }
 
 function renderBldHead() {
-  const hero = bldStep() === 'hero';
-  $('#bldTitle').textContent = hero ? '① ヒーローを選ぶ' : '② ブロックを選ぶ';
+  const st = bldStep();
+  const T = {
+    hero: ['① ヒーローを選ぶ', 'いちばん上に来る、顔になる部分です。'],
+    section: ['② ブロックを選ぶ', '選ぶと下に積まれます。順番はあとから変えられます。'],
+    footer: ['③ フッターを選ぶ', 'いちばん下です。選ばなければ、そのままでも構いません。'],
+  }[st];
+  $('#bldTitle').textContent = T[0];
   /* スマホでは説明が長いほど見本が見えなくなるので、要点だけにする */
-  $('#bldSub').textContent = hero
-    ? 'いちばん上に来る、顔になる部分です。'
-    : '選ぶと下に積まれます。順番はあとから変えられます。';
-  $('#bldCatBar').hidden = hero;
+  $('#bldSub').textContent = T[1];
+  $('#bldCatBar').hidden = st !== 'section';
+  $('#bldDone').textContent = st === 'section' ? 'つぎへ（フッター）' : 'これで完成';
+  $('#bldBack').textContent = st === 'footer' ? 'ブロックに戻る' : '1つ戻す';
 }
 
 function renderBldCats() {
@@ -8545,8 +8688,23 @@ function refreshBld() {
 }
 
 function pickPreset(key) {
-  const p = (bldStep() === 'hero' ? HERO_PRESETS : SECTION_PRESETS).find((x) => x.key === key);
+  const p = bldList().find((x) => x.key === key)
+    || [...HERO_PRESETS, ...SECTION_PRESETS, ...FOOTER_PRESETS].find((x) => x.key === key);
   if (!p) return;
+
+  /* フッターは1ページに1つ。積まずに、いまのフッターの見た目だけを変える */
+  if (p.type === 'footer') {
+    const f = state.blocks.find((b) => b.type === 'footer');
+    if (f) {
+      Object.assign(f.props, clone(p.props));
+      selected = f.id;
+      selectedEl = null;
+      refresh();
+      refreshBld();
+    }
+    return;
+  }
+
   const nb = makeBlock(p.type, p.props);
   bldNames.set(nb.id, p.label);
   const fi = state.blocks.findIndex((b) => b.type === 'footer');
@@ -8558,6 +8716,7 @@ function pickPreset(key) {
 }
 
 function bldUndo() {
+  if (bldStep() === 'footer') { bldToFooter = false; refreshBld(); return; }
   const picked = state.blocks.filter((b) => b.type !== 'header' && b.type !== 'footer');
   const last = picked[picked.length - 1];
   if (!last) return;
@@ -8572,6 +8731,7 @@ function bldUndo() {
 function openBuildFlow() {
   bldBefore = state ? clone(state) : null;
   bldCat = 'all';
+  bldToFooter = false;
   bldNames.clear();
   state = buildCustomState();
   selected = state.blocks[0].id;
@@ -8601,6 +8761,12 @@ $('#bldCancel').addEventListener('click', () => {
   refresh();
 });
 $('#bldDone').addEventListener('click', () => {
+  /* ブロックを選び終えたら、いきなり閉じずにフッターを1画面はさむ */
+  if (bldStep() === 'section') {
+    bldToFooter = true;
+    refreshBld();
+    return;
+  }
   bldBefore = null;
   closeModal('#buildModal');
   if (isMobile()) closeSheets();

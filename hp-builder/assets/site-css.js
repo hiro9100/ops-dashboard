@@ -676,6 +676,44 @@ p:last-child{margin-bottom:0}
 .ftr-nav a:hover{color:var(--c-on-dark,#fff)}
 .copy{margin-top:32px;padding-top:20px;border-top:1px solid rgba(255,255,255,.12);font-size:12.5px;opacity:.7}
 
+/* ---------- フッターの型 ----------
+   bar（既定）は上の指定のまま。ここから下は、その差分だけ。 */
+
+/* 中央ぞろえ */
+.ftr-center .ftr-in{flex-direction:column;justify-content:center;text-align:center;gap:18px}
+.ftr-center .ftr-nav{justify-content:center}
+.ftr-center .copy{text-align:center}
+
+/* 明るい地。濃い地の前提が崩れるので、文字と線の色を敷き直す */
+.ftr-light{background:var(--c-surface);color:var(--c-muted);border-top:1px solid var(--c-border)}
+.ftr-light .logo{color:var(--c-text)}
+.ftr-light .ftr-nav a:hover{color:var(--c-primary)}
+.ftr-light .copy{border-top-color:var(--c-border)}
+
+/* 大きめ。左に名前とひとこと、右にリンクを縦に並べる */
+.ftr-big{padding-top:72px}
+.ftr-cols{display:grid;grid-template-columns:1.4fr 1fr;gap:clamp(28px,4vw,72px)}
+.ftr-lead{max-width:420px}
+.ftr-note{margin:14px 0 0;line-height:1.9;font-size:13.5px}
+.ftr-big .ftr-nav{flex-direction:column;gap:12px;align-items:flex-start}
+
+/* 最後にひと押し。上に一言とボタンを置いてから、いつもの1行を出す */
+.ftr-push{
+  display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:20px;
+  padding-bottom:36px;margin-bottom:32px;border-bottom:1px solid rgba(255,255,255,.12)
+}
+.ftr-push .ftr-note{margin:0;font-size:clamp(17px,1.8vw,24px);font-weight:700;
+  color:var(--c-on-dark,#fff);line-height:1.6}
+
+/* ひとことだけ。細い帯にする */
+.ftr-minimal{padding:34px 0 30px}
+.ftr-minimal .ftr-in{justify-content:center}
+.ftr-minimal .copy{margin-top:14px;padding-top:0;border-top:0;text-align:center}
+
+@media(max-width:760px){
+  .ftr-cols{grid-template-columns:1fr;gap:28px}
+}
+
 /* ==========================================================
    デザインの型（テンプレートごとの造形）
    配色だけでは似た顔になるので、影・角・余白・見出しの構えを変える。

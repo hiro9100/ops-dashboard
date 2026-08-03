@@ -186,3 +186,32 @@ const SECTION_PRESETS = [
   { key: 'exploded', type: 'exploded', group: 'その他', label: 'ばらけた層が組み上がる',
     about: '重なって1つになる図。中身や工程を見せるとき。', props: {} },
 ];
+
+/* ---------------- いちばん下（フッター） ----------------
+   ヒーロー・ブロックとは別の型として持つ。1ページに1つしか無く、
+   選ぶと差し替えではなく、いまのフッターの見た目だけが変わる。 */
+const FOOTER_PRESETS = [
+  { key: 'ftr-bar', type: 'footer', label: '1行（左に名前・右にリンク）',
+    about: 'いちばん素直な形。どのページにも合う。',
+    props: { style: 'bar' } },
+
+  { key: 'ftr-center', type: 'footer', label: '中央ぞろえ',
+    about: '名前・リンク・年を縦に真ん中で。静かに終わる。',
+    props: { style: 'center' } },
+
+  { key: 'ftr-big', type: 'footer', label: '大きめ（ひとこと＋リンク）',
+    about: '左にお店の一言、右にリンクを縦に並べる。住所や営業時間もここに。',
+    props: { style: 'big', text: '月〜金 10:00–19:00／土 10:00–17:00\n東京都〇〇区〇〇 1-2-3' } },
+
+  { key: 'ftr-light', type: 'footer', label: '明るい地',
+    about: '濃い地ではなく、薄い地に線を1本。全体を軽く見せたいとき。',
+    props: { style: 'light' } },
+
+  { key: 'ftr-cta', type: 'footer', label: '最後にひと押し',
+    about: '最後にもう一度、してほしいことを置く。予約や問い合わせに。',
+    props: { style: 'cta', text: 'ご相談はいつでもどうぞ。', cta: 'お問い合わせ', ctaHref: '#contact' } },
+
+  { key: 'ftr-minimal', type: 'footer', label: 'ひとことだけ',
+    about: '名前と年だけの細い帯。中身で見せたいとき。',
+    props: { style: 'minimal' } },
+];

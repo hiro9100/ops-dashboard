@@ -1130,6 +1130,9 @@ body{margin:0;background:#0d1016;padding:14px;
 /* 形の見本は、抜けかたが分かればよい。数が多いので小さめに並べて、
    ひと目で見比べられるようにする */
 .dg.small{grid-template-columns:repeat(auto-fill,196px)}
+/* フッターの見本。丸ごと1つ入る高さにする */
+.dc-ftr{height:150px}
+.dc-ftr .dc-scale .ftr{padding-top:34px;padding-bottom:24px}
 .dc-shape{height:124px;overflow:hidden}
 /* 小さいカードに合わせて、見本の縮尺も落とす。
    合わせないと右と下が切れて、形が分からなくなる。 */
@@ -1186,6 +1189,15 @@ const HDR_ABOUT = {
   float: '角の丸い島が浮きます。軽く見せたいとき。',
 };
 
+const FTR_ABOUT = {
+  bar: '左に名前、右にリンク。いちばん素直な形。',
+  center: '名前・リンク・年を縦に真ん中で。静かに終わる。',
+  big: '左にひとこと、右にリンクを縦に。住所や営業時間もここに。',
+  light: '濃い地ではなく、薄い地に線を1本。全体を軽く見せたいとき。',
+  cta: '最後にもう一度、してほしいことを置く。',
+  minimal: '名前と年だけの細い帯。',
+};
+
 const SHAPE_ABOUT = {
   '': '切り抜きなし。枠のかたちのまま出ます。',
   round: '角を大きく丸めます。やわらかい印象に。',
@@ -1218,6 +1230,9 @@ const GAL_KINDS = {
   scroll: { list: () => HERO_SCROLLS, about: SCROLL_ABOUT, what: 'スクロール連動',
     title: 'スクロール連動のしかたを選ぶ',
     sub: 'スクロールの途中の一場面で止めて並べています。' },
+  ftr: { list: () => BLOCKS.footer.fields[0].options, about: FTR_ABOUT, what: 'フッターの型',
+    title: 'フッターの型を選ぶ',
+    sub: 'いまのフッターを、それぞれの型で出しています。' },
   shape: { list: () => FIELD.shape.options, about: SHAPE_ABOUT, what: '写真の形',
     title: '写真の形を選ぶ',
     sub: 'いまの写真で、抜けかたを並べています。' },
@@ -1261,10 +1276,14 @@ function openDecoGallery(kind, current, onPick) {
      すりガラスや無色は、下に何かが無いと違いが出ないため。 */
   const hb = state.blocks.find((x) => x.type === 'header');
   const hprops = hb ? hb.props : BLOCKS.header.defaults;
+  const fb = state.blocks.find((x) => x.type === 'footer');
+  const fprops = fb ? fb.props : BLOCKS.footer.defaults;
 
   const cards = list.map(([key, label]) => {
     let sample;
-    if (kind === 'shape') {
+    if (kind === 'ftr') {
+      sample = BLOCKS.footer.render(Object.assign({}, fprops, { style: key }));
+    } else if (kind === 'shape') {
       /* いま選んでいるブロックの写真を、その形で抜いて並べる。
          枠は生成サイトと同じ .about-media を使うので、実物どおりに出る。 */
       const im = firstImage(b0.props);
@@ -1285,7 +1304,7 @@ function openDecoGallery(kind, current, onPick) {
     const frozen = kind === 'scroll' && key !== 'none' ? ' style="--p:.45"' : '';
     return `<div class="dc${key === current ? ' on' : ''}" data-k="${esc(key)}" role="button" tabindex="0">
       <span class="dc-hit"></span>
-      <div class="dc-prev${kind === 'hdr' ? ' dc-hdr' : ''}${kind === 'shape' ? ' dc-shape' : ''}">
+      <div class="dc-prev${kind === 'hdr' ? ' dc-hdr' : ''}${kind === 'shape' ? ' dc-shape' : ''}${kind === 'ftr' ? ' dc-ftr' : ''}">
         <div class="dc-scale ${esc(bodyClass())}"${frozen}>${sample}</div></div>
       <div class="dc-meta"><b>${esc(label)}</b><small>${esc(about[key] || '')}</small></div>
     </div>`;
@@ -2439,11 +2458,21 @@ function presetSample(p) {
   return def.render(Object.assign(clone(def.defaults), clone(p.props)));
 }
 
-const bldStep = () => (state && state.blocks.some((b) => b.type === 'hero' || b.type === 'collage')
-  ? 'section' : 'hero');
+/* ヒーロー → ブロック → フッターの3段階。
+   フッターだけは「積む」ものではなく「差し替える」ものなので、
+   ブロックを選び終えたあとの最後の1画面にしている。 */
+let bldToFooter = false;
+
+const bldStep = () => {
+  if (bldToFooter) return 'footer';
+  return state && state.blocks.some((b) => b.type === 'hero' || b.type === 'collage')
+    ? 'section' : 'hero';
+};
 
 function bldList() {
-  if (bldStep() === 'hero') return HERO_PRESETS;
+  const st = bldStep();
+  if (st === 'hero') return HERO_PRESETS;
+  if (st === 'footer') return FOOTER_PRESETS;
   /* 分けかたは「かたち」。使い道（飲食店向けなど）では分けない */
   return SECTION_PRESETS.filter((p) => bldCat === 'all' || p.group === bldCat);
 }
@@ -2455,18 +2484,24 @@ function renderBldStrip() {
     .map((b, i) => `<span><i>${i + 1}</i>${esc(bldNames.get(b.id) || BLOCKS[b.type].label)}</span>`)
     .join('');
   $('#bldStrip').scrollLeft = 99999;
-  $('#bldBack').disabled = picked.length === 0;
-  $('#bldDone').disabled = picked.length === 0;
+  const foot = bldStep() === 'footer';
+  $('#bldBack').disabled = !foot && picked.length === 0;
+  $('#bldDone').disabled = !foot && picked.length === 0;
 }
 
 function renderBldHead() {
-  const hero = bldStep() === 'hero';
-  $('#bldTitle').textContent = hero ? '① ヒーローを選ぶ' : '② ブロックを選ぶ';
+  const st = bldStep();
+  const T = {
+    hero: ['① ヒーローを選ぶ', 'いちばん上に来る、顔になる部分です。'],
+    section: ['② ブロックを選ぶ', '選ぶと下に積まれます。順番はあとから変えられます。'],
+    footer: ['③ フッターを選ぶ', 'いちばん下です。選ばなければ、そのままでも構いません。'],
+  }[st];
+  $('#bldTitle').textContent = T[0];
   /* スマホでは説明が長いほど見本が見えなくなるので、要点だけにする */
-  $('#bldSub').textContent = hero
-    ? 'いちばん上に来る、顔になる部分です。'
-    : '選ぶと下に積まれます。順番はあとから変えられます。';
-  $('#bldCatBar').hidden = hero;
+  $('#bldSub').textContent = T[1];
+  $('#bldCatBar').hidden = st !== 'section';
+  $('#bldDone').textContent = st === 'section' ? 'つぎへ（フッター）' : 'これで完成';
+  $('#bldBack').textContent = st === 'footer' ? 'ブロックに戻る' : '1つ戻す';
 }
 
 function renderBldCats() {
@@ -2508,8 +2543,23 @@ function refreshBld() {
 }
 
 function pickPreset(key) {
-  const p = (bldStep() === 'hero' ? HERO_PRESETS : SECTION_PRESETS).find((x) => x.key === key);
+  const p = bldList().find((x) => x.key === key)
+    || [...HERO_PRESETS, ...SECTION_PRESETS, ...FOOTER_PRESETS].find((x) => x.key === key);
   if (!p) return;
+
+  /* フッターは1ページに1つ。積まずに、いまのフッターの見た目だけを変える */
+  if (p.type === 'footer') {
+    const f = state.blocks.find((b) => b.type === 'footer');
+    if (f) {
+      Object.assign(f.props, clone(p.props));
+      selected = f.id;
+      selectedEl = null;
+      refresh();
+      refreshBld();
+    }
+    return;
+  }
+
   const nb = makeBlock(p.type, p.props);
   bldNames.set(nb.id, p.label);
   const fi = state.blocks.findIndex((b) => b.type === 'footer');
@@ -2521,6 +2571,7 @@ function pickPreset(key) {
 }
 
 function bldUndo() {
+  if (bldStep() === 'footer') { bldToFooter = false; refreshBld(); return; }
   const picked = state.blocks.filter((b) => b.type !== 'header' && b.type !== 'footer');
   const last = picked[picked.length - 1];
   if (!last) return;
@@ -2535,6 +2586,7 @@ function bldUndo() {
 function openBuildFlow() {
   bldBefore = state ? clone(state) : null;
   bldCat = 'all';
+  bldToFooter = false;
   bldNames.clear();
   state = buildCustomState();
   selected = state.blocks[0].id;
@@ -2564,6 +2616,12 @@ $('#bldCancel').addEventListener('click', () => {
   refresh();
 });
 $('#bldDone').addEventListener('click', () => {
+  /* ブロックを選び終えたら、いきなり閉じずにフッターを1画面はさむ */
+  if (bldStep() === 'section') {
+    bldToFooter = true;
+    refreshBld();
+    return;
+  }
   bldBefore = null;
   closeModal('#buildModal');
   if (isMobile()) closeSheets();
