@@ -185,6 +185,15 @@ input,select,textarea{font:inherit}
 }
 .pick.wide{width:100%;margin-top:7px;text-align:center;justify-content:center}
 
+/* 読み込んだ抜き型の下見。抜けるところが分かるよう、色を敷いて形だけ見せる */
+.mask-prev{
+  width:100%;height:96px;margin-top:8px;border-radius:6px;
+  background:linear-gradient(135deg,var(--pri),#8b5cf6);
+  -webkit-mask-size:contain;mask-size:contain;
+  -webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;
+  -webkit-mask-position:center;mask-position:center
+}
+
 /* 背景をぬく。透けたところが分かるよう、下に市松模様を敷く */
 .cut-view{
   border:1px solid var(--line);border-radius:10px;overflow:hidden;margin-bottom:14px;
@@ -836,6 +845,10 @@ p:last-child{margin-bottom:0}
   box-shadow:0 30px 60px -30px rgba(15,23,42,.45)
 }
 .hero-media img{width:100%;height:100%;object-fit:cover}
+/* 中央ぞろえ・左ぞろえに写真を入れたときの置き場所。
+   文章の下に、横いっぱいの一枚を置く。 */
+.hero-media.hero-wide{margin-top:clamp(28px,3.4vw,56px);aspect-ratio:16/7}
+.hero.center .hero-media.hero-wide{margin-inline:auto}
 .hero.split .hero-in{display:grid;grid-template-columns:1.02fr .98fr;gap:clamp(32px,4.4444vw,88.8889px);align-items:center}
 .hero.split .hero-title{font-size:clamp(28px,2.9167vw,58.3333px)}
 .hero.cover{color:#fff}
@@ -988,14 +1001,14 @@ p:last-child{margin-bottom:0}
   border-radius:calc(var(--p,0) * 26px);overflow:hidden;
   box-shadow:0 calc(var(--p,0) * 50px) calc(var(--p,0) * 90px) calc(var(--p,0) * -40px) rgba(0,0,0,.5)
 }
-.hsc-zoomout .hero-bg img{transform:scale(calc(1 + var(--p,0) * .06))}
+.hsc-zoomout .hero-bg img{transform:scale(calc((1 + var(--p,0) * .06) * var(--iz,1)))}
 .hsc-zoomout .hero-in{
   transform:translate3d(0,calc(var(--p,0) * -6vh),0) scale(calc(1 - var(--p,0) * .12));
   opacity:calc(1 - var(--p,0) * 1.25)
 }
 
 /* ---- 写真と文字がずれて流れる ---- */
-.hsc-parallax .hero-bg img{transform:scale(1.22) translate3d(0,calc(var(--p,0) * 13vh),0)}
+.hsc-parallax .hero-bg img{transform:scale(calc(1.22 * var(--iz,1))) translate3d(0,calc(var(--p,0) * 13vh),0)}
 .hsc-parallax .hero-in{
   transform:translate3d(0,calc(var(--p,0) * -22vh),0);
   opacity:calc(1 - var(--p,0) * 1.15)
@@ -1030,7 +1043,7 @@ p:last-child{margin-bottom:0}
   opacity:calc(1 - max(0,(var(--p,0) - .88)) * 8.4)
 }
 .hsc-maskzoom .hero-in{opacity:calc(max(0,var(--p,0) - .86) * 7.2)}
-.hsc-maskzoom .hero-bg img{transform:scale(calc(1.14 - var(--p,0) * .14))}
+.hsc-maskzoom .hero-bg img{transform:scale(calc((1.14 - var(--p,0) * .14) * var(--iz,1)))}
 
 @media (max-width:760px){
   .hsc-zoomout .hero-bg{inset:calc(var(--p,0) * 3vh) calc(var(--p,0) * 4vw)}
@@ -1966,10 +1979,15 @@ a:not(.btn):not(.logo){transition:opacity .5s cubic-bezier(.165,.84,.44,1)}
    枠に入りきらない部分をどこで切るか（object-position）と、
    どれだけ寄るか（scale）。値は枠の style から来る。
    何も指定がなければ、これまでどおり真ん中・等倍。 */
+:is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic,.exp-l,.car-it,.clip-side,.hero-bg) img{
+  object-position:var(--ix,50%) var(--iy,50%)
+}
 :is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic,.exp-l,.car-it,.clip-side) img{
-  object-position:var(--ix,50%) var(--iy,50%);
   transform:scale(var(--iz,1))
 }
+/* 写真いっぱいの型。スクロール連動の型は自分で transform を持っており、
+   ここで上書きすると動きが消える。掛け合わせは各 .hsc-* の側でしている。 */
+.hero:not(.hsc) .hero-bg img{transform:scale(var(--iz,1))}
 
 /* ---------- 出現の段差 ----------
    ブロックごと一度に出すと「表示された」で終わる。
@@ -2064,6 +2082,16 @@ a:not(.btn):not(.logo){transition:opacity .5s cubic-bezier(.165,.84,.44,1)}
   border-radius:0;
   -webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M52 1 C80 -2 99 18 97 45 C95 72 78 99 49 98 C21 97 1 77 2 48 C3 21 24 4 52 1 Z' fill='%23000'/%3E%3C/svg%3E");
   mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M52 1 C80 -2 99 18 97 45 C95 72 78 99 49 98 C21 97 1 77 2 48 C3 21 24 4 52 1 Z' fill='%23000'/%3E%3C/svg%3E");
+  -webkit-mask-size:100% 100%;mask-size:100% 100%;
+  -webkit-mask-repeat:no-repeat;mask-repeat:no-repeat
+}
+
+/* 自分で用意した形。マスクの画像はブロックの --shape から来る。
+   透明なところが抜ける絵として作ってあるので、そのまま敷けばよい。 */
+.shp-own :is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic){
+  border-radius:0;
+  -webkit-mask-image:var(--shape);
+  mask-image:var(--shape);
   -webkit-mask-size:100% 100%;mask-size:100% 100%;
   -webkit-mask-repeat:no-repeat;mask-repeat:no-repeat
 }
@@ -2740,8 +2768,13 @@ const media = (src, alt) => (src ? img(src, alt) : '<span class="ph" aria-hidden
 function sec(type, p, inner, extraClass = '') {
   const cls = ['sec', `sec-${type}`, p.bg ? `bg-${p.bg}` : '',
     p.shape ? `shp-${p.shape}` : '', extraClass].filter(Boolean).join(' ');
-  return `<section class="${cls}"${attr('id', p.anchor)}>\n  <div class="wrap">\n${inner}\n  </div>\n</section>`;
+  return `<section class="${cls}"${attr('id', p.anchor)}${maskVar(p)}>\n  <div class="wrap">\n${inner}\n  </div>\n</section>`;
 }
+
+/* 自分で用意した形を、CSS変数としてブロックに渡す。
+   画像そのものを持つので長くなるが、外から読み込むものは増えない。 */
+const maskVar = (p) => (p.shape === 'own' && p.shapeMask
+  ? ` style="--shape:url('${esc(p.shapeMask)}')"` : '');
 
 /* 見出しブロック（アイキャッチ・タイトル・サブ） */
 function head(p, align = 'center') {
@@ -2956,8 +2989,14 @@ const FIELD = {
       ['slant', '斜めに切る'], ['egg', 'たまご'],
       ['slats', '4本の柱（上下が交互に丸い）'], ['arches', '3連アーチ'],
       ['wave', '下が波'], ['blob', 'まるいかたまり'],
+      ['own', '自分で用意した形'],
     ],
+    hint: '「自分で用意した形」は、形の画像を読み込むとその形どおりに抜きます',
   },
+  /* 自分で用意した形。持っているのはマスクの画像そのもの（データURL）。
+     選び方は「型」ではなく「持ち込み」なので、選択肢とは別に持つ。 */
+  shapeMask: { key: 'shapeMask', label: '形の画像', type: 'mask',
+    showIf: (p) => p.shape === 'own' },
   anchor: { key: 'anchor', label: 'アンカーID', type: 'text', hint: 'メニューから #about のようにリンクできます' },
   eyebrow: { key: 'eyebrow', label: '小見出し', type: 'text' },
   title: { key: 'title', label: '見出し', type: 'textarea', rows: 2 },
@@ -3093,6 +3132,7 @@ const BLOCKS = {
       { key: 'grain', label: 'フィルムの粒状感を足す', type: 'toggle' },
       { key: 'buttons', label: 'ボタン', type: 'list', addLabel: 'ボタンを追加', titleKey: 'label', item: FIELD.btnItem },
       FIELD.shape,
+      FIELD.shapeMask,
       FIELD.bg, FIELD.anchor,
     ],
     defaults: {
@@ -3119,15 +3159,24 @@ const BLOCKS = {
       ${p.title ? `<h1 class="hero-title"${el(p, 'title', 'ta', 'キャッチコピー', 'title')}>${nl2br(p.title)}</h1>` : ''}
       ${p.text ? `<p class="hero-text"${el(p, 'text', 'ta', '説明文', 'text')}>${nl2br(p.text)}</p>` : ''}
 ${buttons(p.buttons)}`;
+      /* 写真いっぱいの型。枠の目印を付けて、押せば選び直せるようにする
+         （位置と大きさの調整もここから届く） */
       const bg = cover
-        ? `  <div class="hero-bg" style="--hero-overlay:rgba(15,23,42,${(p.overlay ?? 55) / 100})">${img(p.image, '')}</div>\n`
+        ? `  <div class="hero-bg" style="--hero-overlay:rgba(15,23,42,${(p.overlay ?? 55) / 100})"`
+          + `${imgSlot('image', p)} data-elname="背景の写真">${img(p.image, '')}</div>\n`
+        : '';
+      /* 中央ぞろえ・左ぞろえでも、写真を入れたら文章の下に置く。
+         入れても何も起きないと、入れた本人には壊れて見える（実際に指摘された）。 */
+      const wide = !cover && p.layout !== 'split' && p.image
+        ? `\n      <div class="hero-media hero-wide"${el(p, 'image', 'ia', '画像')}`
+          + `${imgSlot('image', p)}>${media(p.image, p.title)}</div>`
         : '';
       const inner = p.layout === 'split'
         ? `    <div class="hero-in">
       <div>\n${body}\n      </div>
       <div class="hero-media"${el(p, 'image', 'ia', '画像')}${imgSlot('image', p)}>${media(p.image, p.title)}</div>
     </div>`
-        : `    <div class="hero-in">\n${body}\n    </div>`;
+        : `    <div class="hero-in">\n${body}${wide}\n    </div>`;
       /* スクロール連動のときは、長い区間の中に中身を貼り付ける（sticky）。
          区間の進み具合を --p（0〜1）としてCSSに渡し、動きはCSS側で書く。 */
       const sc = p.scroll && p.scroll !== 'none' ? p.scroll : '';
@@ -3135,12 +3184,12 @@ ${buttons(p.buttons)}`;
 ${inner}
   </div>`;
       if (!sc) {
-        return `<section class="${cls}"${attr('id', p.anchor)}${needsPointer ? ' data-hpt' : ''}>
+        return `<section class="${cls}"${attr('id', p.anchor)}${maskVar(p)}${needsPointer ? ' data-hpt' : ''}>
 ${guts}
 </section>`;
       }
       const maskLayer = sc === 'maskzoom' ? maskZoomLayer(p) : '';
-      return `<section class="${cls} hsc hsc-${esc(sc)}"${attr('id', p.anchor)}${needsPointer ? ' data-hpt' : ''}`
+      return `<section class="${cls} hsc hsc-${esc(sc)}"${attr('id', p.anchor)}${maskVar(p)}${needsPointer ? ' data-hpt' : ''}`
         + ` data-heroscroll style="--pin:${Math.max(120, Math.min(320, p.scrollLen ?? 200))}vh">
   <div class="hsc-in">
 ${maskLayer}${guts}
@@ -3165,6 +3214,7 @@ ${maskLayer}${guts}
           { key: 'text', label: '説明', type: 'textarea' },
         ] },
       FIELD.shape,
+      FIELD.shapeMask,
       FIELD.bg, FIELD.anchor,
     ],
     defaults: {
@@ -3202,6 +3252,7 @@ ${(p.items || []).map((it, i) => `      <div class="card"${el(p, `card${i}`, 'ia
       { key: 'reverse', label: '画像を右側にする', type: 'toggle' },
       { key: 'buttons', label: 'ボタン', type: 'list', addLabel: 'ボタンを追加', titleKey: 'label', item: FIELD.btnItem },
       FIELD.shape,
+      FIELD.shapeMask,
       FIELD.bg, FIELD.anchor,
     ],
     defaults: {
@@ -3234,6 +3285,7 @@ ${buttons(p.buttons)}
           { key: 'alt', label: '説明（代替テキスト）', type: 'text' },
         ] },
       FIELD.shape,
+      FIELD.shapeMask,
       FIELD.bg, FIELD.anchor,
     ],
     defaults: {
@@ -3464,6 +3516,7 @@ ${p.more ? `    <div class="btn-row"><a class="btn ghost" href="${esc(p.moreHref
           { key: 'image', label: '画像', type: 'image' },
         ] },
       FIELD.shape,
+      FIELD.shapeMask,
       FIELD.bg, FIELD.anchor,
     ],
     defaults: {
@@ -3804,6 +3857,7 @@ ${(p.items || []).map((it, i) => `      <div class="exp-l" style="background:${e
           { key: 'image', label: '画像URL', type: 'image' },
         ] },
       FIELD.shape,
+      FIELD.shapeMask,
       FIELD.bg, FIELD.anchor,
     ],
     defaults: {
@@ -7197,6 +7251,10 @@ function inputHTML(f, val, path) {
     case 'range':
       return `<div class="f-row"><input type="range" ${p} min="${f.min ?? 0}" max="${f.max ?? 100}" value="${val ?? 0}" data-suffix="${esc(f.suffix || '')}">
         <span class="f-val">${val ?? 0}${f.suffix || ''}</span></div>`;
+    case 'mask':
+      return `<button class="pick wide" data-mask="${path}">${val ? '別の形にする' : '形の画像を読み込む'}</button>
+        ${val ? `<div class="mask-prev" style="-webkit-mask-image:url('${esc(val)}');mask-image:url('${esc(val)}')"></div>
+        <button class="pick wide" data-maskclear="${path}">形を外す</button>` : ''}`;
     case 'image':
       return `<div class="img-f">
         <input type="text" ${p} value="${esc(val ?? '')}" placeholder="https://... または端末から選択">
@@ -7566,15 +7624,86 @@ const filePicker = document.createElement('input');
 filePicker.type = 'file';
 filePicker.accept = 'image/*';
 let pickTarget = null;
-function openImagePicker(blockId, prop) {
+function openImagePicker(blockId, prop, kind) {
   if (!blockId || !prop) return;
-  pickTarget = { blockId, prop };
+  pickTarget = { blockId, prop, kind };
   filePicker.value = '';
   filePicker.click();
 }
 filePicker.addEventListener('change', () => {
   const f = filePicker.files[0];
-  if (f && pickTarget) setImage(pickTarget.blockId, pickTarget.prop, f);
+  if (!f || !pickTarget) return;
+  if (pickTarget.kind === 'mask') setMask(pickTarget.blockId, pickTarget.prop, f);
+  else setImage(pickTarget.blockId, pickTarget.prop, f);
+});
+
+/* ================================================================
+   自分で用意した形で抜く
+
+   持ち込まれた絵を「抜き型」に直す。
+   ・透明を含む絵（PNGなど）… その透明をそのまま使う
+   ・透明を含まない絵（白地に色の形など）… ふちから背景をたどって外し、
+     残ったところを形とみなす
+   どちらも、最後は「形のところだけ不透明」の絵になる。
+   これを mask-image に敷けば、送られてきた形のとおりに抜ける。
+   ================================================================ */
+const MASK_MAX = 560;   // 抜き型に細かさは要らない。軽くしておく
+
+function hasAlpha(d) {
+  for (let i = 3; i < d.length; i += 4 * 97) if (d[i] < 250) return true;
+  return false;
+}
+
+async function fileToMask(file) {
+  const src = await loadImage(file);
+  const scale = Math.min(1, MASK_MAX / Math.max(src.width, src.height));
+  const cv = document.createElement('canvas');
+  cv.width = Math.max(1, Math.round(src.width * scale));
+  cv.height = Math.max(1, Math.round(src.height * scale));
+  const ctx = cv.getContext('2d', { willReadFrequently: true });
+  ctx.drawImage(src, 0, 0, cv.width, cv.height);
+  if (src.close) src.close();
+
+  const im = ctx.getImageData(0, 0, cv.width, cv.height);
+  const d = im.data;
+  if (!hasAlpha(d)) knockOut(im, 26);        // 白地などの背景を外す
+  /* 残ったところを真っ黒にそろえる。マスクは濃さしか見ないが、
+     半透明のふちを残したいので alpha はそのまま使う。 */
+  for (let i = 0; i < d.length; i += 4) { d[i] = 0; d[i + 1] = 0; d[i + 2] = 0; }
+  ctx.putImageData(im, 0, 0);
+
+  const webp = cv.toDataURL('image/webp', 0.9);
+  return webp.startsWith('data:image/webp') ? webp : cv.toDataURL('image/png');
+}
+
+async function setMask(blockId, prop, file) {
+  const b = state.blocks.find((x) => x.id === blockId);
+  if (!b || !file) return;
+  if (!file.type.startsWith('image/')) { flash('画像ファイルを選んでください'); return; }
+  flash('形を読み取っています…');
+  try {
+    const url = await fileToMask(file);
+    setPath(b.props, prop, url);
+    b.props.shape = 'own';
+    renderEditor(); renderPreview(true); save(`mask:${prop}:${blockId}`);
+    flash(`この形で抜きます（約${Math.round(url.length / 1400)}KB）`);
+  } catch (e) {
+    flash('この画像からは形を読み取れませんでした');
+  }
+}
+
+document.addEventListener('click', (e) => {
+  const mb = e.target.closest('[data-mask]');
+  if (mb) { openImagePicker(selected, mb.dataset.mask.replace(/^props\./, ''), 'mask'); return; }
+  const mc = e.target.closest('[data-maskclear]');
+  if (mc) {
+    const b = state.blocks.find((x) => x.id === selected);
+    if (!b) return;
+    setPath(b.props, mc.dataset.maskclear.replace(/^props\./, ''), '');
+    b.props.shape = '';
+    renderEditor(); renderPreview(true); save();
+    flash('形を外しました');
+  }
 });
 
 /* 右パネルの「画像を選ぶ」ボタン */

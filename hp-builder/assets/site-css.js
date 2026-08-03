@@ -105,6 +105,10 @@ p:last-child{margin-bottom:0}
   box-shadow:0 30px 60px -30px rgba(15,23,42,.45)
 }
 .hero-media img{width:100%;height:100%;object-fit:cover}
+/* 中央ぞろえ・左ぞろえに写真を入れたときの置き場所。
+   文章の下に、横いっぱいの一枚を置く。 */
+.hero-media.hero-wide{margin-top:clamp(28px,3.4vw,56px);aspect-ratio:16/7}
+.hero.center .hero-media.hero-wide{margin-inline:auto}
 .hero.split .hero-in{display:grid;grid-template-columns:1.02fr .98fr;gap:clamp(32px,4.4444vw,88.8889px);align-items:center}
 .hero.split .hero-title{font-size:clamp(28px,2.9167vw,58.3333px)}
 .hero.cover{color:#fff}
@@ -257,14 +261,14 @@ p:last-child{margin-bottom:0}
   border-radius:calc(var(--p,0) * 26px);overflow:hidden;
   box-shadow:0 calc(var(--p,0) * 50px) calc(var(--p,0) * 90px) calc(var(--p,0) * -40px) rgba(0,0,0,.5)
 }
-.hsc-zoomout .hero-bg img{transform:scale(calc(1 + var(--p,0) * .06))}
+.hsc-zoomout .hero-bg img{transform:scale(calc((1 + var(--p,0) * .06) * var(--iz,1)))}
 .hsc-zoomout .hero-in{
   transform:translate3d(0,calc(var(--p,0) * -6vh),0) scale(calc(1 - var(--p,0) * .12));
   opacity:calc(1 - var(--p,0) * 1.25)
 }
 
 /* ---- 写真と文字がずれて流れる ---- */
-.hsc-parallax .hero-bg img{transform:scale(1.22) translate3d(0,calc(var(--p,0) * 13vh),0)}
+.hsc-parallax .hero-bg img{transform:scale(calc(1.22 * var(--iz,1))) translate3d(0,calc(var(--p,0) * 13vh),0)}
 .hsc-parallax .hero-in{
   transform:translate3d(0,calc(var(--p,0) * -22vh),0);
   opacity:calc(1 - var(--p,0) * 1.15)
@@ -299,7 +303,7 @@ p:last-child{margin-bottom:0}
   opacity:calc(1 - max(0,(var(--p,0) - .88)) * 8.4)
 }
 .hsc-maskzoom .hero-in{opacity:calc(max(0,var(--p,0) - .86) * 7.2)}
-.hsc-maskzoom .hero-bg img{transform:scale(calc(1.14 - var(--p,0) * .14))}
+.hsc-maskzoom .hero-bg img{transform:scale(calc((1.14 - var(--p,0) * .14) * var(--iz,1)))}
 
 @media (max-width:760px){
   .hsc-zoomout .hero-bg{inset:calc(var(--p,0) * 3vh) calc(var(--p,0) * 4vw)}
@@ -1235,10 +1239,15 @@ a:not(.btn):not(.logo){transition:opacity .5s cubic-bezier(.165,.84,.44,1)}
    枠に入りきらない部分をどこで切るか（object-position）と、
    どれだけ寄るか（scale）。値は枠の style から来る。
    何も指定がなければ、これまでどおり真ん中・等倍。 */
+:is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic,.exp-l,.car-it,.clip-side,.hero-bg) img{
+  object-position:var(--ix,50%) var(--iy,50%)
+}
 :is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic,.exp-l,.car-it,.clip-side) img{
-  object-position:var(--ix,50%) var(--iy,50%);
   transform:scale(var(--iz,1))
 }
+/* 写真いっぱいの型。スクロール連動の型は自分で transform を持っており、
+   ここで上書きすると動きが消える。掛け合わせは各 .hsc-* の側でしている。 */
+.hero:not(.hsc) .hero-bg img{transform:scale(var(--iz,1))}
 
 /* ---------- 出現の段差 ----------
    ブロックごと一度に出すと「表示された」で終わる。
@@ -1333,6 +1342,16 @@ a:not(.btn):not(.logo){transition:opacity .5s cubic-bezier(.165,.84,.44,1)}
   border-radius:0;
   -webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M52 1 C80 -2 99 18 97 45 C95 72 78 99 49 98 C21 97 1 77 2 48 C3 21 24 4 52 1 Z' fill='%23000'/%3E%3C/svg%3E");
   mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M52 1 C80 -2 99 18 97 45 C95 72 78 99 49 98 C21 97 1 77 2 48 C3 21 24 4 52 1 Z' fill='%23000'/%3E%3C/svg%3E");
+  -webkit-mask-size:100% 100%;mask-size:100% 100%;
+  -webkit-mask-repeat:no-repeat;mask-repeat:no-repeat
+}
+
+/* 自分で用意した形。マスクの画像はブロックの --shape から来る。
+   透明なところが抜ける絵として作ってあるので、そのまま敷けばよい。 */
+.shp-own :is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic){
+  border-radius:0;
+  -webkit-mask-image:var(--shape);
+  mask-image:var(--shape);
   -webkit-mask-size:100% 100%;mask-size:100% 100%;
   -webkit-mask-repeat:no-repeat;mask-repeat:no-repeat
 }

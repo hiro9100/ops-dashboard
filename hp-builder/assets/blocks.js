@@ -18,8 +18,13 @@ const media = (src, alt) => (src ? img(src, alt) : '<span class="ph" aria-hidden
 function sec(type, p, inner, extraClass = '') {
   const cls = ['sec', `sec-${type}`, p.bg ? `bg-${p.bg}` : '',
     p.shape ? `shp-${p.shape}` : '', extraClass].filter(Boolean).join(' ');
-  return `<section class="${cls}"${attr('id', p.anchor)}>\n  <div class="wrap">\n${inner}\n  </div>\n</section>`;
+  return `<section class="${cls}"${attr('id', p.anchor)}${maskVar(p)}>\n  <div class="wrap">\n${inner}\n  </div>\n</section>`;
 }
+
+/* 自分で用意した形を、CSS変数としてブロックに渡す。
+   画像そのものを持つので長くなるが、外から読み込むものは増えない。 */
+const maskVar = (p) => (p.shape === 'own' && p.shapeMask
+  ? ` style="--shape:url('${esc(p.shapeMask)}')"` : '');
 
 /* 見出しブロック（アイキャッチ・タイトル・サブ） */
 function head(p, align = 'center') {
@@ -234,8 +239,14 @@ const FIELD = {
       ['slant', '斜めに切る'], ['egg', 'たまご'],
       ['slats', '4本の柱（上下が交互に丸い）'], ['arches', '3連アーチ'],
       ['wave', '下が波'], ['blob', 'まるいかたまり'],
+      ['own', '自分で用意した形'],
     ],
+    hint: '「自分で用意した形」は、形の画像を読み込むとその形どおりに抜きます',
   },
+  /* 自分で用意した形。持っているのはマスクの画像そのもの（データURL）。
+     選び方は「型」ではなく「持ち込み」なので、選択肢とは別に持つ。 */
+  shapeMask: { key: 'shapeMask', label: '形の画像', type: 'mask',
+    showIf: (p) => p.shape === 'own' },
   anchor: { key: 'anchor', label: 'アンカーID', type: 'text', hint: 'メニューから #about のようにリンクできます' },
   eyebrow: { key: 'eyebrow', label: '小見出し', type: 'text' },
   title: { key: 'title', label: '見出し', type: 'textarea', rows: 2 },
@@ -371,6 +382,7 @@ const BLOCKS = {
       { key: 'grain', label: 'フィルムの粒状感を足す', type: 'toggle' },
       { key: 'buttons', label: 'ボタン', type: 'list', addLabel: 'ボタンを追加', titleKey: 'label', item: FIELD.btnItem },
       FIELD.shape,
+      FIELD.shapeMask,
       FIELD.bg, FIELD.anchor,
     ],
     defaults: {
@@ -397,15 +409,24 @@ const BLOCKS = {
       ${p.title ? `<h1 class="hero-title"${el(p, 'title', 'ta', 'キャッチコピー', 'title')}>${nl2br(p.title)}</h1>` : ''}
       ${p.text ? `<p class="hero-text"${el(p, 'text', 'ta', '説明文', 'text')}>${nl2br(p.text)}</p>` : ''}
 ${buttons(p.buttons)}`;
+      /* 写真いっぱいの型。枠の目印を付けて、押せば選び直せるようにする
+         （位置と大きさの調整もここから届く） */
       const bg = cover
-        ? `  <div class="hero-bg" style="--hero-overlay:rgba(15,23,42,${(p.overlay ?? 55) / 100})">${img(p.image, '')}</div>\n`
+        ? `  <div class="hero-bg" style="--hero-overlay:rgba(15,23,42,${(p.overlay ?? 55) / 100})"`
+          + `${imgSlot('image', p)} data-elname="背景の写真">${img(p.image, '')}</div>\n`
+        : '';
+      /* 中央ぞろえ・左ぞろえでも、写真を入れたら文章の下に置く。
+         入れても何も起きないと、入れた本人には壊れて見える（実際に指摘された）。 */
+      const wide = !cover && p.layout !== 'split' && p.image
+        ? `\n      <div class="hero-media hero-wide"${el(p, 'image', 'ia', '画像')}`
+          + `${imgSlot('image', p)}>${media(p.image, p.title)}</div>`
         : '';
       const inner = p.layout === 'split'
         ? `    <div class="hero-in">
       <div>\n${body}\n      </div>
       <div class="hero-media"${el(p, 'image', 'ia', '画像')}${imgSlot('image', p)}>${media(p.image, p.title)}</div>
     </div>`
-        : `    <div class="hero-in">\n${body}\n    </div>`;
+        : `    <div class="hero-in">\n${body}${wide}\n    </div>`;
       /* スクロール連動のときは、長い区間の中に中身を貼り付ける（sticky）。
          区間の進み具合を --p（0〜1）としてCSSに渡し、動きはCSS側で書く。 */
       const sc = p.scroll && p.scroll !== 'none' ? p.scroll : '';
@@ -413,12 +434,12 @@ ${buttons(p.buttons)}`;
 ${inner}
   </div>`;
       if (!sc) {
-        return `<section class="${cls}"${attr('id', p.anchor)}${needsPointer ? ' data-hpt' : ''}>
+        return `<section class="${cls}"${attr('id', p.anchor)}${maskVar(p)}${needsPointer ? ' data-hpt' : ''}>
 ${guts}
 </section>`;
       }
       const maskLayer = sc === 'maskzoom' ? maskZoomLayer(p) : '';
-      return `<section class="${cls} hsc hsc-${esc(sc)}"${attr('id', p.anchor)}${needsPointer ? ' data-hpt' : ''}`
+      return `<section class="${cls} hsc hsc-${esc(sc)}"${attr('id', p.anchor)}${maskVar(p)}${needsPointer ? ' data-hpt' : ''}`
         + ` data-heroscroll style="--pin:${Math.max(120, Math.min(320, p.scrollLen ?? 200))}vh">
   <div class="hsc-in">
 ${maskLayer}${guts}
@@ -443,6 +464,7 @@ ${maskLayer}${guts}
           { key: 'text', label: '説明', type: 'textarea' },
         ] },
       FIELD.shape,
+      FIELD.shapeMask,
       FIELD.bg, FIELD.anchor,
     ],
     defaults: {
@@ -480,6 +502,7 @@ ${(p.items || []).map((it, i) => `      <div class="card"${el(p, `card${i}`, 'ia
       { key: 'reverse', label: '画像を右側にする', type: 'toggle' },
       { key: 'buttons', label: 'ボタン', type: 'list', addLabel: 'ボタンを追加', titleKey: 'label', item: FIELD.btnItem },
       FIELD.shape,
+      FIELD.shapeMask,
       FIELD.bg, FIELD.anchor,
     ],
     defaults: {
@@ -512,6 +535,7 @@ ${buttons(p.buttons)}
           { key: 'alt', label: '説明（代替テキスト）', type: 'text' },
         ] },
       FIELD.shape,
+      FIELD.shapeMask,
       FIELD.bg, FIELD.anchor,
     ],
     defaults: {
@@ -742,6 +766,7 @@ ${p.more ? `    <div class="btn-row"><a class="btn ghost" href="${esc(p.moreHref
           { key: 'image', label: '画像', type: 'image' },
         ] },
       FIELD.shape,
+      FIELD.shapeMask,
       FIELD.bg, FIELD.anchor,
     ],
     defaults: {
@@ -1082,6 +1107,7 @@ ${(p.items || []).map((it, i) => `      <div class="exp-l" style="background:${e
           { key: 'image', label: '画像URL', type: 'image' },
         ] },
       FIELD.shape,
+      FIELD.shapeMask,
       FIELD.bg, FIELD.anchor,
     ],
     defaults: {

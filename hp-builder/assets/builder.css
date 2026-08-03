@@ -183,6 +183,15 @@ input,select,textarea{font:inherit}
 }
 .pick.wide{width:100%;margin-top:7px;text-align:center;justify-content:center}
 
+/* 読み込んだ抜き型の下見。抜けるところが分かるよう、色を敷いて形だけ見せる */
+.mask-prev{
+  width:100%;height:96px;margin-top:8px;border-radius:6px;
+  background:linear-gradient(135deg,var(--pri),#8b5cf6);
+  -webkit-mask-size:contain;mask-size:contain;
+  -webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;
+  -webkit-mask-position:center;mask-position:center
+}
+
 /* 背景をぬく。透けたところが分かるよう、下に市松模様を敷く */
 .cut-view{
   border:1px solid var(--line);border-radius:10px;overflow:hidden;margin-bottom:14px;

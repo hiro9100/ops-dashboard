@@ -1297,6 +1297,10 @@ function inputHTML(f, val, path) {
     case 'range':
       return `<div class="f-row"><input type="range" ${p} min="${f.min ?? 0}" max="${f.max ?? 100}" value="${val ?? 0}" data-suffix="${esc(f.suffix || '')}">
         <span class="f-val">${val ?? 0}${f.suffix || ''}</span></div>`;
+    case 'mask':
+      return `<button class="pick wide" data-mask="${path}">${val ? '別の形にする' : '形の画像を読み込む'}</button>
+        ${val ? `<div class="mask-prev" style="-webkit-mask-image:url('${esc(val)}');mask-image:url('${esc(val)}')"></div>
+        <button class="pick wide" data-maskclear="${path}">形を外す</button>` : ''}`;
     case 'image':
       return `<div class="img-f">
         <input type="text" ${p} value="${esc(val ?? '')}" placeholder="https://... または端末から選択">
@@ -1666,15 +1670,86 @@ const filePicker = document.createElement('input');
 filePicker.type = 'file';
 filePicker.accept = 'image/*';
 let pickTarget = null;
-function openImagePicker(blockId, prop) {
+function openImagePicker(blockId, prop, kind) {
   if (!blockId || !prop) return;
-  pickTarget = { blockId, prop };
+  pickTarget = { blockId, prop, kind };
   filePicker.value = '';
   filePicker.click();
 }
 filePicker.addEventListener('change', () => {
   const f = filePicker.files[0];
-  if (f && pickTarget) setImage(pickTarget.blockId, pickTarget.prop, f);
+  if (!f || !pickTarget) return;
+  if (pickTarget.kind === 'mask') setMask(pickTarget.blockId, pickTarget.prop, f);
+  else setImage(pickTarget.blockId, pickTarget.prop, f);
+});
+
+/* ================================================================
+   自分で用意した形で抜く
+
+   持ち込まれた絵を「抜き型」に直す。
+   ・透明を含む絵（PNGなど）… その透明をそのまま使う
+   ・透明を含まない絵（白地に色の形など）… ふちから背景をたどって外し、
+     残ったところを形とみなす
+   どちらも、最後は「形のところだけ不透明」の絵になる。
+   これを mask-image に敷けば、送られてきた形のとおりに抜ける。
+   ================================================================ */
+const MASK_MAX = 560;   // 抜き型に細かさは要らない。軽くしておく
+
+function hasAlpha(d) {
+  for (let i = 3; i < d.length; i += 4 * 97) if (d[i] < 250) return true;
+  return false;
+}
+
+async function fileToMask(file) {
+  const src = await loadImage(file);
+  const scale = Math.min(1, MASK_MAX / Math.max(src.width, src.height));
+  const cv = document.createElement('canvas');
+  cv.width = Math.max(1, Math.round(src.width * scale));
+  cv.height = Math.max(1, Math.round(src.height * scale));
+  const ctx = cv.getContext('2d', { willReadFrequently: true });
+  ctx.drawImage(src, 0, 0, cv.width, cv.height);
+  if (src.close) src.close();
+
+  const im = ctx.getImageData(0, 0, cv.width, cv.height);
+  const d = im.data;
+  if (!hasAlpha(d)) knockOut(im, 26);        // 白地などの背景を外す
+  /* 残ったところを真っ黒にそろえる。マスクは濃さしか見ないが、
+     半透明のふちを残したいので alpha はそのまま使う。 */
+  for (let i = 0; i < d.length; i += 4) { d[i] = 0; d[i + 1] = 0; d[i + 2] = 0; }
+  ctx.putImageData(im, 0, 0);
+
+  const webp = cv.toDataURL('image/webp', 0.9);
+  return webp.startsWith('data:image/webp') ? webp : cv.toDataURL('image/png');
+}
+
+async function setMask(blockId, prop, file) {
+  const b = state.blocks.find((x) => x.id === blockId);
+  if (!b || !file) return;
+  if (!file.type.startsWith('image/')) { flash('画像ファイルを選んでください'); return; }
+  flash('形を読み取っています…');
+  try {
+    const url = await fileToMask(file);
+    setPath(b.props, prop, url);
+    b.props.shape = 'own';
+    renderEditor(); renderPreview(true); save(`mask:${prop}:${blockId}`);
+    flash(`この形で抜きます（約${Math.round(url.length / 1400)}KB）`);
+  } catch (e) {
+    flash('この画像からは形を読み取れませんでした');
+  }
+}
+
+document.addEventListener('click', (e) => {
+  const mb = e.target.closest('[data-mask]');
+  if (mb) { openImagePicker(selected, mb.dataset.mask.replace(/^props\./, ''), 'mask'); return; }
+  const mc = e.target.closest('[data-maskclear]');
+  if (mc) {
+    const b = state.blocks.find((x) => x.id === selected);
+    if (!b) return;
+    setPath(b.props, mc.dataset.maskclear.replace(/^props\./, ''), '');
+    b.props.shape = '';
+    renderEditor(); renderPreview(true); save();
+    flash('形を外しました');
+  }
 });
 
 /* 右パネルの「画像を選ぶ」ボタン */
