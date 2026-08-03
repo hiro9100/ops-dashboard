@@ -110,6 +110,14 @@ const SECTION_PRESETS = [
     about: 'YouTube・Vimeo・動画ファイルのURLを貼るだけ。形も土台も写真と同じように使える。',
     props: {} },
 
+  { key: 'strip', type: 'strip', group: '写真', label: '写真が右から左へ流れ続ける',
+    about: '数が多いものを途切れず流す。導入実績・取引先・受賞歴に。写真だけ／カードを選べる。',
+    props: {} },
+
+  { key: 'strip-card', type: 'strip', group: '写真', label: '流れ続けるカード（写真＋文章）',
+    about: '流れる1枚ずつに見出しと説明が付く形。',
+    props: { style: 'card', size: 'l' } },
+
   { key: 'clipreveal', type: 'clipreveal', group: '写真', label: '写真が円で切り替わる',
     about: '円が広がって次の写真に入れ替わる。', props: {} },
 

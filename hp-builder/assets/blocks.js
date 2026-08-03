@@ -798,6 +798,75 @@ ${form}
     },
   },
 
+  /* ---------------- 写真が流れ続ける ----------------
+     導入実績・取引先・受賞歴のように「並べて見せたいが、数が多くて
+     縦に積むと長い」ものを、途切れずに横へ流す。
+     流れる文字（marquee）と同じで、同じ並びを2組出して片方が抜けた
+     瞬間にもう片方が続く形にしている。 */
+  strip: {
+    label: '写真が流れ続ける',
+    icon: '⇢',
+    tag: '写真',
+    about: '写真が右から左へ流れ続けます。導入実績・取引先・受賞歴など、数の多いものに。',
+    fields: [
+      FIELD.eyebrow, FIELD.title, FIELD.text,
+      { key: 'style', label: '見せ方', type: 'select',
+        options: [['plain', '写真だけ'], ['card', 'カード（写真の下に文章）']] },
+      { key: 'size', label: '大きさ', type: 'select',
+        options: [['s', '小さめ'], ['m', 'ふつう'], ['l', '大きめ']] },
+      { key: 'ratio', label: '写真の形（縦横比）', type: 'select',
+        options: [['4x3', '横長（4:3）'], ['1x1', '正方形'], ['16x9', '横長（16:9）'], ['3x4', '縦長（3:4）']] },
+      { key: 'speed', label: '流れる速さ', type: 'range', min: 10, max: 90, suffix: '秒/周' },
+      { key: 'dir', label: '向き', type: 'select', options: [['l', '右から左へ'], ['r', '左から右へ']] },
+      { key: 'items', label: '中身', type: 'list', addLabel: '1つ追加', titleKey: 'title',
+        item: [
+          { key: 'image', label: '写真', type: 'image' },
+          { key: 'title', label: '見出し', type: 'text' },
+          { key: 'text', label: '説明', type: 'text' },
+          { key: 'href', label: 'リンク先（空でリンクなし）', type: 'text' },
+        ] },
+      FIELD.shape, FIELD.shapeMask, FIELD.plate, FIELD.plateShift,
+      FIELD.bg, FIELD.anchor,
+    ],
+    defaults: {
+      eyebrow: 'CLIENTS', title: '導入実績', text: '',
+      style: 'plain', size: 'm', ratio: '4x3', speed: 34, dir: 'l',
+      items: [
+        { image: '', title: '株式会社サンプル', text: '2024年〜', href: '' },
+        { image: '', title: 'サンプル商事', text: '2023年〜', href: '' },
+        { image: '', title: 'サンプル製作所', text: '2023年〜', href: '' },
+        { image: '', title: 'サンプルホールディングス', text: '2022年〜', href: '' },
+        { image: '', title: 'サンプル工業', text: '2022年〜', href: '' },
+        { image: '', title: 'サンプル建設', text: '2021年〜', href: '' },
+      ],
+      shape: '', shapeMask: '', plate: '', plateShift: '',
+      bg: '', anchor: 'clients',
+    },
+    render: (p) => {
+      const card = p.style === 'card';
+      const one = (p.items || []).map((it, i) => {
+        const pic = `<div class="strp-pic"${imgSlot(`items.${i}.image`, p)} data-elname="写真${i + 1}">${
+          media(it.image, it.title)}</div>`;
+        const body = card
+          ? `${pic}<b${ed(`items.${i}.title`, '見出し')}>${esc(it.title)}</b>${
+            it.text ? `<small${ed(`items.${i}.text`, '説明')}>${esc(it.text)}</small>` : ''}`
+          : pic;
+        return it.href
+          ? `<a class="strp-it" href="${esc(it.href)}">${body}</a>`
+          : `<div class="strp-it">${body}</div>`;
+      }).join('');
+      /* 2組目は同じ絵の続きなので、読み上げには渡さない */
+      const track = `<div class="strp-run">${one}</div>`
+        + `<div class="strp-run" aria-hidden="true">${one}</div>`;
+      return sec('strip', p, `${head(p)}
+    <div class="strp strp-${esc(p.size || 'm')} strp-r${esc(p.ratio || '4x3')}${
+        card ? ' strp-card' : ''}${p.dir === 'r' ? ' strp-rev' : ''}"
+      style="--strp-spd:${Math.max(10, Math.min(90, +p.speed || 34))}s">
+      <div class="strp-in">${track}</div>
+    </div>`);
+    },
+  },
+
   /* ---------------- 動画 ----------------
      動画そのものは持たない。1ファイルに収める作りなので、数十MBの
      動画を抱え込むと保存も公開もできなくなる。
@@ -1664,7 +1733,7 @@ ${slides}
 
 /* 追加メニューに出す順番（ヘッダー・フッターは常設なので除く） */
 const ADDABLE = [
-  'hero', 'collage', 'features', 'about', 'gallery', 'video', 'menu', 'floors', 'news', 'marquee', 'pricing', 'faq', 'cta', 'contact', 'rich',
+  'hero', 'collage', 'features', 'about', 'gallery', 'video', 'strip', 'menu', 'floors', 'news', 'marquee', 'pricing', 'faq', 'cta', 'contact', 'rich',
   'slides', 'product3d', 'exploded', 'hscroll', 'stackcards', 'timeline', 'clipreveal',
   'carousel3d', 'slotstats', 'svgdraw', 'shift',
 ];

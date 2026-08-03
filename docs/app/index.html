@@ -2101,11 +2101,11 @@ a:not(.btn):not(.logo){transition:opacity .5s cubic-bezier(.165,.84,.44,1)}
    枠に入りきらない部分をどこで切るか（object-position）と、
    どれだけ寄るか（scale）。値は枠の style から来る。
    何も指定がなければ、これまでどおり真ん中・等倍。 */
-:is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic,.vid,.exp-l,.car-it,.clip-side,.hero-bg)
+:is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic,.vid,.strp-pic,.exp-l,.car-it,.clip-side,.hero-bg)
   :is(img,video){
   object-position:var(--ix,50%) var(--iy,50%)
 }
-:is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic,.vid,.exp-l,.car-it,.clip-side) img{
+:is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic,.vid,.strp-pic,.exp-l,.car-it,.clip-side) img{
   transform:scale(var(--iz,1))
 }
 /* 写真いっぱいの型。スクロール連動の型は自分で transform を持っており、
@@ -2133,6 +2133,38 @@ a:not(.btn):not(.logo){transition:opacity .5s cubic-bezier(.165,.84,.44,1)}
 .rv .grid > *:nth-child(n+5),.rv .nws-i:nth-child(n+5),.rv .flr-i:nth-child(n+5){transition-delay:.44s}
 .rv .btn-row{transition-delay:.5s}
 
+/* ---------- 写真が流れ続ける ----------
+   同じ並びを2組出し、1組ぶん（=50%）動かして継ぎ目を消す。
+   写真の枠は .strp-pic。形も土台も、ほかの写真と同じように効く。 */
+.strp{position:relative;overflow:hidden;
+  /* 両端をうすく消して、切れ目ではなく「続いている」ように見せる */
+  -webkit-mask-image:linear-gradient(90deg,transparent,#000 5%,#000 95%,transparent);
+  mask-image:linear-gradient(90deg,transparent,#000 5%,#000 95%,transparent)}
+.strp-in{display:flex;width:max-content}
+.strp-run{display:flex;gap:var(--strp-gap,22px);padding-right:var(--strp-gap,22px);
+  animation:strp-flow var(--strp-spd,34s) linear infinite}
+.strp-rev .strp-run{animation-direction:reverse}
+@keyframes strp-flow{from{transform:translate3d(0,0,0)}to{transform:translate3d(-100%,0,0)}}
+.strp:hover .strp-run{animation-play-state:paused}
+
+.strp-it{flex:none;width:var(--strp-w,190px);text-decoration:none;color:inherit;display:block}
+.strp-pic{width:100%;overflow:hidden;border-radius:var(--radius);
+  background:linear-gradient(135deg,var(--c-primary),var(--c-accent));box-sizing:border-box}
+.strp-pic img{width:100%;height:100%;object-fit:cover}
+.strp-r4x3 .strp-pic{aspect-ratio:4/3}
+.strp-r1x1 .strp-pic{aspect-ratio:1/1}
+.strp-r16x9 .strp-pic{aspect-ratio:16/9}
+.strp-r3x4 .strp-pic{aspect-ratio:3/4}
+.strp-s{--strp-w:132px;--strp-gap:16px}
+.strp-m{--strp-w:190px;--strp-gap:22px}
+.strp-l{--strp-w:268px;--strp-gap:28px}
+/* カードのとき。写真の下に見出しと説明を置く */
+.strp-card .strp-it b{display:block;margin-top:12px;font-size:14.5px;font-weight:700;line-height:1.6}
+.strp-card .strp-it small{display:block;margin-top:4px;font-size:12.5px;color:var(--c-muted)}
+@media(max-width:640px){
+  .strp-s{--strp-w:108px}.strp-m{--strp-w:150px}.strp-l{--strp-w:200px}
+}
+
 /* ---------- 動画 ----------
    置き場所は写真の枠と同じ扱いにする（形も土台もそのまま効く）。 */
 .vid{position:relative;width:100%;overflow:hidden;border-radius:var(--radius);
@@ -2157,19 +2189,19 @@ a:not(.btn):not(.logo){transition:opacity .5s cubic-bezier(.165,.84,.44,1)}
    要素を増やさず、枠の余白と地の色だけで作っている。
    写真は枠の内側いっぱいなので、余白のぶんが土台として見える。
    ========================================================== */
-.plt :is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic,.vid){
+.plt :is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic,.vid,.strp-pic){
   padding:var(--pt,5%) var(--pr,5%) var(--pb,5%) var(--pl,5%);
   box-sizing:border-box
 }
 /* 写真の側は、土台の形につられて角が立つので、少しだけ丸めて収める */
-.plt :is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic,.vid) img{
+.plt :is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic,.vid,.strp-pic) img{
   border-radius:calc(var(--radius) * .55)
 }
-.plt-dark :is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic,.vid){background:var(--c-dark)}
-.plt-primary :is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic,.vid){background:var(--c-primary)}
-.plt-accent :is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic,.vid){background:var(--c-accent)}
-.plt-surface :is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic,.vid){background:var(--c-surface)}
-.plt-white :is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic,.vid){
+.plt-dark :is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic,.vid,.strp-pic){background:var(--c-dark)}
+.plt-primary :is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic,.vid,.strp-pic){background:var(--c-primary)}
+.plt-accent :is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic,.vid,.strp-pic){background:var(--c-accent)}
+.plt-surface :is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic,.vid,.strp-pic){background:var(--c-surface)}
+.plt-white :is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic,.vid,.strp-pic){
   background:#fff;box-shadow:0 24px 50px -30px rgba(15,23,42,.45)
 }
 /* ずらす。寄せた側の余白を細く、逆側を太くする */
@@ -2190,30 +2222,30 @@ a:not(.btn):not(.logo){transition:opacity .5s cubic-bezier(.165,.84,.44,1)}
 :is(.shp-round,.shp-circle,.shp-arch,.shp-leaf,.shp-hex,.shp-slant,.shp-egg,
   .shp-slats,.shp-arches,.shp-wave,.shp-blob,
   .shp-step,.shp-notch,.shp-ticket,.shp-sparkle,.shp-cross,.shp-diamond)
-  :is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic,.vid){
+  :is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic,.vid,.strp-pic){
   /* 角丸と重ねると形が濁るので、抜くときは角丸を落とす */
   border-radius:0
 }
-.shp-round :is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic,.vid){
+.shp-round :is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic,.vid,.strp-pic){
   border-radius:clamp(18px,2.2vw,44px)
 }
-.shp-circle :is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic,.vid){
+.shp-circle :is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic,.vid,.strp-pic){
   clip-path:circle(50% at 50% 50%);aspect-ratio:1/1
 }
-.shp-arch :is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic,.vid){
+.shp-arch :is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic,.vid,.strp-pic){
   border-radius:999px 999px 0 0
 }
 /* 木の葉：対角の2隅だけを大きく丸める */
-.shp-leaf :is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic,.vid){
+.shp-leaf :is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic,.vid,.strp-pic){
   border-radius:clamp(40px,7vw,140px) 0 clamp(40px,7vw,140px) 0
 }
-.shp-hex :is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic,.vid){
+.shp-hex :is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic,.vid,.strp-pic){
   clip-path:polygon(25% 0,75% 0,100% 50%,75% 100%,25% 100%,0 50%)
 }
-.shp-slant :is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic,.vid){
+.shp-slant :is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic,.vid,.strp-pic){
   clip-path:polygon(0 0,100% 0,100% 88%,0 100%)
 }
-.shp-egg :is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic,.vid){
+.shp-egg :is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic,.vid,.strp-pic){
   border-radius:50% 50% 46% 46% / 58% 58% 42% 42%
 }
 
@@ -2226,28 +2258,28 @@ a:not(.btn):not(.logo){transition:opacity .5s cubic-bezier(.165,.84,.44,1)}
    preserveAspectRatio='none' と mask-size:100% 100% で、枠の形に
    合わせて伸び縮みする。丸い部分は枠の縦横比なりに平たくなるが、
    見本の絵と同じ出かたなので、これでよい。 */
-.shp-slats :is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic,.vid){
+.shp-slats :is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic,.vid,.strp-pic){
   border-radius:0;
   -webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M0.0 0 L22.0 0 L22.0 85 A11 15 0 0 1 0.0 85 Z M26.0 15 A11 15 0 0 1 48.0 15 L48.0 100 L26.0 100 Z M52.0 0 L74.0 0 L74.0 85 A11 15 0 0 1 52.0 85 Z M78.0 15 A11 15 0 0 1 100.0 15 L100.0 100 L78.0 100 Z' fill='%23000'/%3E%3C/svg%3E");
   mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M0.0 0 L22.0 0 L22.0 85 A11 15 0 0 1 0.0 85 Z M26.0 15 A11 15 0 0 1 48.0 15 L48.0 100 L26.0 100 Z M52.0 0 L74.0 0 L74.0 85 A11 15 0 0 1 52.0 85 Z M78.0 15 A11 15 0 0 1 100.0 15 L100.0 100 L78.0 100 Z' fill='%23000'/%3E%3C/svg%3E");
   -webkit-mask-size:100% 100%;mask-size:100% 100%;
   -webkit-mask-repeat:no-repeat;mask-repeat:no-repeat
 }
-.shp-arches :is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic,.vid){
+.shp-arches :is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic,.vid,.strp-pic){
   border-radius:0;
   -webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M0.0 18 A15.5 18 0 0 1 31.0 18 L31.0 100 L0.0 100 Z M34.5 18 A15.5 18 0 0 1 65.5 18 L65.5 100 L34.5 100 Z M69.0 18 A15.5 18 0 0 1 100.0 18 L100.0 100 L69.0 100 Z' fill='%23000'/%3E%3C/svg%3E");
   mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M0.0 18 A15.5 18 0 0 1 31.0 18 L31.0 100 L0.0 100 Z M34.5 18 A15.5 18 0 0 1 65.5 18 L65.5 100 L34.5 100 Z M69.0 18 A15.5 18 0 0 1 100.0 18 L100.0 100 L69.0 100 Z' fill='%23000'/%3E%3C/svg%3E");
   -webkit-mask-size:100% 100%;mask-size:100% 100%;
   -webkit-mask-repeat:no-repeat;mask-repeat:no-repeat
 }
-.shp-wave :is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic,.vid){
+.shp-wave :is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic,.vid,.strp-pic){
   border-radius:0;
   -webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M0 0 L100 0 L100 84 C83 100 67 68 50 84 C33 100 17 68 0 84 Z' fill='%23000'/%3E%3C/svg%3E");
   mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M0 0 L100 0 L100 84 C83 100 67 68 50 84 C33 100 17 68 0 84 Z' fill='%23000'/%3E%3C/svg%3E");
   -webkit-mask-size:100% 100%;mask-size:100% 100%;
   -webkit-mask-repeat:no-repeat;mask-repeat:no-repeat
 }
-.shp-blob :is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic,.vid){
+.shp-blob :is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic,.vid,.strp-pic){
   border-radius:0;
   -webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M52 1 C80 -2 99 18 97 45 C95 72 78 99 49 98 C21 97 1 77 2 48 C3 21 24 4 52 1 Z' fill='%23000'/%3E%3C/svg%3E");
   mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M52 1 C80 -2 99 18 97 45 C95 72 78 99 49 98 C21 97 1 77 2 48 C3 21 24 4 52 1 Z' fill='%23000'/%3E%3C/svg%3E");
@@ -2256,7 +2288,7 @@ a:not(.btn):not(.logo){transition:opacity .5s cubic-bezier(.165,.84,.44,1)}
 }
 
 /* 段ちがい */
-.shp-step :is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic,.vid){
+.shp-step :is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic,.vid,.strp-pic){
   border-radius:0;
   -webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M0 31.6 A4.5 4.5 0 0 1 4.5 27.1 L41.3 27.1 A4.5 4.5 0 0 0 45.8 22.6 L45.8 4.5 A4.5 4.5 0 0 1 50.3 0 L95.5 0 A4.5 4.5 0 0 1 100 4.5 L100 34.9 A4.5 4.5 0 0 1 95.5 39.4 L78.5 39.4 A4.5 4.5 0 0 0 74 43.9 L74 95.5 A4.5 4.5 0 0 1 69.5 100 L4.5 100 A4.5 4.5 0 0 1 0 95.5 Z' fill='%23000'/%3E%3C/svg%3E");
   mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M0 31.6 A4.5 4.5 0 0 1 4.5 27.1 L41.3 27.1 A4.5 4.5 0 0 0 45.8 22.6 L45.8 4.5 A4.5 4.5 0 0 1 50.3 0 L95.5 0 A4.5 4.5 0 0 1 100 4.5 L100 34.9 A4.5 4.5 0 0 1 95.5 39.4 L78.5 39.4 A4.5 4.5 0 0 0 74 43.9 L74 95.5 A4.5 4.5 0 0 1 69.5 100 L4.5 100 A4.5 4.5 0 0 1 0 95.5 Z' fill='%23000'/%3E%3C/svg%3E");
@@ -2264,7 +2296,7 @@ a:not(.btn):not(.logo){transition:opacity .5s cubic-bezier(.165,.84,.44,1)}
   -webkit-mask-repeat:no-repeat;mask-repeat:no-repeat
 }
 /* 角を四角く欠く */
-.shp-notch :is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic,.vid){
+.shp-notch :is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic,.vid,.strp-pic){
   border-radius:0;
   -webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M5 0 L61 0 A5 5 0 0 1 66 5 L66 29 A5 5 0 0 0 71 34 L95 34 A5 5 0 0 1 100 39 L100 95 A5 5 0 0 1 95 100 L5 100 A5 5 0 0 1 0 95 L0 5 A5 5 0 0 1 5 0 Z' fill='%23000'/%3E%3C/svg%3E");
   mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M5 0 L61 0 A5 5 0 0 1 66 5 L66 29 A5 5 0 0 0 71 34 L95 34 A5 5 0 0 1 100 39 L100 95 A5 5 0 0 1 95 100 L5 100 A5 5 0 0 1 0 95 L0 5 A5 5 0 0 1 5 0 Z' fill='%23000'/%3E%3C/svg%3E");
@@ -2272,7 +2304,7 @@ a:not(.btn):not(.logo){transition:opacity .5s cubic-bezier(.165,.84,.44,1)}
   -webkit-mask-repeat:no-repeat;mask-repeat:no-repeat
 }
 /* チケット（左右がへこむ） */
-.shp-ticket :is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic,.vid){
+.shp-ticket :is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic,.vid,.strp-pic){
   border-radius:0;
   -webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M6 0 L94 0 A6 6 0 0 1 100 6 L100 37 A13 13 0 0 0 100 63 L100 94 A6 6 0 0 1 94 100 L6 100 A6 6 0 0 1 0 94 L0 63 A13 13 0 0 0 0 37 L0 6 A6 6 0 0 1 6 0 Z' fill='%23000'/%3E%3C/svg%3E");
   mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M6 0 L94 0 A6 6 0 0 1 100 6 L100 37 A13 13 0 0 0 100 63 L100 94 A6 6 0 0 1 94 100 L6 100 A6 6 0 0 1 0 94 L0 63 A13 13 0 0 0 0 37 L0 6 A6 6 0 0 1 6 0 Z' fill='%23000'/%3E%3C/svg%3E");
@@ -2280,7 +2312,7 @@ a:not(.btn):not(.logo){transition:opacity .5s cubic-bezier(.165,.84,.44,1)}
   -webkit-mask-repeat:no-repeat;mask-repeat:no-repeat
 }
 /* 4点のきらめき */
-.shp-sparkle :is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic,.vid){
+.shp-sparkle :is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic,.vid,.strp-pic){
   border-radius:0;
   -webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M50 0 C50 34 66 50 100 50 C66 50 50 66 50 100 C50 66 34 50 0 50 C34 50 50 34 50 0 Z' fill='%23000'/%3E%3C/svg%3E");
   mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M50 0 C50 34 66 50 100 50 C66 50 50 66 50 100 C50 66 34 50 0 50 C34 50 50 34 50 0 Z' fill='%23000'/%3E%3C/svg%3E");
@@ -2288,7 +2320,7 @@ a:not(.btn):not(.logo){transition:opacity .5s cubic-bezier(.165,.84,.44,1)}
   -webkit-mask-repeat:no-repeat;mask-repeat:no-repeat
 }
 /* 丸みのある十字 */
-.shp-cross :is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic,.vid){
+.shp-cross :is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic,.vid,.strp-pic){
   border-radius:0;
   -webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M38 0 L62 0 A7 7 0 0 1 69 7 L69 24 A7 7 0 0 0 76 31 L93 31 A7 7 0 0 1 100 38 L100 62 A7 7 0 0 1 93 69 L76 69 A7 7 0 0 0 69 76 L69 93 A7 7 0 0 1 62 100 L38 100 A7 7 0 0 1 31 93 L31 76 A7 7 0 0 0 24 69 L7 69 A7 7 0 0 1 0 62 L0 38 A7 7 0 0 1 7 31 L24 31 A7 7 0 0 0 31 24 L31 7 A7 7 0 0 1 38 0 Z' fill='%23000'/%3E%3C/svg%3E");
   mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M38 0 L62 0 A7 7 0 0 1 69 7 L69 24 A7 7 0 0 0 76 31 L93 31 A7 7 0 0 1 100 38 L100 62 A7 7 0 0 1 93 69 L76 69 A7 7 0 0 0 69 76 L69 93 A7 7 0 0 1 62 100 L38 100 A7 7 0 0 1 31 93 L31 76 A7 7 0 0 0 24 69 L7 69 A7 7 0 0 1 0 62 L0 38 A7 7 0 0 1 7 31 L24 31 A7 7 0 0 0 31 24 L31 7 A7 7 0 0 1 38 0 Z' fill='%23000'/%3E%3C/svg%3E");
@@ -2296,7 +2328,7 @@ a:not(.btn):not(.logo){transition:opacity .5s cubic-bezier(.165,.84,.44,1)}
   -webkit-mask-repeat:no-repeat;mask-repeat:no-repeat
 }
 /* 角の丸いひし形 */
-.shp-diamond :is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic,.vid){
+.shp-diamond :is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic,.vid,.strp-pic){
   border-radius:0;
   -webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M42.0 8.0 Q50 0 58.0 8.0 L92.0 42.0 Q100 50 92.0 58.0 L58.0 92.0 Q50 100 42.0 92.0 L8.0 58.0 Q0 50 8.0 42.0 Z' fill='%23000'/%3E%3C/svg%3E");
   mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M42.0 8.0 Q50 0 58.0 8.0 L92.0 42.0 Q100 50 92.0 58.0 L58.0 92.0 Q50 100 42.0 92.0 L8.0 58.0 Q0 50 8.0 42.0 Z' fill='%23000'/%3E%3C/svg%3E");
@@ -2306,7 +2338,7 @@ a:not(.btn):not(.logo){transition:opacity .5s cubic-bezier(.165,.84,.44,1)}
 
 /* 自分で用意した形。マスクの画像はブロックの --shape から来る。
    透明なところが抜ける絵として作ってあるので、そのまま敷けばよい。 */
-.shp-own :is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic,.vid){
+.shp-own :is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic,.vid,.strp-pic){
   border-radius:0;
   -webkit-mask-image:var(--shape);
   mask-image:var(--shape);
@@ -2324,7 +2356,7 @@ a:not(.btn):not(.logo){transition:opacity .5s cubic-bezier(.165,.84,.44,1)}
   .rv,.rv .sec-head > *,.rv .grid > *,.rv .nws-i,.rv .flr-i,.rv .plan,
   .rv .faq details,.rv .btn-row{opacity:1!important;transform:none!important;transition-delay:0s!important}
   /* 装飾は「止まった1枚の絵」として残す。消すと画面が寂しくなるため */
-  .deco b,.deco .sk,.deco .grain,.cg-float.in .cpic,.mq-run{animation:none!important}
+  .deco b,.deco .sk,.deco .grain,.cg-float.in .cpic,.mq-run,.strp-run{animation:none!important}
   .cpic,.sec-collage .cpic{opacity:1!important;transform:rotate(var(--rot,0deg))!important}
   .cb{clip-path:none!important}
   .hero.dk-depth .hero-bg img,.hero.dk-depth .hero-in{transform:none!important}
@@ -2990,7 +3022,7 @@ const SHAPE_MASKS = {
 };
 
 /* 抜き型を敷くCSS。使う形の分だけ作る */
-const SHAPE_FRAMES = '.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic,.vid';
+const SHAPE_FRAMES = '.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic,.vid,.strp-pic';
 const shapeMaskCSS = (keys) => keys.filter((k) => SHAPE_MASKS[k]).map((k) => `.shp-${k} :is(${SHAPE_FRAMES}){
   border-radius:0;
   -webkit-mask-image:url("${SHAPE_MASKS[k]}");mask-image:url("${SHAPE_MASKS[k]}");
@@ -3823,6 +3855,75 @@ ${buttons(p.buttons, 'center')}
     <div class="contact-in${only1}">
 ${info ? `      <dl class="info">\n${info}\n      </dl>` : ''}
 ${form}
+    </div>`);
+    },
+  },
+
+  /* ---------------- 写真が流れ続ける ----------------
+     導入実績・取引先・受賞歴のように「並べて見せたいが、数が多くて
+     縦に積むと長い」ものを、途切れずに横へ流す。
+     流れる文字（marquee）と同じで、同じ並びを2組出して片方が抜けた
+     瞬間にもう片方が続く形にしている。 */
+  strip: {
+    label: '写真が流れ続ける',
+    icon: '⇢',
+    tag: '写真',
+    about: '写真が右から左へ流れ続けます。導入実績・取引先・受賞歴など、数の多いものに。',
+    fields: [
+      FIELD.eyebrow, FIELD.title, FIELD.text,
+      { key: 'style', label: '見せ方', type: 'select',
+        options: [['plain', '写真だけ'], ['card', 'カード（写真の下に文章）']] },
+      { key: 'size', label: '大きさ', type: 'select',
+        options: [['s', '小さめ'], ['m', 'ふつう'], ['l', '大きめ']] },
+      { key: 'ratio', label: '写真の形（縦横比）', type: 'select',
+        options: [['4x3', '横長（4:3）'], ['1x1', '正方形'], ['16x9', '横長（16:9）'], ['3x4', '縦長（3:4）']] },
+      { key: 'speed', label: '流れる速さ', type: 'range', min: 10, max: 90, suffix: '秒/周' },
+      { key: 'dir', label: '向き', type: 'select', options: [['l', '右から左へ'], ['r', '左から右へ']] },
+      { key: 'items', label: '中身', type: 'list', addLabel: '1つ追加', titleKey: 'title',
+        item: [
+          { key: 'image', label: '写真', type: 'image' },
+          { key: 'title', label: '見出し', type: 'text' },
+          { key: 'text', label: '説明', type: 'text' },
+          { key: 'href', label: 'リンク先（空でリンクなし）', type: 'text' },
+        ] },
+      FIELD.shape, FIELD.shapeMask, FIELD.plate, FIELD.plateShift,
+      FIELD.bg, FIELD.anchor,
+    ],
+    defaults: {
+      eyebrow: 'CLIENTS', title: '導入実績', text: '',
+      style: 'plain', size: 'm', ratio: '4x3', speed: 34, dir: 'l',
+      items: [
+        { image: '', title: '株式会社サンプル', text: '2024年〜', href: '' },
+        { image: '', title: 'サンプル商事', text: '2023年〜', href: '' },
+        { image: '', title: 'サンプル製作所', text: '2023年〜', href: '' },
+        { image: '', title: 'サンプルホールディングス', text: '2022年〜', href: '' },
+        { image: '', title: 'サンプル工業', text: '2022年〜', href: '' },
+        { image: '', title: 'サンプル建設', text: '2021年〜', href: '' },
+      ],
+      shape: '', shapeMask: '', plate: '', plateShift: '',
+      bg: '', anchor: 'clients',
+    },
+    render: (p) => {
+      const card = p.style === 'card';
+      const one = (p.items || []).map((it, i) => {
+        const pic = `<div class="strp-pic"${imgSlot(`items.${i}.image`, p)} data-elname="写真${i + 1}">${
+          media(it.image, it.title)}</div>`;
+        const body = card
+          ? `${pic}<b${ed(`items.${i}.title`, '見出し')}>${esc(it.title)}</b>${
+            it.text ? `<small${ed(`items.${i}.text`, '説明')}>${esc(it.text)}</small>` : ''}`
+          : pic;
+        return it.href
+          ? `<a class="strp-it" href="${esc(it.href)}">${body}</a>`
+          : `<div class="strp-it">${body}</div>`;
+      }).join('');
+      /* 2組目は同じ絵の続きなので、読み上げには渡さない */
+      const track = `<div class="strp-run">${one}</div>`
+        + `<div class="strp-run" aria-hidden="true">${one}</div>`;
+      return sec('strip', p, `${head(p)}
+    <div class="strp strp-${esc(p.size || 'm')} strp-r${esc(p.ratio || '4x3')}${
+        card ? ' strp-card' : ''}${p.dir === 'r' ? ' strp-rev' : ''}"
+      style="--strp-spd:${Math.max(10, Math.min(90, +p.speed || 34))}s">
+      <div class="strp-in">${track}</div>
     </div>`);
     },
   },
@@ -4693,7 +4794,7 @@ ${slides}
 
 /* 追加メニューに出す順番（ヘッダー・フッターは常設なので除く） */
 const ADDABLE = [
-  'hero', 'collage', 'features', 'about', 'gallery', 'video', 'menu', 'floors', 'news', 'marquee', 'pricing', 'faq', 'cta', 'contact', 'rich',
+  'hero', 'collage', 'features', 'about', 'gallery', 'video', 'strip', 'menu', 'floors', 'news', 'marquee', 'pricing', 'faq', 'cta', 'contact', 'rich',
   'slides', 'product3d', 'exploded', 'hscroll', 'stackcards', 'timeline', 'clipreveal',
   'carousel3d', 'slotstats', 'svgdraw', 'shift',
 ];
@@ -6000,6 +6101,14 @@ const SECTION_PRESETS = [
   { key: 'video', type: 'video', group: '写真', label: '動画を1つ置く',
     about: 'YouTube・Vimeo・動画ファイルのURLを貼るだけ。形も土台も写真と同じように使える。',
     props: {} },
+
+  { key: 'strip', type: 'strip', group: '写真', label: '写真が右から左へ流れ続ける',
+    about: '数が多いものを途切れず流す。導入実績・取引先・受賞歴に。写真だけ／カードを選べる。',
+    props: {} },
+
+  { key: 'strip-card', type: 'strip', group: '写真', label: '流れ続けるカード（写真＋文章）',
+    about: '流れる1枚ずつに見出しと説明が付く形。',
+    props: { style: 'card', size: 'l' } },
 
   { key: 'clipreveal', type: 'clipreveal', group: '写真', label: '写真が円で切り替わる',
     about: '円が広がって次の写真に入れ替わる。', props: {} },
