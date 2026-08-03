@@ -1271,7 +1271,8 @@ function inputHTML(f, val, path) {
       return `<div class="img-f">
         <input type="text" ${p} value="${esc(val ?? '')}" placeholder="https://... または端末から選択">
         <button class="pick" data-pick="${path}">画像を選ぶ</button>
-      </div>${val ? `<img class="img-thumb" src="${esc(val)}" alt="">` : ''}`;
+      </div>${val ? `<img class="img-thumb" src="${esc(val)}" alt="">
+        <button class="pick wide" data-cut="${path}">背景をぬく</button>` : ''}`;
     default:
       return `<input type="text" ${p} value="${esc(val ?? '')}">`;
   }
@@ -1597,6 +1598,175 @@ document.addEventListener('click', (e) => {
   const btn = e.target.closest('[data-pick]');
   if (!btn) return;
   openImagePicker(selected, btn.dataset.pick.replace(/^props\./, ''));
+});
+
+/* ================================================================
+   背景をぬく
+
+   端末の中だけで行う。写真はどこにも送らない。
+
+   やり方は「ふちから、背景に近い色をたどって消す」。
+   全体から背景色に近い画素を消すやり方だと、被写体の中の白（皿・服・歯）
+   まで抜けてしまう。ふちからつながっている画素だけを消せばそれが起きない。
+
+   人物や雑多な背景をきれいに抜くには学習済みモデルが要る（数MB）。
+   それは file:// で開いても動くという今の作りと引き換えになるので、
+   ここでは単色・白っぽい背景に絞る。
+   ================================================================ */
+let cutState = null;   // { blockId, prop, src, img, out }
+
+const CUT_MAX = 1400;  // 透過PNGは重い。抜くときはここまで縮める
+
+/* ふちの画素から、背景の代表色を決める（中央値ではなく最頻の近傍平均） */
+function edgeColor(d, w, h) {
+  const pick = [];
+  const at = (x, y) => { const i = (y * w + x) * 4; return [d[i], d[i + 1], d[i + 2]]; };
+  const step = Math.max(1, Math.round(Math.min(w, h) / 60));
+  for (let x = 0; x < w; x += step) { pick.push(at(x, 0)); pick.push(at(x, h - 1)); }
+  for (let y = 0; y < h; y += step) { pick.push(at(0, y)); pick.push(at(w - 1, y)); }
+  /* 平均だと、ふちに写り込んだ濃い物に引っぱられる。
+     いちばん多い色の近くだけを平均する。 */
+  let best = null, bestN = -1;
+  for (const c of pick) {
+    let n = 0;
+    for (const o of pick) {
+      if (Math.abs(c[0] - o[0]) + Math.abs(c[1] - o[1]) + Math.abs(c[2] - o[2]) < 60) n++;
+    }
+    if (n > bestN) { bestN = n; best = c; }
+  }
+  const near = pick.filter((o) =>
+    Math.abs(best[0] - o[0]) + Math.abs(best[1] - o[1]) + Math.abs(best[2] - o[2]) < 60);
+  const sum = near.reduce((a, o) => [a[0] + o[0], a[1] + o[1], a[2] + o[2]], [0, 0, 0]);
+  return sum.map((v) => Math.round(v / near.length));
+}
+
+/* ふちからたどって、背景に近い画素を透明にする。
+   戻り値は「背景と判定した割合」。ほぼ全部消えたときに知らせるため。 */
+function knockOut(im, tol) {
+  const { data: d, width: w, height: h } = im;
+  const bg = edgeColor(d, w, h);
+  const lim = tol * 3;                       // R+G+B の差の合計で見る
+  const seen = new Uint8Array(w * h);
+  const stack = [];
+  const push = (x, y) => {
+    const i = y * w + x;
+    if (seen[i]) return;
+    const j = i * 4;
+    if (Math.abs(d[j] - bg[0]) + Math.abs(d[j + 1] - bg[1]) + Math.abs(d[j + 2] - bg[2]) > lim) return;
+    seen[i] = 1; stack.push(i);
+  };
+  for (let x = 0; x < w; x++) { push(x, 0); push(x, h - 1); }
+  for (let y = 0; y < h; y++) { push(0, y); push(w - 1, y); }
+  while (stack.length) {
+    const i = stack.pop();
+    const x = i % w, y = (i / w) | 0;
+    if (x > 0) push(x - 1, y);
+    if (x < w - 1) push(x + 1, y);
+    if (y > 0) push(x, y - 1);
+    if (y < h - 1) push(x, y + 1);
+  }
+  /* ふちを1段なじませる。境目がギザギザのままだと切り抜きに見えない */
+  let cut = 0;
+  for (let i = 0; i < seen.length; i++) {
+    if (seen[i]) { d[i * 4 + 3] = 0; cut++; continue; }
+    const x = i % w, y = (i / w) | 0;
+    let n = 0;
+    if (x > 0 && seen[i - 1]) n++;
+    if (x < w - 1 && seen[i + 1]) n++;
+    if (y > 0 && seen[i - w]) n++;
+    if (y < h - 1 && seen[i + w]) n++;
+    if (n) d[i * 4 + 3] = Math.round(255 * (1 - n / 6));
+  }
+  return cut / seen.length;
+}
+
+function cutRender() {
+  if (!cutState) return;
+  const { img: src } = cutState;
+  const cv = $('#cutCanvas');
+  const scale = Math.min(1, CUT_MAX / Math.max(src.width, src.height));
+  cv.width = Math.round(src.width * scale);
+  cv.height = Math.round(src.height * scale);
+  const ctx = cv.getContext('2d', { willReadFrequently: true });
+  ctx.clearRect(0, 0, cv.width, cv.height);
+  ctx.drawImage(src, 0, 0, cv.width, cv.height);
+  const im = ctx.getImageData(0, 0, cv.width, cv.height);
+  const ratio = knockOut(im, +$('#cutTol').value);
+  ctx.putImageData(im, 0, 0);
+
+  const note = $('#cutNote');
+  if (ratio > 0.92) note.textContent = 'ほとんど消えてしまいました。範囲を狭めてください。';
+  else if (ratio < 0.03) note.textContent = 'あまり抜けていません。範囲を広げてください。';
+  else note.textContent = `背景と判断したところ：${Math.round(ratio * 100)}%`;
+}
+
+function openCutout(blockId, prop) {
+  const b = state.blocks.find((x) => x.id === blockId);
+  const src = b && getPath(b.props, prop);
+  if (!src) return;
+  const im = new Image();
+  im.crossOrigin = 'anonymous';
+  im.onload = () => {
+    cutState = { blockId, prop, img: im };
+    openModal('#cutModal');
+    cutRender();
+  };
+  im.onerror = () => flash('この画像は読み込めませんでした（別のサイトの画像は抜けません）');
+  im.src = src;
+}
+
+$('#cutTol').addEventListener('input', () => {
+  $('#cutTolVal').textContent = $('#cutTol').value;
+  cutRender();
+});
+$('#cutCancel').addEventListener('click', () => { cutState = null; closeModal('#cutModal'); });
+/* 透過つきで、なるべく軽く書き出す。
+
+   JPEG は透明を持てないので使えない。PNG は写真だと非常に重く、
+   512pxの写真でも 255KB になった（1ページ3MBの上限に当たる）。
+   WebP は透明を持てて写真に強いので、使えるならそちらを使い、
+   それでも重いときは縦横を落とす。 */
+function cutEncode(cv) {
+  const webp = cv.toDataURL('image/webp', 0.86);
+  return webp.startsWith('data:image/webp') ? webp : cv.toDataURL('image/png');
+}
+
+const CUT_KB_MAX = 700;
+
+function cutSmall(cv) {
+  let url = cutEncode(cv);
+  let w = cv.width, h = cv.height;
+  /* 3回まで縮めて様子を見る。それ以上は形が崩れるので、重いまま出して知らせる */
+  for (let i = 0; i < 3 && url.length / 1400 > CUT_KB_MAX; i++) {
+    w = Math.round(w * 0.75); h = Math.round(h * 0.75);
+    const c2 = document.createElement('canvas');
+    c2.width = w; c2.height = h;
+    c2.getContext('2d').drawImage(cv, 0, 0, w, h);
+    url = cutEncode(c2);
+  }
+  return url;
+}
+
+$('#cutApply').addEventListener('click', () => {
+  if (!cutState) return;
+  const { blockId, prop } = cutState;
+  const url = cutSmall($('#cutCanvas'));
+  const b = state.blocks.find((x) => x.id === blockId);
+  if (b) {
+    setPath(b.props, prop, url);
+    renderEditor(); renderPreview(true); save(`cut:${prop}:${blockId}`);
+    const kb = Math.round(url.length / 1400);
+    flash(kb > CUT_KB_MAX ? `背景をぬきました（約${kb}KB・写真としては重めです）`
+                          : `背景をぬきました（約${kb}KB）。元に戻すときは「取り消し」`);
+  }
+  cutState = null;
+  closeModal('#cutModal');
+});
+
+document.addEventListener('click', (e) => {
+  const btn = e.target.closest('[data-cut]');
+  if (!btn) return;
+  openCutout(selected, btn.dataset.cut.replace(/^props\./, ''));
 });
 
 /* 編集画面の外にファイルを落としても、ブラウザがそれを開いてしまわないように */

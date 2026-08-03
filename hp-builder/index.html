@@ -166,6 +166,32 @@
   </div>
 </div>
 
+<!-- ================= 背景をぬく ================= -->
+<div class="modal" id="cutModal" hidden>
+  <div class="modal-box">
+    <h2>背景をぬく</h2>
+    <p class="modal-sub">端末の中だけで処理します。写真はどこにも送られません。<br>
+      白い壁や単色の背景に効きます。人や雑多な背景はうまく抜けません。<br>
+      入れたあとでも、上の「取り消し」で元の写真に戻せます。</p>
+
+    <div class="cut-view"><canvas id="cutCanvas"></canvas></div>
+
+    <div class="f">
+      <label>ぬく範囲（広げるほど、背景に近い色まで消えます）</label>
+      <div class="f-row">
+        <input type="range" id="cutTol" min="4" max="60" value="22">
+        <span class="f-val" id="cutTolVal">22</span>
+      </div>
+    </div>
+    <div class="cut-note" id="cutNote"></div>
+
+    <div class="modal-foot">
+      <button class="tb-btn" id="cutCancel">やめる</button>
+      <button class="tb-btn primary" id="cutApply">これでいい</button>
+    </div>
+  </div>
+</div>
+
 <!-- ================= 公開する ================= -->
 <div class="modal" id="pubModal" hidden>
   <div class="modal-box">

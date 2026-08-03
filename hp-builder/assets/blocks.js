@@ -16,7 +16,8 @@ const media = (src, alt) => (src ? img(src, alt) : '<span class="ph" aria-hidden
 
 /* セクションの外枠 */
 function sec(type, p, inner, extraClass = '') {
-  const cls = ['sec', `sec-${type}`, p.bg ? `bg-${p.bg}` : '', extraClass].filter(Boolean).join(' ');
+  const cls = ['sec', `sec-${type}`, p.bg ? `bg-${p.bg}` : '',
+    p.shape ? `shp-${p.shape}` : '', extraClass].filter(Boolean).join(' ');
   return `<section class="${cls}"${attr('id', p.anchor)}>\n  <div class="wrap">\n${inner}\n  </div>\n</section>`;
 }
 
@@ -208,6 +209,16 @@ const FIELD = {
     key: 'bg', label: '背景色', type: 'select',
     options: [['', '標準'], ['surface', '薄いグレー'], ['primary', 'メインカラー'], ['dark', 'ダーク']],
   },
+  /* 写真の形。写真そのものは変えず、見せ方だけを切り替える。
+     いつでも「四角のまま」に戻せる。 */
+  shape: {
+    key: 'shape', label: '写真の形', type: 'select',
+    options: [
+      ['', '四角のまま'], ['round', '角を大きく丸める'], ['circle', '丸'],
+      ['arch', 'アーチ（上が半円）'], ['leaf', '木の葉'], ['hex', '六角形'],
+      ['slant', '斜めに切る'], ['egg', 'たまご'],
+    ],
+  },
   anchor: { key: 'anchor', label: 'アンカーID', type: 'text', hint: 'メニューから #about のようにリンクできます' },
   eyebrow: { key: 'eyebrow', label: '小見出し', type: 'text' },
   title: { key: 'title', label: '見出し', type: 'textarea', rows: 2 },
@@ -342,6 +353,7 @@ const BLOCKS = {
       { key: 'decoLabel', label: '丸の中の文字', type: 'text', showIf: (p) => p.deco === 'cursor' },
       { key: 'grain', label: 'フィルムの粒状感を足す', type: 'toggle' },
       { key: 'buttons', label: 'ボタン', type: 'list', addLabel: 'ボタンを追加', titleKey: 'label', item: FIELD.btnItem },
+      FIELD.shape,
       FIELD.bg, FIELD.anchor,
     ],
     defaults: {
@@ -360,6 +372,9 @@ const BLOCKS = {
       const cover = p.layout === 'cover';
       const needsPointer = ['glass', 'spot', 'depth', 'clouds', 'aurora', 'cursor'].includes(p.deco);
       const cls = ['hero', cover ? 'cover center' : p.layout, p.bg ? `bg-${p.bg}` : '',
+        /* 形は、写真を枠に入れている型（左右ならび）でだけ効かせる。
+           背景いっぱいの写真を切り抜いても、画面の角が欠けるだけになる。 */
+        !cover && p.shape ? `shp-${p.shape}` : '',
         p.deco && p.deco !== 'none' ? `has-deco dk-${p.deco}` : ''].filter(Boolean).join(' ');
       const body = `      ${p.eyebrow ? `<span class="eyebrow"${el(p, 'eyebrow', 'ta', '小見出し', 'eyebrow')}>${esc(p.eyebrow)}</span>` : ''}
       ${p.title ? `<h1 class="hero-title"${el(p, 'title', 'ta', 'キャッチコピー', 'title')}>${nl2br(p.title)}</h1>` : ''}
@@ -410,6 +425,7 @@ ${maskLayer}${guts}
           { key: 'title', label: 'タイトル', type: 'text' },
           { key: 'text', label: '説明', type: 'textarea' },
         ] },
+      FIELD.shape,
       FIELD.bg, FIELD.anchor,
     ],
     defaults: {
@@ -446,6 +462,7 @@ ${(p.items || []).map((it, i) => `      <div class="card"${el(p, `card${i}`, 'ia
       { key: 'image', label: '画像URL', type: 'image' },
       { key: 'reverse', label: '画像を右側にする', type: 'toggle' },
       { key: 'buttons', label: 'ボタン', type: 'list', addLabel: 'ボタンを追加', titleKey: 'label', item: FIELD.btnItem },
+      FIELD.shape,
       FIELD.bg, FIELD.anchor,
     ],
     defaults: {
@@ -477,6 +494,7 @@ ${buttons(p.buttons)}
           { key: 'src', label: '画像URL', type: 'image' },
           { key: 'alt', label: '説明（代替テキスト）', type: 'text' },
         ] },
+      FIELD.shape,
       FIELD.bg, FIELD.anchor,
     ],
     defaults: {
@@ -706,6 +724,7 @@ ${p.more ? `    <div class="btn-row"><a class="btn ghost" href="${esc(p.moreHref
           { key: 'text', label: '説明', type: 'textarea' },
           { key: 'image', label: '画像', type: 'image' },
         ] },
+      FIELD.shape,
       FIELD.bg, FIELD.anchor,
     ],
     defaults: {
@@ -1045,6 +1064,7 @@ ${(p.items || []).map((it, i) => `      <div class="exp-l" style="background:${e
           { key: 'title', label: 'タイトル', type: 'text' },
           { key: 'image', label: '画像URL', type: 'image' },
         ] },
+      FIELD.shape,
       FIELD.bg, FIELD.anchor,
     ],
     defaults: {

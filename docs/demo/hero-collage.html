@@ -1259,6 +1259,43 @@ a:not(.btn):not(.logo){transition:opacity .5s cubic-bezier(.165,.84,.44,1)}
 .rv .grid > *:nth-child(n+5),.rv .nws-i:nth-child(n+5),.rv .flr-i:nth-child(n+5){transition-delay:.44s}
 .rv .btn-row{transition-delay:.5s}
 
+/* ==========================================================
+   写真の形（くり抜き）
+
+   写真そのものは触らない。枠の側を clip-path で抜くだけなので、
+   いつでも「四角のまま」に戻せるし、書き出したHTMLも軽いままになる。
+
+   抜くのは枠（.hero-media など）で、中の img ではない。枠には
+   下地の色が敷いてあるので、img だけを抜くと下地が形の外に残る。
+   ========================================================== */
+:is(.shp-round,.shp-circle,.shp-arch,.shp-leaf,.shp-hex,.shp-slant,.shp-egg)
+  :is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic){
+  /* 角丸と重ねると形が濁るので、抜くときは角丸を落とす */
+  border-radius:0
+}
+.shp-round :is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic){
+  border-radius:clamp(18px,2.2vw,44px)
+}
+.shp-circle :is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic){
+  clip-path:circle(50% at 50% 50%);aspect-ratio:1/1
+}
+.shp-arch :is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic){
+  border-radius:999px 999px 0 0
+}
+/* 木の葉：対角の2隅だけを大きく丸める */
+.shp-leaf :is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic){
+  border-radius:clamp(40px,7vw,140px) 0 clamp(40px,7vw,140px) 0
+}
+.shp-hex :is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic){
+  clip-path:polygon(25% 0,75% 0,100% 50%,75% 100%,25% 100%,0 50%)
+}
+.shp-slant :is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic){
+  clip-path:polygon(0 0,100% 0,100% 88%,0 100%)
+}
+.shp-egg :is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic){
+  border-radius:50% 50% 46% 46% / 58% 58% 42% 42%
+}
+
 /* ---------- 動きを減らす設定への配慮 ---------- */
 @media (prefers-reduced-motion: reduce){
   *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;
