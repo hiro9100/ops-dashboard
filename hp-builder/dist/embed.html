@@ -1960,7 +1960,16 @@ a:not(.btn):not(.logo){transition:opacity .5s cubic-bezier(.165,.84,.44,1)}
 .gal figure img,.flr-pic img,.hs-card img,.card .hero-media img{
   transition:transform .9s cubic-bezier(.165,.84,.44,1)}
 .gal figure:hover img,.flr-i:hover .flr-pic img,.hs-card:hover img,.card:hover .hero-media img{
-  transform:scale(1.055)}
+  transform:scale(calc(var(--iz,1) * 1.055))}
+
+/* ---------- 写真の見せ方（位置・大きさ） ----------
+   枠に入りきらない部分をどこで切るか（object-position）と、
+   どれだけ寄るか（scale）。値は枠の style から来る。
+   何も指定がなければ、これまでどおり真ん中・等倍。 */
+:is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic,.exp-l,.car-it,.clip-side) img{
+  object-position:var(--ix,50%) var(--iy,50%);
+  transform:scale(var(--iz,1))
+}
 
 /* ---------- 出現の段差 ----------
    ブロックごと一度に出すと「表示された」で終わる。
@@ -1992,7 +2001,8 @@ a:not(.btn):not(.logo){transition:opacity .5s cubic-bezier(.165,.84,.44,1)}
    抜くのは枠（.hero-media など）で、中の img ではない。枠には
    下地の色が敷いてあるので、img だけを抜くと下地が形の外に残る。
    ========================================================== */
-:is(.shp-round,.shp-circle,.shp-arch,.shp-leaf,.shp-hex,.shp-slant,.shp-egg)
+:is(.shp-round,.shp-circle,.shp-arch,.shp-leaf,.shp-hex,.shp-slant,.shp-egg,
+  .shp-slats,.shp-arches,.shp-wave,.shp-blob)
   :is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic){
   /* 角丸と重ねると形が濁るので、抜くときは角丸を落とす */
   border-radius:0
@@ -2018,6 +2028,44 @@ a:not(.btn):not(.logo){transition:opacity .5s cubic-bezier(.165,.84,.44,1)}
 }
 .shp-egg :is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic){
   border-radius:50% 50% 46% 46% / 58% 58% 42% 42%
+}
+
+
+/* ---------- 形をなぞって抜く（デザイン寄り） ----------
+   曲線は多角形（clip-path:polygon）では出せないので、SVGの絵を
+   マスクとして敷く。SVGはCSSの中に文字として入れているので、
+   外から読み込むものは増えない（file:// でもそのまま動く）。
+
+   preserveAspectRatio='none' と mask-size:100% 100% で、枠の形に
+   合わせて伸び縮みする。丸い部分は枠の縦横比なりに平たくなるが、
+   見本の絵と同じ出かたなので、これでよい。 */
+.shp-slats :is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic){
+  border-radius:0;
+  -webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M0.0 0 L22.0 0 L22.0 85 A11 15 0 0 1 0.0 85 Z M26.0 15 A11 15 0 0 1 48.0 15 L48.0 100 L26.0 100 Z M52.0 0 L74.0 0 L74.0 85 A11 15 0 0 1 52.0 85 Z M78.0 15 A11 15 0 0 1 100.0 15 L100.0 100 L78.0 100 Z' fill='%23000'/%3E%3C/svg%3E");
+  mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M0.0 0 L22.0 0 L22.0 85 A11 15 0 0 1 0.0 85 Z M26.0 15 A11 15 0 0 1 48.0 15 L48.0 100 L26.0 100 Z M52.0 0 L74.0 0 L74.0 85 A11 15 0 0 1 52.0 85 Z M78.0 15 A11 15 0 0 1 100.0 15 L100.0 100 L78.0 100 Z' fill='%23000'/%3E%3C/svg%3E");
+  -webkit-mask-size:100% 100%;mask-size:100% 100%;
+  -webkit-mask-repeat:no-repeat;mask-repeat:no-repeat
+}
+.shp-arches :is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic){
+  border-radius:0;
+  -webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M0.0 18 A15.5 18 0 0 1 31.0 18 L31.0 100 L0.0 100 Z M34.5 18 A15.5 18 0 0 1 65.5 18 L65.5 100 L34.5 100 Z M69.0 18 A15.5 18 0 0 1 100.0 18 L100.0 100 L69.0 100 Z' fill='%23000'/%3E%3C/svg%3E");
+  mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M0.0 18 A15.5 18 0 0 1 31.0 18 L31.0 100 L0.0 100 Z M34.5 18 A15.5 18 0 0 1 65.5 18 L65.5 100 L34.5 100 Z M69.0 18 A15.5 18 0 0 1 100.0 18 L100.0 100 L69.0 100 Z' fill='%23000'/%3E%3C/svg%3E");
+  -webkit-mask-size:100% 100%;mask-size:100% 100%;
+  -webkit-mask-repeat:no-repeat;mask-repeat:no-repeat
+}
+.shp-wave :is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic){
+  border-radius:0;
+  -webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M0 0 L100 0 L100 84 C83 100 67 68 50 84 C33 100 17 68 0 84 Z' fill='%23000'/%3E%3C/svg%3E");
+  mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M0 0 L100 0 L100 84 C83 100 67 68 50 84 C33 100 17 68 0 84 Z' fill='%23000'/%3E%3C/svg%3E");
+  -webkit-mask-size:100% 100%;mask-size:100% 100%;
+  -webkit-mask-repeat:no-repeat;mask-repeat:no-repeat
+}
+.shp-blob :is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic){
+  border-radius:0;
+  -webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M52 1 C80 -2 99 18 97 45 C95 72 78 99 49 98 C21 97 1 77 2 48 C3 21 24 4 52 1 Z' fill='%23000'/%3E%3C/svg%3E");
+  mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M52 1 C80 -2 99 18 97 45 C95 72 78 99 49 98 C21 97 1 77 2 48 C3 21 24 4 52 1 Z' fill='%23000'/%3E%3C/svg%3E");
+  -webkit-mask-size:100% 100%;mask-size:100% 100%;
+  -webkit-mask-repeat:no-repeat;mask-repeat:no-repeat
 }
 
 /* ---------- 動きを減らす設定への配慮 ---------- */
@@ -2870,7 +2918,22 @@ function el(p, role, kind, label, prop) {
 }
 
 /* 画像を差し替えられる枠であることを示す（タップで選択、ドロップで投入） */
-const imgSlot = (prop) => ` data-imgprop="${esc(prop)}"`;
+/* 画像の枠。編集画面がどのプロパティの枠かを知るための目印と、
+   その写真の「見せ方」（位置・大きさ）をCSS変数で持たせる。
+   data-imgprop は書き出しのときに落ちるが、style は残るので、
+   位置と大きさは公開したページでもそのまま効く。 */
+const imgSlot = (prop, props) => {
+  const f = props ? getIn(props, `${prop}Fit`) : null;
+  if (!f) return ` data-imgprop="${esc(prop)}"`;
+  const v = [];
+  if (f.x != null && f.x !== 50) v.push(`--ix:${+f.x}%`);
+  if (f.y != null && f.y !== 50) v.push(`--iy:${+f.y}%`);
+  if (f.z != null && f.z !== 100) v.push(`--iz:${(+f.z / 100).toFixed(3)}`);
+  return ` data-imgprop="${esc(prop)}"${v.length ? ` style="${v.join(';')}"` : ''}`;
+};
+
+/* "items.0.src" のような道順で取り出す */
+const getIn = (o, path) => path.split('.').reduce((a, k) => (a == null ? a : a[k]), o);
 
 /* ダブルクリック編集だけを付ける（段落が複数あるなど、文字アニメを付けない場所用） */
 function ed(prop, label) {
@@ -2891,6 +2954,8 @@ const FIELD = {
       ['', '四角のまま'], ['round', '角を大きく丸める'], ['circle', '丸'],
       ['arch', 'アーチ（上が半円）'], ['leaf', '木の葉'], ['hex', '六角形'],
       ['slant', '斜めに切る'], ['egg', 'たまご'],
+      ['slats', '4本の柱（上下が交互に丸い）'], ['arches', '3連アーチ'],
+      ['wave', '下が波'], ['blob', 'まるいかたまり'],
     ],
   },
   anchor: { key: 'anchor', label: 'アンカーID', type: 'text', hint: 'メニューから #about のようにリンクできます' },
@@ -3060,7 +3125,7 @@ ${buttons(p.buttons)}`;
       const inner = p.layout === 'split'
         ? `    <div class="hero-in">
       <div>\n${body}\n      </div>
-      <div class="hero-media"${el(p, 'image', 'ia', '画像')}${imgSlot('image')}>${media(p.image, p.title)}</div>
+      <div class="hero-media"${el(p, 'image', 'ia', '画像')}${imgSlot('image', p)}>${media(p.image, p.title)}</div>
     </div>`
         : `    <div class="hero-in">\n${body}\n    </div>`;
       /* スクロール連動のときは、長い区間の中に中身を貼り付ける（sticky）。
@@ -3116,7 +3181,7 @@ ${maskLayer}${guts}
       `${head(p)}
     <div class="grid ${p.cols || 'c3'}">
 ${(p.items || []).map((it, i) => `      <div class="card"${el(p, `card${i}`, 'ia', `カード${i + 1}`)}>
-        ${p.style === 'image' ? `<div class="hero-media" style="aspect-ratio:16/10;margin-bottom:18px" data-elname="カード画像"${imgSlot(`items.${i}.image`)}>${media(it.image, it.title)}</div>` : ''}
+        ${p.style === 'image' ? `<div class="hero-media" style="aspect-ratio:16/10;margin-bottom:18px" data-elname="カード画像"${imgSlot(`items.${i}.image`, p)}>${media(it.image, it.title)}</div>` : ''}
         ${p.style === 'num' ? `<span class="num">${i + 1}</span>`
           : p.style === 'paren' ? `<span class="pnum">( ${String(i + 1).padStart(2, '0')} )</span>`
           : p.style === 'image' ? '' : `<span class="ic">${esc(it.icon || '◆')}</span>`}
@@ -3147,7 +3212,7 @@ ${(p.items || []).map((it, i) => `      <div class="card"${el(p, `card${i}`, 'ia
     },
     render: (p) => sec('about', p,
       `    <div class="about-in${p.reverse ? ' rev' : ''}">
-      <div class="about-media"${el(p, 'image', 'ia', '画像')}${imgSlot('image')}>${media(p.image, p.title)}</div>
+      <div class="about-media"${el(p, 'image', 'ia', '画像')}${imgSlot('image', p)}>${media(p.image, p.title)}</div>
       <div class="about-body">
         ${p.eyebrow ? `<span class="eyebrow"${el(p, 'eyebrow', 'ta', '小見出し', 'eyebrow')}>${esc(p.eyebrow)}</span>` : ''}
         ${p.title ? `<h2 class="sec-title"${el(p, 'title', 'ta', '見出し', 'title')}>${nl2br(p.title)}</h2>` : ''}
@@ -3180,7 +3245,7 @@ ${buttons(p.buttons)}
     render: (p) => sec('gallery', p,
       `${head(p)}
     <div class="gal">
-${(p.items || []).map((it, i) => `      <figure${el(p, `img${i}`, 'ia', `画像${i + 1}`)}${imgSlot(`items.${i}.src`)}>${media(it.src, it.alt)}</figure>`).join('\n')}
+${(p.items || []).map((it, i) => `      <figure${el(p, `img${i}`, 'ia', `画像${i + 1}`)}${imgSlot(`items.${i}.src`, p)}>${media(it.src, it.alt)}</figure>`).join('\n')}
     </div>`),
   },
 
@@ -3416,7 +3481,7 @@ ${p.more ? `    <div class="btn-row"><a class="btn ghost" href="${esc(p.moreHref
       `${head(p, 'left')}
     <div class="flr">
 ${(p.items || []).map((it, i) => `      <div class="flr-i"${el(p, `fl${i}`, 'ia', `フロア${i + 1}`)}>
-        <div class="flr-pic"${imgSlot(`items.${i}.image`)}>${media(it.image, it.name)}</div>
+        <div class="flr-pic"${imgSlot(`items.${i}.image`, p)}>${media(it.image, it.name)}</div>
         <div class="flr-b">
           <span class="flr-n"${ed(`items.${i}.floor`, '階')}>${esc(it.floor)}</span>
           <h3${el(p, `fl${i}.name`, 'ta', 'フロア名', `items.${i}.name`)}>${esc(it.name)}</h3>
@@ -3512,7 +3577,7 @@ ${body}
         const it = pics[i % Math.max(1, n)] || { src: '', alt: '' };
         return `      <figure class="cpic" style="left:${x}%;top:${y}%;--w:${w}%;--rot:${rot}deg;`
           + `--cov:${coverScale(rot)};z-index:${z};--d:${d}ms"${el(p, `pic${i}`, 'ia', `手前の写真${i + 1}`)}`
-          + `${imgSlot(`photos.${i}.src`)}><span class="cpic-in">${media(it.src, it.alt)}</span></figure>`;
+          + `${imgSlot(`photos.${i}.src`, p)}><span class="cpic-in">${media(it.src, it.alt)}</span></figure>`;
       }).join('\n');
       const cls = ['sec', 'sec-collage', `cg-${p.tall || 'l'}`, p.gray ? 'cg-gray' : '',
         p.float ? 'cg-float' : ''].filter(Boolean).join(' ');
@@ -3712,7 +3777,7 @@ ${(p.items || []).map((it) => `      <div data-at="${(+it.at || 0) / 100}"><b>${
   style="height:${+p.height || 380}vh"${attr('id', p.anchor)}>
   <div class="pin-in">
     <div class="exp"><div class="exp-in">
-${(p.items || []).map((it, i) => `      <div class="exp-l" style="background:${esc(it.color || '#64748b')}"${imgSlot(`items.${i}.image`)} data-elname="層${i + 1}">${it.image ? img(it.image, it.label) : ''}<span>${esc(it.label)}</span></div>`).join('\n')}
+${(p.items || []).map((it, i) => `      <div class="exp-l" style="background:${esc(it.color || '#64748b')}"${imgSlot(`items.${i}.image`, p)} data-elname="層${i + 1}">${it.image ? img(it.image, it.label) : ''}<span>${esc(it.label)}</span></div>`).join('\n')}
     </div></div>
     <div class="pin-cap">
       ${p.title ? `<b${el(p, 'title', 'ta', '見出し', 'title')}>${nl2br(p.title)}</b>` : ''}
@@ -3761,7 +3826,7 @@ ${(p.items || []).map((it, i) => `      <div class="exp-l" style="background:${e
       ${p.title ? `<h2 class="sec-title" style="margin:0"${el(p, 'title', 'ta', '見出し', 'title')}>${nl2br(p.title)}</h2>` : ''}
     </div></div>
     <div class="hs-track">
-${(p.items || []).map((it, i) => `      <div class="hs-card"${imgSlot(`items.${i}.image`)} data-elname="カード${i + 1}">${it.image ? img(it.image, it.title) : ''}<em>${esc(it.no)}</em><b${ed(`items.${i}.title`, 'カード名')}>${esc(it.title)}</b></div>`).join('\n')}
+${(p.items || []).map((it, i) => `      <div class="hs-card"${imgSlot(`items.${i}.image`, p)} data-elname="カード${i + 1}">${it.image ? img(it.image, it.title) : ''}<em>${esc(it.no)}</em><b${ed(`items.${i}.title`, 'カード名')}>${esc(it.title)}</b></div>`).join('\n')}
     </div>
   </div>
 </section>`,
@@ -3868,14 +3933,14 @@ ${(p.items || []).map((it, i) => `      <div class="tl-item">
     render: (p) => `<section class="pinsec" data-clip style="height:${+p.height || 260}vh"${attr('id', p.anchor)}>
   <div class="pin-in">
     <div class="clip-box">
-      <div class="clip-side clip-a"${imgSlot('imageA')} data-elname="手前の画像">
+      <div class="clip-side clip-a"${imgSlot('imageA', p)} data-elname="手前の画像">
         ${p.imageA ? img(p.imageA, p.titleA) : ''}
         <div class="in-txt">
           <h3${el(p, 'titleA', 'ta', '手前の見出し', 'titleA')}>${nl2br(p.titleA)}</h3>
           <p${ed('textA', '手前の説明')}>${esc(p.textA)}</p>
         </div>
       </div>
-      <div class="clip-side clip-b"${imgSlot('imageB')} data-elname="奥の画像">
+      <div class="clip-side clip-b"${imgSlot('imageB', p)} data-elname="奥の画像">
         ${p.imageB ? img(p.imageB, p.titleB) : ''}
         <div class="in-txt">
           <h3${ed('titleB', '奥の見出し')}>${nl2br(p.titleB)}</h3>
@@ -3918,7 +3983,7 @@ ${(p.items || []).map((it, i) => `      <div class="tl-item">
     render: (p) => sec('carousel', p,
       `${head(p)}
     <div class="car"><div class="car-in">
-${(p.items || []).map((it, i) => `      <div class="car-it"${imgSlot(`items.${i}.image`)} data-elname="カード${i + 1}">${it.image ? img(it.image, it.title) : ''}<b${ed(`items.${i}.title`, 'カード名')}>${esc(it.title)}</b><small>${esc(it.sub)}</small></div>`).join('\n')}
+${(p.items || []).map((it, i) => `      <div class="car-it"${imgSlot(`items.${i}.image`, p)} data-elname="カード${i + 1}">${it.image ? img(it.image, it.title) : ''}<b${ed(`items.${i}.title`, 'カード名')}>${esc(it.title)}</b><small>${esc(it.sub)}</small></div>`).join('\n')}
     </div></div>`),
   },
 
@@ -6272,9 +6337,16 @@ function initPreview() {
         if (elt) selectEl(blk.dataset.bid, elt.dataset.el, elt.dataset.elkind, elt.dataset.elname, elt.dataset.prop);
         else { selectedEl = null; select(blk.dataset.bid); }
 
-        /* 画像枠なら、そのまま端末の画像選択を開く */
+        /* 画像枠。まだ写真が入っていなければ、そのまま端末の写真選択を開く。
+           入っているときに開いてしまうと、位置を直したいだけのときに
+           毎回ファイル選択が出てしまうので、右の欄で調整できるようにする。 */
         const slot = e.target.closest('[data-imgprop]');
-        if (slot) openImagePicker(blk.dataset.bid, slot.dataset.imgprop);
+        if (slot) {
+          const bb = state.blocks.find((x) => x.id === blk.dataset.bid);
+          const has = bb && getPath(bb.props, slot.dataset.imgprop);
+          if (has) selectImgSlot(blk.dataset.bid, slot.dataset.imgprop, slot.dataset.elname);
+          else openImagePicker(blk.dataset.bid, slot.dataset.imgprop);
+        }
       });
 
       /* ---- 画像ファイルのドラッグ&ドロップ（PC） ---- */
@@ -6415,6 +6487,29 @@ function commitEdit(cancel = false) {
     renderList(); renderEditor(); save(`i:${prop}:${blockId}`);
   }
   renderPreview(true);
+}
+
+/* 写真の枠そのものを選ぶ。位置・大きさ・背景ぬきの操作を右の欄に出す */
+function selectImgSlot(blockId, prop, name) {
+  selected = blockId;
+  selectedEl = { kind: 'img', prop, name: name || '写真', role: `img:${prop}` };
+  renderList(); renderEditor(); highlight();
+  if (isMobile()) openSheetForEdit();
+}
+
+const FIT0 = { x: 50, y: 50, z: 100 };
+const fitOf = (b, prop) => Object.assign({}, FIT0, getPath(b.props, `${prop}Fit`) || {});
+
+function setFit(prop, key, val) {
+  const b = state.blocks.find((x) => x.id === selected);
+  if (!b) return;
+  const f = fitOf(b, prop);
+  f[key] = val;
+  /* 既定のままなら持たない。書き出しに余計な style を出さないため */
+  if (f.x === 50 && f.y === 50 && f.z === 100) setPath(b.props, `${prop}Fit`, undefined);
+  else setPath(b.props, `${prop}Fit`, f);
+  renderPreview(true);
+  save(`fit:${prop}:${b.id}`);
 }
 
 function selectEl(blockId, role, kind, name, prop) {
@@ -7184,6 +7279,40 @@ function elementPanel(b) {
       パソコンなら画像ファイルを枠に放り込んでもOKです。
     </div>`;
   }
+  /* 写真の枠を選んだとき。位置と大きさをここで直す */
+  if (selectedEl.kind === 'img') {
+    const f = fitOf(b, selectedEl.prop);
+    return `<div class="el-panel">
+      <div class="eh">
+        <span class="badge">写真</span>
+        <span class="en">${esc(selectedEl.name)}</span>
+        <button class="ex" data-elclose title="選択を解除">✕</button>
+      </div>
+      <div class="f"><label>大きさ（枠いっぱいまで寄せる）</label>
+        <div class="f-row">
+          <input type="range" data-fit="z" min="100" max="260" step="5" value="${f.z}">
+          <span class="f-val">${f.z}%</span>
+        </div>
+      </div>
+      <div class="f"><label>横の位置（左 ↔ 右）</label>
+        <div class="f-row">
+          <input type="range" data-fit="x" min="0" max="100" value="${f.x}">
+          <span class="f-val">${f.x}%</span>
+        </div>
+      </div>
+      <div class="f"><label>縦の位置（上 ↕ 下）</label>
+        <div class="f-row">
+          <input type="range" data-fit="y" min="0" max="100" value="${f.y}">
+          <span class="f-val">${f.y}%</span>
+        </div>
+      </div>
+      <div class="el-tip">枠から出た分が切れます。顔や商品が切れていたら、ここで寄せてください。</div>
+      <button class="tb-btn" data-fitreset>まん中・等倍に戻す</button>
+      <button class="tb-btn" data-repick="${esc(selectedEl.prop)}">写真を選び直す</button>
+      <button class="tb-btn" data-cut="props.${esc(selectedEl.prop)}">背景をぬく</button>
+    </div>`;
+  }
+
   const isText = selectedEl.kind === 'ta';
   const cfg = (b.props.anims || {})[selectedEl.role] || {};
   const list = isText ? TEXT_ANIMS : IMAGE_ANIMS;
@@ -7214,6 +7343,18 @@ function elementPanel(b) {
 /* 要素パネルの操作 */
 $('#tab-edit').addEventListener('click', (e) => {
   if (e.target.closest('[data-elclose]')) { selectedEl = null; renderEditor(); highlight(); return; }
+
+  /* 写真の枠のボタン */
+  const rp = e.target.closest('[data-repick]');
+  if (rp) { openImagePicker(selected, rp.dataset.repick); return; }
+  if (e.target.closest('[data-fitreset]') && selectedEl && selectedEl.kind === 'img') {
+    const b0 = state.blocks.find((x) => x.id === selected);
+    if (b0) {
+      setPath(b0.props, `${selectedEl.prop}Fit`, undefined);
+      renderEditor(); renderPreview(true); save(`fit:${selectedEl.prop}:${selected}`);
+    }
+    return;
+  }
   /* フィールドに付いたサンプル一覧ボタン（いまは装飾のみ） */
   const fg = e.target.closest('[data-gal]');
   if (fg) {
@@ -7257,6 +7398,14 @@ $('#tab-edit').addEventListener('click', (e) => {
   }
 });
 $('#tab-edit').addEventListener('input', (e) => {
+  /* 写真の位置・大きさ。作り直しは軽いので、動かしながら見られる */
+  const fk = e.target.dataset.fit;
+  if (fk && selectedEl && selectedEl.kind === 'img') {
+    setFit(selectedEl.prop, fk, Number(e.target.value));
+    e.target.parentElement.querySelector('.f-val').textContent = `${e.target.value}%`;
+    return;
+  }
+
   const key = e.target.dataset.elk;
   if (!key || !selectedEl) return;
   const b = state.blocks.find((x) => x.id === selected);

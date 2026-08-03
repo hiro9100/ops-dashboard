@@ -437,9 +437,16 @@ function initPreview() {
         if (elt) selectEl(blk.dataset.bid, elt.dataset.el, elt.dataset.elkind, elt.dataset.elname, elt.dataset.prop);
         else { selectedEl = null; select(blk.dataset.bid); }
 
-        /* 画像枠なら、そのまま端末の画像選択を開く */
+        /* 画像枠。まだ写真が入っていなければ、そのまま端末の写真選択を開く。
+           入っているときに開いてしまうと、位置を直したいだけのときに
+           毎回ファイル選択が出てしまうので、右の欄で調整できるようにする。 */
         const slot = e.target.closest('[data-imgprop]');
-        if (slot) openImagePicker(blk.dataset.bid, slot.dataset.imgprop);
+        if (slot) {
+          const bb = state.blocks.find((x) => x.id === blk.dataset.bid);
+          const has = bb && getPath(bb.props, slot.dataset.imgprop);
+          if (has) selectImgSlot(blk.dataset.bid, slot.dataset.imgprop, slot.dataset.elname);
+          else openImagePicker(blk.dataset.bid, slot.dataset.imgprop);
+        }
       });
 
       /* ---- 画像ファイルのドラッグ&ドロップ（PC） ---- */
@@ -580,6 +587,29 @@ function commitEdit(cancel = false) {
     renderList(); renderEditor(); save(`i:${prop}:${blockId}`);
   }
   renderPreview(true);
+}
+
+/* 写真の枠そのものを選ぶ。位置・大きさ・背景ぬきの操作を右の欄に出す */
+function selectImgSlot(blockId, prop, name) {
+  selected = blockId;
+  selectedEl = { kind: 'img', prop, name: name || '写真', role: `img:${prop}` };
+  renderList(); renderEditor(); highlight();
+  if (isMobile()) openSheetForEdit();
+}
+
+const FIT0 = { x: 50, y: 50, z: 100 };
+const fitOf = (b, prop) => Object.assign({}, FIT0, getPath(b.props, `${prop}Fit`) || {});
+
+function setFit(prop, key, val) {
+  const b = state.blocks.find((x) => x.id === selected);
+  if (!b) return;
+  const f = fitOf(b, prop);
+  f[key] = val;
+  /* 既定のままなら持たない。書き出しに余計な style を出さないため */
+  if (f.x === 50 && f.y === 50 && f.z === 100) setPath(b.props, `${prop}Fit`, undefined);
+  else setPath(b.props, `${prop}Fit`, f);
+  renderPreview(true);
+  save(`fit:${prop}:${b.id}`);
 }
 
 function selectEl(blockId, role, kind, name, prop) {
@@ -1349,6 +1379,40 @@ function elementPanel(b) {
       パソコンなら画像ファイルを枠に放り込んでもOKです。
     </div>`;
   }
+  /* 写真の枠を選んだとき。位置と大きさをここで直す */
+  if (selectedEl.kind === 'img') {
+    const f = fitOf(b, selectedEl.prop);
+    return `<div class="el-panel">
+      <div class="eh">
+        <span class="badge">写真</span>
+        <span class="en">${esc(selectedEl.name)}</span>
+        <button class="ex" data-elclose title="選択を解除">✕</button>
+      </div>
+      <div class="f"><label>大きさ（枠いっぱいまで寄せる）</label>
+        <div class="f-row">
+          <input type="range" data-fit="z" min="100" max="260" step="5" value="${f.z}">
+          <span class="f-val">${f.z}%</span>
+        </div>
+      </div>
+      <div class="f"><label>横の位置（左 ↔ 右）</label>
+        <div class="f-row">
+          <input type="range" data-fit="x" min="0" max="100" value="${f.x}">
+          <span class="f-val">${f.x}%</span>
+        </div>
+      </div>
+      <div class="f"><label>縦の位置（上 ↕ 下）</label>
+        <div class="f-row">
+          <input type="range" data-fit="y" min="0" max="100" value="${f.y}">
+          <span class="f-val">${f.y}%</span>
+        </div>
+      </div>
+      <div class="el-tip">枠から出た分が切れます。顔や商品が切れていたら、ここで寄せてください。</div>
+      <button class="tb-btn" data-fitreset>まん中・等倍に戻す</button>
+      <button class="tb-btn" data-repick="${esc(selectedEl.prop)}">写真を選び直す</button>
+      <button class="tb-btn" data-cut="props.${esc(selectedEl.prop)}">背景をぬく</button>
+    </div>`;
+  }
+
   const isText = selectedEl.kind === 'ta';
   const cfg = (b.props.anims || {})[selectedEl.role] || {};
   const list = isText ? TEXT_ANIMS : IMAGE_ANIMS;
@@ -1379,6 +1443,18 @@ function elementPanel(b) {
 /* 要素パネルの操作 */
 $('#tab-edit').addEventListener('click', (e) => {
   if (e.target.closest('[data-elclose]')) { selectedEl = null; renderEditor(); highlight(); return; }
+
+  /* 写真の枠のボタン */
+  const rp = e.target.closest('[data-repick]');
+  if (rp) { openImagePicker(selected, rp.dataset.repick); return; }
+  if (e.target.closest('[data-fitreset]') && selectedEl && selectedEl.kind === 'img') {
+    const b0 = state.blocks.find((x) => x.id === selected);
+    if (b0) {
+      setPath(b0.props, `${selectedEl.prop}Fit`, undefined);
+      renderEditor(); renderPreview(true); save(`fit:${selectedEl.prop}:${selected}`);
+    }
+    return;
+  }
   /* フィールドに付いたサンプル一覧ボタン（いまは装飾のみ） */
   const fg = e.target.closest('[data-gal]');
   if (fg) {
@@ -1422,6 +1498,14 @@ $('#tab-edit').addEventListener('click', (e) => {
   }
 });
 $('#tab-edit').addEventListener('input', (e) => {
+  /* 写真の位置・大きさ。作り直しは軽いので、動かしながら見られる */
+  const fk = e.target.dataset.fit;
+  if (fk && selectedEl && selectedEl.kind === 'img') {
+    setFit(selectedEl.prop, fk, Number(e.target.value));
+    e.target.parentElement.querySelector('.f-val').textContent = `${e.target.value}%`;
+    return;
+  }
+
   const key = e.target.dataset.elk;
   if (!key || !selectedEl) return;
   const b = state.blocks.find((x) => x.id === selected);

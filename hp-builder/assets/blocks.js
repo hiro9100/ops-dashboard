@@ -196,7 +196,22 @@ function el(p, role, kind, label, prop) {
 }
 
 /* 画像を差し替えられる枠であることを示す（タップで選択、ドロップで投入） */
-const imgSlot = (prop) => ` data-imgprop="${esc(prop)}"`;
+/* 画像の枠。編集画面がどのプロパティの枠かを知るための目印と、
+   その写真の「見せ方」（位置・大きさ）をCSS変数で持たせる。
+   data-imgprop は書き出しのときに落ちるが、style は残るので、
+   位置と大きさは公開したページでもそのまま効く。 */
+const imgSlot = (prop, props) => {
+  const f = props ? getIn(props, `${prop}Fit`) : null;
+  if (!f) return ` data-imgprop="${esc(prop)}"`;
+  const v = [];
+  if (f.x != null && f.x !== 50) v.push(`--ix:${+f.x}%`);
+  if (f.y != null && f.y !== 50) v.push(`--iy:${+f.y}%`);
+  if (f.z != null && f.z !== 100) v.push(`--iz:${(+f.z / 100).toFixed(3)}`);
+  return ` data-imgprop="${esc(prop)}"${v.length ? ` style="${v.join(';')}"` : ''}`;
+};
+
+/* "items.0.src" のような道順で取り出す */
+const getIn = (o, path) => path.split('.').reduce((a, k) => (a == null ? a : a[k]), o);
 
 /* ダブルクリック編集だけを付ける（段落が複数あるなど、文字アニメを付けない場所用） */
 function ed(prop, label) {
@@ -217,6 +232,8 @@ const FIELD = {
       ['', '四角のまま'], ['round', '角を大きく丸める'], ['circle', '丸'],
       ['arch', 'アーチ（上が半円）'], ['leaf', '木の葉'], ['hex', '六角形'],
       ['slant', '斜めに切る'], ['egg', 'たまご'],
+      ['slats', '4本の柱（上下が交互に丸い）'], ['arches', '3連アーチ'],
+      ['wave', '下が波'], ['blob', 'まるいかたまり'],
     ],
   },
   anchor: { key: 'anchor', label: 'アンカーID', type: 'text', hint: 'メニューから #about のようにリンクできます' },
@@ -386,7 +403,7 @@ ${buttons(p.buttons)}`;
       const inner = p.layout === 'split'
         ? `    <div class="hero-in">
       <div>\n${body}\n      </div>
-      <div class="hero-media"${el(p, 'image', 'ia', '画像')}${imgSlot('image')}>${media(p.image, p.title)}</div>
+      <div class="hero-media"${el(p, 'image', 'ia', '画像')}${imgSlot('image', p)}>${media(p.image, p.title)}</div>
     </div>`
         : `    <div class="hero-in">\n${body}\n    </div>`;
       /* スクロール連動のときは、長い区間の中に中身を貼り付ける（sticky）。
@@ -442,7 +459,7 @@ ${maskLayer}${guts}
       `${head(p)}
     <div class="grid ${p.cols || 'c3'}">
 ${(p.items || []).map((it, i) => `      <div class="card"${el(p, `card${i}`, 'ia', `カード${i + 1}`)}>
-        ${p.style === 'image' ? `<div class="hero-media" style="aspect-ratio:16/10;margin-bottom:18px" data-elname="カード画像"${imgSlot(`items.${i}.image`)}>${media(it.image, it.title)}</div>` : ''}
+        ${p.style === 'image' ? `<div class="hero-media" style="aspect-ratio:16/10;margin-bottom:18px" data-elname="カード画像"${imgSlot(`items.${i}.image`, p)}>${media(it.image, it.title)}</div>` : ''}
         ${p.style === 'num' ? `<span class="num">${i + 1}</span>`
           : p.style === 'paren' ? `<span class="pnum">( ${String(i + 1).padStart(2, '0')} )</span>`
           : p.style === 'image' ? '' : `<span class="ic">${esc(it.icon || '◆')}</span>`}
@@ -473,7 +490,7 @@ ${(p.items || []).map((it, i) => `      <div class="card"${el(p, `card${i}`, 'ia
     },
     render: (p) => sec('about', p,
       `    <div class="about-in${p.reverse ? ' rev' : ''}">
-      <div class="about-media"${el(p, 'image', 'ia', '画像')}${imgSlot('image')}>${media(p.image, p.title)}</div>
+      <div class="about-media"${el(p, 'image', 'ia', '画像')}${imgSlot('image', p)}>${media(p.image, p.title)}</div>
       <div class="about-body">
         ${p.eyebrow ? `<span class="eyebrow"${el(p, 'eyebrow', 'ta', '小見出し', 'eyebrow')}>${esc(p.eyebrow)}</span>` : ''}
         ${p.title ? `<h2 class="sec-title"${el(p, 'title', 'ta', '見出し', 'title')}>${nl2br(p.title)}</h2>` : ''}
@@ -506,7 +523,7 @@ ${buttons(p.buttons)}
     render: (p) => sec('gallery', p,
       `${head(p)}
     <div class="gal">
-${(p.items || []).map((it, i) => `      <figure${el(p, `img${i}`, 'ia', `画像${i + 1}`)}${imgSlot(`items.${i}.src`)}>${media(it.src, it.alt)}</figure>`).join('\n')}
+${(p.items || []).map((it, i) => `      <figure${el(p, `img${i}`, 'ia', `画像${i + 1}`)}${imgSlot(`items.${i}.src`, p)}>${media(it.src, it.alt)}</figure>`).join('\n')}
     </div>`),
   },
 
@@ -742,7 +759,7 @@ ${p.more ? `    <div class="btn-row"><a class="btn ghost" href="${esc(p.moreHref
       `${head(p, 'left')}
     <div class="flr">
 ${(p.items || []).map((it, i) => `      <div class="flr-i"${el(p, `fl${i}`, 'ia', `フロア${i + 1}`)}>
-        <div class="flr-pic"${imgSlot(`items.${i}.image`)}>${media(it.image, it.name)}</div>
+        <div class="flr-pic"${imgSlot(`items.${i}.image`, p)}>${media(it.image, it.name)}</div>
         <div class="flr-b">
           <span class="flr-n"${ed(`items.${i}.floor`, '階')}>${esc(it.floor)}</span>
           <h3${el(p, `fl${i}.name`, 'ta', 'フロア名', `items.${i}.name`)}>${esc(it.name)}</h3>
@@ -838,7 +855,7 @@ ${body}
         const it = pics[i % Math.max(1, n)] || { src: '', alt: '' };
         return `      <figure class="cpic" style="left:${x}%;top:${y}%;--w:${w}%;--rot:${rot}deg;`
           + `--cov:${coverScale(rot)};z-index:${z};--d:${d}ms"${el(p, `pic${i}`, 'ia', `手前の写真${i + 1}`)}`
-          + `${imgSlot(`photos.${i}.src`)}><span class="cpic-in">${media(it.src, it.alt)}</span></figure>`;
+          + `${imgSlot(`photos.${i}.src`, p)}><span class="cpic-in">${media(it.src, it.alt)}</span></figure>`;
       }).join('\n');
       const cls = ['sec', 'sec-collage', `cg-${p.tall || 'l'}`, p.gray ? 'cg-gray' : '',
         p.float ? 'cg-float' : ''].filter(Boolean).join(' ');
@@ -1038,7 +1055,7 @@ ${(p.items || []).map((it) => `      <div data-at="${(+it.at || 0) / 100}"><b>${
   style="height:${+p.height || 380}vh"${attr('id', p.anchor)}>
   <div class="pin-in">
     <div class="exp"><div class="exp-in">
-${(p.items || []).map((it, i) => `      <div class="exp-l" style="background:${esc(it.color || '#64748b')}"${imgSlot(`items.${i}.image`)} data-elname="層${i + 1}">${it.image ? img(it.image, it.label) : ''}<span>${esc(it.label)}</span></div>`).join('\n')}
+${(p.items || []).map((it, i) => `      <div class="exp-l" style="background:${esc(it.color || '#64748b')}"${imgSlot(`items.${i}.image`, p)} data-elname="層${i + 1}">${it.image ? img(it.image, it.label) : ''}<span>${esc(it.label)}</span></div>`).join('\n')}
     </div></div>
     <div class="pin-cap">
       ${p.title ? `<b${el(p, 'title', 'ta', '見出し', 'title')}>${nl2br(p.title)}</b>` : ''}
@@ -1087,7 +1104,7 @@ ${(p.items || []).map((it, i) => `      <div class="exp-l" style="background:${e
       ${p.title ? `<h2 class="sec-title" style="margin:0"${el(p, 'title', 'ta', '見出し', 'title')}>${nl2br(p.title)}</h2>` : ''}
     </div></div>
     <div class="hs-track">
-${(p.items || []).map((it, i) => `      <div class="hs-card"${imgSlot(`items.${i}.image`)} data-elname="カード${i + 1}">${it.image ? img(it.image, it.title) : ''}<em>${esc(it.no)}</em><b${ed(`items.${i}.title`, 'カード名')}>${esc(it.title)}</b></div>`).join('\n')}
+${(p.items || []).map((it, i) => `      <div class="hs-card"${imgSlot(`items.${i}.image`, p)} data-elname="カード${i + 1}">${it.image ? img(it.image, it.title) : ''}<em>${esc(it.no)}</em><b${ed(`items.${i}.title`, 'カード名')}>${esc(it.title)}</b></div>`).join('\n')}
     </div>
   </div>
 </section>`,
@@ -1194,14 +1211,14 @@ ${(p.items || []).map((it, i) => `      <div class="tl-item">
     render: (p) => `<section class="pinsec" data-clip style="height:${+p.height || 260}vh"${attr('id', p.anchor)}>
   <div class="pin-in">
     <div class="clip-box">
-      <div class="clip-side clip-a"${imgSlot('imageA')} data-elname="手前の画像">
+      <div class="clip-side clip-a"${imgSlot('imageA', p)} data-elname="手前の画像">
         ${p.imageA ? img(p.imageA, p.titleA) : ''}
         <div class="in-txt">
           <h3${el(p, 'titleA', 'ta', '手前の見出し', 'titleA')}>${nl2br(p.titleA)}</h3>
           <p${ed('textA', '手前の説明')}>${esc(p.textA)}</p>
         </div>
       </div>
-      <div class="clip-side clip-b"${imgSlot('imageB')} data-elname="奥の画像">
+      <div class="clip-side clip-b"${imgSlot('imageB', p)} data-elname="奥の画像">
         ${p.imageB ? img(p.imageB, p.titleB) : ''}
         <div class="in-txt">
           <h3${ed('titleB', '奥の見出し')}>${nl2br(p.titleB)}</h3>
@@ -1244,7 +1261,7 @@ ${(p.items || []).map((it, i) => `      <div class="tl-item">
     render: (p) => sec('carousel', p,
       `${head(p)}
     <div class="car"><div class="car-in">
-${(p.items || []).map((it, i) => `      <div class="car-it"${imgSlot(`items.${i}.image`)} data-elname="カード${i + 1}">${it.image ? img(it.image, it.title) : ''}<b${ed(`items.${i}.title`, 'カード名')}>${esc(it.title)}</b><small>${esc(it.sub)}</small></div>`).join('\n')}
+${(p.items || []).map((it, i) => `      <div class="car-it"${imgSlot(`items.${i}.image`, p)} data-elname="カード${i + 1}">${it.image ? img(it.image, it.title) : ''}<b${ed(`items.${i}.title`, 'カード名')}>${esc(it.title)}</b><small>${esc(it.sub)}</small></div>`).join('\n')}
     </div></div>`),
   },
 
