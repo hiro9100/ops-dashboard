@@ -1913,9 +1913,14 @@ p:last-child{margin-bottom:0}
 .clip-box p{margin:10px 0 0;font-size:14.5px;opacity:.85}
 
 /* ---------- 3Dカルーセル ---------- */
-.car{perspective:1300px;height:400px;display:grid;place-items:center;cursor:grab;touch-action:pan-y}
+/* 円をえがいて並ぶので、外側の輪はカードの幅ぶんだけ横に張り出す。
+   狭い画面ではカードを小さくし、それでもはみ出す分は枠で切る
+   （切らないと、ページ全体が横スクロールしてしまう）。 */
+.car{perspective:1300px;height:400px;display:grid;place-items:center;cursor:grab;
+  touch-action:pan-y;overflow:hidden}
 .car:active{cursor:grabbing}
-.car-in{position:relative;width:220px;height:300px;transform-style:preserve-3d}
+.car-in{position:relative;width:min(220px,44vw);height:min(300px,60vw);transform-style:preserve-3d}
+@media(min-width:761px){.car-in{width:220px;height:300px}}
 .car-it{
   position:absolute;inset:0;border-radius:var(--radius);overflow:hidden;
   border:1px solid var(--c-border);backface-visibility:hidden;
@@ -2877,7 +2882,10 @@ const SITE_JS = `
     var inner = box.querySelector('.car-in'); if(!inner) return;
     var items = [].slice.call(inner.children), N = items.length;
     if(!N) return;
-    var R = Math.round(130 / Math.tan(Math.PI / N)) || 300;
+    /* 輪の半径は、実際のカード幅から決める。決め打ちにすると、
+       狭い画面でカードを小さくしても輪だけ大きいままになる。 */
+    var half = (inner.offsetWidth || 220) / 2;
+    var R = Math.round((half + 18) / Math.tan(Math.PI / N)) || 300;
     items.forEach(function(el, i){
       el.style.transform = 'rotateY(' + (i*360/N) + 'deg) translateZ(' + R + 'px)';
     });
@@ -6850,8 +6858,15 @@ const PREVIEW_CSS = `
   background:#4c8dff;color:#fff;border-radius:4px;padding:1px 7px;pointer-events:none;
   font:700 10px/1.7 -apple-system,"Hiragino Sans",sans-serif;letter-spacing:.04em;white-space:nowrap}
 
-/* 画像を差し替えられる枠 */
-[data-imgprop]{position:relative;cursor:pointer}
+/* 画像を差し替えられる枠。
+
+   position は :where() で当てる（強さ 0）。ブロック側が自分で配置を
+   決めている枠（回るカード・円で切り替わる面・背景いっぱいの写真など）は
+   position:absolute なので、ここで relative に上書きすると並びが崩れる。
+   実際、3Dカルーセルが編集画面だけ縦に散らばっていた。
+   自分で位置を決めていない枠にだけ relative が入ればよい。 */
+[data-imgprop]{cursor:pointer}
+:where([data-imgprop]){position:relative}
 [data-imgprop]:hover::after{
   content:"画像を選ぶ";background:#8b5cf6;color:#fff;position:absolute;top:2px;left:2px;z-index:21;
   border-radius:4px;padding:1px 7px;pointer-events:none;white-space:nowrap;

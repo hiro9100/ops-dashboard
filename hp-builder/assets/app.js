@@ -401,8 +401,15 @@ const PREVIEW_CSS = `
   background:#4c8dff;color:#fff;border-radius:4px;padding:1px 7px;pointer-events:none;
   font:700 10px/1.7 -apple-system,"Hiragino Sans",sans-serif;letter-spacing:.04em;white-space:nowrap}
 
-/* 画像を差し替えられる枠 */
-[data-imgprop]{position:relative;cursor:pointer}
+/* 画像を差し替えられる枠。
+
+   position は :where() で当てる（強さ 0）。ブロック側が自分で配置を
+   決めている枠（回るカード・円で切り替わる面・背景いっぱいの写真など）は
+   position:absolute なので、ここで relative に上書きすると並びが崩れる。
+   実際、3Dカルーセルが編集画面だけ縦に散らばっていた。
+   自分で位置を決めていない枠にだけ relative が入ればよい。 */
+[data-imgprop]{cursor:pointer}
+:where([data-imgprop]){position:relative}
 [data-imgprop]:hover::after{
   content:"画像を選ぶ";background:#8b5cf6;color:#fff;position:absolute;top:2px;left:2px;z-index:21;
   border-radius:4px;padding:1px 7px;pointer-events:none;white-space:nowrap;

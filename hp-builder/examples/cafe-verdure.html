@@ -1192,9 +1192,14 @@ p:last-child{margin-bottom:0}
 .clip-box p{margin:10px 0 0;font-size:14.5px;opacity:.85}
 
 /* ---------- 3Dカルーセル ---------- */
-.car{perspective:1300px;height:400px;display:grid;place-items:center;cursor:grab;touch-action:pan-y}
+/* 円をえがいて並ぶので、外側の輪はカードの幅ぶんだけ横に張り出す。
+   狭い画面ではカードを小さくし、それでもはみ出す分は枠で切る
+   （切らないと、ページ全体が横スクロールしてしまう）。 */
+.car{perspective:1300px;height:400px;display:grid;place-items:center;cursor:grab;
+  touch-action:pan-y;overflow:hidden}
 .car:active{cursor:grabbing}
-.car-in{position:relative;width:220px;height:300px;transform-style:preserve-3d}
+.car-in{position:relative;width:min(220px,44vw);height:min(300px,60vw);transform-style:preserve-3d}
+@media(min-width:761px){.car-in{width:220px;height:300px}}
 .car-it{
   position:absolute;inset:0;border-radius:var(--radius);overflow:hidden;
   border:1px solid var(--c-border);backface-visibility:hidden;
@@ -2409,7 +2414,10 @@ a:not(.btn):not(.logo){transition:opacity .5s cubic-bezier(.165,.84,.44,1)}
     var inner = box.querySelector('.car-in'); if(!inner) return;
     var items = [].slice.call(inner.children), N = items.length;
     if(!N) return;
-    var R = Math.round(130 / Math.tan(Math.PI / N)) || 300;
+    /* 輪の半径は、実際のカード幅から決める。決め打ちにすると、
+       狭い画面でカードを小さくしても輪だけ大きいままになる。 */
+    var half = (inner.offsetWidth || 220) / 2;
+    var R = Math.round((half + 18) / Math.tan(Math.PI / N)) || 300;
     items.forEach(function(el, i){
       el.style.transform = 'rotateY(' + (i*360/N) + 'deg) translateZ(' + R + 'px)';
     });
