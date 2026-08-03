@@ -254,6 +254,15 @@ function el(p, role, kind, label, prop) {
   if (prop) out += ` data-prop="${esc(prop)}"`;   // ダブルクリックで直接編集できる
   if (cfg.a) out += ` data-anim="${esc(cfg.a)}"`;
   if (cfg.d) out += ` data-delay="${parseInt(cfg.d, 10) || 0}"`;
+  /* 文字の塗り。data-txf は書き出しでも残す（見た目そのものなので） */
+  const fill = (p.fills || {})[role];
+  if (fill) {
+    out += ` data-txf="${esc(fill)}"`;
+    if (fill === 'own') {
+      const im = (p.fillImgs || {})[role];
+      if (im) out += ` style="--txf:url('${esc(im)}')"`;
+    }
+  }
   return out;
 }
 

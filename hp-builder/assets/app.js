@@ -339,6 +339,7 @@ function fullHTML(forPublish) {
 ${themeCSS(state.theme)}
 ${SITE_CSS}
 ${shapeMaskCSS(usedShapes(state))}
+${textFillCSS(usedFills(state))}
 </style>
 </head>
 <body class="${esc(bodyClass())}" data-anim="${esc(state.motion.anim)}" data-reveal="${state.motion.reveal ? 1 : 0}" data-smooth="${state.motion.smooth ? 1 : 0}">
@@ -505,6 +506,15 @@ function initPreview() {
 
 /* いま使われている「絵から作った形」だけを集める。
    書き出すCSSを、使っている分だけにするため。 */
+/* いま使われている「絵の塗り」だけを集める */
+function usedFills(st) {
+  const set = new Set();
+  (st.blocks || []).forEach((b) => {
+    Object.values((b.props && b.props.fills) || {}).forEach((v) => set.add(v));
+  });
+  return [...set];
+}
+
 function usedShapes(st) {
   const set = new Set();
   (st.blocks || []).forEach((b) => { if (b.props && b.props.shape) set.add(b.props.shape); });
@@ -518,7 +528,8 @@ function renderPreview(now = false) {
   const run = () => {
     if (!pdoc) return;
     pdoc.getElementById('s-theme').textContent = themeCSS(state.theme)
-      + '\n' + shapeMaskCSS(usedShapes(state));
+      + '\n' + shapeMaskCSS(usedShapes(state))
+      + '\n' + textFillCSS(usedFills(state));
     pdoc.body.className = bodyClass();
     pdoc.body.setAttribute('data-anim', state.motion.anim);
     pdoc.body.setAttribute('data-reveal', state.motion.reveal ? '1' : '0');
@@ -1189,6 +1200,21 @@ const HDR_ABOUT = {
   float: '角の丸い島が浮きます。軽く見せたいとき。',
 };
 
+/* 文字の塗り。グラデーションはCSSだけ、絵のものは text-fills.js から */
+const TEXT_FILL_LIST = [
+  ['', '塗らない（文字の色のまま）'],
+  ['gold', '金'],
+  ['fire', '炎（グラデーション）'],
+  ['metal', '銀・メタル'],
+  ['night', '夜（紫から水色）'],
+  ['rainbow', '虹'],
+  ['brand', 'メイン色からアクセント色へ'],
+  ['flame', '炎の写真'],
+  ['polydark', '黒い多面体'],
+  ['polylight', '白い多面体'],
+  ['own', '自分の画像で塗る'],
+];
+
 const FTR_ABOUT = {
   bar: '左に名前、右にリンク。いちばん素直な形。',
   center: '名前・リンク・年を縦に真ん中で。静かに終わる。',
@@ -1527,12 +1553,41 @@ function elementPanel(b) {
         <span class="f-val">${delay}ms</span>
       </div>
     </div>
+    ${isText ? textFillField(b) : ''}
   </div>`;
+}
+
+/* 文字を絵やグラデーションで塗る欄（見出しなどのテキスト要素だけ） */
+function textFillField(b) {
+  const cur = (b.props.fills || {})[selectedEl.role] || '';
+  const own = (b.props.fillImgs || {})[selectedEl.role] || '';
+  return `<div class="f"><label>文字の塗り</label>
+    <select data-txfill>${TEXT_FILL_LIST.map(([v, l]) =>
+      `<option value="${v}"${cur === v ? ' selected' : ''}>${esc(l)}</option>`).join('')}</select>
+    ${cur === 'own' ? `<button class="pick wide" data-txfimg>${own ? '別の画像にする' : '画像を選ぶ'}</button>
+      ${own ? `<img class="img-thumb" src="${esc(own)}" alt="">` : ''}` : ''}
+    <div class="hint">背景を文字の形に切り抜きます。文字は文字のままなので、あとから書き換えられます。</div>
+  </div>`;
+}
+
+function setTextFill(val) {
+  const b = state.blocks.find((x) => x.id === selected);
+  if (!b || !selectedEl) return;
+  b.props.fills = b.props.fills || {};
+  if (val) b.props.fills[selectedEl.role] = val;
+  else delete b.props.fills[selectedEl.role];
+  renderEditor(); renderPreview(true); save(`txf:${selectedEl.role}:${b.id}`);
 }
 
 /* 要素パネルの操作 */
 $('#tab-edit').addEventListener('click', (e) => {
   if (e.target.closest('[data-elclose]')) { selectedEl = null; renderEditor(); highlight(); return; }
+
+  /* 文字を自分の画像で塗る */
+  if (e.target.closest('[data-txfimg]') && selectedEl) {
+    openImagePicker(selected, `fillImgs.${selectedEl.role}`, 'txf');
+    return;
+  }
 
   /* 写真の枠のボタン */
   const rp = e.target.closest('[data-repick]');
@@ -1637,6 +1692,8 @@ $('#tab-edit').addEventListener('input', (e) => {
 
 /* select / checkbox は showIf の出し分けがあるのでフォームごと作り直す */
 $('#tab-edit').addEventListener('change', (e) => {
+  /* 文字の塗りは、ブロックの props ではなく要素ごとに持つので、道順を持たない */
+  if (e.target.hasAttribute('data-txfill')) { setTextFill(e.target.value); return; }
   if (!e.target.dataset.path) return;
   if (e.target.tagName === 'SELECT' || e.target.type === 'checkbox' || e.target.type === 'file') renderEditor();
 });
@@ -1766,6 +1823,7 @@ filePicker.addEventListener('change', () => {
   const f = filePicker.files[0];
   if (!f || !pickTarget) return;
   if (pickTarget.kind === 'mask') setMask(pickTarget.blockId, pickTarget.prop, f);
+  else if (pickTarget.kind === 'txf') setFillImage(pickTarget.blockId, pickTarget.prop, f);
   else setImage(pickTarget.blockId, pickTarget.prop, f);
 });
 
@@ -1806,6 +1864,36 @@ async function fileToMask(file) {
 
   const webp = cv.toDataURL('image/webp', 0.9);
   return webp.startsWith('data:image/webp') ? webp : cv.toDataURL('image/png');
+}
+
+/* 文字を塗る画像。文字の面積ぶんしか見えないので、写真ほどの大きさは要らない */
+const FILL_MAX = 900;
+
+async function setFillImage(blockId, prop, file) {
+  const b = state.blocks.find((x) => x.id === blockId);
+  if (!b || !file) return;
+  if (!file.type.startsWith('image/')) { flash('画像ファイルを選んでください'); return; }
+  flash('画像を読み込んでいます…');
+  try {
+    const src = await loadImage(file);
+    const scale = Math.min(1, FILL_MAX / Math.max(src.width, src.height));
+    const cv = document.createElement('canvas');
+    cv.width = Math.max(1, Math.round(src.width * scale));
+    cv.height = Math.max(1, Math.round(src.height * scale));
+    cv.getContext('2d').drawImage(src, 0, 0, cv.width, cv.height);
+    if (src.close) src.close();
+    const webp = cv.toDataURL('image/webp', 0.72);
+    const url = webp.startsWith('data:image/webp') ? webp : cv.toDataURL('image/jpeg', 0.75);
+    const role = prop.split('.').pop();
+    b.props.fillImgs = b.props.fillImgs || {};
+    b.props.fillImgs[role] = url;
+    b.props.fills = b.props.fills || {};
+    b.props.fills[role] = 'own';
+    renderEditor(); renderPreview(true); save(`txfimg:${role}:${blockId}`);
+    flash(`この画像で文字を塗ります（約${Math.round(url.length / 1400)}KB）`);
+  } catch (e) {
+    flash('画像を読み込めませんでした');
+  }
 }
 
 async function setMask(blockId, prop, file) {

@@ -844,6 +844,32 @@ p:last-child{margin-bottom:0}
 .tpl-studio .hdr{border-bottom-color:rgba(255,255,255,.12)}
 
 /* ==========================================================
+   文字を絵で塗る（文字のくり抜き）
+
+   背景を文字の形に切り抜いて見せる。文字そのものは文字のままなので、
+   読み上げにも検索にも残るし、あとから書き換えられる。
+
+   グラデーションはCSSだけで作れるので、ここに全部書いてある（0バイト）。
+   写真で塗るものだけ、絵を assets/text-fills.js に持つ。
+   ========================================================== */
+[data-txf]{
+  background-image:var(--txf);
+  background-size:cover;background-position:center;
+  -webkit-background-clip:text;background-clip:text;
+  color:transparent;-webkit-text-fill-color:transparent
+}
+/* 塗りが読み込めないときに文字が消えないよう、下に色を敷いておく */
+@supports not ((-webkit-background-clip:text) or (background-clip:text)){
+  [data-txf]{color:inherit;-webkit-text-fill-color:currentColor;background-image:none}
+}
+[data-txf="gold"]{--txf:linear-gradient(180deg,#fff4c2 0%,#e9b949 38%,#8a5a12 68%,#f7dd8a 100%)}
+[data-txf="fire"]{--txf:linear-gradient(180deg,#ffe259 0%,#ff8a00 46%,#e63900 100%)}
+[data-txf="metal"]{--txf:linear-gradient(180deg,#f7f9fb 0%,#c3ccd6 42%,#6d7682 68%,#eef2f6 100%)}
+[data-txf="night"]{--txf:linear-gradient(120deg,#8b5cff 0%,#22d3ee 100%)}
+[data-txf="rainbow"]{--txf:linear-gradient(90deg,#ff5f6d,#ffc371,#47e5bc,#4c8dff,#a06bff)}
+[data-txf="brand"]{--txf:linear-gradient(120deg,var(--c-primary),var(--c-accent))}
+
+/* ==========================================================
    ボタンの型
 
    ここもスタイルやテンプレートの味付け（.sty-* / .tpl-*）より後ろに置く。
