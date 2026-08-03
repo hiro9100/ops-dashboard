@@ -297,7 +297,7 @@ function buildEasyState(industryKey, name, photos) {
   st.meta.title = name || 'My Website';
   st.meta.description = c.hero.text;
 
-  for (const b of st.blocks) {
+  for (const b of st.pages[0].blocks) {
     if (b.type === 'header' || b.type === 'footer') {
       b.props.logo = name || b.props.logo;
     }
@@ -314,7 +314,7 @@ function buildEasyState(industryKey, name, photos) {
       b._done = true;    // 同じテンプレートに features が2つある場合、上の1つだけ差し替える
     }
   }
-  st.blocks.forEach((b) => { delete b._done; });
+  st.pages[0].blocks.forEach((b) => { delete b._done; });
   return st;
 }
 
@@ -323,7 +323,7 @@ function buildEasyState(industryKey, name, photos) {
 function fillPhotos(st, photos) {
   if (!photos.length) return 0;
   let i = 0;
-  for (const b of st.blocks) {
+  for (const b of st.pages.flatMap((pg) => pg.blocks)) {
     for (const slot of imageSlots(b)) {
       if (i >= photos.length) return i;
       setPath(b.props, slot, photos[i++]);

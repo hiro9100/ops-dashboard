@@ -148,6 +148,7 @@ input,select,textarea{font:inherit}
   padding:10px;font-size:12.5px;font-weight:700;color:var(--tx2)
 }
 .add-btn:hover{color:var(--tx);border-color:var(--pri)}
+.add-btn.sub{margin-top:6px;font-weight:600;font-size:12px}
 .add-menu{
   position:absolute;bottom:56px;left:10px;right:10px;background:var(--panel2);
   border:1px solid var(--line);border-radius:var(--r);padding:6px;z-index:30;
@@ -199,6 +200,41 @@ input,select,textarea{font:inherit}
 }
 .img-f .pick:hover{border-color:var(--pri)}
 /* 絵をえらぶ。名前ではなく絵で選べるように、大きめに並べる */
+/* ================= ページ =================
+   1枚しかないうちは出さない（renderPageBar が hidden にする） */
+.pagebar[hidden]{display:none}
+.pagebar{
+  display:flex;gap:6px;overflow-x:auto;padding:9px 10px;flex:none;
+  border-bottom:1px solid var(--line);background:var(--panel2);scrollbar-width:thin
+}
+.pagebar .pg{
+  flex:none;display:flex;flex-direction:column;align-items:flex-start;gap:2px;
+  padding:7px 11px;border:1px solid var(--line);border-radius:8px;
+  background:var(--panel);color:var(--tx2);font-size:12.5px;font-weight:700;line-height:1.3;
+  white-space:nowrap;cursor:pointer
+}
+.pagebar .pg small{font-size:10px;font-weight:400;color:var(--tx3,#6b7280);letter-spacing:.02em}
+.pagebar .pg:hover{border-color:var(--pri)}
+.pagebar .pg.on{border-color:var(--pri);background:#20293a;color:var(--tx)}
+.pagebar .pg.add{justify-content:center;align-items:center;font-size:16px;padding:7px 13px;color:var(--tx2)}
+.pg-path{display:flex;align-items:center;gap:2px}
+.pg-path span{font-size:12px;color:var(--tx2);flex:none}
+.pg-path input{flex:1;min-width:0}
+.pg-kinds{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:6px}
+.pg-kinds button{
+  text-align:left;padding:11px 13px;border:1px solid var(--line);border-radius:9px;
+  background:var(--panel2);color:var(--tx);cursor:pointer
+}
+.pg-kinds button b{display:block;font-size:13px}
+.pg-kinds button small{display:block;font-size:11px;color:var(--tx2);margin-top:2px;line-height:1.5}
+.pg-kinds button.on{border-color:var(--pri);background:#20293a}
+.pg-ops{display:flex;flex-wrap:wrap;gap:6px;margin:2px 0 14px}
+.pg-ops .tb-btn{font-size:11.5px;padding:6px 10px}
+
+/* リンク先。種類をえらぶと、その下の欄が入れ替わる */
+.lk{display:flex;flex-direction:column;gap:6px}
+.lk .hint{margin:0}
+
 .ic-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:10px}
 .ic-head{
   font-size:12px;font-weight:800;color:var(--tx2);letter-spacing:.06em;
@@ -561,3 +597,14 @@ input,select,textarea{font:inherit}
   padding:8px;font-size:12px;font-weight:700;color:var(--tx)
 }
 .anim-gal:hover{background:#2b3b58;border-color:var(--pri)}
+
+/* ================= 届いたお問い合わせ ================= */
+.inbox{max-height:56vh;overflow-y:auto;margin-bottom:4px}
+.inbox-none{color:var(--tx2);font-size:13px;line-height:2;padding:26px 2px;text-align:center}
+.ib{border:1px solid var(--line);border-radius:9px;background:var(--panel2);padding:13px 15px;margin-bottom:9px}
+.ib-h{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 12px;margin-bottom:7px}
+.ib-h b{font-size:13.5px}
+.ib-h a{color:var(--pri);font-size:12px;text-decoration:none}
+.ib-h a:hover{text-decoration:underline}
+.ib-h time{margin-left:auto;color:var(--tx2);font-size:11px}
+.ib p{margin:0;font-size:13px;line-height:1.9;color:var(--tx);white-space:pre-wrap}

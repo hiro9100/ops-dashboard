@@ -30,6 +30,8 @@ const bucket = () => getStorage().bucket();
 /* ---------------- 制限 ----------------
    他人のHTMLを自分のドメインで配るので、置きっぱなしにはできない。 */
 const MAX_BYTES = 3 * 1024 * 1024;   // 1ページの上限。写真込みでもこれで足りる
+const MAX_SITE_BYTES = 12 * 1024 * 1024;  // サイト全体の上限
+const MAX_PAGES = 20;                // 1サイトのページ数
 const MAX_NEW_PER_DAY = 5;           // 同じ回線から1日に作れる新規サイト数
 const MARK = 'id="hp-builder-data"'; // このツールが作ったHTMLの目印
 
@@ -78,15 +80,46 @@ exports.publishSite = onRequest({ region: REGION, maxInstances: 10, cors: false,
   if (req.method !== 'POST') return res.status(405).json({ error: 'POST でお願いします' });
 
   try {
-    const { siteId, editToken, title, html } = req.body || {};
+    const { siteId, editToken, title, html, pages } = req.body || {};
 
-    if (typeof html !== 'string' || !html) {
+    /* 1ページのときは html、複数ページのときは pages で来る。
+       どちらも「path とHTMLの組」の並びに直してから先へ進む */
+    let list;
+    if (Array.isArray(pages)) {
+      list = pages;
+    } else if (typeof html === 'string' && html) {
+      list = [{ path: 'index', html }];
+    } else {
       return res.status(400).json({ error: 'ページの中身がありません' });
     }
-    if (Buffer.byteLength(html, 'utf8') > MAX_BYTES) {
-      return res.status(413).json({ error: '写真が多すぎます。枚数を減らすか、小さい写真にしてください' });
+
+    if (!list.length) return res.status(400).json({ error: 'ページの中身がありません' });
+    if (list.length > MAX_PAGES) {
+      return res.status(400).json({ error: `ページは${MAX_PAGES}枚までです` });
     }
-    if (!html.includes(MARK)) {
+
+    let total = 0;
+    for (const p of list) {
+      if (typeof p.html !== 'string' || !p.html) {
+        return res.status(400).json({ error: 'ページの中身がありません' });
+      }
+      /* 住所はそのままファイル名になる。上の階へ抜ける道を作らせない */
+      if (!/^[a-z0-9-]{1,40}$/.test(String(p.path || ''))) {
+        return res.status(400).json({ error: 'ページのアドレスの形が違います' });
+      }
+      const n = Buffer.byteLength(p.html, 'utf8');
+      if (n > MAX_BYTES) {
+        return res.status(413).json({ error: '写真が多すぎます。枚数を減らすか、小さい写真にしてください' });
+      }
+      total += n;
+    }
+    if (total > MAX_SITE_BYTES) {
+      return res.status(413).json({ error: 'サイト全体が大きすぎます。写真の枚数を減らしてください' });
+    }
+    /* このツールが作ったものかは、組み立て情報を持つホームで見る */
+    const home = list.find((p) => p.path === 'index');
+    if (!home) return res.status(400).json({ error: 'ホーム（index）がありません' });
+    if (!home.html.includes(MARK)) {
       return res.status(400).json({ error: 'このツールで作ったページではないようです' });
     }
 
@@ -112,16 +145,25 @@ exports.publishSite = onRequest({ region: REGION, maxInstances: 10, cors: false,
       isNew = true;
     }
 
-    await bucket().file(`sites/${id}/index.html`).save(Buffer.from(html, 'utf8'), {
-      contentType: 'text/html; charset=utf-8',
-      resumable: false,
-      metadata: { cacheControl: 'no-store' },   // 配信側の見出しは serveSite で付ける
-    });
+    await Promise.all(list.map((p) =>
+      bucket().file(`sites/${id}/${p.path}.html`).save(Buffer.from(p.html, 'utf8'), {
+        contentType: 'text/html; charset=utf-8',
+        resumable: false,
+        metadata: { cacheControl: 'no-store' },   // 配信側の見出しは serveSite で付ける
+      })));
+
+    /* 前より減ったときに、消したページが残り続けないようにする */
+    const keep = new Set(list.map((p) => `sites/${id}/${p.path}.html`));
+    try {
+      const [olds] = await bucket().getFiles({ prefix: `sites/${id}/` });
+      await Promise.all(olds.filter((f) => !keep.has(f.name)).map((f) => f.delete()));
+    } catch (e) { console.warn('古いページを消せませんでした', e); }
 
     await db.collection('sites').doc(id).set({
       title: String(title || '').slice(0, 120),
       tokenHash: sha(tok),
-      bytes: Buffer.byteLength(html, 'utf8'),
+      pages: list.map((p) => p.path),
+      bytes: total,
       updatedAt: FieldValue.serverTimestamp(),
       ...(isNew ? { createdAt: FieldValue.serverTimestamp() } : {}),
     }, { merge: true });
@@ -136,14 +178,115 @@ exports.publishSite = onRequest({ region: REGION, maxInstances: 10, cors: false,
   }
 });
 
+/* ================================================================
+   お問い合わせを受け取る
+
+     POST /api/form      公開したページのフォームから届く
+     POST /api/messages  持ち主が読む（合言葉が要る）
+
+   メールは送らない。送るには外の配信業者と、その鍵の管理が要る。
+   代わりに預かって、編集画面から読めるようにする。
+   持ち主の証明は公開と同じ合言葉なので、覚えるものは増えない。
+   ================================================================ */
+const MAX_FIELD = 4000;              // 1つの欄の長さ
+const MAX_MSG_PER_DAY = 30;          // 同じ回線から1日に送れる数
+const MAX_KEEP = 500;                // 1サイトに貯める数
+
+const trim = (v) => String(v == null ? '' : v).slice(0, MAX_FIELD).trim();
+
+exports.submitForm = onRequest({ region: REGION, maxInstances: 10, cors: false, memory: '256MiB' }, async (req, res) => {
+  cors(res, req.headers.origin);
+  if (req.method === 'OPTIONS') return res.status(204).end();
+  if (req.method !== 'POST') return res.status(405).json({ error: 'POST でお願いします' });
+
+  try {
+    const { siteId, name, email, message, company } = req.body || {};
+
+    /* 機械よけ。人には見えない欄が埋まっていたら、静かに受けたことにする。
+       はっきり断ると、避けかたを教えることになる。 */
+    if (trim(company)) return res.json({ ok: true });
+
+    const id = String(siteId || '').trim();
+    if (!/^[a-z0-9-]{4,40}$/.test(id)) return res.status(400).json({ error: '送り先が分かりませんでした' });
+
+    const nm = trim(name), em = trim(email), msg = trim(message);
+    if (!nm || !em || !msg) return res.status(400).json({ error: 'お名前・メールアドレス・お問い合わせ内容を入れてください' });
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em)) return res.status(400).json({ error: 'メールアドレスの形が違うようです' });
+
+    const site = await db.collection('sites').doc(id).get();
+    if (!site.exists) return res.status(404).json({ error: 'この送り先はもうありません' });
+
+    /* 同じ回線からの送りすぎを止める。持ち主の受信箱が埋まらないように */
+    const day = new Date().toISOString().slice(0, 10);
+    const qref = db.collection('quota').doc(`msg_${day}_${sha(clientIp(req)).slice(0, 32)}`);
+    const okQuota = await db.runTransaction(async (tx) => {
+      const snap = await tx.get(qref);
+      const n = snap.exists ? (snap.data().n || 0) : 0;
+      if (n >= MAX_MSG_PER_DAY) return false;
+      tx.set(qref, { n: n + 1, day, at: FieldValue.serverTimestamp() });
+      return true;
+    });
+    if (!okQuota) return res.status(429).json({ error: '送信が続いています。しばらく待ってからお試しください' });
+
+    const box = db.collection('sites').doc(id).collection('messages');
+    await box.add({ name: nm, email: em, message: msg, at: FieldValue.serverTimestamp() });
+
+    /* 貯まりすぎたら古いものから捨てる。置きっぱなしにしない方針は公開と同じ */
+    const all = await box.orderBy('at', 'desc').offset(MAX_KEEP).limit(50).get();
+    await Promise.all(all.docs.map((doc) => doc.ref.delete()));
+
+    return res.json({ ok: true });
+  } catch (e) {
+    console.error('form failed', e);
+    return res.status(500).json({ error: '送れませんでした。少し待ってもう一度お試しください' });
+  }
+});
+
+/* ---------------- 持ち主が読む ---------------- */
+exports.listMessages = onRequest({ region: REGION, maxInstances: 10, cors: false, memory: '256MiB' }, async (req, res) => {
+  cors(res, req.headers.origin);
+  if (req.method === 'OPTIONS') return res.status(204).end();
+  if (req.method !== 'POST') return res.status(405).json({ error: 'POST でお願いします' });
+
+  try {
+    const { siteId, editToken } = req.body || {};
+    const id = String(siteId || '').trim();
+    if (!/^[a-z0-9-]{4,40}$/.test(id)) return res.status(400).json({ error: 'サイトIDの形が違います' });
+
+    const site = await db.collection('sites').doc(id).get();
+    if (!site.exists) return res.status(404).json({ error: 'そのサイトは見つかりませんでした' });
+    if (site.data().tokenHash !== sha(String(editToken || ''))) {
+      return res.status(403).json({ error: 'このサイトを開く合言葉が違います' });
+    }
+
+    const snap = await db.collection('sites').doc(id).collection('messages')
+      .orderBy('at', 'desc').limit(100).get();
+    return res.json({
+      messages: snap.docs.map((doc) => {
+        const v = doc.data();
+        return { id: doc.id, name: v.name, email: v.email, message: v.message,
+          at: v.at ? v.at.toDate().toISOString() : null };
+      }),
+    });
+  } catch (e) {
+    console.error('list failed', e);
+    return res.status(500).json({ error: '読み出せませんでした。少し待ってもう一度お試しください' });
+  }
+});
+
 /* ---------------- 返す ---------------- */
 exports.serveSite = onRequest({ region: REGION, maxInstances: 10, cors: false, memory: '256MiB' }, async (req, res) => {
   try {
     /* Hosting からは元のパスがそのまま来る（/s/xxx あるいは /s/xxx/） */
-    const id = decodeURIComponent(String(req.path || '')).split('/').filter(Boolean)[1] || '';
+    /* /s/<サイトID> ／ /s/<サイトID>/ ／ /s/<サイトID>/<ページ>.html */
+    const parts = decodeURIComponent(String(req.path || '')).split('/').filter(Boolean);
+    const id = parts[1] || '';
     if (!/^[a-z0-9-]{4,40}$/.test(id)) return notFound(res);
 
-    const file = bucket().file(`sites/${id}/index.html`);
+    const raw = (parts[2] || 'index').replace(/\.html$/, '');
+    if (!/^[a-z0-9-]{1,40}$/.test(raw)) return notFound(res);
+
+    const file = bucket().file(`sites/${id}/${raw}.html`);
     const [exists] = await file.exists();
     if (!exists) return notFound(res);
 

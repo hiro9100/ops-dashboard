@@ -9,6 +9,24 @@ const esc = (s) =>
 const nl2br = (s) => esc(s).replace(/\n/g, '<br>');
 const attr = (name, v) => (v ? ` ${name}="${esc(v)}"` : '');
 
+/* ---------- リンク先 ----------
+   リンク先は「page:<ページID>」の形でも持てる。
+   住所（ファイル名）ではなくIDで持つのは、あとでページの名前を変えても
+   リンクが切れないようにするため。ここで実際のアドレスに直す。
+
+   プレビューの中では、押しても別ファイルへ飛べない（srcdoc なので
+   隣のファイルが無い）。代わりに data-gopage を付けておき、
+   編集画面がそれを見て編集中のページを切り替える。
+   書き出すときは exportBody() が data-gopage を落とす。 */
+function linkAttr(v) {
+  const raw = String(v || '');
+  const m = raw.match(/^page:(.+)$/);
+  if (!m) return ` href="${esc(raw || '#')}"`;
+  const r = typeof pageRef === 'function' ? pageRef(m[1]) : null;
+  if (!r) return ' href="#"';                       // 消されたページ
+  return ` href="${esc(r.href)}" data-gopage="${esc(m[1])}"`;
+}
+
 /* 画像URLがあれば <img>、無ければ何も出さない（ロゴ・背景用） */
 const img = (src, alt) => (src ? `<img src="${esc(src)}" alt="${esc(alt || '')}" loading="lazy">` : '');
 /* 画像を置く枠。未設定なら「IMAGE」のプレースホルダを出す */
@@ -94,7 +112,7 @@ function buttons(list, extraClass = '') {
         b.style && b.style !== 'primary' ? b.style : '',
         b.size || '',
         b.arrow ? 'arrow' : ''].filter(Boolean).join(' ');
-      return `      <a class="${cls}" href="${esc(b.href || '#')}">${esc(b.label)}</a>`;
+      return `      <a class="${cls}"${linkAttr(b.href)}>${esc(b.label)}</a>`;
     })
     .join('\n');
   return items ? `    <div class="btn-row ${extraClass}">\n${items}\n    </div>` : '';
@@ -345,7 +363,7 @@ const FIELD = {
   },
   btnItem: [
     { key: 'label', label: 'ボタン文字', type: 'text' },
-    { key: 'href', label: 'リンク先', type: 'text' },
+    { key: 'href', label: 'リンク先', type: 'link' },
     { key: 'style', label: '見た目', type: 'select', options: BTN_STYLES },
     { key: 'size', label: '大きさ', type: 'select',
       options: [['', 'ふつう'], ['lg', '大きい'], ['sm', '小さい'], ['full', '横いっぱい']] },
@@ -423,10 +441,10 @@ const BLOCKS = {
         titleKey: 'label',
         item: [
           { key: 'label', label: '表示名', type: 'text' },
-          { key: 'href', label: 'リンク先', type: 'text' },
+          { key: 'href', label: 'リンク先', type: 'link' },
         ] },
       { key: 'cta', label: 'ボタン文字（空でボタン無し）', type: 'text' },
-      { key: 'ctaHref', label: 'ボタンのリンク先', type: 'text' },
+      { key: 'ctaHref', label: 'ボタンのリンク先', type: 'link' },
     ],
     defaults: {
       bar: 'line', logo: 'YOUR LOGO', logoImage: '', sticky: true,
@@ -441,8 +459,8 @@ const BLOCKS = {
     render: (p) => `<header class="hdr bar-${esc(p.bar || 'line')}${p.sticky ? ' sticky' : ''}">
   <div class="wrap hdr-in">
     <a class="logo" href="#top"${ed('logo', 'サイト名')}>${p.logoImage ? img(p.logoImage, p.logo) : ''}${esc(p.logo)}</a>
-    <nav class="nav">${(p.nav || []).filter((n) => n.label).map((n) => `<a href="${esc(n.href || '#')}">${esc(n.label)}</a>`).join('')}</nav>
-    ${p.cta ? `<a class="btn sm" href="${esc(p.ctaHref || '#')}">${esc(p.cta)}</a>` : ''}
+    <nav class="nav">${(p.nav || []).filter((n) => n.label).map((n) => `<a${linkAttr(n.href)}>${esc(n.label)}</a>`).join('')}</nav>
+    ${p.cta ? `<a class="btn sm"${linkAttr(p.ctaHref)}>${esc(p.cta)}</a>` : ''}
     <button class="hdr-toggle" aria-label="メニュー">☰</button>
   </div>
 </header>`,
@@ -673,7 +691,7 @@ ${(p.items || []).map((it, i) => `      <figure${el(p, `img${i}`, 'ia', `画像$
           { key: 'unit', label: '単位（/月 など）', type: 'text' },
           { key: 'features', label: '含まれる内容（改行区切り）', type: 'textarea' },
           { key: 'btn', label: 'ボタン文字', type: 'text' },
-          { key: 'href', label: 'ボタンのリンク先', type: 'text' },
+          { key: 'href', label: 'ボタンのリンク先', type: 'link' },
           { key: 'featured', label: 'おすすめとして目立たせる', type: 'toggle' },
           { key: 'tag', label: 'おすすめラベル', type: 'text' },
         ] },
@@ -696,7 +714,7 @@ ${(p.items || []).map((it, i) => `      <div class="plan${it.featured ? ' feat' 
         <h3${el(p, `plan${i}.name`, 'ta', 'プラン名', `items.${i}.name`)}>${esc(it.name)}</h3>
         <div class="price">${esc(it.price)}${it.unit ? `<span>${esc(it.unit)}</span>` : ''}</div>
         <ul>${(it.features || '').split('\n').filter(Boolean).map((f) => `<li>${esc(f)}</li>`).join('')}</ul>
-        ${it.btn ? `<a class="btn${it.featured ? '' : ' ghost'}" href="${esc(it.href || '#')}">${esc(it.btn)}</a>` : ''}
+        ${it.btn ? `<a class="btn${it.featured ? '' : ' ghost'}"${linkAttr(it.href)}>${esc(it.btn)}</a>` : ''}
       </div>`).join('\n')}
     </div>`),
   },
@@ -767,8 +785,17 @@ ${buttons(p.buttons, 'center')}
       { key: 'address', label: '住所', type: 'text' },
       { key: 'hours', label: '営業時間', type: 'text' },
       { key: 'form', label: '入力フォームを表示', type: 'toggle' },
-      { key: 'action', label: 'フォームの送信先URL', type: 'text', hint: 'Googleフォーム等のURL。空なら見た目だけ', showIf: (p) => p.form },
+      { key: 'formTo', label: '送られた内容の届け先', type: 'select', showIf: (p) => p.form,
+        options: [
+          ['here', 'このツールで受け取る'],
+          ['url', 'ほかのサービスに送る'],
+          ['', '見た目だけ（送信しない）'],
+        ],
+        hint: '「このツールで受け取る」は、公開したあとに使えます。届いた内容は編集画面から読めます' },
+      { key: 'action', label: '送信先のURL', type: 'text', hint: 'Googleフォーム等のURL',
+        showIf: (p) => p.form && p.formTo === 'url' },
       { key: 'submit', label: '送信ボタンの文字', type: 'text', showIf: (p) => p.form },
+      { key: 'thanks', label: '送ったあとに出す言葉', type: 'text', showIf: (p) => p.form && p.formTo === 'here' },
       FIELD.bg, FIELD.anchor,
     ],
     defaults: {
@@ -776,17 +803,25 @@ ${buttons(p.buttons, 'center')}
       text: 'お気軽にご連絡ください。2営業日以内にご返信します。',
       tel: '03-0000-0000', email: 'hello@example.com',
       address: '東京都〇〇区〇〇 1-2-3', hours: '平日 10:00 - 18:00',
-      form: true, action: '', submit: '送信する', bg: 'surface', anchor: 'contact',
+      form: true, formTo: 'here', action: '', submit: '送信する',
+      thanks: 'お問い合わせありがとうございます。2営業日以内にご返信します。',
+      bg: 'surface', anchor: 'contact',
     },
     render: (p) => {
       const info = [['TEL', p.tel], ['EMAIL', p.email], ['ADDRESS', p.address], ['HOURS', p.hours]]
         .filter(([, v]) => v)
         .map(([k, v]) => `        <div><dt>${k}</dt><dd>${esc(v)}</dd></div>`).join('\n');
-      const form = p.form ? `      <form class="form"${attr('action', p.action)}${p.action ? ' method="post"' : ''}>
+      /* 届け先の指定。「このツールで受け取る」ときだけ data-form が付き、
+         書き出したページのJSがそこへ送る。それ以外は今までどおり。 */
+      const to = p.formTo === 'url' ? `${attr('action', p.action)}${p.action ? ' method="post"' : ''}`
+        : (typeof formAttrs === 'function' ? formAttrs(p) : '');
+      const form = p.form ? `      <form class="form"${to}>
         <label>お名前<input type="text" name="name" required></label>
         <label>メールアドレス<input type="email" name="email" required></label>
         <label>お問い合わせ内容<textarea name="message" required></textarea></label>
+        <p class="fm-hp" aria-hidden="true"><label>この欄は空のままにしてください<input type="text" name="company" tabindex="-1" autocomplete="off"></label></p>
         <button class="btn" type="submit">${esc(p.submit || '送信する')}</button>
+        <p class="fm-msg" role="status"></p>
       </form>` : '';
       const only1 = !info || !form ? ' only1' : '';
       return sec('contact', p,
@@ -866,7 +901,7 @@ ${(p.items || []).map((it, i) => `      <div class="ico"${el(p, `ico${i}`, 'ia',
           { key: 'image', label: '写真', type: 'image' },
           { key: 'title', label: '見出し', type: 'text' },
           { key: 'text', label: '説明', type: 'text' },
-          { key: 'href', label: 'リンク先（空でリンクなし）', type: 'text' },
+          { key: 'href', label: 'リンク先（空でリンクなし）', type: 'link' },
         ] },
       FIELD.shape, FIELD.shapeMask, FIELD.plate, FIELD.plateShift,
       FIELD.bg, FIELD.anchor,
@@ -895,7 +930,7 @@ ${(p.items || []).map((it, i) => `      <div class="ico"${el(p, `ico${i}`, 'ia',
             it.text ? `<small${ed(`items.${i}.text`, '説明')}>${esc(it.text)}</small>` : ''}`
           : pic;
         return it.href
-          ? `<a class="strp-it" href="${esc(it.href)}">${body}</a>`
+          ? `<a class="strp-it"${linkAttr(it.href)}>${body}</a>`
           : `<div class="strp-it">${body}</div>`;
       }).join('');
       /* 2組目は同じ絵の続きなので、読み上げには渡さない */
@@ -976,10 +1011,10 @@ ${videoTag(p)}
           { key: 'date', label: '日付', type: 'text' },
           { key: 'cat', label: 'カテゴリ', type: 'text' },
           { key: 'title', label: '見出し', type: 'text' },
-          { key: 'href', label: 'リンク先', type: 'text' },
+          { key: 'href', label: 'リンク先', type: 'link' },
         ] },
       { key: 'more', label: 'もっと見るボタン（空で非表示）', type: 'text' },
-      { key: 'moreHref', label: 'ボタンのリンク先', type: 'text' },
+      { key: 'moreHref', label: 'ボタンのリンク先', type: 'link' },
       FIELD.bg, FIELD.anchor,
     ],
     defaults: {
@@ -995,14 +1030,14 @@ ${videoTag(p)}
       `${head(p, 'left')}
     <ul class="nws">
 ${(p.items || []).map((it, i) => `      <li class="nws-i"${el(p, `row${i}`, 'ia', `お知らせ${i + 1}`)}>
-        <a href="${esc(it.href || '#')}">
+        <a${linkAttr(it.href)}>
           <time>${esc(it.date)}</time>
           ${it.cat ? `<span class="nws-c">${esc(it.cat)}</span>` : ''}
           <b${ed(`items.${i}.title`, '見出し')}>${esc(it.title)}</b>
         </a>
       </li>`).join('\n')}
     </ul>
-${p.more ? `    <div class="btn-row"><a class="btn ghost" href="${esc(p.moreHref || '#')}">${esc(p.more)}</a></div>` : ''}`),
+${p.more ? `    <div class="btn-row"><a class="btn ghost"${linkAttr(p.moreHref)}>${esc(p.more)}</a></div>` : ''}`),
   },
 
   /* ---------------- フロアガイド ---------------- */
@@ -1063,7 +1098,7 @@ ${(p.items || []).map((it, i) => `      <div class="flr-i"${el(p, `fl${i}`, 'ia'
       { key: 'dir', label: '向き', type: 'select', options: [['l', '左へ'], ['r', '右へ']] },
       { key: 'size', label: '文字の大きさ', type: 'range', min: 30, max: 180, suffix: 'px' },
       { key: 'outline', label: '中を抜いた文字にする', type: 'toggle' },
-      { key: 'href', label: 'リンク先（空でリンクなし）', type: 'text' },
+      { key: 'href', label: 'リンク先（空でリンクなし）', type: 'link' },
       FIELD.bg, FIELD.anchor,
     ],
     defaults: {
@@ -1077,7 +1112,7 @@ ${(p.items || []).map((it, i) => `      <div class="flr-i"${el(p, `fl${i}`, 'ia'
         `<span class="mq-w">${esc(p.text)}</span>${p.sep ? `<span class="mq-s">${esc(p.sep)}</span>` : ''}`).join('');
       const inner = `<div class="mq-run">${one}</div><div class="mq-run" aria-hidden="true">${one}</div>`;
       const body = p.href
-        ? `<a class="mq-in" href="${esc(p.href)}">${inner}</a>`
+        ? `<a class="mq-in"${linkAttr(p.href)}>${inner}</a>`
         : `<div class="mq-in">${inner}</div>`;
       const cls = ['sec', 'sec-marquee', p.bg ? `bg-${p.bg}` : '', p.outline ? 'mq-line' : '',
         p.dir === 'r' ? 'mq-r' : ''].filter(Boolean).join(' ');
@@ -1228,12 +1263,12 @@ ${p.note ? `    <p class="menu-note"${ed('note', '注記')}>${esc(p.note)}</p>` 
       { key: 'text', label: 'ひとこと・住所など', type: 'textarea', rows: 2,
         showIf: (p) => ['big', 'cta'].includes(p.style) },
       { key: 'cta', label: 'ボタン文字', type: 'text', showIf: (p) => p.style === 'cta' },
-      { key: 'ctaHref', label: 'ボタンのリンク先', type: 'text', showIf: (p) => p.style === 'cta' },
+      { key: 'ctaHref', label: 'ボタンのリンク先', type: 'link', showIf: (p) => p.style === 'cta' },
       { key: 'logo', label: 'サイト名', type: 'text' },
       { key: 'links', label: 'リンク', type: 'list', addLabel: 'リンクを追加', titleKey: 'label',
         item: [
           { key: 'label', label: '表示名', type: 'text' },
-          { key: 'href', label: 'リンク先', type: 'text' },
+          { key: 'href', label: 'リンク先', type: 'link' },
         ] },
       { key: 'copy', label: 'コピーライト', type: 'text' },
     ],
@@ -1253,11 +1288,11 @@ ${p.note ? `    <p class="menu-note"${ed('note', '注記')}>${esc(p.note)}</p>` 
       const st = p.style || 'bar';
       const logo = `<span class="logo"${ed('logo', 'サイト名')}>${esc(p.logo)}</span>`;
       const links = (p.links || []).filter((l) => l.label)
-        .map((l) => `<a href="${esc(l.href || '#')}">${esc(l.label)}</a>`).join('');
+        .map((l) => `<a${linkAttr(l.href)}>${esc(l.label)}</a>`).join('');
       const nav = `<nav class="ftr-nav">${links}</nav>`;
       const copy = p.copy ? `<div class="copy"${ed('copy', 'コピーライト')}>${esc(p.copy)}</div>` : '';
       const note = p.text ? `<p class="ftr-note"${ed('text', 'ひとこと')}>${nl2br(p.text)}</p>` : '';
-      const btn = p.cta ? `<a class="btn" href="${esc(p.ctaHref || '#')}"${ed('cta', 'ボタン文字')}>${esc(p.cta)}</a>` : '';
+      const btn = p.cta ? `<a class="btn"${linkAttr(p.ctaHref)}${ed('cta', 'ボタン文字')}>${esc(p.cta)}</a>` : '';
 
       let inner;
       if (st === 'minimal') {

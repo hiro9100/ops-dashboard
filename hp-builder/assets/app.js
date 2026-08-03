@@ -7,7 +7,8 @@ const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const STORE_KEY = 'hp-builder-v1';
 
-let state = null;      // { template, meta, theme, blocks:[{id,type,props}] }
+let state = null;      // { template, meta, theme, pages:[{id,name,path,title,desc,blocks}] }
+let pageIdx = 0;       // 編集中のページ
 let selected = null;   // 編集中のブロックID
 let selectedEl = null; // 編集中の要素 {role, kind, name}
 let uidSeq = 0;
@@ -23,6 +24,78 @@ function makeBlock(type, override = {}) {
   return { id: uid(), type, props: Object.assign(clone(BLOCKS[type].defaults), clone(override)) };
 }
 
+/* ================================================================
+   ページ
+
+   1枚のページで足りる人が大半なので、はじめは1枚しか無い。
+   足したときだけ、ページを選ぶ帯が出る。
+
+   ページは「名前・住所・中身」を持つ。住所（path）はファイル名になり、
+   そのままアドレスの末尾になる。ホームだけは index で固定。
+
+   配色・デザインの型・動きはサイト全体で共通。ページごとに変えられると
+   バラバラのサイトになってしまい、直す場所も増える。
+   ================================================================ */
+const HOME_PATH = 'index';
+const page = () => state.pages[Math.min(pageIdx, state.pages.length - 1)] || state.pages[0];
+const isHome = (pg) => state.pages.indexOf(pg) === 0;
+
+function makePage(name, blocks, path) {
+  return { id: uid(), name, path: path || slugPath(name), title: '', desc: '', blocks };
+}
+
+/* 名前から住所を作る。日本語の名前でもアドレスに出せるよう、
+   英数字が無いときは page-2 のような通し番号にする。 */
+function slugPath(name, taken = []) {
+  let s = String(name || '').toLowerCase().trim()
+    .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 32);
+  if (!s || s === HOME_PATH) s = '';
+  let out = s || `page-${state.pages.length + 1}`;
+  const used = new Set([HOME_PATH, ...taken]);
+  let n = 2;
+  while (used.has(out)) out = `${s || 'page'}-${n++}`;
+  return out;
+}
+
+/* ================================================================
+   お問い合わせフォームの届け先
+
+   「見た目だけのフォーム」は、いちばんたちの悪い作りかたになる。
+   押した人は送ったつもりで待ち、受け取る側は何も来ないことに
+   気づかない。だから既定を「このツールで受け取る」にする。
+
+   受け口は公開のときと同じ Cloud Function。サイトIDが決まるのは
+   公開したあとなので、それまでは「まだ受け取れない」と出す。
+   blocks.js の render から呼ばれる。
+   ================================================================ */
+const formEndpoint = () => (typeof PUBLISH === 'object' && PUBLISH.endpoint
+  ? PUBLISH.endpoint.replace(/\/publish$/, '/form') : '');
+
+function formAttrs(p) {
+  if (p.formTo !== 'here') return '';
+  const ep = formEndpoint();
+  const id = (state && state.meta && state.meta.siteId) || '';
+  if (!ep || !id) return ' data-form-wait="1"';   // 公開すれば受け取れるようになる
+  return ` data-form="${esc(ep)}" data-site="${esc(id)}"${attr('data-thanks', p.thanks)}`;
+}
+
+/* リンク先が指しているページを引く。blocks.js の linkAttr から呼ばれる。
+   消されたページを指していたら null（リンクは無効になるだけで、壊れない） */
+function pageRef(id) {
+  const pg = (state.pages || []).find((x) => x.id === id);
+  if (!pg) return null;
+  return { name: pg.name, href: state.pages.indexOf(pg) === 0 ? './' : `./${pg.path}.html` };
+}
+
+/* ページの出発点。ヘッダーとフッターはどのページにも要るので、
+   いまのホームのものをそのまま借りる。1枚ずつ作り直させない。 */
+function newPageBlocks(kind) {
+  const home = state.pages[0].blocks;
+  const same = (t) => { const b = home.find((x) => x.type === t); return b ? Object.assign(clone(b), { id: uid() }) : makeBlock(t); };
+  const mid = { blank: [], about: ['about', 'features'], menu: ['menu'], contact: ['contact'] }[kind] || [];
+  return [same('header'), ...mid.map((t) => makeBlock(t)), same('footer')];
+}
+
 function buildState(tplKey) {
   const t = TEMPLATES[tplKey];
   return {
@@ -36,7 +109,8 @@ function buildState(tplKey) {
     style: t.style || '',
     rules: !!t.rules,
     motion: clone(DEFAULT_MOTION),
-    blocks: t.blocks.map((b) => makeBlock(b.type, b.props)),
+    pages: [{ id: uid(), name: 'ホーム', path: HOME_PATH, title: '', desc: '',
+      blocks: t.blocks.map((b) => makeBlock(b.type, b.props)) }],
   };
 }
 
@@ -56,7 +130,8 @@ function buildCustomState() {
     style: '',
     rules: false,
     motion: clone(DEFAULT_MOTION),
-    blocks: [makeBlock('header'), makeBlock('footer')],
+    pages: [{ id: uid(), name: 'ホーム', path: HOME_PATH, title: '', desc: '',
+      blocks: [makeBlock('header'), makeBlock('footer')] }],
   };
 }
 
@@ -126,8 +201,8 @@ function applyHistory(step) {
   applyingHistory = true;
   state = JSON.parse(hist.stack[hist.idx]);
   selectedEl = null;
-  if (!state.blocks.some((b) => b.id === selected)) {
-    selected = state.blocks[1]?.id || state.blocks[0]?.id || null;
+  if (!page().blocks.some((b) => b.id === selected)) {
+    selected = page().blocks[1]?.id || page().blocks[0]?.id || null;
   }
   renderList(); renderEditor(); renderDesign(); renderPage(); renderPreview(true);
   try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); } catch (e) { /* 容量超過は無視 */ }
@@ -183,18 +258,35 @@ function flash(msg) {
    自動保存からの復帰でも、書き出したHTMLの読み込みでも同じ手当てが要る。 */
 function migrate(s) {
   if (!s) return null;
-  // 知らないブロックが混ざっていたら捨てる（定義を消した時の保険）
-  s.blocks = (s.blocks || []).filter((b) => BLOCKS[b.type]);
   s.motion = Object.assign(clone(DEFAULT_MOTION), s.motion || {}); // 旧データ対策
   if (s.style === undefined) s.style = (TEMPLATES[s.template] || {}).style || '';
   s.meta = Object.assign({ title: 'My Website', description: '', lang: 'ja' }, s.meta || {});
-  /* id が重複していると、選択も並べ替えも別のブロックに効いてしまう */
-  const seen = new Set();
-  s.blocks.forEach((b) => {
-    if (!b.id || seen.has(b.id)) b.id = uid();
-    seen.add(b.id);
+
+  /* ページを持たない時代のデータは、まるごと1枚目のページにする。
+     前に作ったページを読み込んでも、そのまま続きから直せる。 */
+  if (!Array.isArray(s.pages)) {
+    s.pages = [{ id: uid(), name: 'ホーム', path: HOME_PATH, title: '', desc: '', blocks: s.blocks || [] }];
+  }
+  delete s.blocks;
+
+  const paths = new Set();
+  const seen = new Set();   // id が重複すると、選択も並べ替えも別のものに効いてしまう
+  s.pages.forEach((pg, i) => {
+    if (!pg.id || seen.has(pg.id)) pg.id = uid();
+    seen.add(pg.id);
+    pg.name = pg.name || (i ? `ページ${i + 1}` : 'ホーム');
+    pg.path = i === 0 ? HOME_PATH : String(pg.path || '').replace(/[^a-z0-9-]/g, '') || `page-${i + 1}`;
+    while (paths.has(pg.path)) pg.path += '-2';
+    paths.add(pg.path);
+    // 知らないブロックが混ざっていたら捨てる（定義を消した時の保険）
+    pg.blocks = (pg.blocks || []).filter((b) => BLOCKS[b.type]);
+    pg.blocks.forEach((b) => {
+      if (!b.id || seen.has(b.id)) b.id = uid();
+      seen.add(b.id);
+    });
   });
-  return s.blocks.length ? s : null;
+  s.pages = s.pages.filter((pg) => pg.blocks.length);
+  return s.pages.length ? s : null;
 }
 
 function load() {
@@ -246,12 +338,12 @@ function themeCSS(t) {
 const bodyClass = () => `tpl-${state.template}${state.style ? ` sty-${state.style}` : ''}`
   + (state.rules ? ' has-rules' : '');
 
-const bodyHTML = () => state.blocks.map((b) => BLOCKS[b.type].render(b.props)).join('\n\n');
+const bodyHTML = (pg = page()) => pg.blocks.map((b) => BLOCKS[b.type].render(b.props)).join('\n\n');
 
 /* 書き出し時は編集画面専用の属性を取り除く（動作に必要な data-ta/-ia/-anim/-delay は残す） */
 /* 書き出しでは編集用の目印を全部落とす。imgprop も忘れずに
    （落とし忘れると、画像枠の属性が書き出したHTMLに残る） */
-const exportBody = () => bodyHTML().replace(/ data-(?:el|elname|elkind|prop|imgprop)="[^"]*"/g, '');
+const exportBody = (pg) => bodyHTML(pg).replace(/ data-(?:el|elname|elkind|prop|imgprop|gopage)="[^"]*"/g, '');
 
 /* 書き出し用の完成HTML（1ファイルで動く） */
 /* ================================================================
@@ -318,23 +410,56 @@ function fattenState(s, imgs) {
   return s;
 }
 
-function fullHTML(forPublish) {
+/* ================================================================
+   1ページぶんのHTML
+
+   ページが1枚なら、これまでどおり index.html が1つ出るだけ。
+   2枚以上あるときは、ページごとに1ファイル。組み立て情報は
+   ホーム（index.html）にだけ入れる。全ページに入れると、写真を
+   ページの数だけ持つことになって、まとめて重くなる。
+
+   ホーム以外には目印だけ置いて、間違って読み込まれたときに
+   「index.html を読み込んでください」と言えるようにする。
+   ================================================================ */
+const SITE_SUB_MARK = 'hp-builder-sub';
+
+function pageTitle(pg) {
+  if (pg.title) return pg.title;
+  return isHome(pg) ? state.meta.title : `${pg.name}｜${state.meta.title}`;
+}
+const pageDesc = (pg) => pg.desc || state.meta.description;
+
+/* そのページのアドレス。ホームは末尾なし、ほかは <住所>.html */
+const pagePath = (pg) => (isHome(pg) ? 'index.html' : `${pg.path}.html`);
+function pageURL(pg) {
+  const raw = String(state.meta.siteUrl || '');
+  if (!raw) return '';
+  /* ホームは、控えてもらったアドレスをそのまま出す。こちらで
+     末尾を足したり削ったりすると、打った人の覚えと食い違う */
+  if (isHome(pg)) return raw;
+  return `${raw.replace(/\/index\.html$/, '').replace(/\/+$/, '')}/${pg.path}.html`;
+}
+
+function pageHTML(pg, forPublish) {
   const m = state.meta;
-  const body = exportBody();
+  const body = exportBody(pg);
+  const url = pageURL(pg);
   /* 組み立て情報。</script> が中に現れると、そこでタグが閉じてしまうので逃がす */
-  const data = JSON.stringify(slimState(bodyImages(body), forPublish)).replace(/<\//g, '<\\/');
+  const data = isHome(pg)
+    ? JSON.stringify(slimState(bodyImages(body), forPublish)).replace(/<\//g, '<\\/')
+    : null;
   return `<!DOCTYPE html>
 <html lang="${esc(m.lang || 'ja')}">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>${esc(m.title)}</title>
-<meta name="description" content="${esc(m.description)}">
-<meta property="og:title" content="${esc(m.title)}">
-<meta property="og:description" content="${esc(m.description)}">
-<meta property="og:type" content="website">${m.siteUrl ? `
-<link rel="canonical" href="${esc(m.siteUrl)}">
-<meta property="og:url" content="${esc(m.siteUrl)}">` : ''}
+<title>${esc(pageTitle(pg))}</title>
+<meta name="description" content="${esc(pageDesc(pg))}">
+<meta property="og:title" content="${esc(pageTitle(pg))}">
+<meta property="og:description" content="${esc(pageDesc(pg))}">
+<meta property="og:type" content="website">${url ? `
+<link rel="canonical" href="${esc(url)}">
+<meta property="og:url" content="${esc(url)}">` : ''}
 <style>
 ${themeCSS(state.theme)}
 ${SITE_CSS}
@@ -347,21 +472,31 @@ ${textFillCSS(usedFills(state))}
 ${body}
 
 <script>${SITE_JS}<\/script>
-<!-- このファイルを編集ツールに読み込むと、続きから編集できます -->
-<script type="application/json" id="${SITE_DATA_ID}">${data}<\/script>
+${data ? `<!-- このファイルを編集ツールに読み込むと、続きから編集できます -->
+<script type="application/json" id="${SITE_DATA_ID}">${data}<\/script>`
+       : `<!-- 編集の続きは index.html から。この印はそのための目印です -->
+<script type="application/json" id="${SITE_SUB_MARK}">{"home":"index.html"}<\/script>`}
 </body>
 </html>`;
 }
+
+/* サイト全体を書き出す。[{name, html}] を返す */
+const siteFiles = (forPublish) =>
+  state.pages.map((pg) => ({ name: pagePath(pg), path: isHome(pg) ? HOME_PATH : pg.path, html: pageHTML(pg, forPublish) }));
+
+/* 1ページだけのときの、これまでどおりの書き出し */
+const fullHTML = (forPublish) => pageHTML(state.pages[0], forPublish);
 
 /* 書き出したHTMLを読んで state に戻す。
    このツールが作ったものでなければ null を返す。 */
 function stateFromHTML(text) {
   const doc = new DOMParser().parseFromString(text, 'text/html');
   const tag = doc.getElementById(SITE_DATA_ID);
-  if (!tag) return null;
+  /* ホーム以外のページを読み込まれたときは、どこを読めばいいかを返す */
+  if (!tag) return doc.getElementById(SITE_SUB_MARK) ? 'sub' : null;
   let s;
   try { s = JSON.parse(tag.textContent); } catch { return null; }
-  if (!s || !Array.isArray(s.blocks)) return null;
+  if (!s || !(Array.isArray(s.blocks) || Array.isArray(s.pages))) return null;
   /* 数える範囲は、書き出したときと同じ「本文だけ」に揃える。
      生成サイトのCSSには data:image/svg+xml が1つ入っているので、
      文書ぜんぶを数えると番号が1つずれる（実測で確認）。
@@ -440,6 +575,13 @@ function initPreview() {
         if (editing && editing.el.contains(e.target)) return;  // 編集中の中身のクリックは通す
         e.preventDefault();
         if (editing) commitEdit();
+
+        /* ほかのページへのリンクを押したら、そのページに移る。
+           プレビューは1枚のHTMLなので本当には飛べないが、
+           押した人が期待するのは「そのページが出ること」なので合わせる */
+        const go = e.target.closest('[data-gopage]');
+        if (go) { const i = state.pages.findIndex((x) => x.id === go.dataset.gopage); if (i >= 0) return gotoPage(i); }
+
         const blk = e.target.closest('[data-bid]');
         if (!blk) return;
         const elt = e.target.closest('[data-el]');
@@ -451,7 +593,7 @@ function initPreview() {
            毎回ファイル選択が出てしまうので、右の欄で調整できるようにする。 */
         const slot = e.target.closest('[data-imgprop]');
         if (slot) {
-          const bb = state.blocks.find((x) => x.id === blk.dataset.bid);
+          const bb = page().blocks.find((x) => x.id === blk.dataset.bid);
           const has = bb && getPath(bb.props, slot.dataset.imgprop);
           if (has) selectImgSlot(blk.dataset.bid, slot.dataset.imgprop, slot.dataset.elname);
           else openImagePicker(blk.dataset.bid, slot.dataset.imgprop);
@@ -514,9 +656,13 @@ function initPreview() {
 /* いま使われている「絵から作った形」だけを集める。
    書き出すCSSを、使っている分だけにするため。 */
 /* いま使われている「絵の塗り」だけを集める */
+/* サイト全体で使っている形・塗りを集める。ページごとに違うCSSを持たせると
+   ページを移ったときに絵が変わって見えるので、どのページにも同じものを敷く */
+const allBlocks = (st) => (st.pages || []).flatMap((pg) => pg.blocks || []);
+
 function usedFills(st) {
   const set = new Set();
-  (st.blocks || []).forEach((b) => {
+  allBlocks(st).forEach((b) => {
     Object.values((b.props && b.props.fills) || {}).forEach((v) => set.add(v));
   });
   return [...set];
@@ -524,7 +670,7 @@ function usedFills(st) {
 
 function usedShapes(st) {
   const set = new Set();
-  (st.blocks || []).forEach((b) => { if (b.props && b.props.shape) set.add(b.props.shape); });
+  allBlocks(st).forEach((b) => { if (b.props && b.props.shape) set.add(b.props.shape); });
   return [...set];
 }
 
@@ -544,7 +690,7 @@ function renderPreview(now = false) {
     pdoc.body.innerHTML = bodyHTML();
     // 生成されたトップレベル要素とブロックを対応づける（クリックで選択できるように）
     [...pdoc.body.children].forEach((el, i) => {
-      const b = state.blocks[i];
+      const b = page().blocks[i];
       if (!b) return;
       el.dataset.bid = b.id;
       if (b.id === selected) el.classList.add('__sel');
@@ -581,7 +727,7 @@ const getPath = (o, path) => path.split('.').reduce((a, k) => (a == null ? a : a
 
 function startEdit(el, blockId, prop) {
   if (editing) commitEdit();
-  const b = state.blocks.find((x) => x.id === blockId);
+  const b = page().blocks.find((x) => x.id === blockId);
   if (!b) return;
   const raw = String(getPath(b.props, prop) ?? '');
 
@@ -608,7 +754,7 @@ function commitEdit(cancel = false) {
   el.contentEditable = 'false';
   el.classList.remove('__editing');
 
-  const b = state.blocks.find((x) => x.id === blockId);
+  const b = page().blocks.find((x) => x.id === blockId);
   const val = cancel ? raw : typed;
   if (b && val !== raw) {
     setPath(b.props, prop, val);
@@ -629,7 +775,7 @@ const FIT0 = { x: 50, y: 50, z: 100 };
 const fitOf = (b, prop) => Object.assign({}, FIT0, getPath(b.props, `${prop}Fit`) || {});
 
 function setFit(prop, key, val) {
-  const b = state.blocks.find((x) => x.id === selected);
+  const b = page().blocks.find((x) => x.id === selected);
   if (!b) return;
   const f = fitOf(b, prop);
   f[key] = val;
@@ -662,9 +808,135 @@ function scrollToBlock(id) {
 /* ================================================================
    左パネル：ブロック一覧
    ================================================================ */
+/* ページを選ぶ帯。1枚しかないうちは出さない。
+   ページという考えかたを、必要になるまで見せない（大半の人は1枚で足りる） */
+function renderPageBar() {
+  const bar = $('#pageBar');
+  bar.hidden = state.pages.length < 2;
+  if (bar.hidden) return;
+  bar.innerHTML = state.pages.map((pg, i) => `<button class="pg${i === pageIdx ? ' on' : ''}" data-pg="${i}">
+      ${esc(pg.name)}<small>${i === 0 ? '/' : `/${esc(pg.path)}.html`}</small>
+    </button>`).join('') + '<button class="pg add" id="pgAdd" title="ページを追加">＋</button>';
+}
+
+$('#pageBar').addEventListener('click', (e) => {
+  if (e.target.closest('#pgAdd')) return openPageModal();
+  const b = e.target.closest('[data-pg]');
+  if (b) gotoPage(Number(b.dataset.pg));
+});
+
+function gotoPage(i) {
+  if (i === pageIdx || !state.pages[i]) return;
+  if (editing) commitEdit();
+  pageIdx = i;
+  selected = page().blocks[1]?.id || page().blocks[0]?.id || null;
+  selectedEl = null;
+  closed.clear();
+  refresh();
+  if (pdoc) pdoc.defaultView.scrollTo(0, 0);
+}
+
+/* ================================================================
+   届いたお問い合わせ
+
+   預かった内容を読む。持ち主の証明は公開と同じ合言葉で、
+   その合言葉は手元のデータの中にあるので、入力を求めない。
+   ================================================================ */
+async function loadInbox() {
+  const box = $('#inboxList');
+  const id = state.meta.siteId;
+  const tok = state.meta.editToken;
+  $('#inboxReload').hidden = !(id && tok);
+
+  if (!id) {
+    $('#inboxSub').textContent = '';
+    box.innerHTML = `<p class="inbox-none">まだ公開していません。<br>
+      「公開する」でこのツールから公開すると、お問い合わせを受け取れるようになります。</p>`;
+    return;
+  }
+  if (!tok) {
+    $('#inboxSub').textContent = '';
+    box.innerHTML = `<p class="inbox-none">このサイトの合言葉が手元にありません。<br>
+      公開したときに書き出した index.html を「保存したファイルから続ける」で読み込んでください。</p>`;
+    return;
+  }
+
+  $('#inboxSub').textContent = '新しいものから100件まで。';
+  box.innerHTML = '<p class="inbox-none">読み込んでいます…</p>';
+  let j = {};
+  try {
+    const r = await fetch(formEndpoint().replace(/\/form$/, '/messages'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ siteId: id, editToken: tok }),
+    });
+    j = await r.json();
+    if (!r.ok) throw new Error(j.error || `読み出せませんでした（${r.status}）`);
+  } catch (e) {
+    box.innerHTML = `<p class="inbox-none">${esc(e.message || 'つながりませんでした')}</p>`;
+    return;
+  }
+  const list = j.messages || [];
+  if (!list.length) {
+    box.innerHTML = '<p class="inbox-none">まだ届いていません。</p>';
+    return;
+  }
+  box.innerHTML = list.map((m) => `<div class="ib">
+    <div class="ib-h"><b>${esc(m.name)}</b>
+      <a href="mailto:${esc(m.email)}">${esc(m.email)}</a>
+      <time>${esc(m.at ? new Date(m.at).toLocaleString('ja-JP') : '')}</time></div>
+    <p>${nl2br(esc(m.message))}</p>
+  </div>`).join('');
+}
+$('#btnInbox').addEventListener('click', () => { openModal('#inboxModal'); loadInbox(); });
+$('#inboxReload').addEventListener('click', loadInbox);
+$('#inboxClose').addEventListener('click', () => closeModal('#inboxModal'));
+
+/* ---------------- ページを追加する ---------------- */
+let pgKind = 'blank';
+function openPageModal() {
+  pgKind = 'blank';
+  $('#pgName').value = '';
+  $('#pgPath').value = '';
+  $$('#pgKinds button').forEach((b) => b.classList.toggle('on', b.dataset.kind === 'blank'));
+  openModal('#pageModal');
+  setTimeout(() => $('#pgName').focus(), 60);
+}
+$('#btnAddPage').addEventListener('click', openPageModal);
+$('#pgCancel').addEventListener('click', () => closeModal('#pageModal'));
+$('#pgKinds').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-kind]');
+  if (!b) return;
+  pgKind = b.dataset.kind;
+  $$('#pgKinds button').forEach((x) => x.classList.toggle('on', x === b));
+});
+/* 名前を打つあいだ、アドレスを一緒に作る。自分で直したらそれ以上いじらない */
+$('#pgName').addEventListener('input', () => {
+  if ($('#pgPath').dataset.touched) return;
+  $('#pgPath').value = slugPath($('#pgName').value, state.pages.map((p) => p.path));
+});
+$('#pgPath').addEventListener('input', (e) => {
+  e.target.dataset.touched = '1';
+  e.target.value = e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '');
+});
+$('#pgMake').addEventListener('click', () => {
+  const name = $('#pgName').value.trim() || `ページ${state.pages.length + 1}`;
+  const path = slugPath($('#pgPath').value || name, state.pages.map((p) => p.path));
+  state.pages.push(makePage(name, newPageBlocks(pgKind), path));
+  closeModal('#pageModal');
+  pageIdx = state.pages.length - 1;
+  selected = page().blocks[1]?.id || page().blocks[0]?.id;
+  selectedEl = null;
+  closed.clear();
+  refresh();
+  save('page:add');
+  flash(`「${name}」を作りました`);
+});
+
 function renderList() {
+  renderPageBar();
   const wrap = $('#blockList');
-  wrap.innerHTML = state.blocks.map((b, i) => {
+  wrap.innerHTML = page().blocks.map((b, i) => {
     const def = BLOCKS[b.type];
     const label = b.props.title || b.props.logo || def.label;
     const fixed = def.unique;   // ヘッダー・フッターは位置が決まっているので動かさない
@@ -675,7 +947,7 @@ function renderList() {
       <span class="bl-name">${esc(label)}<br><span class="bl-sub">${def.label}</span></span>
       <span class="bl-ops">
         <button data-act="up" title="上へ"${i === 0 ? ' disabled' : ''}>↑</button>
-        <button data-act="down" title="下へ"${i === state.blocks.length - 1 ? ' disabled' : ''}>↓</button>
+        <button data-act="down" title="下へ"${i === page().blocks.length - 1 ? ' disabled' : ''}>↓</button>
         <button data-act="dup" title="複製">⧉</button>
         <button data-act="del" title="削除">✕</button>
       </span>
@@ -687,20 +959,20 @@ $('#blockList').addEventListener('click', (e) => {
   const item = e.target.closest('.bl-item');
   if (!item) return;
   const id = item.dataset.id;
-  const i = state.blocks.findIndex((b) => b.id === id);
+  const i = page().blocks.findIndex((b) => b.id === id);
   const act = e.target.closest('button')?.dataset.act;
 
   if (!act) { selectedEl = null; select(id); scrollToBlock(id); return; }
-  if (act === 'up' && i > 0) state.blocks.splice(i - 1, 0, state.blocks.splice(i, 1)[0]);
-  if (act === 'down' && i < state.blocks.length - 1) state.blocks.splice(i + 1, 0, state.blocks.splice(i, 1)[0]);
+  if (act === 'up' && i > 0) page().blocks.splice(i - 1, 0, page().blocks.splice(i, 1)[0]);
+  if (act === 'down' && i < page().blocks.length - 1) page().blocks.splice(i + 1, 0, page().blocks.splice(i, 1)[0]);
   if (act === 'dup') {
-    const c = clone(state.blocks[i]); c.id = uid();
-    state.blocks.splice(i + 1, 0, c); selected = c.id;
+    const c = clone(page().blocks[i]); c.id = uid();
+    page().blocks.splice(i + 1, 0, c); selected = c.id;
   }
   if (act === 'del') {
-    if (!confirm(`「${BLOCKS[state.blocks[i].type].label}」を削除しますか？`)) return;
-    state.blocks.splice(i, 1);
-    if (selected === id) selected = state.blocks[Math.min(i, state.blocks.length - 1)]?.id || null;
+    if (!confirm(`「${BLOCKS[page().blocks[i].type].label}」を削除しますか？`)) return;
+    page().blocks.splice(i, 1);
+    if (selected === id) selected = page().blocks[Math.min(i, page().blocks.length - 1)]?.id || null;
   }
   refresh();
 });
@@ -713,9 +985,9 @@ let drag = null;   // {mode:'move', id} または {mode:'add', type}
 
 /* ヘッダーは先頭、フッターは末尾に固定されるので、その内側に収める */
 function clampIdx(i) {
-  const lo = state.blocks[0] && state.blocks[0].type === 'header' ? 1 : 0;
-  const fi = state.blocks.findIndex((b) => b.type === 'footer');
-  const hi = fi >= 0 ? fi : state.blocks.length;
+  const lo = page().blocks[0] && page().blocks[0].type === 'header' ? 1 : 0;
+  const fi = page().blocks.findIndex((b) => b.type === 'footer');
+  const hi = fi >= 0 ? fi : page().blocks.length;
   return Math.min(Math.max(i, lo), hi);
 }
 
@@ -771,16 +1043,16 @@ function performDrop(y) {
   let at = clampIdx(dropIndex(y));
 
   if (drag.mode === 'move') {
-    const from = state.blocks.findIndex((b) => b.id === drag.id);
+    const from = page().blocks.findIndex((b) => b.id === drag.id);
     if (from < 0) return clearDrag();
     if (at > from) at--;                       // 自分を抜いた分だけ詰まる
     if (at !== from) {
-      state.blocks.splice(at, 0, state.blocks.splice(from, 1)[0]);
+      page().blocks.splice(at, 0, page().blocks.splice(from, 1)[0]);
     }
     selected = drag.id;
   } else {
     const nb = makeBlock(drag.type);
-    state.blocks.splice(at, 0, nb);
+    page().blocks.splice(at, 0, nb);
     selected = nb.id;
     selectedEl = null;
   }
@@ -948,7 +1220,7 @@ const fitJS = (g) => `
 `;
 
 function galleryTypes() {
-  const exists = new Set(state.blocks.map((b) => b.type));
+  const exists = new Set(page().blocks.map((b) => b.type));
   const order = Object.keys(BLOCKS).filter((t) => BLOCKS[t].unique).concat(ADDABLE);
   return order.filter((t) => !(BLOCKS[t].unique && exists.has(t)))
     .filter((t) => addCat === 'all' || catOf(BLOCKS[t]) === addCat);
@@ -1319,7 +1591,7 @@ $('#iconFind').addEventListener('input', (e) => drawIconGrid(e.target.value));
 $('#iconGrid').addEventListener('click', (e) => {
   const k = e.target.closest('[data-ic]')?.dataset.ic;
   if (!k || !iconPick) return;
-  const b = state.blocks.find((x) => x.id === selected);
+  const b = page().blocks.find((x) => x.id === selected);
   if (b) {
     setPath(b.props, iconPick.replace(/^props\./, ''), k);
     renderEditor(); renderPreview(true); save(`icon:${iconPick}:${b.id}`);
@@ -1339,19 +1611,19 @@ function openDecoGallery(kind, current, onPick) {
 
   /* 見本は「いま編集中のヒーロー」から作る。文言も写真もそのまま使うので、
      自分のページでどう見えるかが分かる。 */
-  const b = state.blocks.find((x) => x.id === selected);
+  const b = page().blocks.find((x) => x.id === selected);
   const base = b && b.type === 'hero' ? b.props
-    : (state.blocks.find((x) => x.type === 'hero') || { props: BLOCKS.hero.defaults }).props;
+    : (page().blocks.find((x) => x.type === 'hero') || { props: BLOCKS.hero.defaults }).props;
 
   /* 形の見本は、いま選んでいるブロックの写真で作る。自分の写真で
      どう抜けるかが分かるように。写真がまだ無ければ目印の枠を出す。 */
-  const b0 = state.blocks.find((x) => x.id === selected) || { props: {} };
+  const b0 = page().blocks.find((x) => x.id === selected) || { props: {} };
 
   /* ヘッダーの見本は、いま使っているヘッダーの上にヒーローの頭を敷いて作る。
      すりガラスや無色は、下に何かが無いと違いが出ないため。 */
-  const hb = state.blocks.find((x) => x.type === 'header');
+  const hb = page().blocks.find((x) => x.type === 'header');
   const hprops = hb ? hb.props : BLOCKS.header.defaults;
-  const fb = state.blocks.find((x) => x.type === 'footer');
+  const fb = page().blocks.find((x) => x.type === 'footer');
   const fprops = fb ? fb.props : BLOCKS.footer.defaults;
 
   const cards = list.map(([key, label]) => {
@@ -1408,13 +1680,13 @@ $('#animClose').addEventListener('click', () => closeModal('#animModal'));
 
 function addBlock(type) {
   const nb = makeBlock(type);
-  let at = state.blocks.findIndex((b) => b.id === selected) + 1;
-  if (!at) at = state.blocks.length;
-  const fi = state.blocks.findIndex((b) => b.type === 'footer');
+  let at = page().blocks.findIndex((b) => b.id === selected) + 1;
+  if (!at) at = page().blocks.length;
+  const fi = page().blocks.findIndex((b) => b.type === 'footer');
   if (type !== 'footer' && fi >= 0 && at > fi) at = fi;   // フッターより下には入れない
   if (type === 'header') at = 0;
-  if (type === 'footer') at = state.blocks.length;
-  state.blocks.splice(at, 0, nb);
+  if (type === 'footer') at = page().blocks.length;
+  page().blocks.splice(at, 0, nb);
   selected = nb.id;
   selectedEl = null;
   closeModal('#addModal');
@@ -1454,6 +1726,84 @@ $('#catBar').addEventListener('click', (e) => {
 /* ================================================================
    右パネル：編集フォーム（fields から自動生成）
    ================================================================ */
+/* ================================================================
+   リンク先をえらぶ
+
+   URLを手で書かせない。ホームページを持っていない人にとって、
+   「#contact」も「tel:03-…」も知らない書きかたで、打ち間違えても
+   間違えたことに気づけない（押しても何も起きないだけ）。
+
+   何をしたいか（ページへ／この中の場所へ／電話／メール／外のサイト）を
+   選ぶと、その先は選択肢か、ふつうの電話番号・メールアドレスの入力になる。
+   持つ値は今までどおりの文字列のままなので、書き出したHTMLは変わらない。
+   ================================================================ */
+const LINK_KINDS = [
+  ['page', 'ページへ'],
+  ['anchor', 'このページの中へ'],
+  ['tel', '電話をかける'],
+  ['mail', 'メールを送る'],
+  ['url', '外のサイトへ'],
+  ['', 'リンクなし'],
+];
+
+function linkKind(v) {
+  const s = String(v || '');
+  if (!s) return '';
+  if (s.startsWith('page:')) return 'page';
+  if (s.startsWith('#')) return 'anchor';
+  if (s.startsWith('tel:')) return 'tel';
+  if (s.startsWith('mailto:')) return 'mail';
+  return 'url';
+}
+
+/* いまのサイトにあるアンカー（＃で飛べる場所）を集める */
+function anchorList() {
+  const out = [];
+  page().blocks.forEach((b) => {
+    if (b.props && b.props.anchor) out.push([`#${b.props.anchor}`, `${BLOCKS[b.type].label}（#${b.props.anchor}）`]);
+  });
+  return out;
+}
+
+function linkHTML(val, path) {
+  const kind = linkKind(val);
+  const sel = (opts, cur, extra = '') =>
+    `<select data-linkval="${path}"${extra}>${opts.map(([v, l]) =>
+      `<option value="${esc(v)}"${String(cur) === String(v) ? ' selected' : ''}>${esc(l)}</option>`).join('')}</select>`;
+
+  let body = '';
+  if (kind === 'page') {
+    const cur = val.slice(5);
+    const opts = state.pages.map((pg) => [pg.id, pg.name]);
+    body = state.pages.length > 1
+      ? sel(opts, cur)
+      : `<p class="hint">ページはホームだけです。「＋ ページを追加」で増やすと、ここから選べます。</p>`;
+  } else if (kind === 'anchor') {
+    const list = anchorList();
+    body = list.length
+      ? sel(list.concat(list.some(([v]) => v === val) ? [] : [[val, val]]), val)
+      : `<p class="hint">飛び先がまだありません。ブロックの「アンカーID」を付けると、ここから選べます。</p>`;
+  } else if (kind === 'tel') {
+    body = `<input type="tel" data-linkval="${path}" data-pre="tel:" value="${esc(val.slice(4))}" placeholder="03-0000-0000">`;
+  } else if (kind === 'mail') {
+    body = `<input type="email" data-linkval="${path}" data-pre="mailto:" value="${esc(val.slice(7))}" placeholder="hello@example.com">`;
+  } else if (kind === 'url') {
+    body = `<input type="url" data-linkval="${path}" value="${esc(val)}" placeholder="https://...">`;
+  }
+  return `<div class="lk"><select data-linkkind="${path}">${LINK_KINDS.map(([v, l]) =>
+      `<option value="${esc(v)}"${kind === v ? ' selected' : ''}>${esc(l)}</option>`).join('')}</select>${body}</div>`;
+}
+
+/* 種類を変えたら、その種類の初期値に置きかえる */
+function linkDefault(kind) {
+  if (kind === 'page') return `page:${state.pages[0].id}`;
+  if (kind === 'anchor') return anchorList()[0]?.[0] || '#';
+  if (kind === 'tel') return 'tel:';
+  if (kind === 'mail') return 'mailto:';
+  if (kind === 'url') return 'https://';
+  return '';
+}
+
 function inputHTML(f, val, path) {
   const p = `data-path="${path}"`;
   switch (f.type) {
@@ -1474,6 +1824,8 @@ function inputHTML(f, val, path) {
       return `<button class="pick wide ico-pick" data-iconpick="${path}">
         <span class="ico-prev">${iconSVG(val || 'wifi')}</span>${esc((ICONS[val] || {}).label || '選ぶ')}
       </button>`;
+    case 'link':
+      return linkHTML(String(val ?? ''), path);
     case 'mask':
       return `<button class="pick wide" data-mask="${path}">${val ? '別の形にする' : '形の画像を読み込む'}</button>
         ${val ? `<div class="mask-prev" style="-webkit-mask-image:url('${esc(val)}');mask-image:url('${esc(val)}')"></div>
@@ -1538,17 +1890,20 @@ function fieldHTML(f, props, base) {
    最初に見せるのは中身（文字・写真・リンク）だけにして、
    速さ・向き・大きさ・余白のような調整はたたんでおく。
    数タップで作り終える人の前に、全部を並べない。 */
+/* ボタンの行き先は、ここには入れない。どこへ飛ぶかはボタンの文字と
+   同じくらい大事な中身で、ページを足せるようになってからは
+   「打つもの」ではなく「選ぶもの」になったので、前に出す。 */
 const ADV_KEYS = new Set([
   'anchor', 'bg', 'cols', 'plate', 'plateShift',
   'speed', 'dir', 'size', 'ratio', 'scrollLen', 'decoStrength', 'decoLabel',
   'overlay', 'grain', 'sticky', 'height', 'sep', 'outline', 'auto', 'poster',
-  'ctaHref', 'href', 'action', 'method',
+  'action', 'method',
 ]);
 const isAdv = (f) => f.adv === true || ADV_KEYS.has(f.key);
 
 function renderEditor() {
   const box = $('#tab-edit');
-  const b = state.blocks.find((x) => x.id === selected);
+  const b = page().blocks.find((x) => x.id === selected);
   if (!b) {
     box.innerHTML = `<div class="empty">左の一覧、またはプレビューを<br>クリックしてブロックを選んでください。</div>`;
     return;
@@ -1659,7 +2014,7 @@ function textFillField(b) {
 }
 
 function setTextFill(val) {
-  const b = state.blocks.find((x) => x.id === selected);
+  const b = page().blocks.find((x) => x.id === selected);
   if (!b || !selectedEl) return;
   b.props.fills = b.props.fills || {};
   if (val) b.props.fills[selectedEl.role] = val;
@@ -1674,7 +2029,7 @@ $('#tab-edit').addEventListener('click', (e) => {
   /* 絵を選ぶ */
   const ip = e.target.closest('[data-iconpick]');
   if (ip) {
-    const b0 = state.blocks.find((x) => x.id === selected);
+    const b0 = page().blocks.find((x) => x.id === selected);
     const cur = b0 ? getPath(b0.props, ip.dataset.iconpick.replace(/^props\./, '')) : '';
     openIconGallery(ip.dataset.iconpick, cur);
     return;
@@ -1690,7 +2045,7 @@ $('#tab-edit').addEventListener('click', (e) => {
   const rp = e.target.closest('[data-repick]');
   if (rp) { openImagePicker(selected, rp.dataset.repick); return; }
   if (e.target.closest('[data-fitreset]') && selectedEl && selectedEl.kind === 'img') {
-    const b0 = state.blocks.find((x) => x.id === selected);
+    const b0 = page().blocks.find((x) => x.id === selected);
     if (b0) {
       setPath(b0.props, `${selectedEl.prop}Fit`, undefined);
       renderEditor(); renderPreview(true); save(`fit:${selectedEl.prop}:${selected}`);
@@ -1700,7 +2055,7 @@ $('#tab-edit').addEventListener('click', (e) => {
   /* フィールドに付いたサンプル一覧ボタン（いまは装飾のみ） */
   const fg = e.target.closest('[data-gal]');
   if (fg) {
-    const bb = state.blocks.find((x) => x.id === selected);
+    const bb = page().blocks.find((x) => x.id === selected);
     if (!bb) return;
     const kind = fg.dataset.gal;
     const key = fg.dataset.galpath.split('.').pop();
@@ -1715,10 +2070,10 @@ $('#tab-edit').addEventListener('click', (e) => {
 
   const ag = e.target.closest('[data-animgal]');
   if (ag && selectedEl) {
-    const b0 = state.blocks.find((x) => x.id === selected);
+    const b0 = page().blocks.find((x) => x.id === selected);
     const cur0 = ((b0 && b0.props.anims) || {})[selectedEl.role] || {};
     openAnimGallery(ag.dataset.animgal, cur0.a || 'none', (key) => {
-      const bb = state.blocks.find((x) => x.id === selected);
+      const bb = page().blocks.find((x) => x.id === selected);
       if (!bb) return;
       bb.props.anims = bb.props.anims || {};
       const c = Object.assign({}, bb.props.anims[selectedEl.role]);
@@ -1750,7 +2105,7 @@ $('#tab-edit').addEventListener('input', (e) => {
 
   const key = e.target.dataset.elk;
   if (!key || !selectedEl) return;
-  const b = state.blocks.find((x) => x.id === selected);
+  const b = page().blocks.find((x) => x.id === selected);
   if (!b) return;
   b.props.anims = b.props.anims || {};
   const cur = Object.assign({}, b.props.anims[selectedEl.role]);
@@ -1778,7 +2133,7 @@ function readEl(el) {
 $('#tab-edit').addEventListener('input', (e) => {
   const el = e.target;
   if (!el.dataset.path) return;   // 要素パネル（data-elk）は別のハンドラが処理する
-  const b = state.blocks.find((x) => x.id === selected);
+  const b = page().blocks.find((x) => x.id === selected);
   if (!b) return;
   setPath(b, el.dataset.path, readEl(el));
   if (el.type === 'range') el.parentElement.querySelector('.f-val').textContent = el.value + (el.dataset.suffix || '');
@@ -1791,13 +2146,35 @@ $('#tab-edit').addEventListener('input', (e) => {
 $('#tab-edit').addEventListener('change', (e) => {
   /* 文字の塗りは、ブロックの props ではなく要素ごとに持つので、道順を持たない */
   if (e.target.hasAttribute('data-txfill')) { setTextFill(e.target.value); return; }
+  if (e.target.dataset.linkkind !== undefined) return setLink(e.target.dataset.linkkind, linkDefault(e.target.value), true);
   if (!e.target.dataset.path) return;
   if (e.target.tagName === 'SELECT' || e.target.type === 'checkbox' || e.target.type === 'file') renderEditor();
 });
 
+/* ---- リンク先 ---- */
+function setLink(path, value, redraw) {
+  const b = page().blocks.find((x) => x.id === selected);
+  if (!b) return;
+  setPath(b.props, path.replace(/^props\./, ''), value);
+  if (redraw) renderEditor();
+  renderPreview(true);
+  save(`lk:${path}`);
+}
+$('#tab-edit').addEventListener('input', (e) => {
+  const path = e.target.dataset.linkval;
+  if (path === undefined) return;
+  setLink(path, (e.target.dataset.pre || '') + e.target.value, false);
+});
+$('#tab-edit').addEventListener('change', (e) => {
+  const path = e.target.dataset.linkval;
+  if (path === undefined || e.target.tagName !== 'SELECT') return;
+  const v = e.target.value;
+  setLink(path, linkKind(v) === 'anchor' || v.startsWith('#') ? v : `page:${v}`, false);
+});
+
 /* ---- 繰り返し項目の操作 ---- */
 $('#tab-edit').addEventListener('click', (e) => {
-  const b = state.blocks.find((x) => x.id === selected);
+  const b = page().blocks.find((x) => x.id === selected);
   if (!b) return;
 
   const fold = e.target.closest('.li-h');
@@ -1888,7 +2265,7 @@ async function toDataURL(file) {
 }
 
 async function setImage(blockId, prop, file) {
-  const b = state.blocks.find((x) => x.id === blockId);
+  const b = page().blocks.find((x) => x.id === blockId);
   if (!b || !file) return;
   if (!file.type.startsWith('image/')) { flash('画像ファイルを選んでください'); return; }
   flash('画像を読み込んでいます…');
@@ -1967,7 +2344,7 @@ async function fileToMask(file) {
 const FILL_MAX = 900;
 
 async function setFillImage(blockId, prop, file) {
-  const b = state.blocks.find((x) => x.id === blockId);
+  const b = page().blocks.find((x) => x.id === blockId);
   if (!b || !file) return;
   if (!file.type.startsWith('image/')) { flash('画像ファイルを選んでください'); return; }
   flash('画像を読み込んでいます…');
@@ -1994,7 +2371,7 @@ async function setFillImage(blockId, prop, file) {
 }
 
 async function setMask(blockId, prop, file) {
-  const b = state.blocks.find((x) => x.id === blockId);
+  const b = page().blocks.find((x) => x.id === blockId);
   if (!b || !file) return;
   if (!file.type.startsWith('image/')) { flash('画像ファイルを選んでください'); return; }
   flash('形を読み取っています…');
@@ -2014,7 +2391,7 @@ document.addEventListener('click', (e) => {
   if (mb) { openImagePicker(selected, mb.dataset.mask.replace(/^props\./, ''), 'mask'); return; }
   const mc = e.target.closest('[data-maskclear]');
   if (mc) {
-    const b = state.blocks.find((x) => x.id === selected);
+    const b = page().blocks.find((x) => x.id === selected);
     if (!b) return;
     setPath(b.props, mc.dataset.maskclear.replace(/^props\./, ''), '');
     b.props.shape = '';
@@ -2131,7 +2508,7 @@ function cutRender() {
 }
 
 function openCutout(blockId, prop) {
-  const b = state.blocks.find((x) => x.id === blockId);
+  const b = page().blocks.find((x) => x.id === blockId);
   const src = b && getPath(b.props, prop);
   if (!src) return;
   const im = new Image();
@@ -2181,7 +2558,7 @@ $('#cutApply').addEventListener('click', () => {
   if (!cutState) return;
   const { blockId, prop } = cutState;
   const url = cutSmall($('#cutCanvas'));
-  const b = state.blocks.find((x) => x.id === blockId);
+  const b = page().blocks.find((x) => x.id === blockId);
   if (b) {
     setPath(b.props, prop, url);
     renderEditor(); renderPreview(true); save(`cut:${prop}:${blockId}`);
@@ -2289,20 +2666,95 @@ function renderDesign() {
     + `<button class="add-btn" id="btnReplayAnim" style="margin-top:8px">▶ プレビューで再生</button>`;
 }
 function renderPage() {
-  $('#tab-page').innerHTML = `
-    <div class="sec-label">ページ情報（ブラウザのタブ名・検索結果に出ます）</div>
-    <div class="f"><label>ページタイトル</label><input type="text" data-path="meta.title" value="${esc(state.meta.title)}"></div>
-    <div class="f"><label>ページの説明</label><textarea data-path="meta.description" rows="4">${esc(state.meta.description)}</textarea></div>
+  const pg = page();
+  const many = state.pages.length > 1;
+  const i = state.pages.indexOf(pg);
+  /* ページが1枚なら「サイト」も「ページ」も同じものなので、分けて見せない。
+     2枚目ができた時点で、はじめて「このページ」と「サイト全体」を分ける */
+  const perPage = many ? `
+    <div class="sec-label">このページ（${esc(pg.name)}）</div>
+    <div class="f"><label>ページの名前</label>
+      <input type="text" id="pgRename" value="${esc(pg.name)}"${i === 0 ? ' disabled' : ''}></div>
+    ${i === 0 ? '<div class="hint">ホームの名前とアドレスは変えられません。</div>' : `
+    <div class="f"><label>アドレス</label>
+      <div class="pg-path"><span>…/</span><input type="text" id="pgRepath" value="${esc(pg.path)}"><span>.html</span></div></div>`}
+    <div class="f"><label>タブに出す名前（空ならページ名＋サイト名）</label>
+      <input type="text" data-page="title" value="${esc(pg.title)}" placeholder="${esc(pageTitle(pg))}"></div>
+    <div class="f"><label>このページの説明（空ならサイトの説明）</label>
+      <textarea data-page="desc" rows="3" placeholder="${esc(pageDesc(pg))}">${esc(pg.desc)}</textarea></div>
+    <div class="pg-ops">
+      <button class="tb-btn" data-pgact="up"${i <= 1 ? ' disabled' : ''}>← 前へ</button>
+      <button class="tb-btn" data-pgact="down"${i === 0 || i === state.pages.length - 1 ? ' disabled' : ''}>後ろへ →</button>
+      <button class="tb-btn" data-pgact="dup">複製する</button>
+      <button class="tb-btn" data-pgact="del"${i === 0 ? ' disabled' : ''}>このページを削除</button>
+    </div>` : '';
+
+  $('#tab-page').innerHTML = perPage + `
+    <div class="sec-label">サイト全体（ブラウザのタブ名・検索結果に出ます）</div>
+    <div class="f"><label>${many ? 'サイトの名前' : 'ページタイトル'}</label><input type="text" data-path="meta.title" value="${esc(state.meta.title)}"></div>
+    <div class="f"><label>${many ? 'サイトの説明' : 'ページの説明'}</label><textarea data-path="meta.description" rows="4">${esc(state.meta.description)}</textarea></div>
     <div class="f"><label>言語</label><input type="text" data-path="meta.lang" value="${esc(state.meta.lang)}"></div>
     <div class="sec-label">つかいかた</div>
     <div class="hint" style="line-height:2">
       ・左でブロックの並べかえ・追加・削除<br>
       ・プレビューを直接クリックしても選べます<br>
       ・「アンカーID」を付けると、メニューから <b>#id</b> でリンクできます<br>
-      ・内容はこのブラウザに自動保存されます<br>
-      ・完成したら「HTMLを書き出す」で1ファイルとして保存できます
+      ・ボタンやメニューの「リンク先」から、ほかのページを選べます<br>
+      ・内容はこのブラウザに自動保存されます${many ? `<br>
+      ・保存すると、${state.pages.length}枚ぶんをまとめたZIPになります` : ''}
     </div>`;
 }
+
+/* ページの名前・アドレス・並び・削除 */
+$('#tab-page').addEventListener('input', (e) => {
+  const pg = page();
+  if (e.target.id === 'pgRename') { pg.name = e.target.value; renderPageBar(); renderPreview(); return save('pg:name'); }
+  if (e.target.id === 'pgRepath') {
+    e.target.value = e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '');
+    pg.path = e.target.value;
+    renderPageBar(); save('pg:path');
+    return;
+  }
+  const k = e.target.dataset.page;
+  if (k) { pg[k] = e.target.value; save(`pg:${k}`); }
+});
+$('#tab-page').addEventListener('change', (e) => {
+  /* 打ち終わったところで、空や重なりを直す。打っている途中に直すと入力が飛ぶ */
+  if (e.target.id !== 'pgRepath') return;
+  const pg = page();
+  pg.path = slugPath(e.target.value || pg.name, state.pages.filter((x) => x !== pg).map((x) => x.path));
+  e.target.value = pg.path;
+  renderPageBar(); renderPreview(true); save('pg:path');
+});
+$('#tab-page').addEventListener('click', (e) => {
+  const act = e.target.closest('[data-pgact]')?.dataset.pgact;
+  if (!act) return;
+  const i = pageIdx;
+  const pg = state.pages[i];
+  if (act === 'up' && i > 1) { state.pages.splice(i - 1, 0, state.pages.splice(i, 1)[0]); pageIdx = i - 1; }
+  if (act === 'down' && i > 0 && i < state.pages.length - 1) { state.pages.splice(i + 1, 0, state.pages.splice(i, 1)[0]); pageIdx = i + 1; }
+  if (act === 'dup') {
+    const c = clone(pg);
+    c.id = uid();
+    c.name = `${pg.name}のコピー`;
+    c.path = slugPath(c.name, state.pages.map((x) => x.path));
+    c.blocks.forEach((b) => { b.id = uid(); });
+    state.pages.splice(i + 1, 0, c);
+    pageIdx = i + 1;
+  }
+  if (act === 'del') {
+    if (i === 0) return;
+    const linked = allBlocks(state).filter((b) => JSON.stringify(b.props).includes(`page:${pg.id}`)).length;
+    const warn = linked ? `\n\nこのページへのリンクが${linked}か所あります。リンクは効かなくなります。` : '';
+    if (!confirm(`「${pg.name}」を削除しますか？${warn}`)) return;
+    state.pages.splice(i, 1);
+    pageIdx = Math.min(i, state.pages.length - 1);
+  }
+  selected = page().blocks[1]?.id || page().blocks[0]?.id || null;
+  selectedEl = null;
+  refresh();
+  save(`pg:${act}`);
+});
 
 function themeInput(e) {
   const el = e.target;
@@ -2340,7 +2792,7 @@ $('#tab-design').addEventListener('change', (e) => {
   const path = e.target.dataset.path || '';
   if (path.startsWith('motion.') || path === 'style' || path === 'rules') renderPreview(true);
 });
-$('#tab-page').addEventListener('input', themeInput);
+$('#tab-page').addEventListener('input', themeInput);   // サイト全体の欄
 
 /* ---- タブ切り替え ---- */
 $$('.tabs button').forEach((b) => b.addEventListener('click', () => switchTab(b.dataset.tab)));
@@ -2424,7 +2876,7 @@ function currentPaletteKey() {
 
 function renderPalGrid() {
   /* いまのページの上のほうを、そのまま色だけ変えて見せる */
-  const sample = state.blocks.slice(0, 3)
+  const sample = page().blocks.slice(0, 3)
     .map((b) => BLOCKS[b.type].render(b.props)).join('');
   const cur = currentPaletteKey();
 
@@ -2554,7 +3006,7 @@ async function ezRebuild() {
   if (ezPhotos.length) st.theme = await paletteFromPhotos(st.theme, ezPhotos);
   fillPhotos(st, ezPhotos);
   state = st;
-  selected = state.blocks[1]?.id || state.blocks[0]?.id;
+  selected = page().blocks[1]?.id || page().blocks[0]?.id;
   selectedEl = null;
   closed.clear();
   refresh();
@@ -2663,7 +3115,7 @@ let bldToFooter = false;
 
 const bldStep = () => {
   if (bldToFooter) return 'footer';
-  return state && state.blocks.some((b) => b.type === 'hero' || b.type === 'collage')
+  return state && page().blocks.some((b) => b.type === 'hero' || b.type === 'collage')
     ? 'section' : 'hero';
 };
 
@@ -2677,7 +3129,7 @@ function bldList() {
 
 function renderBldStrip() {
   /* header と footer は最初から入っていて選ぶものではないので出さない */
-  const picked = state.blocks.filter((b) => b.type !== 'header' && b.type !== 'footer');
+  const picked = page().blocks.filter((b) => b.type !== 'header' && b.type !== 'footer');
   $('#bldStrip').innerHTML = picked
     .map((b, i) => `<span><i>${i + 1}</i>${esc(bldNames.get(b.id) || BLOCKS[b.type].label)}</span>`)
     .join('');
@@ -2748,7 +3200,7 @@ function pickPreset(key) {
 
   /* フッターは1ページに1つ。積まずに、いまのフッターの見た目だけを変える */
   if (p.type === 'footer') {
-    const f = state.blocks.find((b) => b.type === 'footer');
+    const f = page().blocks.find((b) => b.type === 'footer');
     if (f) {
       Object.assign(f.props, clone(p.props));
       selected = f.id;
@@ -2761,8 +3213,8 @@ function pickPreset(key) {
 
   const nb = makeBlock(p.type, p.props);
   bldNames.set(nb.id, p.label);
-  const fi = state.blocks.findIndex((b) => b.type === 'footer');
-  state.blocks.splice(fi < 0 ? state.blocks.length : fi, 0, nb);
+  const fi = page().blocks.findIndex((b) => b.type === 'footer');
+  page().blocks.splice(fi < 0 ? page().blocks.length : fi, 0, nb);
   selected = nb.id;
   selectedEl = null;
   refresh();          // 後ろのプレビューも伸ばして、積み上がりが見えるようにする
@@ -2771,12 +3223,12 @@ function pickPreset(key) {
 
 function bldUndo() {
   if (bldStep() === 'footer') { bldToFooter = false; refreshBld(); return; }
-  const picked = state.blocks.filter((b) => b.type !== 'header' && b.type !== 'footer');
+  const picked = page().blocks.filter((b) => b.type !== 'header' && b.type !== 'footer');
   const last = picked[picked.length - 1];
   if (!last) return;
-  state.blocks = state.blocks.filter((b) => b.id !== last.id);
+  page().blocks = page().blocks.filter((b) => b.id !== last.id);
   bldNames.delete(last.id);
-  selected = state.blocks[0]?.id || null;
+  selected = page().blocks[0]?.id || null;
   selectedEl = null;
   refresh();
   refreshBld();
@@ -2788,7 +3240,7 @@ function openBuildFlow() {
   bldToFooter = false;
   bldNames.clear();
   state = buildCustomState();
-  selected = state.blocks[0].id;
+  selected = page().blocks[0].id;
   selectedEl = null;
   closed.clear();
   closeModal('#tplModal');
@@ -2808,7 +3260,7 @@ $('#bldCatBar').addEventListener('click', (e) => {
   renderBldGallery();
 });
 $('#bldCancel').addEventListener('click', () => {
-  if (bldBefore) { state = bldBefore; selected = state.blocks[1]?.id || state.blocks[0]?.id; }
+  if (bldBefore) { state = bldBefore; selected = page().blocks[1]?.id || page().blocks[0]?.id; }
   bldBefore = null;
   selectedEl = null;
   closeModal('#buildModal');
@@ -2826,7 +3278,7 @@ $('#bldDone').addEventListener('click', () => {
   if (isMobile()) closeSheets();
   refresh();
   resetHistory();     // 組み上げたところを起点にする
-  const n = state.blocks.filter((b) => b.type !== 'header' && b.type !== 'footer').length;
+  const n = page().blocks.filter((b) => b.type !== 'header' && b.type !== 'footer').length;
   flash(`${n}段のページを組みました。ここから中身を書き替えられます`);
 });
 
@@ -2840,7 +3292,7 @@ $('#tplClose').addEventListener('click', () => closeModal('#tplModal'));
 function pickTemplate(k) {
   if (askBeforeSwitch && !confirm('テンプレートを切り替えると、いまの内容は置きかわります。よろしいですか？')) return;
   state = buildState(k);
-  selected = state.blocks[1]?.id || state.blocks[0]?.id;
+  selected = page().blocks[1]?.id || page().blocks[0]?.id;
   selectedEl = null;
   closed.clear();
   closeModal('#tplModal');
@@ -2853,14 +3305,26 @@ function pickTemplate(k) {
    書き出し / コード表示 / リセット / 画面幅
    ================================================================ */
 $('#btnExport').addEventListener('click', () => {
-  const blob = new Blob([fullHTML()], { type: 'text/html;charset=utf-8' });
+  const files = siteFiles(false);
+  /* 1枚ならこれまでどおり index.html だけ。2枚以上のときは、
+     続けてダウンロードさせようとすると2つ目以降で端末が止めるので、
+     ZIPにまとめて1回で渡す。置き場所への持ち込みもZIPのほうが早い */
+  const many = files.length > 1;
+  const blob = many
+    ? makeZip(files.map((f) => ({ name: f.name, text: f.html })))
+    : new Blob([files[0].html], { type: 'text/html;charset=utf-8' });
+  const name = many
+    ? `${(state.meta.title || 'mysite').replace(/[\\/:*?"<>|\s]+/g, '-').slice(0, 24)}.zip`
+    : 'index.html';
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = 'index.html';
+  a.download = name;
   a.click();
   setTimeout(() => URL.revokeObjectURL(a.href), 1000);
   /* このHTMLが控えも兼ねていることは、伝えないと気づけない */
-  flash('index.html を書き出しました。このファイルを開けば続きから編集できます');
+  flash(many
+    ? `${name} を書き出しました（${files.length}ページ）。中の index.html を開けば続きから編集できます`
+    : 'index.html を書き出しました。このファイルを開けば続きから編集できます');
 });
 /* ================================================================
    公開する
@@ -2926,7 +3390,7 @@ const HOSTS = [
    設定が空なら、この道は選択肢に出さない。 */
 const cloudReady = () => typeof PUBLISH === 'object' && !!PUBLISH.endpoint;
 
-async function postSite(html) {
+async function postSite(files) {
   let r;
   try {
     r = await fetch(PUBLISH.endpoint, {
@@ -2936,7 +3400,10 @@ async function postSite(html) {
         siteId: state.meta.siteId || '',
         editToken: state.meta.editToken || '',
         title: state.meta.title || '',
-        html,
+        /* ページが1枚のときは html だけ送る。前からある受け口を
+           そのまま使えるので、古い版の受け口でも公開できる */
+        ...(files.length === 1 ? { html: files[0].html }
+                               : { pages: files.map((f) => ({ path: f.path, html: f.html })) }),
       }),
     });
   } catch {
@@ -2952,7 +3419,7 @@ async function postSite(html) {
 
 async function publishToCloud() {
   const first = !state.meta.siteId;
-  let res = await postSite(fullHTML(true));
+  let res = await postSite(siteFiles(true));
 
   state.meta.siteId = res.siteId;
   if (res.editToken) state.meta.editToken = res.editToken;
@@ -2960,7 +3427,7 @@ async function publishToCloud() {
 
   /* 初回はアドレスが決まる前に送っているので、canonical が入っていない。
      決まったアドレスを入れて、もう一度だけ送り直す。 */
-  if (first) { try { await postSite(fullHTML(true)); } catch { /* 中身は載っているので続行 */ } }
+  if (first) { try { await postSite(siteFiles(true)); } catch { /* 中身は載っているので続行 */ } }
 
   save('publish');
   return res.url;
@@ -3118,13 +3585,18 @@ async function openSiteFile(file) {
   try {
     s = stateFromHTML(await file.text());
   } catch { /* 下のメッセージへ */ }
+  if (s === 'sub') {
+    flash('これは2ページ目以降のファイルです。index.html を読み込んでください');
+    return;
+  }
   if (!s) {
     flash('このHTMLはこのツールで作ったものではないようです');
     return;
   }
   if (!confirm('読み込むと、いまの内容は置きかわります。よろしいですか？')) return;
   state = migrate(s);
-  selected = state.blocks[1]?.id || state.blocks[0]?.id;
+  pageIdx = 0;
+  selected = page().blocks[1]?.id || page().blocks[0]?.id;
   selectedEl = null;
   closed.clear();
   closeModal('#easyModal');
@@ -3236,14 +3708,14 @@ addEventListener('resize', () => { if (!isMobile()) closeSheets(); });
   const saved = load();
   if (saved) {
     state = saved;
-    selected = state.blocks[1]?.id || state.blocks[0]?.id;
+    selected = page().blocks[1]?.id || page().blocks[0]?.id;
     refresh();
     resetHistory();
   } else {
     /* 初回はかんたんモードを正面に出す。
        テンプレート一覧は、そこから「テンプレートから選ぶ」で行ける。 */
     state = buildState('corporate');
-    selected = state.blocks[1].id;
+    selected = page().blocks[1].id;
     refresh();
     resetHistory();
     openEasy();

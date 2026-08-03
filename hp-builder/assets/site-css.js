@@ -1636,10 +1636,22 @@ a:not(.btn):not(.logo){transition:opacity .5s cubic-bezier(.165,.84,.44,1)}
   .cb{clip-path:none!important}
   .hero.dk-depth .hero-bg img,.hero.dk-depth .hero-in{transform:none!important}
 }
+
+/* ---------- フォームの送信結果と、機械よけの欄 ----------
+   機械よけ（honeypot）は、人には見えないが自動で埋める道具には見える欄。
+   ここが埋まっていたら人ではないので、受け口で静かに捨てる。
+   display:none にすると見つけられて避けられるので、画面の外へ出す。 */
+.form{position:relative}
+.fm-hp{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
+.fm-msg{margin:12px 0 0;font-size:14px;line-height:1.8;min-height:1px}
+.fm-msg.ok{color:var(--c-primary);font-weight:700}
+.fm-msg.ng{color:#c0392b;font-weight:700}
 `;
 
 /* 書き出したHTMLでも動く最小限のJS
-   ① ハンバーガーメニュー ② 文字アニメーション ③ ブロックの出現 */
+   ① ハンバーガーメニュー ② 文字アニメーション ③ ブロックの出現
+   ④ お問い合わせフォームの送信 */
+
 const SITE_JS = `
 (function(){
   /* ---------- ハンバーガーメニュー ---------- */
@@ -1655,6 +1667,51 @@ const SITE_JS = `
   document.querySelectorAll('.hdr.bar-over').forEach(function(h){
     var nx = h.nextElementSibling;
     if(nx && nx.matches('.hero.cover, .hsc.cover, .collage')) h.classList.add('on-photo');
+  });
+
+  /* ---------- お問い合わせフォーム ----------
+     押した人を待たせないよう、送っている間はボタンを止めて言葉を出す。
+     つながらなかったときに黙って終わると、送れたと思って待ってしまう。 */
+  /* 届け先がまだ決まっていないフォームは、そのままだと押した瞬間に
+     ページが読み直され、打った内容が黙って消える。送れないなら
+     送れないと言って、書いたものは残す。 */
+  document.querySelectorAll('form.form[data-form-wait]').forEach(function(f){
+    f.addEventListener('submit', function(e){
+      e.preventDefault();
+      var m = f.querySelector('.fm-msg');
+      if(m){ m.className='fm-msg ng'; m.textContent='ただいま受付を準備中です。お手数ですが、お電話でご連絡ください。'; }
+    });
+  });
+
+  document.querySelectorAll('form.form[data-form]').forEach(function(f){
+    var btn = f.querySelector('button[type=submit]'), msg = f.querySelector('.fm-msg');
+    var label = btn ? btn.textContent : '';
+    f.addEventListener('submit', function(e){
+      e.preventDefault();
+      if(f.dataset.sending) return;
+      f.dataset.sending = '1';
+      if(btn){ btn.disabled = true; btn.textContent = '送信中…'; }
+      if(msg){ msg.className = 'fm-msg'; msg.textContent = ''; }
+      var fd = new FormData(f);
+      fetch(f.dataset.form, {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ siteId:f.dataset.site, name:fd.get('name'),
+          email:fd.get('email'), message:fd.get('message'), company:fd.get('company') })
+      }).then(function(r){ return r.json().then(function(j){ return {ok:r.ok, j:j}; }); })
+        .then(function(res){
+          if(!res.ok) throw new Error(res.j && res.j.error);
+          f.reset();
+          if(msg){ msg.className = 'fm-msg ok'; msg.textContent = f.dataset.thanks || 'お問い合わせありがとうございます。'; }
+        })
+        .catch(function(err){
+          if(msg){ msg.className = 'fm-msg ng';
+            msg.textContent = (err && err.message) || '送れませんでした。電波の入るところでもう一度お試しください。'; }
+        })
+        .then(function(){
+          delete f.dataset.sending;
+          if(btn){ btn.disabled = false; btn.textContent = label; }
+        });
+    });
   });
 
   var d=document, body=d.body;

@@ -31,6 +31,7 @@
     <div class="more-wrap">
       <button class="tb-btn ico" id="btnMore" aria-label="そのほか" aria-expanded="false">…</button>
       <div class="more-menu" id="moreMenu" hidden>
+        <button id="btnInbox">届いたお問い合わせ</button>
         <button id="btnOpen">保存したファイルから続ける</button>
         <button id="btnCode">中のHTMLを見る</button>
         <button id="btnReset" class="danger">まっさらから作り直す</button>
@@ -42,9 +43,11 @@
   <aside class="panel left" id="panelLeft">
     <button class="sheet-close" data-closesheet aria-label="閉じる"></button>
     <div class="panel-h">ページの構成</div>
+    <div id="pageBar" class="pagebar" hidden></div>
     <div id="blockList" class="blocklist"></div>
     <div class="add-wrap">
       <button class="add-btn" id="btnAdd">＋ ブロックを追加</button>
+      <button class="add-btn sub" id="btnAddPage">＋ ページを追加</button>
     </div>
   </aside>
 
@@ -183,6 +186,43 @@
   </div>
 </div>
 
+<!-- ================= 届いたお問い合わせ ================= -->
+<div class="modal" id="inboxModal" hidden>
+  <div class="modal-box wide">
+    <h2>届いたお問い合わせ</h2>
+    <p class="modal-sub" id="inboxSub"></p>
+    <div id="inboxList" class="inbox"></div>
+    <div class="modal-foot">
+      <button class="tb-btn" id="inboxReload">読み直す</button>
+      <button class="tb-btn" id="inboxClose">閉じる</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= ページを追加 ================= -->
+<div class="modal" id="pageModal" hidden>
+  <div class="modal-box">
+    <h2>ページを追加</h2>
+    <p class="modal-sub">ヘッダーとフッターは、いまのホームのものをそのまま使います。</p>
+    <div class="f"><label>ページの名前</label>
+      <input type="text" id="pgName" placeholder="会社概要" autocomplete="off"></div>
+    <div class="f"><label>アドレス</label>
+      <div class="pg-path"><span>…/</span><input type="text" id="pgPath" placeholder="about" autocomplete="off"><span>.html</span></div>
+      <small class="hint">英数字とハイフンだけ。名前から自動で作られます。</small></div>
+    <div class="sec-label">中身のはじまり</div>
+    <div class="pg-kinds" id="pgKinds">
+      <button data-kind="blank" class="on"><b>まっさら</b><small>あとから足す</small></button>
+      <button data-kind="about"><b>紹介</b><small>写真＋文章と、3つのカード</small></button>
+      <button data-kind="menu"><b>お品書き</b><small>品名と値段の一覧</small></button>
+      <button data-kind="contact"><b>お問い合わせ</b><small>連絡先と入力フォーム</small></button>
+    </div>
+    <div class="modal-foot">
+      <button class="tb-btn" id="pgCancel">やめる</button>
+      <button class="tb-btn primary" id="pgMake">このページを作る</button>
+    </div>
+  </div>
+</div>
+
 <!-- ================= 背景をぬく ================= -->
 <div class="modal" id="cutModal" hidden>
   <div class="modal-box">
@@ -257,6 +297,7 @@
 <script src="assets/shape-masks.js"></script>
 <script src="assets/text-fills.js"></script>
 <script src="assets/icons.js"></script>
+<script src="assets/zip.js"></script>
 <script src="assets/blocks.js"></script>
 <script src="assets/templates.js"></script>
 <script src="assets/publish-config.js"></script>
