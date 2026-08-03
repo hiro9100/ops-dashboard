@@ -1127,6 +1127,14 @@ body{margin:0;background:#0d1016;padding:14px;
 .dc-scale .hdr-in{height:72px}
 /* ヘッダーの見本は、バーとその下が少し見えれば足りる */
 .dc-hdr{height:96px}
+/* 形の見本は、抜けかたが分かればよい。数が多いので小さめに並べて、
+   ひと目で見比べられるようにする */
+.dg.small{grid-template-columns:repeat(auto-fill,196px)}
+.dc-shape{height:124px;overflow:hidden}
+/* 小さいカードに合わせて、見本の縮尺も落とす。
+   合わせないと右と下が切れて、形が分からなくなる。 */
+.dc-shape .dc-scale{width:1100px;transform:scale(.176)}
+.dc-shape .about-media{background:linear-gradient(135deg,var(--c-primary),var(--c-accent))}
 .dc-hdr .hero{min-height:420px}
 .dc-meta{padding:10px 12px 12px;color:#e7ebf0}
 .dc-meta b{font-size:13px;display:block}
@@ -1178,6 +1186,31 @@ const HDR_ABOUT = {
   float: '角の丸い島が浮きます。軽く見せたいとき。',
 };
 
+const SHAPE_ABOUT = {
+  '': '切り抜きなし。枠のかたちのまま出ます。',
+  round: '角を大きく丸めます。やわらかい印象に。',
+  circle: '真ん丸に抜きます。人の顔や商品の1枚に。',
+  egg: 'たまご形。丸より少しやわらかい。',
+  diamond: '角の丸いひし形。斜めに置いたような形。',
+  arch: '上が半円のアーチ。入口や建物の写真と相性がいい。',
+  leaf: '対角の2隅だけ大きく丸めた木の葉形。',
+  hex: '六角形。かたく、図鑑のように並べたいとき。',
+  slant: '下辺を斜めに切ります。流れが出ます。',
+  notch: '右上の角を四角く欠きます。',
+  step: '大小2つの四角をずらして重ねた形。',
+  ticket: '左右がへこんだチケット形。',
+  cross: '丸みのある十字。',
+  sparkle: '4点のきらめき。差し色の1枚に。',
+  slats: '4本の柱。上下の丸みが交互に入れかわります。',
+  arches: '3連のアーチ。',
+  wave: '下の辺が波打ちます。',
+  blob: '手で描いたような、まるいかたまり。',
+  dots: '丸が3×3でつながった形。',
+  bars: '斜めの帯が重なった形。',
+  wavebar: '縦の棒が並んだ形。音の波のように。',
+  own: '形の画像を読み込むと、その形どおりに抜きます。',
+};
+
 const GAL_KINDS = {
   deco: { list: () => HERO_DECOS, about: DECO_ABOUT, what: '装飾',
     title: 'ヒーローの装飾を選ぶ',
@@ -1185,6 +1218,9 @@ const GAL_KINDS = {
   scroll: { list: () => HERO_SCROLLS, about: SCROLL_ABOUT, what: 'スクロール連動',
     title: 'スクロール連動のしかたを選ぶ',
     sub: 'スクロールの途中の一場面で止めて並べています。' },
+  shape: { list: () => FIELD.shape.options, about: SHAPE_ABOUT, what: '写真の形',
+    title: '写真の形を選ぶ',
+    sub: 'いまの写真で、抜けかたを並べています。' },
   hdr: { list: () => HDR_BARS, about: HDR_ABOUT, what: 'ヘッダーのバー',
     title: 'ヘッダーのバーを選ぶ',
     sub: 'いまのヘッダーを、それぞれの型で出しています。下はヒーローの頭です。' },
@@ -1194,6 +1230,15 @@ let decoPick = null;
 
 /* kind: 'deco'（装飾）/ 'scroll'（スクロール連動）/ 'hdr'（ヘッダーのバー）。
    どれも「上のほうを縮めて並べる」点は同じなので、一覧は共通にする。 */
+/* そのブロックが持っている写真を1枚だけ拾う（見本用） */
+function firstImage(props) {
+  for (const k of ['image', 'imageA', 'imageB']) if (props[k]) return props[k];
+  for (const list of ['items', 'photos']) {
+    for (const it of props[list] || []) if (it.image || it.src) return it.image || it.src;
+  }
+  return '';
+}
+
 function openDecoGallery(kind, current, onPick) {
   decoPick = onPick;
   const k = GAL_KINDS[kind] || GAL_KINDS.deco;
@@ -1208,6 +1253,10 @@ function openDecoGallery(kind, current, onPick) {
   const base = b && b.type === 'hero' ? b.props
     : (state.blocks.find((x) => x.type === 'hero') || { props: BLOCKS.hero.defaults }).props;
 
+  /* 形の見本は、いま選んでいるブロックの写真で作る。自分の写真で
+     どう抜けるかが分かるように。写真がまだ無ければ目印の枠を出す。 */
+  const b0 = state.blocks.find((x) => x.id === selected) || { props: {} };
+
   /* ヘッダーの見本は、いま使っているヘッダーの上にヒーローの頭を敷いて作る。
      すりガラスや無色は、下に何かが無いと違いが出ないため。 */
   const hb = state.blocks.find((x) => x.type === 'header');
@@ -1215,7 +1264,15 @@ function openDecoGallery(kind, current, onPick) {
 
   const cards = list.map(([key, label]) => {
     let sample;
-    if (kind === 'hdr') {
+    if (kind === 'shape') {
+      /* いま選んでいるブロックの写真を、その形で抜いて並べる。
+         枠は生成サイトと同じ .about-media を使うので、実物どおりに出る。 */
+      const im = firstImage(b0.props);
+      sample = `<div class="${key ? `shp-${esc(key)}` : ''}" style="width:1100px${
+        key === 'own' && b0.props.shapeMask ? `;--shape:url('${esc(b0.props.shapeMask)}')` : ''}">
+        <div class="about-media" style="aspect-ratio:16/10">${
+          im ? `<img src="${esc(im)}" alt="">` : '<span class="ph"></span>'}</div></div>`;
+    } else if (kind === 'hdr') {
       sample = BLOCKS.header.render(Object.assign({}, hprops, { bar: key, sticky: false }))
         + BLOCKS.hero.render(Object.assign({}, base,
           { anchor: '', anims: {}, scroll: 'none', layout: 'cover' }));
@@ -1228,15 +1285,15 @@ function openDecoGallery(kind, current, onPick) {
     const frozen = kind === 'scroll' && key !== 'none' ? ' style="--p:.45"' : '';
     return `<div class="dc${key === current ? ' on' : ''}" data-k="${esc(key)}" role="button" tabindex="0">
       <span class="dc-hit"></span>
-      <div class="dc-prev${kind === 'hdr' ? ' dc-hdr' : ''}">
+      <div class="dc-prev${kind === 'hdr' ? ' dc-hdr' : ''}${kind === 'shape' ? ' dc-shape' : ''}">
         <div class="dc-scale ${esc(bodyClass())}"${frozen}>${sample}</div></div>
       <div class="dc-meta"><b>${esc(label)}</b><small>${esc(about[key] || '')}</small></div>
     </div>`;
   }).join('');
 
   $('#animFrame').srcdoc = `<!DOCTYPE html><html lang="ja"><head><meta charset="utf-8">
-<style>${themeCSS(state.theme)}\n${SITE_CSS}\n${DECO_GAL_CSS}</style></head>
-<body class="${esc(bodyClass())}"><div class="dg">${cards}</div>
+<style>${themeCSS(state.theme)}\n${SITE_CSS}\n${shapeMaskCSS(Object.keys(SHAPE_MASKS))}\n${DECO_GAL_CSS}</style></head>
+<body class="${esc(bodyClass())}"><div class="dg${kind === 'shape' ? ' small' : ''}">${cards}</div>
 <script>${SITE_JS}<\/script><script>${DECO_GAL_JS}<\/script></body></html>`;
   openModal('#animModal');
 }

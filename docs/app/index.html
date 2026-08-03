@@ -2018,7 +2018,8 @@ a:not(.btn):not(.logo){transition:opacity .5s cubic-bezier(.165,.84,.44,1)}
    下地の色が敷いてあるので、img だけを抜くと下地が形の外に残る。
    ========================================================== */
 :is(.shp-round,.shp-circle,.shp-arch,.shp-leaf,.shp-hex,.shp-slant,.shp-egg,
-  .shp-slats,.shp-arches,.shp-wave,.shp-blob)
+  .shp-slats,.shp-arches,.shp-wave,.shp-blob,
+  .shp-step,.shp-notch,.shp-ticket,.shp-sparkle,.shp-cross,.shp-diamond)
   :is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic){
   /* 角丸と重ねると形が濁るので、抜くときは角丸を落とす */
   border-radius:0
@@ -2080,6 +2081,55 @@ a:not(.btn):not(.logo){transition:opacity .5s cubic-bezier(.165,.84,.44,1)}
   border-radius:0;
   -webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M52 1 C80 -2 99 18 97 45 C95 72 78 99 49 98 C21 97 1 77 2 48 C3 21 24 4 52 1 Z' fill='%23000'/%3E%3C/svg%3E");
   mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M52 1 C80 -2 99 18 97 45 C95 72 78 99 49 98 C21 97 1 77 2 48 C3 21 24 4 52 1 Z' fill='%23000'/%3E%3C/svg%3E");
+  -webkit-mask-size:100% 100%;mask-size:100% 100%;
+  -webkit-mask-repeat:no-repeat;mask-repeat:no-repeat
+}
+
+/* 段ちがい */
+.shp-step :is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic){
+  border-radius:0;
+  -webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M0 31.6 A4.5 4.5 0 0 1 4.5 27.1 L41.3 27.1 A4.5 4.5 0 0 0 45.8 22.6 L45.8 4.5 A4.5 4.5 0 0 1 50.3 0 L95.5 0 A4.5 4.5 0 0 1 100 4.5 L100 34.9 A4.5 4.5 0 0 1 95.5 39.4 L78.5 39.4 A4.5 4.5 0 0 0 74 43.9 L74 95.5 A4.5 4.5 0 0 1 69.5 100 L4.5 100 A4.5 4.5 0 0 1 0 95.5 Z' fill='%23000'/%3E%3C/svg%3E");
+  mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M0 31.6 A4.5 4.5 0 0 1 4.5 27.1 L41.3 27.1 A4.5 4.5 0 0 0 45.8 22.6 L45.8 4.5 A4.5 4.5 0 0 1 50.3 0 L95.5 0 A4.5 4.5 0 0 1 100 4.5 L100 34.9 A4.5 4.5 0 0 1 95.5 39.4 L78.5 39.4 A4.5 4.5 0 0 0 74 43.9 L74 95.5 A4.5 4.5 0 0 1 69.5 100 L4.5 100 A4.5 4.5 0 0 1 0 95.5 Z' fill='%23000'/%3E%3C/svg%3E");
+  -webkit-mask-size:100% 100%;mask-size:100% 100%;
+  -webkit-mask-repeat:no-repeat;mask-repeat:no-repeat
+}
+/* 角を四角く欠く */
+.shp-notch :is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic){
+  border-radius:0;
+  -webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M5 0 L61 0 A5 5 0 0 1 66 5 L66 29 A5 5 0 0 0 71 34 L95 34 A5 5 0 0 1 100 39 L100 95 A5 5 0 0 1 95 100 L5 100 A5 5 0 0 1 0 95 L0 5 A5 5 0 0 1 5 0 Z' fill='%23000'/%3E%3C/svg%3E");
+  mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M5 0 L61 0 A5 5 0 0 1 66 5 L66 29 A5 5 0 0 0 71 34 L95 34 A5 5 0 0 1 100 39 L100 95 A5 5 0 0 1 95 100 L5 100 A5 5 0 0 1 0 95 L0 5 A5 5 0 0 1 5 0 Z' fill='%23000'/%3E%3C/svg%3E");
+  -webkit-mask-size:100% 100%;mask-size:100% 100%;
+  -webkit-mask-repeat:no-repeat;mask-repeat:no-repeat
+}
+/* チケット（左右がへこむ） */
+.shp-ticket :is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic){
+  border-radius:0;
+  -webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M6 0 L94 0 A6 6 0 0 1 100 6 L100 37 A13 13 0 0 0 100 63 L100 94 A6 6 0 0 1 94 100 L6 100 A6 6 0 0 1 0 94 L0 63 A13 13 0 0 0 0 37 L0 6 A6 6 0 0 1 6 0 Z' fill='%23000'/%3E%3C/svg%3E");
+  mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M6 0 L94 0 A6 6 0 0 1 100 6 L100 37 A13 13 0 0 0 100 63 L100 94 A6 6 0 0 1 94 100 L6 100 A6 6 0 0 1 0 94 L0 63 A13 13 0 0 0 0 37 L0 6 A6 6 0 0 1 6 0 Z' fill='%23000'/%3E%3C/svg%3E");
+  -webkit-mask-size:100% 100%;mask-size:100% 100%;
+  -webkit-mask-repeat:no-repeat;mask-repeat:no-repeat
+}
+/* 4点のきらめき */
+.shp-sparkle :is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic){
+  border-radius:0;
+  -webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M50 0 C50 34 66 50 100 50 C66 50 50 66 50 100 C50 66 34 50 0 50 C34 50 50 34 50 0 Z' fill='%23000'/%3E%3C/svg%3E");
+  mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M50 0 C50 34 66 50 100 50 C66 50 50 66 50 100 C50 66 34 50 0 50 C34 50 50 34 50 0 Z' fill='%23000'/%3E%3C/svg%3E");
+  -webkit-mask-size:100% 100%;mask-size:100% 100%;
+  -webkit-mask-repeat:no-repeat;mask-repeat:no-repeat
+}
+/* 丸みのある十字 */
+.shp-cross :is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic){
+  border-radius:0;
+  -webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M38 0 L62 0 A7 7 0 0 1 69 7 L69 24 A7 7 0 0 0 76 31 L93 31 A7 7 0 0 1 100 38 L100 62 A7 7 0 0 1 93 69 L76 69 A7 7 0 0 0 69 76 L69 93 A7 7 0 0 1 62 100 L38 100 A7 7 0 0 1 31 93 L31 76 A7 7 0 0 0 24 69 L7 69 A7 7 0 0 1 0 62 L0 38 A7 7 0 0 1 7 31 L24 31 A7 7 0 0 0 31 24 L31 7 A7 7 0 0 1 38 0 Z' fill='%23000'/%3E%3C/svg%3E");
+  mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M38 0 L62 0 A7 7 0 0 1 69 7 L69 24 A7 7 0 0 0 76 31 L93 31 A7 7 0 0 1 100 38 L100 62 A7 7 0 0 1 93 69 L76 69 A7 7 0 0 0 69 76 L69 93 A7 7 0 0 1 62 100 L38 100 A7 7 0 0 1 31 93 L31 76 A7 7 0 0 0 24 69 L7 69 A7 7 0 0 1 0 62 L0 38 A7 7 0 0 1 7 31 L24 31 A7 7 0 0 0 31 24 L31 7 A7 7 0 0 1 38 0 Z' fill='%23000'/%3E%3C/svg%3E");
+  -webkit-mask-size:100% 100%;mask-size:100% 100%;
+  -webkit-mask-repeat:no-repeat;mask-repeat:no-repeat
+}
+/* 角の丸いひし形 */
+.shp-diamond :is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic){
+  border-radius:0;
+  -webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M42.0 8.0 Q50 0 58.0 8.0 L92.0 42.0 Q100 50 92.0 58.0 L58.0 92.0 Q50 100 42.0 92.0 L8.0 58.0 Q0 50 8.0 42.0 Z' fill='%23000'/%3E%3C/svg%3E");
+  mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M42.0 8.0 Q50 0 58.0 8.0 L92.0 42.0 Q100 50 92.0 58.0 L58.0 92.0 Q50 100 42.0 92.0 L8.0 58.0 Q0 50 8.0 42.0 Z' fill='%23000'/%3E%3C/svg%3E");
   -webkit-mask-size:100% 100%;mask-size:100% 100%;
   -webkit-mask-repeat:no-repeat;mask-repeat:no-repeat
 }
@@ -3012,11 +3062,13 @@ const FIELD = {
   /* 写真の形。写真そのものは変えず、見せ方だけを切り替える。
      いつでも「四角のまま」に戻せる。 */
   shape: {
-    key: 'shape', label: '写真の形', type: 'select',
+    key: 'shape', label: '写真の形', type: 'select', gallery: 'shape',
     options: [
       ['', '四角のまま'], ['round', '角を大きく丸める'], ['circle', '丸'],
-      ['arch', 'アーチ（上が半円）'], ['leaf', '木の葉'], ['hex', '六角形'],
-      ['slant', '斜めに切る'], ['egg', 'たまご'],
+      ['egg', 'たまご'], ['diamond', 'ひし形'], ['arch', 'アーチ（上が半円）'],
+      ['leaf', '木の葉'], ['hex', '六角形'], ['slant', '斜めに切る'],
+      ['notch', '角を四角く欠く'], ['step', '段ちがい'], ['ticket', 'チケット'],
+      ['cross', '十字'], ['sparkle', 'きらめき'],
       ['slats', '4本の柱（上下が交互に丸い）'], ['arches', '3連アーチ'],
       ['wave', '下が波'], ['blob', 'まるいかたまり'],
       ['dots', '丸つなぎ（3×3）'], ['bars', '斜めの帯'], ['wavebar', '音の波（縦の棒）'],
@@ -7112,6 +7164,14 @@ body{margin:0;background:#0d1016;padding:14px;
 .dc-scale .hdr-in{height:72px}
 /* ヘッダーの見本は、バーとその下が少し見えれば足りる */
 .dc-hdr{height:96px}
+/* 形の見本は、抜けかたが分かればよい。数が多いので小さめに並べて、
+   ひと目で見比べられるようにする */
+.dg.small{grid-template-columns:repeat(auto-fill,196px)}
+.dc-shape{height:124px;overflow:hidden}
+/* 小さいカードに合わせて、見本の縮尺も落とす。
+   合わせないと右と下が切れて、形が分からなくなる。 */
+.dc-shape .dc-scale{width:1100px;transform:scale(.176)}
+.dc-shape .about-media{background:linear-gradient(135deg,var(--c-primary),var(--c-accent))}
 .dc-hdr .hero{min-height:420px}
 .dc-meta{padding:10px 12px 12px;color:#e7ebf0}
 .dc-meta b{font-size:13px;display:block}
@@ -7163,6 +7223,31 @@ const HDR_ABOUT = {
   float: '角の丸い島が浮きます。軽く見せたいとき。',
 };
 
+const SHAPE_ABOUT = {
+  '': '切り抜きなし。枠のかたちのまま出ます。',
+  round: '角を大きく丸めます。やわらかい印象に。',
+  circle: '真ん丸に抜きます。人の顔や商品の1枚に。',
+  egg: 'たまご形。丸より少しやわらかい。',
+  diamond: '角の丸いひし形。斜めに置いたような形。',
+  arch: '上が半円のアーチ。入口や建物の写真と相性がいい。',
+  leaf: '対角の2隅だけ大きく丸めた木の葉形。',
+  hex: '六角形。かたく、図鑑のように並べたいとき。',
+  slant: '下辺を斜めに切ります。流れが出ます。',
+  notch: '右上の角を四角く欠きます。',
+  step: '大小2つの四角をずらして重ねた形。',
+  ticket: '左右がへこんだチケット形。',
+  cross: '丸みのある十字。',
+  sparkle: '4点のきらめき。差し色の1枚に。',
+  slats: '4本の柱。上下の丸みが交互に入れかわります。',
+  arches: '3連のアーチ。',
+  wave: '下の辺が波打ちます。',
+  blob: '手で描いたような、まるいかたまり。',
+  dots: '丸が3×3でつながった形。',
+  bars: '斜めの帯が重なった形。',
+  wavebar: '縦の棒が並んだ形。音の波のように。',
+  own: '形の画像を読み込むと、その形どおりに抜きます。',
+};
+
 const GAL_KINDS = {
   deco: { list: () => HERO_DECOS, about: DECO_ABOUT, what: '装飾',
     title: 'ヒーローの装飾を選ぶ',
@@ -7170,6 +7255,9 @@ const GAL_KINDS = {
   scroll: { list: () => HERO_SCROLLS, about: SCROLL_ABOUT, what: 'スクロール連動',
     title: 'スクロール連動のしかたを選ぶ',
     sub: 'スクロールの途中の一場面で止めて並べています。' },
+  shape: { list: () => FIELD.shape.options, about: SHAPE_ABOUT, what: '写真の形',
+    title: '写真の形を選ぶ',
+    sub: 'いまの写真で、抜けかたを並べています。' },
   hdr: { list: () => HDR_BARS, about: HDR_ABOUT, what: 'ヘッダーのバー',
     title: 'ヘッダーのバーを選ぶ',
     sub: 'いまのヘッダーを、それぞれの型で出しています。下はヒーローの頭です。' },
@@ -7179,6 +7267,15 @@ let decoPick = null;
 
 /* kind: 'deco'（装飾）/ 'scroll'（スクロール連動）/ 'hdr'（ヘッダーのバー）。
    どれも「上のほうを縮めて並べる」点は同じなので、一覧は共通にする。 */
+/* そのブロックが持っている写真を1枚だけ拾う（見本用） */
+function firstImage(props) {
+  for (const k of ['image', 'imageA', 'imageB']) if (props[k]) return props[k];
+  for (const list of ['items', 'photos']) {
+    for (const it of props[list] || []) if (it.image || it.src) return it.image || it.src;
+  }
+  return '';
+}
+
 function openDecoGallery(kind, current, onPick) {
   decoPick = onPick;
   const k = GAL_KINDS[kind] || GAL_KINDS.deco;
@@ -7193,6 +7290,10 @@ function openDecoGallery(kind, current, onPick) {
   const base = b && b.type === 'hero' ? b.props
     : (state.blocks.find((x) => x.type === 'hero') || { props: BLOCKS.hero.defaults }).props;
 
+  /* 形の見本は、いま選んでいるブロックの写真で作る。自分の写真で
+     どう抜けるかが分かるように。写真がまだ無ければ目印の枠を出す。 */
+  const b0 = state.blocks.find((x) => x.id === selected) || { props: {} };
+
   /* ヘッダーの見本は、いま使っているヘッダーの上にヒーローの頭を敷いて作る。
      すりガラスや無色は、下に何かが無いと違いが出ないため。 */
   const hb = state.blocks.find((x) => x.type === 'header');
@@ -7200,7 +7301,15 @@ function openDecoGallery(kind, current, onPick) {
 
   const cards = list.map(([key, label]) => {
     let sample;
-    if (kind === 'hdr') {
+    if (kind === 'shape') {
+      /* いま選んでいるブロックの写真を、その形で抜いて並べる。
+         枠は生成サイトと同じ .about-media を使うので、実物どおりに出る。 */
+      const im = firstImage(b0.props);
+      sample = `<div class="${key ? `shp-${esc(key)}` : ''}" style="width:1100px${
+        key === 'own' && b0.props.shapeMask ? `;--shape:url('${esc(b0.props.shapeMask)}')` : ''}">
+        <div class="about-media" style="aspect-ratio:16/10">${
+          im ? `<img src="${esc(im)}" alt="">` : '<span class="ph"></span>'}</div></div>`;
+    } else if (kind === 'hdr') {
       sample = BLOCKS.header.render(Object.assign({}, hprops, { bar: key, sticky: false }))
         + BLOCKS.hero.render(Object.assign({}, base,
           { anchor: '', anims: {}, scroll: 'none', layout: 'cover' }));
@@ -7213,15 +7322,15 @@ function openDecoGallery(kind, current, onPick) {
     const frozen = kind === 'scroll' && key !== 'none' ? ' style="--p:.45"' : '';
     return `<div class="dc${key === current ? ' on' : ''}" data-k="${esc(key)}" role="button" tabindex="0">
       <span class="dc-hit"></span>
-      <div class="dc-prev${kind === 'hdr' ? ' dc-hdr' : ''}">
+      <div class="dc-prev${kind === 'hdr' ? ' dc-hdr' : ''}${kind === 'shape' ? ' dc-shape' : ''}">
         <div class="dc-scale ${esc(bodyClass())}"${frozen}>${sample}</div></div>
       <div class="dc-meta"><b>${esc(label)}</b><small>${esc(about[key] || '')}</small></div>
     </div>`;
   }).join('');
 
   $('#animFrame').srcdoc = `<!DOCTYPE html><html lang="ja"><head><meta charset="utf-8">
-<style>${themeCSS(state.theme)}\n${SITE_CSS}\n${DECO_GAL_CSS}</style></head>
-<body class="${esc(bodyClass())}"><div class="dg">${cards}</div>
+<style>${themeCSS(state.theme)}\n${SITE_CSS}\n${shapeMaskCSS(Object.keys(SHAPE_MASKS))}\n${DECO_GAL_CSS}</style></head>
+<body class="${esc(bodyClass())}"><div class="dg${kind === 'shape' ? ' small' : ''}">${cards}</div>
 <script>${SITE_JS}<\/script><script>${DECO_GAL_JS}<\/script></body></html>`;
   openModal('#animModal');
 }

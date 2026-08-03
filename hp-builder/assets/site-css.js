@@ -1280,7 +1280,8 @@ a:not(.btn):not(.logo){transition:opacity .5s cubic-bezier(.165,.84,.44,1)}
    下地の色が敷いてあるので、img だけを抜くと下地が形の外に残る。
    ========================================================== */
 :is(.shp-round,.shp-circle,.shp-arch,.shp-leaf,.shp-hex,.shp-slant,.shp-egg,
-  .shp-slats,.shp-arches,.shp-wave,.shp-blob)
+  .shp-slats,.shp-arches,.shp-wave,.shp-blob,
+  .shp-step,.shp-notch,.shp-ticket,.shp-sparkle,.shp-cross,.shp-diamond)
   :is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic){
   /* 角丸と重ねると形が濁るので、抜くときは角丸を落とす */
   border-radius:0
@@ -1342,6 +1343,55 @@ a:not(.btn):not(.logo){transition:opacity .5s cubic-bezier(.165,.84,.44,1)}
   border-radius:0;
   -webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M52 1 C80 -2 99 18 97 45 C95 72 78 99 49 98 C21 97 1 77 2 48 C3 21 24 4 52 1 Z' fill='%23000'/%3E%3C/svg%3E");
   mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M52 1 C80 -2 99 18 97 45 C95 72 78 99 49 98 C21 97 1 77 2 48 C3 21 24 4 52 1 Z' fill='%23000'/%3E%3C/svg%3E");
+  -webkit-mask-size:100% 100%;mask-size:100% 100%;
+  -webkit-mask-repeat:no-repeat;mask-repeat:no-repeat
+}
+
+/* 段ちがい */
+.shp-step :is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic){
+  border-radius:0;
+  -webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M0 31.6 A4.5 4.5 0 0 1 4.5 27.1 L41.3 27.1 A4.5 4.5 0 0 0 45.8 22.6 L45.8 4.5 A4.5 4.5 0 0 1 50.3 0 L95.5 0 A4.5 4.5 0 0 1 100 4.5 L100 34.9 A4.5 4.5 0 0 1 95.5 39.4 L78.5 39.4 A4.5 4.5 0 0 0 74 43.9 L74 95.5 A4.5 4.5 0 0 1 69.5 100 L4.5 100 A4.5 4.5 0 0 1 0 95.5 Z' fill='%23000'/%3E%3C/svg%3E");
+  mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M0 31.6 A4.5 4.5 0 0 1 4.5 27.1 L41.3 27.1 A4.5 4.5 0 0 0 45.8 22.6 L45.8 4.5 A4.5 4.5 0 0 1 50.3 0 L95.5 0 A4.5 4.5 0 0 1 100 4.5 L100 34.9 A4.5 4.5 0 0 1 95.5 39.4 L78.5 39.4 A4.5 4.5 0 0 0 74 43.9 L74 95.5 A4.5 4.5 0 0 1 69.5 100 L4.5 100 A4.5 4.5 0 0 1 0 95.5 Z' fill='%23000'/%3E%3C/svg%3E");
+  -webkit-mask-size:100% 100%;mask-size:100% 100%;
+  -webkit-mask-repeat:no-repeat;mask-repeat:no-repeat
+}
+/* 角を四角く欠く */
+.shp-notch :is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic){
+  border-radius:0;
+  -webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M5 0 L61 0 A5 5 0 0 1 66 5 L66 29 A5 5 0 0 0 71 34 L95 34 A5 5 0 0 1 100 39 L100 95 A5 5 0 0 1 95 100 L5 100 A5 5 0 0 1 0 95 L0 5 A5 5 0 0 1 5 0 Z' fill='%23000'/%3E%3C/svg%3E");
+  mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M5 0 L61 0 A5 5 0 0 1 66 5 L66 29 A5 5 0 0 0 71 34 L95 34 A5 5 0 0 1 100 39 L100 95 A5 5 0 0 1 95 100 L5 100 A5 5 0 0 1 0 95 L0 5 A5 5 0 0 1 5 0 Z' fill='%23000'/%3E%3C/svg%3E");
+  -webkit-mask-size:100% 100%;mask-size:100% 100%;
+  -webkit-mask-repeat:no-repeat;mask-repeat:no-repeat
+}
+/* チケット（左右がへこむ） */
+.shp-ticket :is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic){
+  border-radius:0;
+  -webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M6 0 L94 0 A6 6 0 0 1 100 6 L100 37 A13 13 0 0 0 100 63 L100 94 A6 6 0 0 1 94 100 L6 100 A6 6 0 0 1 0 94 L0 63 A13 13 0 0 0 0 37 L0 6 A6 6 0 0 1 6 0 Z' fill='%23000'/%3E%3C/svg%3E");
+  mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M6 0 L94 0 A6 6 0 0 1 100 6 L100 37 A13 13 0 0 0 100 63 L100 94 A6 6 0 0 1 94 100 L6 100 A6 6 0 0 1 0 94 L0 63 A13 13 0 0 0 0 37 L0 6 A6 6 0 0 1 6 0 Z' fill='%23000'/%3E%3C/svg%3E");
+  -webkit-mask-size:100% 100%;mask-size:100% 100%;
+  -webkit-mask-repeat:no-repeat;mask-repeat:no-repeat
+}
+/* 4点のきらめき */
+.shp-sparkle :is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic){
+  border-radius:0;
+  -webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M50 0 C50 34 66 50 100 50 C66 50 50 66 50 100 C50 66 34 50 0 50 C34 50 50 34 50 0 Z' fill='%23000'/%3E%3C/svg%3E");
+  mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M50 0 C50 34 66 50 100 50 C66 50 50 66 50 100 C50 66 34 50 0 50 C34 50 50 34 50 0 Z' fill='%23000'/%3E%3C/svg%3E");
+  -webkit-mask-size:100% 100%;mask-size:100% 100%;
+  -webkit-mask-repeat:no-repeat;mask-repeat:no-repeat
+}
+/* 丸みのある十字 */
+.shp-cross :is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic){
+  border-radius:0;
+  -webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M38 0 L62 0 A7 7 0 0 1 69 7 L69 24 A7 7 0 0 0 76 31 L93 31 A7 7 0 0 1 100 38 L100 62 A7 7 0 0 1 93 69 L76 69 A7 7 0 0 0 69 76 L69 93 A7 7 0 0 1 62 100 L38 100 A7 7 0 0 1 31 93 L31 76 A7 7 0 0 0 24 69 L7 69 A7 7 0 0 1 0 62 L0 38 A7 7 0 0 1 7 31 L24 31 A7 7 0 0 0 31 24 L31 7 A7 7 0 0 1 38 0 Z' fill='%23000'/%3E%3C/svg%3E");
+  mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M38 0 L62 0 A7 7 0 0 1 69 7 L69 24 A7 7 0 0 0 76 31 L93 31 A7 7 0 0 1 100 38 L100 62 A7 7 0 0 1 93 69 L76 69 A7 7 0 0 0 69 76 L69 93 A7 7 0 0 1 62 100 L38 100 A7 7 0 0 1 31 93 L31 76 A7 7 0 0 0 24 69 L7 69 A7 7 0 0 1 0 62 L0 38 A7 7 0 0 1 7 31 L24 31 A7 7 0 0 0 31 24 L31 7 A7 7 0 0 1 38 0 Z' fill='%23000'/%3E%3C/svg%3E");
+  -webkit-mask-size:100% 100%;mask-size:100% 100%;
+  -webkit-mask-repeat:no-repeat;mask-repeat:no-repeat
+}
+/* 角の丸いひし形 */
+.shp-diamond :is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic){
+  border-radius:0;
+  -webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M42.0 8.0 Q50 0 58.0 8.0 L92.0 42.0 Q100 50 92.0 58.0 L58.0 92.0 Q50 100 42.0 92.0 L8.0 58.0 Q0 50 8.0 42.0 Z' fill='%23000'/%3E%3C/svg%3E");
+  mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M42.0 8.0 Q50 0 58.0 8.0 L92.0 42.0 Q100 50 92.0 58.0 L58.0 92.0 Q50 100 42.0 92.0 L8.0 58.0 Q0 50 8.0 42.0 Z' fill='%23000'/%3E%3C/svg%3E");
   -webkit-mask-size:100% 100%;mask-size:100% 100%;
   -webkit-mask-repeat:no-repeat;mask-repeat:no-repeat
 }

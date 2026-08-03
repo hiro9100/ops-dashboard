@@ -232,11 +232,13 @@ const FIELD = {
   /* 写真の形。写真そのものは変えず、見せ方だけを切り替える。
      いつでも「四角のまま」に戻せる。 */
   shape: {
-    key: 'shape', label: '写真の形', type: 'select',
+    key: 'shape', label: '写真の形', type: 'select', gallery: 'shape',
     options: [
       ['', '四角のまま'], ['round', '角を大きく丸める'], ['circle', '丸'],
-      ['arch', 'アーチ（上が半円）'], ['leaf', '木の葉'], ['hex', '六角形'],
-      ['slant', '斜めに切る'], ['egg', 'たまご'],
+      ['egg', 'たまご'], ['diamond', 'ひし形'], ['arch', 'アーチ（上が半円）'],
+      ['leaf', '木の葉'], ['hex', '六角形'], ['slant', '斜めに切る'],
+      ['notch', '角を四角く欠く'], ['step', '段ちがい'], ['ticket', 'チケット'],
+      ['cross', '十字'], ['sparkle', 'きらめき'],
       ['slats', '4本の柱（上下が交互に丸い）'], ['arches', '3連アーチ'],
       ['wave', '下が波'], ['blob', 'まるいかたまり'],
       ['dots', '丸つなぎ（3×3）'], ['bars', '斜めの帯'], ['wavebar', '音の波（縦の棒）'],
