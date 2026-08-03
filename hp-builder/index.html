@@ -24,11 +24,18 @@
       <button data-w="390px">スマホ</button>
     </div>
 
-    <button class="tb-btn" id="btnOpen">HTMLを開く</button>
-    <button class="tb-btn" id="btnCode">HTMLを見る</button>
-    <button class="tb-btn danger" id="btnReset">最初から</button>
-    <button class="tb-btn" id="btnExport">HTMLを書き出す</button>
+    <button class="tb-btn" id="btnExport">ファイルに保存</button>
     <button class="tb-btn primary" id="btnPublish">公開する</button>
+
+    <!-- たまにしか使わないものは、ここにしまう -->
+    <div class="more-wrap">
+      <button class="tb-btn ico" id="btnMore" aria-label="そのほか" aria-expanded="false">…</button>
+      <div class="more-menu" id="moreMenu" hidden>
+        <button id="btnOpen">保存したファイルから続ける</button>
+        <button id="btnCode">中のHTMLを見る</button>
+        <button id="btnReset" class="danger">まっさらから作り直す</button>
+      </div>
+    </div>
   </header>
 
   <!-- ================= 左：ブロック一覧 ================= -->
@@ -109,7 +116,7 @@
 <div class="modal" id="tplModal" hidden>
   <div class="modal-box wide">
     <h2>テンプレートを選ぶ</h2>
-    <p class="modal-sub">選ぶと、いまの内容は置きかわります。あとから中身は自由に変えられます。</p>
+    <p class="modal-sub">選ぶと、いまの内容は置きかわります。</p>
     <div class="gal-wrap"><iframe id="tplFrame" title="テンプレートのサンプル"></iframe></div>
     <div class="modal-foot">
       <button class="tb-btn" id="tplToEasy">かんたんに作る</button>
@@ -139,7 +146,7 @@
 <div class="modal" id="addModal" hidden>
   <div class="modal-box wide">
     <h2>ブロックを追加</h2>
-    <p class="modal-sub">実物のサンプルから選べます。選ぶと、いま選択中のブロックのすぐ下に追加されます（あとから並べ替えできます）。</p>
+    <p class="modal-sub">選ぶと、いまの位置のすぐ下に入ります。順番はあとから変えられます。</p>
     <div class="cat-bar" id="catBar"></div>
     <div class="gal-wrap"><iframe id="galFrame" title="ブロックのサンプル"></iframe></div>
     <div class="modal-foot"><button class="tb-btn" id="addClose">閉じる</button></div>
@@ -150,7 +157,7 @@
 <div class="modal" id="palModal" hidden>
   <div class="modal-box wide">
     <h2>配色を選ぶ</h2>
-    <p class="modal-sub">いまのページの構成そのままで、色だけ入れ替わります。角の丸み・幅・フォントはそのままです。</p>
+    <p class="modal-sub">構成はそのままで、色だけ入れ替わります。</p>
     <div class="gal-wrap"><iframe id="palFrame" title="配色のサンプル"></iframe></div>
     <div class="modal-foot"><button class="tb-btn" id="palClose">閉じる</button></div>
   </div>

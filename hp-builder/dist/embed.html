@@ -42,6 +42,22 @@ input,select,textarea{font:inherit}
 .tb-btn.primary:hover{background:#3d7cf0}
 .tb-btn.danger:hover{border-color:var(--danger);color:var(--danger)}
 
+/* たまにしか使わないものをしまう場所。
+   上のバーに全部並べると、初めての人が何から押せばいいか分からなくなる。 */
+.more-wrap{position:relative}
+.more-menu{
+  position:absolute;top:calc(100% + 8px);right:0;min-width:210px;z-index:90;
+  background:var(--panel2);border:1px solid var(--line);border-radius:var(--r);
+  padding:6px;box-shadow:0 18px 44px rgba(0,0,0,.55)
+}
+.more-menu[hidden]{display:none}
+.more-menu button{
+  display:block;width:100%;text-align:left;background:transparent;border:0;
+  padding:9px 11px;border-radius:6px;font-size:12.5px;color:var(--tx)
+}
+.more-menu button:hover{background:#2f3644}
+.more-menu button.danger{color:var(--danger)}
+
 .devices{display:flex;background:var(--panel2);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
 .devices button{background:transparent;border:0;padding:7px 12px;font-size:12px;color:var(--tx2)}
 .devices button.on{background:#2d3441;color:var(--tx);font-weight:700}
@@ -122,6 +138,11 @@ input,select,textarea{font:inherit}
   font-size:11.5px;color:var(--tx2);background:#13161d;border:1px dashed var(--line);
   border-radius:var(--r);padding:11px 12px;margin:-2px 0 16px;line-height:1.75
 }
+.el-hint > summary{cursor:pointer;list-style:none;font-weight:700;color:var(--tx2)}
+.el-hint > summary::-webkit-details-marker{display:none}
+.el-hint > summary::before{content:"▸ "}
+.el-hint[open] > summary{margin-bottom:8px}
+.el-hint[open] > summary::before{content:"▾ "}
 
 .add-wrap{position:relative;padding:10px;border-top:1px solid var(--line)}
 .add-btn{
@@ -179,6 +200,18 @@ input,select,textarea{font:inherit}
   padding:8px 10px;font-size:11.5px;white-space:nowrap
 }
 .img-f .pick:hover{border-color:var(--pri)}
+/* こまかい調整はたたんでおく。最初に見せるのは中身だけ */
+.adv{border-top:1px solid var(--line);margin-top:6px;padding-top:12px}
+.adv > summary{
+  cursor:pointer;font-size:12px;font-weight:700;color:var(--tx2);
+  list-style:none;padding:6px 0;user-select:none
+}
+.adv > summary::-webkit-details-marker{display:none}
+.adv > summary::before{content:"▸ ";color:var(--tx2)}
+.adv[open] > summary::before{content:"▾ "}
+.adv > summary:hover{color:var(--tx)}
+.adv > .f:first-of-type{margin-top:10px}
+
 .img-thumb{
   width:100%;height:74px;object-fit:cover;border-radius:6px;margin-top:7px;
   border:1px solid var(--line);background:#0a0c10;display:block
@@ -534,11 +567,18 @@ ${textFillCSS(usedFills(state))}
       <button data-w="390px">スマホ</button>
     </div>
 
-    <button class="tb-btn" id="btnOpen">HTMLを開く</button>
-    <button class="tb-btn" id="btnCode">HTMLを見る</button>
-    <button class="tb-btn danger" id="btnReset">最初から</button>
-    <button class="tb-btn" id="btnExport">HTMLを書き出す</button>
+    <button class="tb-btn" id="btnExport">ファイルに保存</button>
     <button class="tb-btn primary" id="btnPublish">公開する</button>
+
+    <!-- たまにしか使わないものは、ここにしまう -->
+    <div class="more-wrap">
+      <button class="tb-btn ico" id="btnMore" aria-label="そのほか" aria-expanded="false">…</button>
+      <div class="more-menu" id="moreMenu" hidden>
+        <button id="btnOpen">保存したファイルから続ける</button>
+        <button id="btnCode">中のHTMLを見る</button>
+        <button id="btnReset" class="danger">まっさらから作り直す</button>
+      </div>
+    </div>
   </header>
 
   <!-- ================= 左：ブロック一覧 ================= -->
@@ -619,7 +659,7 @@ ${textFillCSS(usedFills(state))}
 <div class="modal" id="tplModal" hidden>
   <div class="modal-box wide">
     <h2>テンプレートを選ぶ</h2>
-    <p class="modal-sub">選ぶと、いまの内容は置きかわります。あとから中身は自由に変えられます。</p>
+    <p class="modal-sub">選ぶと、いまの内容は置きかわります。</p>
     <div class="gal-wrap"><iframe id="tplFrame" title="テンプレートのサンプル"></iframe></div>
     <div class="modal-foot">
       <button class="tb-btn" id="tplToEasy">かんたんに作る</button>
@@ -649,7 +689,7 @@ ${textFillCSS(usedFills(state))}
 <div class="modal" id="addModal" hidden>
   <div class="modal-box wide">
     <h2>ブロックを追加</h2>
-    <p class="modal-sub">実物のサンプルから選べます。選ぶと、いま選択中のブロックのすぐ下に追加されます（あとから並べ替えできます）。</p>
+    <p class="modal-sub">選ぶと、いまの位置のすぐ下に入ります。順番はあとから変えられます。</p>
     <div class="cat-bar" id="catBar"></div>
     <div class="gal-wrap"><iframe id="galFrame" title="ブロックのサンプル"></iframe></div>
     <div class="modal-foot"><button class="tb-btn" id="addClose">閉じる</button></div>
@@ -660,7 +700,7 @@ ${textFillCSS(usedFills(state))}
 <div class="modal" id="palModal" hidden>
   <div class="modal-box wide">
     <h2>配色を選ぶ</h2>
-    <p class="modal-sub">いまのページの構成そのままで、色だけ入れ替わります。角の丸み・幅・フォントはそのままです。</p>
+    <p class="modal-sub">構成はそのままで、色だけ入れ替わります。</p>
     <div class="gal-wrap"><iframe id="palFrame" title="配色のサンプル"></iframe></div>
     <div class="modal-foot"><button class="tb-btn" id="palClose">閉じる</button></div>
   </div>
@@ -3139,15 +3179,15 @@ ${p.eyebrow ? `      <span class="eyebrow"${el(p, 'eyebrow', 'ta', '小見出し
 /* ボタン群 */
 /* ボタンの型。見た目・大きさ・矢印を、それぞれ別に選べる */
 const BTN_STYLES = [
-  ['primary', '塗り（メインカラー）'],
-  ['accent', '塗り（アクセント）'],
-  ['ghost', '枠線だけ'],
-  ['pill', '丸（ピル）'],
-  ['square', '角なし（四角）'],
-  ['dark', '濃い地'],
-  ['solidlight', '白抜き（写真の上に）'],
-  ['link', '下線だけ'],
-  ['hard', 'ずらした影'],
+  ['primary', 'Solid'],
+  ['accent', 'Accent'],
+  ['ghost', 'Outline'],
+  ['pill', 'Pill'],
+  ['square', 'Square'],
+  ['dark', 'Dark'],
+  ['solidlight', 'Light'],
+  ['link', 'Underline'],
+  ['hard', 'Hard Shadow'],
 ];
 
 function buttons(list, extraClass = '') {
@@ -3167,37 +3207,37 @@ function buttons(list, extraClass = '') {
 
 /* 文字アニメーションの一覧（サイト側CSSの ta-* と対応） */
 const TEXT_ANIMS = [
-  ['none', 'なし'],
-  ['fadeup', 'フェードアップ'],
-  ['maskline', '行マスクせり上げ'],
-  ['blur', 'ぼかし解除'],
-  ['flip3d', '3Dフリップ'],
-  ['drop', '回転して落ちる'],
-  ['bounce', '弾む'],
-  ['slidealt', '左右交互スライド'],
-  ['scatter', '散らばりから集合'],
-  ['neon', 'ネオン点灯'],
-  ['fillgrad', 'グラデーションで塗る'],
-  ['scramble', 'スクランブル'],
-  ['type', 'タイプライター'],
+  ['none', 'None'],
+  ['fadeup', 'Fade Up'],
+  ['maskline', 'Mask Line'],
+  ['blur', 'Blur'],
+  ['flip3d', 'Flip 3D'],
+  ['drop', 'Drop'],
+  ['bounce', 'Bounce'],
+  ['slidealt', 'Slide Alt'],
+  ['scatter', 'Scatter'],
+  ['neon', 'Neon'],
+  ['fillgrad', 'Gradient'],
+  ['scramble', 'Scramble'],
+  ['type', 'Typewriter'],
 ];
 const TEXT_ANIMS_WITH_DEFAULT = [['', '全体設定に従う']].concat(TEXT_ANIMS);
 
 /* 画像・要素アニメーションの一覧（サイト側CSSの ia-* と対応） */
 const IMAGE_ANIMS = [
-  ['none', 'なし'],
-  ['zoomin', 'ズームイン'],
-  ['zoomout', 'ズームアウト'],
-  ['slideleft', '左から入る'],
-  ['slideright', '右から入る'],
-  ['slideup', '下から入る'],
-  ['wipe', '下から開く（ワイプ）'],
-  ['circle', '円形に開く'],
-  ['blurin', 'ぼかし解除'],
-  ['tilt3d', '3Dで起き上がる'],
-  ['flipup', 'めくれて立つ'],
-  ['kenburns', 'ゆっくりズーム（ループ）'],
-  ['float', 'ふわふわ浮遊（ループ）'],
+  ['none', 'None'],
+  ['zoomin', 'Zoom In'],
+  ['zoomout', 'Zoom Out'],
+  ['slideleft', 'Slide L'],
+  ['slideright', 'Slide R'],
+  ['slideup', 'Slide Up'],
+  ['wipe', 'Wipe'],
+  ['circle', 'Circle'],
+  ['blurin', 'Blur In'],
+  ['tilt3d', 'Tilt 3D'],
+  ['flipup', 'Flip Up'],
+  ['kenburns', 'Ken Burns'],
+  ['float', 'Float'],
 ];
 
 /* ============================================================
@@ -3209,11 +3249,11 @@ const IMAGE_ANIMS = [
 /* スクロールに連動するヒーローの型。
    区間を長くとって中身を貼り付け（sticky）、進み具合 0→1 で動かす。 */
 const HERO_SCROLLS = [
-  ['none', 'なし（ふつうのヒーロー）'],
-  ['zoomout', '写真が縮んで枠に収まる'],
-  ['parallax', '写真と文字がずれて流れる'],
-  ['curtain', '幕が上下に開く'],
-  ['maskzoom', '文字の中から写真が広がる'],
+  ['none', 'None'],
+  ['zoomout', 'Zoom Out'],
+  ['parallax', 'Parallax'],
+  ['curtain', 'Curtain'],
+  ['maskzoom', 'Mask Zoom'],
 ];
 
 /* ヘッダーのバーの型。
@@ -3221,24 +3261,24 @@ const HERO_SCROLLS = [
    固定しているときは半透明のすりガラス）。前に作ったページの見え方を
    変えないため、既定はここから動かさない。 */
 const HDR_BARS = [
-  ['line', '線だけ（既定）'],
-  ['solid', 'ベタ塗り'],
-  ['glass', 'すりガラス'],
-  ['clear', '無色（透ける）'],
-  ['over', 'ヒーローに重ねる'],
-  ['float', '浮かぶ島'],
+  ['line', 'Line'],
+  ['solid', 'Solid'],
+  ['glass', 'Glass'],
+  ['clear', 'Clear'],
+  ['over', 'Overlay'],
+  ['float', 'Floating'],
 ];
 
 const HERO_DECOS = [
-  ['none', 'なし'],
-  ['clouds', 'ふわふわ雲'],
-  ['glass', 'すりガラス（ポインタ追従）'],
-  ['aurora', 'オーロラ'],
-  ['dust', '光の粒'],
-  ['spot', 'スポットライト（ポインタ追従）'],
-  ['depth', '奥行き（ポインタで視差）'],
-  ['silk', '流れる線'],
-  ['cursor', 'カーソルに丸がついてくる'],
+  ['none', 'None'],
+  ['clouds', 'Clouds'],
+  ['glass', 'Glass'],
+  ['aurora', 'Aurora'],
+  ['dust', 'Dust'],
+  ['spot', 'Spotlight'],
+  ['depth', 'Depth'],
+  ['silk', 'Silk'],
+  ['cursor', 'Cursor'],
 ];
 
 /* 雲・オーロラの配置。実行時に乱数を使うと再読み込みのたびに絵が変わって
@@ -3365,17 +3405,17 @@ const FIELD = {
   shape: {
     key: 'shape', label: '写真の形', type: 'select', gallery: 'shape',
     options: [
-      ['', '四角のまま'], ['round', '角を大きく丸める'], ['circle', '丸'],
-      ['egg', 'たまご'], ['diamond', 'ひし形'], ['arch', 'アーチ（上が半円）'],
-      ['leaf', '木の葉'], ['hex', '六角形'], ['slant', '斜めに切る'],
-      ['notch', '角を四角く欠く'], ['step', '段ちがい'], ['ticket', 'チケット'],
-      ['cross', '十字'], ['sparkle', 'きらめき'],
-      ['slats', '4本の柱（上下が交互に丸い）'], ['arches', '3連アーチ'],
-      ['wave', '下が波'], ['blob', 'まるいかたまり'],
-      ['dots', '丸つなぎ（3×3）'], ['bars', '斜めの帯'], ['wavebar', '音の波（縦の棒）'],
-      ['own', '自分で用意した形'],
+      ['', 'Square'], ['round', 'Rounded'], ['circle', 'Circle'],
+      ['egg', 'Egg'], ['diamond', 'Diamond'], ['arch', 'Arch'],
+      ['leaf', 'Leaf'], ['hex', 'Hexagon'], ['slant', 'Slant'],
+      ['notch', 'Notch'], ['step', 'Step'], ['ticket', 'Ticket'],
+      ['cross', 'Cross'], ['sparkle', 'Sparkle'],
+      ['slats', 'Slats'], ['arches', 'Arches'],
+      ['wave', 'Wave'], ['blob', 'Blob'],
+      ['dots', 'Dots'], ['bars', 'Bars'], ['wavebar', 'Wave Bars'],
+      ['own', 'Custom'],
     ],
-    hint: '「自分で用意した形」は、形の画像を読み込むとその形どおりに抜きます',
+    hint: 'Custom は、形の画像を読み込むとその形どおりに抜きます',
   },
   /* 自分で用意した形。持っているのはマスクの画像そのもの（データURL）。
      選び方は「型」ではなく「持ち込み」なので、選択肢とは別に持つ。 */
@@ -3472,7 +3512,7 @@ ${[...t].map(vChar).join('\n')}
 const BLOCKS = {
   /* ---------------- ヘッダー ---------------- */
   header: {
-    label: 'ヘッダー',
+    label: 'Header',
     icon: '▤',
     unique: true, // 1ページに1つだけ
     fields: [
@@ -3515,7 +3555,7 @@ const BLOCKS = {
 
   /* ---------------- ヒーロー ---------------- */
   hero: {
-    label: 'ヒーロー',
+    label: 'Hero',
     icon: '★',
     fields: [
       { key: 'layout', label: 'レイアウト', type: 'select',
@@ -3618,7 +3658,7 @@ ${maskLayer}${guts}
 
   /* ---------------- 特徴・サービス ---------------- */
   features: {
-    label: '特徴・サービス',
+    label: 'Features',
     icon: '◆',
     fields: [
       FIELD.eyebrow, FIELD.title, FIELD.text, FIELD.cols,
@@ -3663,7 +3703,7 @@ ${(p.items || []).map((it, i) => `      <div class="card"${el(p, `card${i}`, 'ia
 
   /* ---------------- 紹介（画像＋文章） ---------------- */
   about: {
-    label: '紹介（画像＋文章）',
+    label: 'About',
     icon: '▧',
     fields: [
       FIELD.eyebrow, FIELD.title,
@@ -3697,7 +3737,7 @@ ${buttons(p.buttons)}
 
   /* ---------------- ギャラリー ---------------- */
   gallery: {
-    label: 'ギャラリー',
+    label: 'Gallery',
     icon: '▦',
     fields: [
       FIELD.eyebrow, FIELD.title, FIELD.text,
@@ -3727,7 +3767,7 @@ ${(p.items || []).map((it, i) => `      <figure${el(p, `img${i}`, 'ia', `画像$
 
   /* ---------------- 料金 ---------------- */
   pricing: {
-    label: '料金プラン',
+    label: 'Pricing',
     icon: '¥',
     fields: [
       FIELD.eyebrow, FIELD.title, FIELD.text, FIELD.cols,
@@ -3768,7 +3808,7 @@ ${(p.items || []).map((it, i) => `      <div class="plan${it.featured ? ' feat' 
 
   /* ---------------- よくある質問 ---------------- */
   faq: {
-    label: 'よくある質問',
+    label: 'FAQ',
     icon: '?',
     fields: [
       FIELD.eyebrow, FIELD.title, FIELD.text,
@@ -3800,7 +3840,7 @@ ${(p.items || []).map((it, i) => `      <details${it.open ? ' open' : ''}>
 
   /* ---------------- CTA帯 ---------------- */
   cta: {
-    label: 'CTA（行動を促す帯）',
+    label: 'CTA',
     icon: '➤',
     fields: [
       FIELD.title, FIELD.text,
@@ -3823,7 +3863,7 @@ ${buttons(p.buttons, 'center')}
 
   /* ---------------- お問い合わせ ---------------- */
   contact: {
-    label: 'お問い合わせ',
+    label: 'Contact',
     icon: '✉',
     fields: [
       FIELD.eyebrow, FIELD.title, FIELD.text,
@@ -3869,7 +3909,7 @@ ${form}
      流れる文字（marquee）と同じで、同じ並びを2組出して片方が抜けた
      瞬間にもう片方が続く形にしている。 */
   strip: {
-    label: '写真が流れ続ける',
+    label: 'Photo Strip',
     icon: '⇢',
     tag: '写真',
     about: '写真が右から左へ流れ続けます。導入実績・取引先・受賞歴など、数の多いものに。',
@@ -3937,7 +3977,7 @@ ${form}
      動画を抱え込むと保存も公開もできなくなる。
      YouTube・Vimeo・動画ファイルのURLを受け取って、置き場所だけを作る。 */
   video: {
-    label: '動画',
+    label: 'Video',
     icon: '▶',
     tag: '写真',
     about: 'YouTube・Vimeo・動画ファイルのURLを貼ると、そのまま置けます。',
@@ -3967,7 +4007,7 @@ ${videoTag(p)}
 
   /* ---------------- 自由テキスト ---------------- */
   rich: {
-    label: '自由テキスト',
+    label: 'Text',
     icon: '¶',
     fields: [
       FIELD.title,
@@ -3988,7 +4028,7 @@ ${videoTag(p)}
 
   /* ---------------- お知らせ・イベント ---------------- */
   news: {
-    label: 'お知らせ・イベント',
+    label: 'News',
     icon: '📰',
     about: '日付とカテゴリを添えた一覧。新着情報、イベント、実績の告知に。',
     fields: [
@@ -4029,7 +4069,7 @@ ${p.more ? `    <div class="btn-row"><a class="btn ghost" href="${esc(p.moreHref
 
   /* ---------------- フロアガイド ---------------- */
   floors: {
-    label: 'フロアガイド',
+    label: 'Floors',
     icon: '▤',
     about: '階ごとに何があるかを並べます。商業施設・ビル・複合施設に。',
     fields: [
@@ -4074,7 +4114,7 @@ ${(p.items || []).map((it, i) => `      <div class="flr-i"${el(p, `fl${i}`, 'ia'
 
   /* ---------------- 流れる文字（マーキー） ---------------- */
   marquee: {
-    label: '流れる文字',
+    label: 'Marquee',
     icon: '⟶',
     tag: '演出',
     about: '同じ言葉が横に流れ続けます。区切りのしるしや、CONTACT の手前に置く帯として。',
@@ -4112,7 +4152,7 @@ ${body}
 
   /* ---------------- コラージュ・ヒーロー ---------------- */
   collage: {
-    label: 'コラージュ（縦書き＋斜め写真）',
+    label: 'Collage',
     icon: '◈',
     tag: '演出',
     about: '写真を敷き詰めた背景に、斜めの写真と縦書きの白い帯を重ねます。イベント・採用・特集の顔に。',
@@ -4178,7 +4218,7 @@ ${bands(p.bandL, 'l')}
 
   /* ---------------- お品書き（価格表） ---------------- */
   menu: {
-    label: 'お品書き（価格表）',
+    label: 'Menu',
     icon: '≡',
     about: 'カテゴリごとに品名と価格を並べます。カフェ・飲食店・サロンのメニューに。',
     fields: [
@@ -4238,15 +4278,14 @@ ${p.note ? `    <p class="menu-note"${ed('note', '注記')}>${esc(p.note)}</p>` 
 
   /* ---------------- フッター ---------------- */
   footer: {
-    label: 'フッター',
+    label: 'Footer',
     icon: '▁',
     unique: true,
     fields: [
       { key: 'style', label: 'フッターの型', type: 'select', gallery: 'ftr',
         options: [
-          ['bar', '1行（左に名前・右にリンク）'], ['center', '中央ぞろえ'],
-          ['big', '大きめ（ひとこと＋リンク）'], ['light', '明るい地'],
-          ['cta', '最後にひと押し'], ['minimal', 'ひとことだけ'],
+          ['bar', 'Bar'], ['center', 'Centered'], ['big', 'Large'],
+          ['light', 'Light'], ['cta', 'CTA'], ['minimal', 'Minimal'],
         ] },
       { key: 'text', label: 'ひとこと・住所など', type: 'textarea', rows: 2,
         showIf: (p) => ['big', 'cta'].includes(p.style) },
@@ -4316,7 +4355,7 @@ ${inner}
 
   /* ---------------- 3D製品ビュー ---------------- */
   product3d: {
-    label: '3D製品ビュー',
+    label: 'Product 3D',
     icon: '◉',
     tag: '3D',
     about: 'スクロールに合わせて立体が360°回転します。画像は不要で、形と色だけで作られます。',
@@ -4368,7 +4407,7 @@ ${(p.items || []).map((it) => `      <div data-at="${(+it.at || 0) / 100}"><b>${
 
   /* ---------------- 分解図 ---------------- */
   exploded: {
-    label: '分解図が組み上がる',
+    label: 'Exploded',
     icon: '▤',
     tag: '3D',
     about: 'バラバラの層がスクロールで合体します。各層に画像を入れれば実物の構造説明になります。',
@@ -4411,7 +4450,7 @@ ${(p.items || []).map((it, i) => `      <div class="exp-l" style="background:${e
 
   /* ---------------- 横に流れるギャラリー ---------------- */
   hscroll: {
-    label: '横に流れるギャラリー',
+    label: 'H-Scroll',
     icon: '⇥',
     tag: 'スクロール',
     about: '縦にスクロールすると、カードが横に流れていきます。実績一覧に向いています。',
@@ -4459,7 +4498,7 @@ ${(p.items || []).map((it, i) => `      <div class="hs-card"${imgSlot(`items.${i
 
   /* ---------------- 積み重なるカード ---------------- */
   stackcards: {
-    label: '積み重なるカード',
+    label: 'Stack',
     icon: '▥',
     tag: 'スクロール',
     about: 'カードが重なりながら積み上がります。制作フローやサービス紹介に。',
@@ -4497,7 +4536,7 @@ ${(p.items || []).map((it, i) => `      <div class="stackcard">
 
   /* ---------------- タイムライン ---------------- */
   timeline: {
-    label: 'タイムライン',
+    label: 'Timeline',
     icon: '⌇',
     tag: 'スクロール',
     about: 'スクロールに合わせて線が伸び、通過した項目が点灯します。沿革や導入ステップに。',
@@ -4535,7 +4574,7 @@ ${(p.items || []).map((it, i) => `      <div class="tl-item">
 
   /* ---------------- 円形マスクで切り替え ---------------- */
   clipreveal: {
-    label: '円形マスクで切り替え',
+    label: 'Clip Reveal',
     icon: '◍',
     tag: 'スクロール',
     about: 'スクロールすると円が開いて、下の世界に入れ替わります。ビフォーアフターや転換に。',
@@ -4579,7 +4618,7 @@ ${(p.items || []).map((it, i) => `      <div class="tl-item">
 
   /* ---------------- 3Dカルーセル ---------------- */
   carousel3d: {
-    label: '3Dカルーセル',
+    label: 'Carousel',
     icon: '◎',
     tag: '3D',
     about: '円環に並んだカードがゆっくり回ります。ドラッグで手動でも回せます。',
@@ -4614,7 +4653,7 @@ ${(p.items || []).map((it, i) => `      <div class="car-it"${imgSlot(`items.${i}
 
   /* ---------------- スロット式カウンター ---------------- */
   slotstats: {
-    label: '数字カウンター',
+    label: 'Counter',
     icon: '＃',
     tag: '数字',
     about: '桁ごとに数字が縦に回って止まります。実績数値を見せるときに。',
@@ -4645,7 +4684,7 @@ ${(p.items || []).map((it, i) => `      <div><span class="slot" data-slot="${esc
 
   /* ---------------- SVG線画のグラフ ---------------- */
   svgdraw: {
-    label: '線が引かれるグラフ',
+    label: 'Line Chart',
     icon: '⌁',
     tag: '図解',
     about: '棒グラフと折れ線が、線を引くように現れます。実績の推移や比較に。',
@@ -4690,7 +4729,7 @@ ${p.line ? `        <polyline points="${items.map((it, i) => `${x(i).toFixed(1)}
 
   /* ---------------- スライドページ ---------------- */
   slides: {
-    label: 'スライドページ',
+    label: 'Slides',
     icon: '❐',
     tag: 'スクロール',
     about: 'スクロール1回で1枚めくる全画面スライド。表示のたびに図と数字が最初から再生されます。',
@@ -4772,7 +4811,7 @@ ${slides}
 
   /* ---------------- 全画面メッセージ ---------------- */
   shift: {
-    label: '全画面メッセージ',
+    label: 'Statement',
     icon: '◧',
     tag: '演出',
     about: '画面いっぱいに1つの言葉だけを置きます。色を変えると空気が切り替わります。',
@@ -6013,59 +6052,59 @@ const PUBLISH = {
 
 /* ---------------- ヒーロー（1段目） ---------------- */
 const HERO_PRESETS = [
-  { key: 'center', type: 'hero', label: '中央ぞろえ',
+  { key: 'center', type: 'hero', label: 'Center',
     about: 'いちばん素直な形。文章が主役のとき。',
     props: { layout: 'center' } },
 
-  { key: 'left', type: 'hero', label: '左ぞろえ',
+  { key: 'left', type: 'hero', label: 'Left',
     about: '読み出しが速い。文章が長めのときに。',
     props: { layout: 'left' } },
 
-  { key: 'split', type: 'hero', label: '文章 左 ／ 写真 右',
+  { key: 'split', type: 'hero', label: 'Split',
     about: '文章と写真を同じ重さで見せる。',
     props: { layout: 'split' } },
 
-  { key: 'cover', type: 'hero', label: '写真いっぱい・文字を重ねる',
+  { key: 'cover', type: 'hero', label: 'Cover',
     about: '写真の力で見せる。文字は写真の上に乗る。',
     props: { layout: 'cover' } },
 
-  { key: 'cover-glass', type: 'hero', label: '写真いっぱい＋すりガラスの円',
+  { key: 'cover-glass', type: 'hero', label: 'Cover + Glass',
     about: 'ポインタに追いてガラスの円が動く。指の環境では自動で止まる。',
     props: { layout: 'cover', deco: 'glass', decoStrength: 70 } },
 
-  { key: 'center-clouds', type: 'hero', label: '中央ぞろえ＋ふわふわ雲',
+  { key: 'center-clouds', type: 'hero', label: 'Center + Clouds',
     about: 'やわらかい色のかたまりがゆっくり漂う。',
     props: { layout: 'center', deco: 'clouds', decoStrength: 60 } },
 
-  { key: 'center-aurora', type: 'hero', label: '中央ぞろえ＋オーロラ',
+  { key: 'center-aurora', type: 'hero', label: 'Center + Aurora',
     about: '背後で光の帯がゆっくり流れる。暗い配色と相性がいい。',
     props: { layout: 'center', deco: 'aurora', decoStrength: 65 } },
 
-  { key: 'center-dust', type: 'hero', label: '中央ぞろえ＋光の粒',
+  { key: 'center-dust', type: 'hero', label: 'Center + Dust',
     about: '細かい粒がゆっくり昇る。静かに動かしたいとき。',
     props: { layout: 'center', deco: 'dust', decoStrength: 55 } },
 
-  { key: 'cover-cursor', type: 'hero', label: '写真いっぱい＋追従する丸',
+  { key: 'cover-cursor', type: 'hero', label: 'Cover + Cursor',
     about: 'ポインタを追う丸の中だけ、文字が反転して見える。',
     props: { layout: 'cover', deco: 'cursor', decoStrength: 60, decoLabel: 'SCROLL' } },
 
-  { key: 'scroll-zoomout', type: 'hero', label: '写真いっぱい → 縮んで枠に収まる',
+  { key: 'scroll-zoomout', type: 'hero', label: 'Scroll: Zoom Out',
     about: '全画面の写真が、スクロールにつれて枠の中に収まっていく。',
     props: { layout: 'cover', scroll: 'zoomout', scrollLen: 200 } },
 
-  { key: 'scroll-parallax', type: 'hero', label: '写真と文字がずれて流れる',
+  { key: 'scroll-parallax', type: 'hero', label: 'Scroll: Parallax',
     about: '写真がゆっくり、文字が速く動いて奥行きが出る。',
     props: { layout: 'cover', scroll: 'parallax', scrollLen: 200 } },
 
-  { key: 'scroll-curtain', type: 'hero', label: '上下の幕が開いて写真が出る',
+  { key: 'scroll-curtain', type: 'hero', label: 'Scroll: Curtain',
     about: 'スクロールに合わせて幕が開く。',
     props: { layout: 'cover', scroll: 'curtain', scrollLen: 200 } },
 
-  { key: 'scroll-maskzoom', type: 'hero', label: '文字の中から写真が広がる',
+  { key: 'scroll-maskzoom', type: 'hero', label: 'Scroll: Mask Zoom',
     about: '文字の内側から写真が広がって全画面になる。いちばん派手。',
     props: { layout: 'cover', scroll: 'maskzoom', scrollLen: 240 } },
 
-  { key: 'collage', type: 'collage', label: '写真を敷き詰める＋縦書きの帯',
+  { key: 'collage', type: 'collage', label: 'Collage',
     about: '敷き詰めた写真に、斜めの写真と縦書きの帯を重ねる。',
     props: {} },
 ];
@@ -6085,113 +6124,113 @@ const SECTION_GROUPS = [
 
 const SECTION_PRESETS = [
   /* ============ 写真 ============ */
-  { key: 'about-left', type: 'about', group: '写真', label: '写真 左 ／ 文章 右',
+  { key: 'about-left', type: 'about', group: '写真', label: 'Photo L / Text R',
     about: '写真1枚に説明を添える。店や会社の紹介に。',
     props: { reverse: false } },
 
-  { key: 'about-right', type: 'about', group: '写真', label: '写真 右 ／ 文章 左',
+  { key: 'about-right', type: 'about', group: '写真', label: 'Photo R / Text L',
     about: '左右ちがい。上と続けて使うと交互になって流れが出る。',
     props: { reverse: true } },
 
-  { key: 'gallery', type: 'gallery', group: '写真', label: '写真を格子に並べる',
+  { key: 'gallery', type: 'gallery', group: '写真', label: 'Gallery Grid',
     about: '同じ大きさの枠に敷き詰める。ギャラリー。', props: {} },
 
-  { key: 'hscroll', type: 'hscroll', group: '写真', label: '写真を横一列（横に流れる）',
+  { key: 'hscroll', type: 'hscroll', group: '写真', label: 'H-Scroll',
     about: '縦に読むと横に流れる。作品や事例を並べるとき。', props: {} },
 
-  { key: 'collage-mid', type: 'collage', group: '写真', label: '写真を敷き詰めた帯',
+  { key: 'collage-mid', type: 'collage', group: '写真', label: 'Collage Band',
     about: '大小の写真を隙間なく敷く。途中に挟んでも効く。', props: {} },
 
-  { key: 'video', type: 'video', group: '写真', label: '動画を1つ置く',
+  { key: 'video', type: 'video', group: '写真', label: 'Video',
     about: 'YouTube・Vimeo・動画ファイルのURLを貼るだけ。形も土台も写真と同じように使える。',
     props: {} },
 
-  { key: 'strip', type: 'strip', group: '写真', label: '写真が右から左へ流れ続ける',
+  { key: 'strip', type: 'strip', group: '写真', label: 'Photo Strip',
     about: '数が多いものを途切れず流す。導入実績・取引先・受賞歴に。写真だけ／カードを選べる。',
     props: {} },
 
-  { key: 'strip-card', type: 'strip', group: '写真', label: '流れ続けるカード（写真＋文章）',
+  { key: 'strip-card', type: 'strip', group: '写真', label: 'Photo Strip (Cards)',
     about: '流れる1枚ずつに見出しと説明が付く形。',
     props: { style: 'card', size: 'l' } },
 
-  { key: 'clipreveal', type: 'clipreveal', group: '写真', label: '写真が円で切り替わる',
+  { key: 'clipreveal', type: 'clipreveal', group: '写真', label: 'Clip Reveal',
     about: '円が広がって次の写真に入れ替わる。', props: {} },
 
   /* ============ 横に並べる（カード） ============ */
-  { key: 'features-icon', type: 'features', group: 'カード', label: 'カード3つ（絵柄つき）',
+  { key: 'features-icon', type: 'features', group: 'カード', label: 'Cards ×3 (Icon)',
     about: 'いちばん使う形。伝えたいことを3つに分ける。',
     props: { style: 'icon', cols: 'c3' } },
 
-  { key: 'features-num', type: 'features', group: 'カード', label: 'カード3つ（1・2・3）',
+  { key: 'features-num', type: 'features', group: 'カード', label: 'Cards ×3 (Number)',
     about: '番号が大きく出る。順番に意味があるとき。',
     props: { style: 'num', cols: 'c3' } },
 
-  { key: 'features-paren', type: 'features', group: 'カード', label: 'カード2つ（( 01 ) つき）',
+  { key: 'features-paren', type: 'features', group: 'カード', label: 'Cards ×2 (01)',
     about: '番号を控えめに置く形。落ち着いて見える。',
     props: { style: 'paren', cols: 'c2' } },
 
-  { key: 'features-image', type: 'features', group: 'カード', label: 'カード3つ（写真つき）',
+  { key: 'features-image', type: 'features', group: 'カード', label: 'Cards ×3 (Photo)',
     about: '上に写真、下に説明。事例や商品を並べるとき。',
     props: { style: 'image', cols: 'c3' } },
 
-  { key: 'pricing', type: 'pricing', group: 'カード', label: 'カード3つ（値段つき・中央を強調）',
+  { key: 'pricing', type: 'pricing', group: 'カード', label: 'Pricing ×3',
     about: '真ん中だけ目立たせる形。', props: { cols: 'c3' } },
 
-  { key: 'stackcards', type: 'stackcards', group: 'カード', label: 'カードが重なっていく',
+  { key: 'stackcards', type: 'stackcards', group: 'カード', label: 'Stack',
     about: 'スクロールで手前に積み上がる。順に見せたいとき。', props: {} },
 
-  { key: 'carousel3d', type: 'carousel3d', group: 'カード', label: 'カードが円をえがいてまわる',
+  { key: 'carousel3d', type: 'carousel3d', group: 'カード', label: 'Carousel',
     about: '奥行きのある並び。写真が多いとき。', props: {} },
 
   /* ============ 縦に並べる（一覧） ============ */
-  { key: 'menu', type: 'menu', group: '一覧', label: '名前と値段の一覧',
+  { key: 'menu', type: 'menu', group: '一覧', label: 'Price List',
     about: '左に品名、右に値段。お品書き・メニュー表に。', props: {} },
 
-  { key: 'news', type: 'news', group: '一覧', label: '日付つきの一覧',
+  { key: 'news', type: 'news', group: '一覧', label: 'Dated List',
     about: '日付と見出しが縦に並ぶ。お知らせや予定に。', props: {} },
 
-  { key: 'faq', type: 'faq', group: '一覧', label: '押すと開く一覧',
+  { key: 'faq', type: 'faq', group: '一覧', label: 'Accordion',
     about: '見出しだけ並べて、押すと答えが出る。長い説明をたたむとき。', props: {} },
 
-  { key: 'floors', type: 'floors', group: '一覧', label: '段ごとの一覧（フロア案内）',
+  { key: 'floors', type: 'floors', group: '一覧', label: 'Floors',
     about: '階数と内容を縦に並べる。', props: {} },
 
-  { key: 'timeline', type: 'timeline', group: '一覧', label: '縦線でつながる一覧',
+  { key: 'timeline', type: 'timeline', group: '一覧', label: 'Timeline',
     about: '線が伸びながら項目が現れる。沿革や流れに。', props: {} },
 
-  { key: 'slotstats', type: 'slotstats', group: '一覧', label: '大きな数字を3つ',
+  { key: 'slotstats', type: 'slotstats', group: '一覧', label: 'Big Numbers',
     about: '画面に入ると数字が回って止まる。実績を出すとき。',
     props: { cols: 'c3' } },
 
-  { key: 'svgdraw', type: 'svgdraw', group: '一覧', label: '折れ線グラフ',
+  { key: 'svgdraw', type: 'svgdraw', group: '一覧', label: 'Line Chart',
     about: '線がその場で描かれる。数字の変化を見せるとき。', props: {} },
 
   /* ============ 文章・帯 ============ */
-  { key: 'rich', type: 'rich', group: '文章', label: '文章だけ',
+  { key: 'rich', type: 'rich', group: '文章', label: 'Text',
     about: '決まった形に収まらない文章を置く欄。', props: {} },
 
-  { key: 'shift', type: 'shift', group: '文章', label: '画面いっぱいに1行',
+  { key: 'shift', type: 'shift', group: '文章', label: 'Statement',
     about: '大きな文字を1行だけ置いて、間を作る。', props: {} },
 
-  { key: 'marquee', type: 'marquee', group: '文章', label: '横に流れる大きな文字',
+  { key: 'marquee', type: 'marquee', group: '文章', label: 'Marquee',
     about: '文字が横に流れ続ける帯。区切りに置く。',
     props: { bg: 'primary' } },
 
-  { key: 'cta', type: 'cta', group: '文章', label: '色を敷いた帯＋ボタン',
+  { key: 'cta', type: 'cta', group: '文章', label: 'CTA Band',
     about: '次にしてほしいことを1つだけ置く。予約や電話に。',
     props: { bg: 'primary' } },
 
   /* ============ その他 ============ */
-  { key: 'contact', type: 'contact', group: 'その他', label: '入力フォーム',
+  { key: 'contact', type: 'contact', group: 'その他', label: 'Form',
     about: '名前・連絡先・本文と送信ボタン。送信先はあとで設定する。', props: {} },
 
-  { key: 'slides', type: 'slides', group: 'その他', label: '1画面ずつめくる',
+  { key: 'slides', type: 'slides', group: 'その他', label: 'Slides',
     about: '資料のように、1枚ずつ切り替わる。', props: {} },
 
-  { key: 'product3d', type: 'product3d', group: 'その他', label: '立体の品物がまわる',
+  { key: 'product3d', type: 'product3d', group: 'その他', label: 'Product 3D',
     about: 'スクロールで向きが変わる。物を売るとき。', props: {} },
 
-  { key: 'exploded', type: 'exploded', group: 'その他', label: 'ばらけた層が組み上がる',
+  { key: 'exploded', type: 'exploded', group: 'その他', label: 'Exploded',
     about: '重なって1つになる図。中身や工程を見せるとき。', props: {} },
 ];
 
@@ -6199,27 +6238,27 @@ const SECTION_PRESETS = [
    ヒーロー・ブロックとは別の型として持つ。1ページに1つしか無く、
    選ぶと差し替えではなく、いまのフッターの見た目だけが変わる。 */
 const FOOTER_PRESETS = [
-  { key: 'ftr-bar', type: 'footer', label: '1行（左に名前・右にリンク）',
+  { key: 'ftr-bar', type: 'footer', label: 'Bar',
     about: 'いちばん素直な形。どのページにも合う。',
     props: { style: 'bar' } },
 
-  { key: 'ftr-center', type: 'footer', label: '中央ぞろえ',
+  { key: 'ftr-center', type: 'footer', label: 'Centered',
     about: '名前・リンク・年を縦に真ん中で。静かに終わる。',
     props: { style: 'center' } },
 
-  { key: 'ftr-big', type: 'footer', label: '大きめ（ひとこと＋リンク）',
+  { key: 'ftr-big', type: 'footer', label: 'Large',
     about: '左にお店の一言、右にリンクを縦に並べる。住所や営業時間もここに。',
     props: { style: 'big', text: '月〜金 10:00–19:00／土 10:00–17:00\n東京都〇〇区〇〇 1-2-3' } },
 
-  { key: 'ftr-light', type: 'footer', label: '明るい地',
+  { key: 'ftr-light', type: 'footer', label: 'Light',
     about: '濃い地ではなく、薄い地に線を1本。全体を軽く見せたいとき。',
     props: { style: 'light' } },
 
-  { key: 'ftr-cta', type: 'footer', label: '最後にひと押し',
+  { key: 'ftr-cta', type: 'footer', label: 'CTA',
     about: '最後にもう一度、してほしいことを置く。予約や問い合わせに。',
     props: { style: 'cta', text: 'ご相談はいつでもどうぞ。', cta: 'お問い合わせ', ctaHref: '#contact' } },
 
-  { key: 'ftr-minimal', type: 'footer', label: 'ひとことだけ',
+  { key: 'ftr-minimal', type: 'footer', label: 'Minimal',
     about: '名前と年だけの細い帯。中身で見せたいとき。',
     props: { style: 'minimal' } },
 ];
@@ -7532,11 +7571,10 @@ function renderGallery() {
     const sample = def.render(clone(def.defaults));
     /* サンプルには header や form が入るので、button ではなく div で包む
        （button の中でそれらに出会うと、パーサが button を閉じて構造が壊れる） */
-    return `<div class="gc" data-type="${t}" role="button" tabindex="0">
+    return `<div class="gc" data-type="${t}" role="button" tabindex="0" title="${esc(def.about || '')}">
       <span class="gc-hit"></span>
       <div class="gc-prev"><div class="gc-scale">${sample}</div></div>
-      <div class="gc-meta"><b>${esc(def.label)}</b>${def.tag ? `<i>${esc(def.tag)}</i>` : ''}
-        <small>${esc(def.about || '')}</small></div>
+      <div class="gc-meta"><b>${esc(def.label)}</b>${def.tag ? `<i>${esc(def.tag)}</i>` : ''}</div>
     </div>`;
   }).join('');
 
@@ -7777,17 +7815,17 @@ const HDR_ABOUT = {
 
 /* 文字の塗り。グラデーションはCSSだけ、絵のものは text-fills.js から */
 const TEXT_FILL_LIST = [
-  ['', '塗らない（文字の色のまま）'],
-  ['gold', '金'],
-  ['fire', '炎（グラデーション）'],
-  ['metal', '銀・メタル'],
-  ['night', '夜（紫から水色）'],
-  ['rainbow', '虹'],
-  ['brand', 'メイン色からアクセント色へ'],
-  ['flame', '炎の写真'],
-  ['polydark', '黒い多面体'],
-  ['polylight', '白い多面体'],
-  ['own', '自分の画像で塗る'],
+  ['', 'None'],
+  ['gold', 'Gold'],
+  ['fire', 'Fire'],
+  ['metal', 'Metal'],
+  ['night', 'Night'],
+  ['rainbow', 'Rainbow'],
+  ['brand', 'Brand'],
+  ['flame', 'Flame Photo'],
+  ['polydark', 'Poly Dark'],
+  ['polylight', 'Poly Light'],
+  ['own', 'Custom'],
 ];
 
 const FTR_ABOUT = {
@@ -7903,11 +7941,11 @@ function openDecoGallery(kind, current, onPick) {
         kind === 'scroll' ? { scroll: key } : { deco: key }));
     }
     const frozen = kind === 'scroll' && key !== 'none' ? ' style="--p:.45"' : '';
-    return `<div class="dc${key === current ? ' on' : ''}" data-k="${esc(key)}" role="button" tabindex="0">
+    return `<div class="dc${key === current ? ' on' : ''}" data-k="${esc(key)}" role="button" tabindex="0" title="${esc(about[key] || '')}">
       <span class="dc-hit"></span>
       <div class="dc-prev${kind === 'hdr' ? ' dc-hdr' : ''}${kind === 'shape' ? ' dc-shape' : ''}${kind === 'ftr' ? ' dc-ftr' : ''}">
         <div class="dc-scale ${esc(bodyClass())}"${frozen}>${sample}</div></div>
-      <div class="dc-meta"><b>${esc(label)}</b><small>${esc(about[key] || '')}</small></div>
+      <div class="dc-meta"><b>${esc(label)}</b></div>
     </div>`;
   }).join('');
 
@@ -8056,6 +8094,18 @@ function fieldHTML(f, props, base) {
   </div>`;
 }
 
+/* 「あとで直せばいい」つまみ。
+   最初に見せるのは中身（文字・写真・リンク）だけにして、
+   速さ・向き・大きさ・余白のような調整はたたんでおく。
+   数タップで作り終える人の前に、全部を並べない。 */
+const ADV_KEYS = new Set([
+  'anchor', 'bg', 'cols', 'plate', 'plateShift',
+  'speed', 'dir', 'size', 'ratio', 'scrollLen', 'decoStrength', 'decoLabel',
+  'overlay', 'grain', 'sticky', 'height', 'sep', 'outline', 'auto', 'poster',
+  'ctaHref', 'href', 'action', 'method',
+]);
+const isAdv = (f) => f.adv === true || ADV_KEYS.has(f.key);
+
 function renderEditor() {
   const box = $('#tab-edit');
   const b = state.blocks.find((x) => x.id === selected);
@@ -8065,22 +8115,33 @@ function renderEditor() {
   }
   const def = BLOCKS[b.type];
   const keep = box.scrollTop;
+  const open = advOpen ? ' open' : '';
+  const basic = def.fields.filter((f) => !isAdv(f));
+  const adv = def.fields.filter(isAdv);
+  const advHTML = adv.map((f) => fieldHTML(f, b.props, 'props')).join('').trim();
   box.innerHTML = `<div class="edit-head"><span class="bl-ic">${def.icon}</span>${esc(def.label)}</div>`
     + elementPanel(b)
-    + def.fields.map((f) => fieldHTML(f, b.props, 'props')).join('');
+    + basic.map((f) => fieldHTML(f, b.props, 'props')).join('')
+    + (advHTML ? `<details class="adv"${open}><summary>こまかい調整</summary>${advHTML}</details>` : '');
   box.scrollTop = keep;
 }
+
+/* たたんだ状態は覚えておく（開いて直して、また別のブロックへ、が続くので） */
+let advOpen = false;
+$('#tab-edit').addEventListener('toggle', (e) => {
+  if (e.target.classList && e.target.classList.contains('adv')) advOpen = e.target.open;
+}, true);
 
 /* 選択中の要素にアニメーションを付けるパネル */
 function elementPanel(b) {
   if (!selectedEl) {
-    return `<div class="el-hint">
-      <b>ダブルクリック</b>で文字をその場で書き換えられます。<br>
-      <b>1回クリック</b>すると、その要素にアニメーションを付けられます
-      （青枠＝テキスト12種 / 紫枠＝画像・カード12種）。<br>
-      <b>画像枠をクリック</b>すると端末の画像から選べます。
-      パソコンなら画像ファイルを枠に放り込んでもOKです。
-    </div>`;
+    /* 使い方の説明は、必要になった人だけが読めばいい。
+       ふだんは1行にして、たたんでおく。 */
+    return `<details class="el-hint"><summary>プレビューの触りかた</summary>
+      <b>ダブルクリック</b>で文字をその場で書き換え。<br>
+      <b>1回クリック</b>で、その要素に動きを付ける。<br>
+      <b>写真をクリック</b>で、大きさと位置を直す（空の枠なら写真を選ぶ）。
+    </details>`;
   }
   /* 写真の枠を選んだとき。位置と大きさをここで直す */
   if (selectedEl.kind === 'img') {
@@ -8689,6 +8750,19 @@ document.addEventListener('click', (e) => {
   openCutout(selected, btn.dataset.cut.replace(/^props\./, ''));
 });
 
+/* たまにしか使わないものは「…」の中。開いたら、外を押すと閉じる */
+$('#btnMore').addEventListener('click', (e) => {
+  e.stopPropagation();
+  const m = $('#moreMenu');
+  m.hidden = !m.hidden;
+  $('#btnMore').setAttribute('aria-expanded', String(!m.hidden));
+});
+document.addEventListener('click', () => {
+  const m = $('#moreMenu');
+  if (m && !m.hidden) { m.hidden = true; $('#btnMore').setAttribute('aria-expanded', 'false'); }
+});
+$('#moreMenu').addEventListener('click', () => { $('#moreMenu').hidden = true; });
+
 /* 編集画面の外にファイルを落としても、ブラウザがそれを開いてしまわないように */
 ['dragover', 'drop'].forEach((t) =>
   document.addEventListener(t, (e) => { if ([...(e.dataTransfer?.types || [])].includes('Files')) e.preventDefault(); }));
@@ -9186,11 +9260,12 @@ function renderBldCats() {
 
 function renderBldGallery() {
   const f = $('#bldFrame');
-  const cards = bldList().map((p) => `<div class="gc" data-key="${esc(p.key)}" role="button" tabindex="0">
+  /* 説明は絵で足りる。名前だけ出し、言葉での補足はマウスを乗せたときに出す */
+  const cards = bldList().map((p) => `<div class="gc" data-key="${esc(p.key)}" role="button" tabindex="0"
+      title="${esc(p.about || '')}">
       <span class="gc-hit"></span>
       <div class="gc-prev"><div class="gc-scale">${presetSample(p)}</div></div>
-      <div class="gc-meta"><b>${esc(p.label)}</b>
-        <small>${esc(p.about)}</small></div>
+      <div class="gc-meta"><b>${esc(p.label)}</b></div>
     </div>`).join('');
 
   const g = galGeom(f);

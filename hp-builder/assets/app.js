@@ -966,11 +966,10 @@ function renderGallery() {
     const sample = def.render(clone(def.defaults));
     /* サンプルには header や form が入るので、button ではなく div で包む
        （button の中でそれらに出会うと、パーサが button を閉じて構造が壊れる） */
-    return `<div class="gc" data-type="${t}" role="button" tabindex="0">
+    return `<div class="gc" data-type="${t}" role="button" tabindex="0" title="${esc(def.about || '')}">
       <span class="gc-hit"></span>
       <div class="gc-prev"><div class="gc-scale">${sample}</div></div>
-      <div class="gc-meta"><b>${esc(def.label)}</b>${def.tag ? `<i>${esc(def.tag)}</i>` : ''}
-        <small>${esc(def.about || '')}</small></div>
+      <div class="gc-meta"><b>${esc(def.label)}</b>${def.tag ? `<i>${esc(def.tag)}</i>` : ''}</div>
     </div>`;
   }).join('');
 
@@ -1211,17 +1210,17 @@ const HDR_ABOUT = {
 
 /* 文字の塗り。グラデーションはCSSだけ、絵のものは text-fills.js から */
 const TEXT_FILL_LIST = [
-  ['', '塗らない（文字の色のまま）'],
-  ['gold', '金'],
-  ['fire', '炎（グラデーション）'],
-  ['metal', '銀・メタル'],
-  ['night', '夜（紫から水色）'],
-  ['rainbow', '虹'],
-  ['brand', 'メイン色からアクセント色へ'],
-  ['flame', '炎の写真'],
-  ['polydark', '黒い多面体'],
-  ['polylight', '白い多面体'],
-  ['own', '自分の画像で塗る'],
+  ['', 'None'],
+  ['gold', 'Gold'],
+  ['fire', 'Fire'],
+  ['metal', 'Metal'],
+  ['night', 'Night'],
+  ['rainbow', 'Rainbow'],
+  ['brand', 'Brand'],
+  ['flame', 'Flame Photo'],
+  ['polydark', 'Poly Dark'],
+  ['polylight', 'Poly Light'],
+  ['own', 'Custom'],
 ];
 
 const FTR_ABOUT = {
@@ -1337,11 +1336,11 @@ function openDecoGallery(kind, current, onPick) {
         kind === 'scroll' ? { scroll: key } : { deco: key }));
     }
     const frozen = kind === 'scroll' && key !== 'none' ? ' style="--p:.45"' : '';
-    return `<div class="dc${key === current ? ' on' : ''}" data-k="${esc(key)}" role="button" tabindex="0">
+    return `<div class="dc${key === current ? ' on' : ''}" data-k="${esc(key)}" role="button" tabindex="0" title="${esc(about[key] || '')}">
       <span class="dc-hit"></span>
       <div class="dc-prev${kind === 'hdr' ? ' dc-hdr' : ''}${kind === 'shape' ? ' dc-shape' : ''}${kind === 'ftr' ? ' dc-ftr' : ''}">
         <div class="dc-scale ${esc(bodyClass())}"${frozen}>${sample}</div></div>
-      <div class="dc-meta"><b>${esc(label)}</b><small>${esc(about[key] || '')}</small></div>
+      <div class="dc-meta"><b>${esc(label)}</b></div>
     </div>`;
   }).join('');
 
@@ -1490,6 +1489,18 @@ function fieldHTML(f, props, base) {
   </div>`;
 }
 
+/* 「あとで直せばいい」つまみ。
+   最初に見せるのは中身（文字・写真・リンク）だけにして、
+   速さ・向き・大きさ・余白のような調整はたたんでおく。
+   数タップで作り終える人の前に、全部を並べない。 */
+const ADV_KEYS = new Set([
+  'anchor', 'bg', 'cols', 'plate', 'plateShift',
+  'speed', 'dir', 'size', 'ratio', 'scrollLen', 'decoStrength', 'decoLabel',
+  'overlay', 'grain', 'sticky', 'height', 'sep', 'outline', 'auto', 'poster',
+  'ctaHref', 'href', 'action', 'method',
+]);
+const isAdv = (f) => f.adv === true || ADV_KEYS.has(f.key);
+
 function renderEditor() {
   const box = $('#tab-edit');
   const b = state.blocks.find((x) => x.id === selected);
@@ -1499,22 +1510,33 @@ function renderEditor() {
   }
   const def = BLOCKS[b.type];
   const keep = box.scrollTop;
+  const open = advOpen ? ' open' : '';
+  const basic = def.fields.filter((f) => !isAdv(f));
+  const adv = def.fields.filter(isAdv);
+  const advHTML = adv.map((f) => fieldHTML(f, b.props, 'props')).join('').trim();
   box.innerHTML = `<div class="edit-head"><span class="bl-ic">${def.icon}</span>${esc(def.label)}</div>`
     + elementPanel(b)
-    + def.fields.map((f) => fieldHTML(f, b.props, 'props')).join('');
+    + basic.map((f) => fieldHTML(f, b.props, 'props')).join('')
+    + (advHTML ? `<details class="adv"${open}><summary>こまかい調整</summary>${advHTML}</details>` : '');
   box.scrollTop = keep;
 }
+
+/* たたんだ状態は覚えておく（開いて直して、また別のブロックへ、が続くので） */
+let advOpen = false;
+$('#tab-edit').addEventListener('toggle', (e) => {
+  if (e.target.classList && e.target.classList.contains('adv')) advOpen = e.target.open;
+}, true);
 
 /* 選択中の要素にアニメーションを付けるパネル */
 function elementPanel(b) {
   if (!selectedEl) {
-    return `<div class="el-hint">
-      <b>ダブルクリック</b>で文字をその場で書き換えられます。<br>
-      <b>1回クリック</b>すると、その要素にアニメーションを付けられます
-      （青枠＝テキスト12種 / 紫枠＝画像・カード12種）。<br>
-      <b>画像枠をクリック</b>すると端末の画像から選べます。
-      パソコンなら画像ファイルを枠に放り込んでもOKです。
-    </div>`;
+    /* 使い方の説明は、必要になった人だけが読めばいい。
+       ふだんは1行にして、たたんでおく。 */
+    return `<details class="el-hint"><summary>プレビューの触りかた</summary>
+      <b>ダブルクリック</b>で文字をその場で書き換え。<br>
+      <b>1回クリック</b>で、その要素に動きを付ける。<br>
+      <b>写真をクリック</b>で、大きさと位置を直す（空の枠なら写真を選ぶ）。
+    </details>`;
   }
   /* 写真の枠を選んだとき。位置と大きさをここで直す */
   if (selectedEl.kind === 'img') {
@@ -2123,6 +2145,19 @@ document.addEventListener('click', (e) => {
   openCutout(selected, btn.dataset.cut.replace(/^props\./, ''));
 });
 
+/* たまにしか使わないものは「…」の中。開いたら、外を押すと閉じる */
+$('#btnMore').addEventListener('click', (e) => {
+  e.stopPropagation();
+  const m = $('#moreMenu');
+  m.hidden = !m.hidden;
+  $('#btnMore').setAttribute('aria-expanded', String(!m.hidden));
+});
+document.addEventListener('click', () => {
+  const m = $('#moreMenu');
+  if (m && !m.hidden) { m.hidden = true; $('#btnMore').setAttribute('aria-expanded', 'false'); }
+});
+$('#moreMenu').addEventListener('click', () => { $('#moreMenu').hidden = true; });
+
 /* 編集画面の外にファイルを落としても、ブラウザがそれを開いてしまわないように */
 ['dragover', 'drop'].forEach((t) =>
   document.addEventListener(t, (e) => { if ([...(e.dataTransfer?.types || [])].includes('Files')) e.preventDefault(); }));
@@ -2620,11 +2655,12 @@ function renderBldCats() {
 
 function renderBldGallery() {
   const f = $('#bldFrame');
-  const cards = bldList().map((p) => `<div class="gc" data-key="${esc(p.key)}" role="button" tabindex="0">
+  /* 説明は絵で足りる。名前だけ出し、言葉での補足はマウスを乗せたときに出す */
+  const cards = bldList().map((p) => `<div class="gc" data-key="${esc(p.key)}" role="button" tabindex="0"
+      title="${esc(p.about || '')}">
       <span class="gc-hit"></span>
       <div class="gc-prev"><div class="gc-scale">${presetSample(p)}</div></div>
-      <div class="gc-meta"><b>${esc(p.label)}</b>
-        <small>${esc(p.about)}</small></div>
+      <div class="gc-meta"><b>${esc(p.label)}</b></div>
     </div>`).join('');
 
   const g = galGeom(f);
