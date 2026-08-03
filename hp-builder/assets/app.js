@@ -854,8 +854,10 @@ const GAL_W = 1180;
 
 function galGeom(f) {
   const wrap = f.parentElement;
-  const W = wrap.clientWidth || 900;
-  const H = wrap.clientHeight || 480;
+  /* 枠がまだ描かれていない（開く前など）ときは、画面の幅から見積もる。
+     900px を決め打ちにすると、スマホでもPC用の並びで作ってしまう。 */
+  const W = wrap.clientWidth || Math.min(window.innerWidth - 48, GAL_W);
+  const H = wrap.clientHeight || Math.round(window.innerHeight * 0.52);
   return { W, H, gs: Math.min(1, W / GAL_W), cols: W < 520 ? 1 : W < 900 ? 2 : 3 };
 }
 
@@ -1377,11 +1379,23 @@ function addBlock(type) {
 
 function openAddGallery() {
   renderCatBar();
-  renderGallery();
+  /* 先に開く。閉じているあいだは枠の幅が 0 で、列数も縮尺も決められない
+     （実際、スマホでPC用の並びのまま出て、右が切れていた）。 */
   openModal('#addModal');
+  renderGallery();
 }
 $('#btnAdd').addEventListener('click', openAddGallery);
 $('#addClose').addEventListener('click', () => closeModal('#addModal'));
+
+/* 画面の向きや大きさが変わると、列数と縮尺が合わなくなる。開いている一覧だけ作り直す */
+let galResizeTimer;
+window.addEventListener('resize', () => {
+  clearTimeout(galResizeTimer);
+  galResizeTimer = setTimeout(() => {
+    if (!$('#addModal').hidden) renderGallery();
+    if (!$('#buildModal').hidden) renderBldGallery();
+  }, 180);
+});
 $('#catBar').addEventListener('click', (e) => {
   const c = e.target.closest('button')?.dataset.cat;
   if (!c) return;
