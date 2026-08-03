@@ -1601,13 +1601,13 @@ $('#iconGrid').addEventListener('click', (e) => {
 });
 $('#iconClose').addEventListener('click', () => { iconPick = null; closeModal('#iconModal'); });
 
-function openDecoGallery(kind, current, onPick) {
-  decoPick = onPick;
+/* 見本のカードを組む。
+   この一覧は「アニメーションを選ぶ」画面と、空白から組むときの
+   ヘッダー／フッターの段で、どちらも同じものを使う。 */
+function decoCards(kind, current) {
   const k = GAL_KINDS[kind] || GAL_KINDS.deco;
   const list = k.list();
   const about = k.about;
-  $('#animTitle').textContent = k.title;
-  $('#animSub').textContent = k.sub;
 
   /* 見本は「いま編集中のヒーロー」から作る。文言も写真もそのまま使うので、
      自分のページでどう見えるかが分かる。 */
@@ -1656,11 +1656,21 @@ function openDecoGallery(kind, current, onPick) {
       <div class="dc-meta"><b>${esc(label)}</b></div>
     </div>`;
   }).join('');
+  return cards;
+}
 
-  $('#animFrame').srcdoc = `<!DOCTYPE html><html lang="ja"><head><meta charset="utf-8">
+/* カードを敷いた1枚のHTML。iframe の srcdoc にそのまま入れる */
+const decoDoc = (kind, cards) => `<!DOCTYPE html><html lang="ja"><head><meta charset="utf-8">
 <style>${themeCSS(state.theme)}\n${SITE_CSS}\n${shapeMaskCSS(Object.keys(SHAPE_MASKS))}\n${DECO_GAL_CSS}</style></head>
 <body class="${esc(bodyClass())}"><div class="dg${kind === 'shape' ? ' small' : ''}">${cards}</div>
 <script>${SITE_JS}<\/script><script>${DECO_GAL_JS}<\/script></body></html>`;
+
+function openDecoGallery(kind, current, onPick) {
+  decoPick = onPick;
+  const k = GAL_KINDS[kind] || GAL_KINDS.deco;
+  $('#animTitle').textContent = k.title;
+  $('#animSub').textContent = k.sub;
+  $('#animFrame').srcdoc = decoDoc(kind, decoCards(kind, current));
   openModal('#animModal');
 }
 
@@ -2952,136 +2962,26 @@ const closeModal = (id) => { $(id).hidden = true; };
    ホームページを持っていない人が対象なので、決めることを3つに絞る。
    文章・配色・写真の配置は、こちらで埋める。
    ================================================================ */
-let ezStep = 1;
-let ezInd = null;
-let ezName = '';
-let ezPhotos = [];      // データURLの配列
+/* ================================================================
+   はじめる
 
-const ezPicker = document.createElement('input');
-ezPicker.type = 'file';
-ezPicker.accept = 'image/*';
-ezPicker.multiple = true;
-
-function renderEz() {
-  $('#ezDots').innerHTML = [1, 2, 3].map((i) => `<i class="${i <= ezStep ? 'on' : ''}"></i>`).join('');
-  $('#ezStep1').hidden = ezStep !== 1;
-  $('#ezStep2').hidden = ezStep !== 2;
-  $('#ezStep3').hidden = ezStep !== 3;
-  $('#ezBack').hidden = ezStep === 1;
-  $('#ezToTpl').hidden = ezStep !== 1;
-  /* 前に作ったHTMLを開く道は、この画面に置く。
-     起動直後はこの画面が上部バーを覆っていて、そちらのボタンを押せないため。 */
-  $('#ezOpen').hidden = ezStep !== 1;
-  $('#ezNext').hidden = ezStep === 1;
-
-  if (ezStep === 1) {
-    $('#ezTitle').textContent = 'どんなお店・会社ですか？';
-    $('#ezSub').textContent = '近いものを1つ選んでください。あとから全部変えられます。';
-  } else if (ezStep === 2) {
-    $('#ezTitle').textContent = 'お名前を教えてください';
-    $('#ezSub').textContent = 'お店・会社の名前です。ページの見出しとロゴに入ります。';
-    $('#ezNext').textContent = 'つぎへ';
-    $('#ezNext').disabled = !$('#ezName').value.trim();
-  } else {
-    $('#ezTitle').textContent = '写真をえらんでください';
-    $('#ezSub').textContent = ezPhotos.length
-      ? `${ezPhotos.length}枚を配置しました。色も写真に合わせています。`
-      : '無くても作れます。あとから1枚ずつ差し替えられます。';
-    $('#ezNext').textContent = ezPhotos.length ? 'これで完成' : '写真はあとで';
-    $('#ezNext').disabled = false;
-  }
-}
-
-function renderEzInds() {
-  $('#ezInds').innerHTML = INDUSTRIES.map((i) =>
-    `<button data-ind="${esc(i.key)}"><b>${i.icon}</b>${esc(i.label)}</button>`).join('');
-}
-
-/* 業種・店名・写真がそろうたびに組み直す。
-   途中でも常に「いまの答えでの完成形」がプレビューに出ている状態にする。 */
-async function ezRebuild() {
-  if (!ezInd) return;
-  const ind = INDUSTRIES.find((i) => i.key === ezInd);
-  const st = buildEasyState(ezInd, ezName, ezPhotos);
-  if (ezPhotos.length) st.theme = await paletteFromPhotos(st.theme, ezPhotos);
-  fillPhotos(st, ezPhotos);
-  state = st;
-  selected = page().blocks[1]?.id || page().blocks[0]?.id;
-  selectedEl = null;
-  closed.clear();
-  refresh();
-  return ind;
-}
-
+   起動して最初に出る画面。ここでの分かれ道は2つだけにする。
+     ・テンプレートから選ぶ … 出来上がったページを選んで差し替える
+     ・空白からカスタマイズ … 順に選んで組み上げる
+   どちらを選んでも、あとから全部変えられる。
+   ================================================================ */
 function openEasy() {
-  ezStep = 1; ezInd = null; ezName = ''; ezPhotos = [];
-  $('#ezName').value = '';
-  $('#ezThumbs').innerHTML = '';
-  renderEzInds();
-  renderEz();
   closeModal('#tplModal');
+  closeModal('#buildModal');
   openModal('#easyModal');
 }
 
-$('#ezInds').addEventListener('click', async (e) => {
-  const k = e.target.closest('button')?.dataset.ind;
-  if (!k) return;
-  ezInd = k;
-  await ezRebuild();
-  ezStep = 2;
-  renderEz();
-  $('#ezName').focus();
-});
-
-$('#ezName').addEventListener('input', () => {
-  ezName = $('#ezName').value.trim();
-  $('#ezNext').disabled = !ezName;
-});
-$('#ezName').addEventListener('keydown', (e) => {
-  if (e.key === 'Enter' && ezName) $('#ezNext').click();
-});
-
-$('#ezPick').addEventListener('click', () => ezPicker.click());
-ezPicker.addEventListener('change', async () => {
-  const files = [...ezPicker.files].filter((f) => f.type.startsWith('image/'));
-  ezPicker.value = '';
-  if (!files.length) return;
-  flash('写真を読み込んでいます…');
-  for (const f of files) {
-    try { ezPhotos.push(await toDataURL(f)); } catch { /* 読めない1枚は飛ばす */ }
-  }
-  $('#ezThumbs').innerHTML = ezPhotos
-    .map((src) => `<img src="${esc(src)}" alt="">`).join('');
-  await ezRebuild();
-  renderEz();
-  flash(`${ezPhotos.length}枚を配置しました`);
-});
-
-$('#ezBack').addEventListener('click', () => {
-  ezStep = Math.max(1, ezStep - 1);
-  renderEz();
-});
-
-$('#ezNext').addEventListener('click', async () => {
-  if (ezStep === 2) {
-    await ezRebuild();
-    ezStep = 3;
-    renderEz();
-    return;
-  }
+$('#ezStep0').addEventListener('click', (e) => {
+  const way = e.target.closest('[data-way]')?.dataset.way;
+  if (!way) return;
   closeModal('#easyModal');
-  if (isMobile()) closeSheets();
-  refresh();
-  resetHistory();
-  flash(ezPhotos.length
-    ? `できました。写真${ezPhotos.length}枚を入れて、色も合わせています`
-    : 'できました。写真はいつでも足せます');
-});
-
-$('#ezToTpl').addEventListener('click', () => {
-  closeModal('#easyModal');
-  renderTplGrid();
-  openModal('#tplModal');
+  if (way === 'tpl') { renderTplGrid(); openModal('#tplModal'); }
+  else openBuild(true);
 });
 
 /* ================================================================
@@ -3108,23 +3008,46 @@ function presetSample(p) {
   return def.render(Object.assign(clone(def.defaults), clone(p.props)));
 }
 
-/* ヒーロー → ブロック → フッターの3段階。
-   フッターだけは「積む」ものではなく「差し替える」ものなので、
-   ブロックを選び終えたあとの最後の1画面にしている。 */
-let bldToFooter = false;
+/* ================================================================
+   順を追って組む
 
-const bldStep = () => {
-  if (bldToFooter) return 'footer';
-  return state && page().blocks.some((b) => b.type === 'hero' || b.type === 'collage')
-    ? 'section' : 'hero';
+     ① ビジネス情報 → ② ヒーロー → ③ ブロック → ④ ヘッダー／フッター → ⑤ 仕上げ
+
+   一度に全部を見せない。いま決めることだけを出して、その1つだけを選ばせる。
+   決めたものは上の帯に積まれていくので、どこまで来たかが分かる。
+
+   ①は飛ばせる。名前も業種もまだ決まっていない人がいるし、そこで
+   止まってしまうくらいなら、先に形を見せたほうがいい。
+   ================================================================ */
+const BLD_STEPS = ['info', 'hero', 'section', 'chrome', 'done'];
+let bldI = 0;
+let bldChrome = 'hdr';   // ④でヘッダーとフッターのどちらを見せているか
+let bldPhotos = [];      // ②で選んだ写真
+
+const bldStep = () => BLD_STEPS[bldI];
+
+const BLD_HEAD = {
+  info: ['① ビジネス情報', '入れておくと、あとで足すブロックにそのまま入ります。飛ばしても構いません。'],
+  hero: ['② ヒーローを選ぶ', 'いちばん上に来る、顔になる部分です。'],
+  section: ['③ ブロックを選ぶ', '選ぶと下に積まれます。順番はあとから変えられます。'],
+  chrome: ['④ ヘッダーとフッター', 'いちばん上のバーと、いちばん下です。'],
+  done: ['できました', 'ここから細かいところを整えます。'],
 };
 
 function bldList() {
   const st = bldStep();
   if (st === 'hero') return HERO_PRESETS;
-  if (st === 'footer') return FOOTER_PRESETS;
   /* 分けかたは「かたち」。使い道（飲食店向けなど）では分けない */
-  return SECTION_PRESETS.filter((p) => bldCat === 'all' || p.group === bldCat);
+  if (st === 'section') return SECTION_PRESETS.filter((p) => bldCat === 'all' || p.group === bldCat);
+  return [];
+}
+
+function renderBldSteps() {
+  const now = bldI;
+  $('#bldSteps').innerHTML = BLD_STEPS.map((k, i) => {
+    const label = BLD_HEAD[k][0].replace(/^[①-⑤]\s*/, '');
+    return `<span class="${i === now ? 'on' : (i < now ? 'past' : '')}">${esc(label)}</span>`;
+  }).join('');
 }
 
 function renderBldStrip() {
@@ -3134,24 +3057,35 @@ function renderBldStrip() {
     .map((b, i) => `<span><i>${i + 1}</i>${esc(bldNames.get(b.id) || BLOCKS[b.type].label)}</span>`)
     .join('');
   $('#bldStrip').scrollLeft = 99999;
-  const foot = bldStep() === 'footer';
-  $('#bldBack').disabled = !foot && picked.length === 0;
-  $('#bldDone').disabled = !foot && picked.length === 0;
+  $('#bldStrip').hidden = !picked.length;
 }
 
 function renderBldHead() {
   const st = bldStep();
-  const T = {
-    hero: ['① ヒーローを選ぶ', 'いちばん上に来る、顔になる部分です。'],
-    section: ['② ブロックを選ぶ', '選ぶと下に積まれます。順番はあとから変えられます。'],
-    footer: ['③ フッターを選ぶ', 'いちばん下です。選ばなければ、そのままでも構いません。'],
-  }[st];
-  $('#bldTitle').textContent = T[0];
+  const [title, sub] = BLD_HEAD[st];
+  $('#bldTitle').textContent = title;
   /* スマホでは説明が長いほど見本が見えなくなるので、要点だけにする */
-  $('#bldSub').textContent = T[1];
+  $('#bldSub').textContent = sub;
+
+  $('#bldInfo').hidden = st !== 'info';
+  $('#bldPhoto').hidden = st !== 'hero';
+  $('#bldFinish').hidden = st !== 'done';
+  $('#bldGal').hidden = st === 'info' || st === 'done';
   $('#bldCatBar').hidden = st !== 'section';
-  $('#bldDone').textContent = st === 'section' ? 'つぎへ（フッター）' : 'これで完成';
-  $('#bldBack').textContent = st === 'footer' ? 'ブロックに戻る' : '1つ戻す';
+  $('#bldChromeBar').hidden = st !== 'chrome';
+  $('#bldSkip').hidden = st !== 'info';
+
+  const hasHero = page().blocks.some((b) => b.type === 'hero' || b.type === 'collage');
+  const nSec = page().blocks.filter((b) => b.type !== 'header' && b.type !== 'footer').length;
+  $('#bldBack').hidden = bldI === 0;
+  /* 最後の段で「やめる」を押すと、組み上げたものが全部消える。
+     ここまで来た人が押すボタンではないので、出さない */
+  $('#bldCancel').hidden = st === 'done';
+  $('#bldBack').textContent = st === 'section' && nSec > 1 ? '1つ戻す' : 'もどる';
+  $('#bldDone').textContent = st === 'done' ? '編集をはじめる' : 'つぎへ';
+  /* ヒーローを選ばずには進ませない。空のページから始まっているので、
+     何も無いまま先へ行っても選ぶものが見えない */
+  $('#bldDone').disabled = st === 'hero' && !hasHero;
 }
 
 function renderBldCats() {
@@ -3160,7 +3094,33 @@ function renderBldCats() {
 }
 
 function renderBldGallery() {
+  const st = bldStep();
+  if (st === 'info' || st === 'done') return;
   const f = $('#bldFrame');
+
+  if (st === 'chrome') {
+    /* ヘッダーとフッターの見本は、幅を広げて縮める作りではない
+       （中身が1枚ずつ大きいので、そのままの幅で並べる）。
+       ②③で当てた寸法が残っていると空きが出るので、戻しておく。 */
+    f.style.cssText = '';
+    /* ヘッダーとフッターは「積む」ものではなく「差し替える」もの。
+       見本の作りは編集画面の一覧と同じものを使い回す */
+    const hb = page().blocks.find((b) => b.type === 'header');
+    const fb = page().blocks.find((b) => b.type === 'footer');
+    const cur = bldChrome === 'hdr' ? (hb && hb.props.bar) || '' : (fb && fb.props.style) || 'bar';
+    f.srcdoc = decoDoc(bldChrome, decoCards(bldChrome, cur));
+    f.onload = () => {
+      f.contentDocument.addEventListener('click', (e) => {
+        const k = e.target.closest('.dc')?.dataset.k;
+        if (k != null) pickChrome(k);
+      });
+    };
+    return;
+  }
+
+  const g = galGeom(f);
+  sizeGalFrame(f, g);
+
   /* 説明は絵で足りる。名前だけ出し、言葉での補足はマウスを乗せたときに出す */
   const cards = bldList().map((p) => `<div class="gc" data-key="${esc(p.key)}" role="button" tabindex="0"
       title="${esc(p.about || '')}">
@@ -3169,8 +3129,6 @@ function renderBldGallery() {
       <div class="gc-meta"><b>${esc(p.label)}</b></div>
     </div>`).join('');
 
-  const g = galGeom(f);
-  sizeGalFrame(f, g);
   f.srcdoc = `<!DOCTYPE html><html lang="ja"><head><meta charset="utf-8">
 <style>${themeCSS(state.theme)}\n${SITE_CSS}\n${galleryCSS(g)}</style></head>
 <body class="${esc(bodyClass())}"><div class="gg">${cards}</div>
@@ -3187,10 +3145,27 @@ function renderBldGallery() {
 }
 
 function refreshBld() {
+  renderBldSteps();
   renderBldHead();
   renderBldCats();
   renderBldStrip();
   renderBldGallery();
+}
+
+/* ④で選んだヘッダーのバー／フッターの型を当てる */
+function pickChrome(key) {
+  const t = bldChrome === 'hdr' ? 'header' : 'footer';
+  const b = page().blocks.find((x) => x.type === t);
+  if (!b) return;
+  if (bldChrome === 'hdr') b.props.bar = key;
+  else {
+    Object.assign(b.props, clone((FOOTER_PRESETS.find((p) => p.props.style === key) || { props: {} }).props));
+    fillFromBiz(b);   // 型を選ぶと見本の文章が入るので、分かっている情報で上書きする
+  }
+  selected = b.id;
+  selectedEl = null;
+  refresh();
+  refreshBld();
 }
 
 function pickPreset(key) {
@@ -3211,43 +3186,224 @@ function pickPreset(key) {
     return;
   }
 
+  /* ヒーローは1ページに1つ。②で選び直したら、積まずに差し替える */
+  const heroStep = bldStep() === 'hero';
+  if (heroStep) {
+    const old = page().blocks.find((b) => b.type === 'hero' || b.type === 'collage');
+    if (old) {
+      page().blocks = page().blocks.filter((b) => b.id !== old.id);
+      bldNames.delete(old.id);
+    }
+  }
+
   const nb = makeBlock(p.type, p.props);
+  fillFromBiz(nb);
   bldNames.set(nb.id, p.label);
   const fi = page().blocks.findIndex((b) => b.type === 'footer');
   page().blocks.splice(fi < 0 ? page().blocks.length : fi, 0, nb);
+  spreadPhotos();
   selected = nb.id;
   selectedEl = null;
   refresh();          // 後ろのプレビューも伸ばして、積み上がりが見えるようにする
   refreshBld();
 }
 
+/* 写真の枠を、上のブロックから順に埋めていく。
+   ②で選んだ写真を先に使い、足りなくなったら業種に合わせた仮の絵にする。
+   空の枠に「IMAGE」と出ているページは作りかけにしか見えず、そこで
+   手が止まる。写真が1枚も無くても、形が見えている状態にする。
+
+   すでに人が入れた写真には触らない（仮の絵と、②で選んだ写真だけ入れ替える）。 */
+function spreadPhotos() {
+  const ind = (state.biz && state.biz.ind) || 'company';
+  const mine = new Set(bldPhotos);
+  let i = 0, k = 0;
+  page().blocks.forEach((b) => {
+    imageSlots(b).forEach((slot) => {
+      const cur = getPath(b.props, slot);
+      if (cur && !isSampleArt(cur) && !mine.has(cur)) return;   // 人が入れたものは残す
+      if (i < bldPhotos.length) setPath(b.props, slot, bldPhotos[i++]);
+      else setPath(b.props, slot, sampleArt(ind, k++));
+    });
+  });
+}
+
 function bldUndo() {
-  if (bldStep() === 'footer') { bldToFooter = false; refreshBld(); return; }
-  const picked = page().blocks.filter((b) => b.type !== 'header' && b.type !== 'footer');
-  const last = picked[picked.length - 1];
-  if (!last) return;
-  page().blocks = page().blocks.filter((b) => b.id !== last.id);
-  bldNames.delete(last.id);
-  selected = page().blocks[0]?.id || null;
-  selectedEl = null;
-  refresh();
+  const st = bldStep();
+  /* ③でブロックを積んでいる途中なら、まず1つ取り消す。
+     取り消すものが無くなったら、前の段へ戻る */
+  if (st === 'section') {
+    const picked = page().blocks.filter((b) => b.type !== 'header' && b.type !== 'footer');
+    if (picked.length > 1) {
+      const last = picked[picked.length - 1];
+      page().blocks = page().blocks.filter((b) => b.id !== last.id);
+      bldNames.delete(last.id);
+      selected = page().blocks[0]?.id || null;
+      selectedEl = null;
+      refresh();
+      return refreshBld();
+    }
+  }
+  bldI = Math.max(0, bldI - 1);
   refreshBld();
 }
 
-function openBuildFlow() {
+/* ---------------- ① ビジネス情報 ---------------- */
+const BIZ_FIELDS = [['bizName', 'name'], ['bizTel', 'tel'], ['bizMail', 'email'],
+  ['bizAddr', 'address'], ['bizHours', 'hours']];
+
+function renderBldInds() {
+  const cur = state.biz && state.biz.ind;
+  $('#bldInds').innerHTML = INDUSTRIES.map((i) =>
+    `<button data-ind="${esc(i.key)}"${i.key === cur ? ' class="on"' : ''}><b>${i.icon}</b>${esc(i.label)}</button>`).join('');
+}
+
+$('#bldInds').addEventListener('click', (e) => {
+  const k = e.target.closest('button')?.dataset.ind;
+  if (!k) return;
+  state.biz = Object.assign({}, state.biz, { ind: k });
+  /* 写真がまだ無いうちは、業種の色に寄せる。あとで写真を入れたら
+     そちらから作り直すので、ここで決めた色は残らない */
+  if (!bldPhotos.length) state.theme = themeFromIndustry(state.theme, k);
+  renderBldInds();
+  spreadPhotos();     // 仮の絵も、その業種のものに描き直す
+  applyBiz();
+});
+$('#bldInfo').addEventListener('input', (e) => {
+  const f = BIZ_FIELDS.find(([id]) => e.target.id === id);
+  if (!f) return;
+  state.biz = Object.assign({}, state.biz, { [f[1]]: e.target.value.trim() });
+  applyBiz();
+});
+
+/* 入れてもらった情報を、いま置いてあるブロックに反映する。
+   名前はヘッダーとフッターに出るので、打っているそばから見える。 */
+function applyBiz() {
+  const z = state.biz || {};
+  if (z.name) {
+    state.meta.title = z.name;
+    page().blocks.forEach((b) => {
+      if (b.type === 'header' || b.type === 'footer') b.props.logo = z.name;
+    });
+  }
+  page().blocks.forEach(fillFromBiz);
+  refresh();
+}
+
+/* 1つのブロックに、分かっている情報を入れる。
+   すでに人が書き替えたところは触らない（初期値のときだけ入れる）。 */
+function fillFromBiz(b) {
+  const z = state.biz || {};
+  const def = BLOCKS[b.type].defaults;
+  const put = (key, val) => {
+    if (!val) return;
+    if (b.props[key] === undefined) return;
+    if (b.props[key] !== def[key]) return;   // 人が直したものは残す
+    b.props[key] = val;
+  };
+  if (b.type === 'header' || b.type === 'footer') put('logo', z.name);
+  if (b.type === 'contact') {
+    put('tel', z.tel); put('email', z.email); put('address', z.address); put('hours', z.hours);
+  }
+  /* フッターは連絡先の欄を持たず、まとまった文章1つで見せる。
+     型を選ぶと見本の文章が入るので、それも「まだ書き替えていない」
+     ものとして扱い、分かっている住所と営業時間に置きかえる。 */
+  if (b.type === 'footer' && (z.address || z.hours)) {
+    const sample = new Set([def.text, ...FOOTER_PRESETS.map((x) => x.props.text).filter(Boolean)]);
+    if (sample.has(b.props.text)) b.props.text = [z.hours, z.address].filter(Boolean).join('\n');
+  }
+  /* 業種を選んでいれば、ヒーローと紹介の文章をその業種のものにする */
+  const ind = z.ind && INDUSTRIES.find((i) => i.key === z.ind);
+  if (!ind) return;
+  const c = ind.copy(z.name || 'お店の名前');
+  if (b.type === 'hero') {
+    put('eyebrow', c.hero.eyebrow); put('title', c.hero.title); put('text', c.hero.text);
+  }
+  if (b.type === 'about') { put('title', c.about.title); put('body', c.about.body); }
+  if (b.type === 'features' && JSON.stringify(b.props.items) === JSON.stringify(def.items)) {
+    b.props.items = clone(c.features);
+  }
+}
+
+/* ---------------- ② 写真 ---------------- */
+const bldPicker = document.createElement('input');
+bldPicker.type = 'file';
+bldPicker.accept = 'image/*';
+bldPicker.multiple = true;
+
+$('#bldPick').addEventListener('click', () => bldPicker.click());
+bldPicker.addEventListener('change', async () => {
+  const files = [...bldPicker.files].filter((f) => f.type.startsWith('image/'));
+  bldPicker.value = '';
+  if (!files.length) return;
+  flash('写真を読み込んでいます…');
+  for (const f of files) {
+    try { bldPhotos.push(await toDataURL(f)); } catch { /* 読めない1枚は飛ばす */ }
+  }
+  $('#bldThumbs').innerHTML = bldPhotos.map((src) => `<img src="${esc(src)}" alt="">`).join('');
+  $('#bldPickSub').textContent = `${bldPhotos.length}枚。この先のブロックにも順に入ります`;
+  /* 写真に合わせて配色も寄せる。色をあとから選び直す手間を1つ減らす */
+  try { state.theme = await paletteFromPhotos(state.theme, bldPhotos); } catch { /* 色は元のまま */ }
+  spreadPhotos();
+  refresh();
+  refreshBld();
+  flash(`${bldPhotos.length}枚を入れました`);
+});
+
+/* ---------------- ④ ヘッダーとフッター ---------------- */
+$('#bldChromeBar').addEventListener('click', (e) => {
+  const k = e.target.closest('[data-chrome]')?.dataset.chrome;
+  if (!k) return;
+  bldChrome = k;
+  $$('#bldChromeBar button').forEach((b) => b.classList.toggle('on', b.dataset.chrome === k));
+  renderBldGallery();
+});
+
+/* ---------------- ⑤ 仕上げ ---------------- */
+$('#bldFinish').addEventListener('click', (e) => {
+  const k = e.target.closest('[data-fin]')?.dataset.fin;
+  if (!k) return;
+  finishBuild();
+  if (k === 'color') { switchTab('design'); if (isMobile()) openSheet('right', 'design'); }
+  else if (k === 'anim') { switchTab('design'); if (isMobile()) openSheet('right', 'design'); flash('「動き」の欄で、出かたと速さを変えられます'); }
+  else {
+    switchTab('edit');
+    if (isMobile()) openSheet('right', 'edit');
+    flash('プレビューの写真をクリックすると、大きさと位置を直せます');
+  }
+});
+
+function finishBuild() {
+  bldBefore = null;
+  closeModal('#buildModal');
+  if (isMobile()) closeSheets();
+  refresh();
+  resetHistory();     // 組み上げたところを起点にする
+}
+
+function openBuild(fresh) {
   bldBefore = state ? clone(state) : null;
   bldCat = 'all';
-  bldToFooter = false;
+  bldChrome = 'hdr';
+  bldPhotos = [];
+  bldI = 0;
   bldNames.clear();
-  state = buildCustomState();
+  if (fresh || !state) state = buildCustomState();
   selected = page().blocks[0].id;
   selectedEl = null;
   closed.clear();
+  $('#bldThumbs').innerHTML = '';
+  $('#bldPickSub').textContent = '入れなくても大丈夫です。業種に合わせた仮の絵が入ります';
+  BIZ_FIELDS.forEach(([id, key]) => { $(`#${id}`).value = (state.biz && state.biz[key]) || ''; });
+  $('#bizMore').open = false;
+  renderBldInds();
   closeModal('#tplModal');
+  closeModal('#easyModal');
   refresh();
   openModal('#buildModal');
   refreshBld();
 }
+const openBuildFlow = () => openBuild(true);
 
 $('#tplToBuild').addEventListener('click', openBuildFlow);
 $('#tplToEasy').addEventListener('click', openEasy);
@@ -3266,18 +3422,10 @@ $('#bldCancel').addEventListener('click', () => {
   closeModal('#buildModal');
   refresh();
 });
+$('#bldSkip').addEventListener('click', () => { bldI = 1; refreshBld(); });
 $('#bldDone').addEventListener('click', () => {
-  /* ブロックを選び終えたら、いきなり閉じずにフッターを1画面はさむ */
-  if (bldStep() === 'section') {
-    bldToFooter = true;
-    refreshBld();
-    return;
-  }
-  bldBefore = null;
-  closeModal('#buildModal');
-  if (isMobile()) closeSheets();
-  refresh();
-  resetHistory();     // 組み上げたところを起点にする
+  if (bldStep() !== 'done') { bldI += 1; refreshBld(); return; }
+  finishBuild();
   const n = page().blocks.filter((b) => b.type !== 'header' && b.type !== 'footer').length;
   flash(`${n}段のページを組みました。ここから中身を書き替えられます`);
 });

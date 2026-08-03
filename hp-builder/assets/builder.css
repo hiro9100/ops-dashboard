@@ -542,6 +542,57 @@ input,select,textarea{font:inherit}
   border:1px solid var(--line);display:block
 }
 
+/* 起動して最初の分かれ道。選択肢は2つだけにする */
+.ez-ways{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.ez-ways button{
+  text-align:left;background:var(--panel2);border:1px solid var(--line);border-radius:14px;
+  padding:20px 18px;color:var(--tx);transition:border-color .15s,transform .15s
+}
+.ez-ways button:hover{border-color:var(--pri);transform:translateY(-2px)}
+.ez-ways b{display:block;font-size:15px;margin-bottom:7px}
+.ez-ways small{display:block;color:var(--tx2);font-size:12px;line-height:1.75}
+@media (max-width:640px){ .ez-ways{grid-template-columns:1fr} }
+
+/* ==========================================================
+   順を追って組む
+   ========================================================== */
+/* いま何段目かの帯。いくつあって、どこまで来たかを一目で出す。
+   箱ごとスクロールしても、いまどこかは見えていてほしいので上に貼り付ける
+   （「閉じる」を下に貼り付けているのと同じ理由）。 */
+.bld-steps{
+  display:flex;gap:5px;margin-bottom:14px;overflow-x:auto;scrollbar-width:none;
+  position:sticky;top:-26px;z-index:3;background:var(--panel);
+  margin-top:-26px;padding:26px 0 14px
+}
+.bld-steps::-webkit-scrollbar{display:none}
+.bld-steps span{
+  flex:1;min-width:64px;white-space:nowrap;text-align:center;
+  font-size:11px;font-weight:700;color:var(--tx2);
+  padding:6px 8px;border-radius:7px;background:var(--panel2);border:1px solid var(--line)
+}
+.bld-steps span.past{color:var(--tx);border-color:#3a4150}
+.bld-steps span.on{color:#fff;background:var(--pri);border-color:var(--pri)}
+
+.ez-drop.sm{padding:16px 14px;margin-bottom:2px}
+.ez-drop.sm b{font-size:13.5px;margin-bottom:3px}
+#bldPhoto .ez-thumbs img{width:46px;height:46px}
+#bldInfo .ez-grid{grid-template-columns:repeat(auto-fill,minmax(132px,1fr));gap:7px;margin-bottom:16px}
+#bldInfo .ez-grid button{padding:11px 12px;font-size:12px}
+#bldInfo .ez-grid button b{font-size:17px}
+#bldInfo .ez-grid button.on{border-color:var(--pri);background:#20293a}
+#bldInfo{max-height:56vh;overflow-y:auto;padding-right:2px}
+
+/* 仕上げの入口。ここで終わりではなく、次に何ができるかを見せる */
+.fin-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}
+.fin-grid button{
+  text-align:left;background:var(--panel2);border:1px solid var(--line);border-radius:12px;
+  padding:16px 15px;color:var(--tx);transition:border-color .15s,transform .15s
+}
+.fin-grid button:hover{border-color:var(--pri);transform:translateY(-2px)}
+.fin-grid b{display:block;font-size:13.5px;margin-bottom:5px}
+.fin-grid small{display:block;color:var(--tx2);font-size:11.5px;line-height:1.7}
+@media (max-width:640px){ .fin-grid{grid-template-columns:1fr} }
+
 /* ==========================================================
    公開する
    ========================================================== */

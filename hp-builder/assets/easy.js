@@ -287,47 +287,7 @@ async function paletteFromPhotos(baseTheme, dataURLs) {
   return t;
 }
 
-/* ---------------- 1枚を組み上げる ---------------- */
-function buildEasyState(industryKey, name, photos) {
-  const ind = INDUSTRIES.find((i) => i.key === industryKey) || INDUSTRIES[0];
-  const st = buildState(ind.tpl);
-  const c = ind.copy(name || 'お店の名前');
-
-  st.template = ind.tpl;
-  st.meta.title = name || 'My Website';
-  st.meta.description = c.hero.text;
-
-  for (const b of st.pages[0].blocks) {
-    if (b.type === 'header' || b.type === 'footer') {
-      b.props.logo = name || b.props.logo;
-    }
-    if (b.type === 'hero') {
-      Object.assign(b.props, c.hero);
-      if (photos.length) b.props.layout = 'cover';   // 写真があるなら顔にする
-    }
-    if (b.type === 'about') {
-      b.props.title = c.about.title;
-      b.props.body = c.about.body;
-    }
-    if (b.type === 'features' && Array.isArray(b.props.items) && !b._done) {
-      b.props.items = JSON.parse(JSON.stringify(c.features));
-      b._done = true;    // 同じテンプレートに features が2つある場合、上の1つだけ差し替える
-    }
-  }
-  st.pages[0].blocks.forEach((b) => { delete b._done; });
-  return st;
-}
-
-/* 集めた写真を、上のブロックから順に入れていく。
-   足りなくなったら、そこから先は元のまま（プレースホルダ）。 */
-function fillPhotos(st, photos) {
-  if (!photos.length) return 0;
-  let i = 0;
-  for (const b of st.pages.flatMap((pg) => pg.blocks)) {
-    for (const slot of imageSlots(b)) {
-      if (i >= photos.length) return i;
-      setPath(b.props, slot, photos[i++]);
-    }
-  }
-  return i;
-}
+/* 業種ごとの文章は、順を追って組むときの①（ビジネス情報）で使う。
+   業種を選んでおくと、そのあと足すヒーローや紹介・特徴の文章が、
+   その業種のものになる（app.js の fillFromBiz）。
+   写真の差し込みは spreadPhotos が受け持つ。 */

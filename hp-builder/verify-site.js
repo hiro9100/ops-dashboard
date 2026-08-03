@@ -50,16 +50,13 @@ const note = (ok, msg) => { console.log(`${ok ? '  ok ' : '  NG '} ${msg}`); if 
     page.on('console', (m) => { if (m.type() === 'error') errs.push(m.text()); });
     const resp = await page.goto(base + p, { waitUntil: 'load' });
     await page.waitForTimeout(1200);
-    /* ビルダーは起動直後にかんたんモードが開く。
-       ここでは編集画面そのものを見たいので、業種を1つ選んで抜ける */
+    /* ビルダーは起動直後に「どうやって作りますか？」が開く。
+       ここでは編集画面そのものを見たいので、テンプレートを1つ選んで抜ける */
     if (p === '/app/') {
-      await page.click('#ezInds button');
-      await page.waitForTimeout(900);
-      await page.fill('#ezName', 'テスト商店');
-      await page.click('#ezNext');          // 写真の画面へ
-      await page.waitForTimeout(900);
-      await page.click('#ezNext');          // 写真なしで完成
-      await page.waitForTimeout(1500);
+      await page.click('[data-way="tpl"]');
+      await page.waitForTimeout(1000);
+      await page.frameLocator('#tplFrame').locator('.tc').first().click();
+      await page.waitForTimeout(1800);
     }
     note(resp.status() === 200, `${p} → ${resp.status()}`);
     note(errs.length === 0, `${p} JSエラー ${errs.length}件 ${errs.slice(0, 2).join(' / ')}`);
