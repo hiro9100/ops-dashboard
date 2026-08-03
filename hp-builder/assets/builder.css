@@ -198,6 +198,21 @@ input,select,textarea{font:inherit}
   padding:8px 10px;font-size:11.5px;white-space:nowrap
 }
 .img-f .pick:hover{border-color:var(--pri)}
+/* 絵をえらぶ。名前ではなく絵で選べるように、大きめに並べる */
+.ic-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:10px}
+.ic-cell{
+  display:flex;flex-direction:column;align-items:center;gap:7px;padding:14px 8px;
+  background:var(--panel2);border:1px solid var(--line);border-radius:10px;color:var(--tx)
+}
+.ic-cell:hover{border-color:var(--pri)}
+.ic-cell.on{border-color:var(--pri);background:#20293a}
+.ic-cell svg{width:34px;height:34px}
+.ic-cell small{font-size:10.5px;color:var(--tx2);line-height:1.4;text-align:center}
+/* 欄の中に出す、いま選ばれている絵 */
+.ico-pick{display:flex;align-items:center;justify-content:center;gap:9px}
+.ico-prev{display:grid;place-items:center;width:22px;height:22px;flex:none}
+.ico-prev svg{width:100%;height:100%}
+
 /* こまかい調整はたたんでおく。最初に見せるのは中身だけ */
 .adv{border-top:1px solid var(--line);margin-top:6px;padding-top:12px}
 .adv > summary{

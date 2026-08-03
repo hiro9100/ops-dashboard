@@ -1416,6 +1416,27 @@ a:not(.btn):not(.logo){transition:opacity .5s cubic-bezier(.165,.84,.44,1)}
 .rv .grid > *:nth-child(n+5),.rv .nws-i:nth-child(n+5),.rv .flr-i:nth-child(n+5){transition-delay:.44s}
 .rv .btn-row{transition-delay:.5s}
 
+/* ---------- アイコンの一覧 ----------
+   絵と短い言葉を縦に組んで、横に並べる。
+   絵の色は文字の色に従うので、配色を変えても浮かない。 */
+.icos{display:grid;gap:clamp(28px,3.6vw,56px) clamp(18px,2.4vw,40px);justify-items:center;text-align:center}
+.icos.c2{grid-template-columns:repeat(2,1fr)}
+.icos.c3{grid-template-columns:repeat(3,1fr)}
+.icos.c4{grid-template-columns:repeat(4,1fr)}
+.ico{display:flex;flex-direction:column;align-items:center;gap:14px;max-width:220px}
+.ico-i{display:grid;place-items:center;color:var(--c-text)}
+.ico-svg{display:block;width:100%;height:100%}
+.ico-s .ico-i{width:44px;height:44px}
+.ico-m .ico-i{width:62px;height:62px}
+.ico-l .ico-i{width:84px;height:84px}
+.ico b{font-size:clamp(14px,1.05vw,17px);font-weight:700;line-height:1.65}
+/* 濃い地・メインカラーの上では、絵も文字と同じ色にする */
+.bg-dark .ico-i,.bg-primary .ico-i{color:inherit}
+@media(max-width:640px){
+  .icos.c3,.icos.c4{grid-template-columns:repeat(2,1fr)}
+  .ico-l .ico-i{width:64px;height:64px}
+}
+
 /* ---------- 写真が流れ続ける ----------
    同じ並びを2組出し、1組ぶん（=50%）動かして継ぎ目を消す。
    写真の枠は .strp-pic。形も土台も、ほかの写真と同じように効く。 */

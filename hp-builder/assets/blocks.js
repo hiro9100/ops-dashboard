@@ -798,6 +798,49 @@ ${form}
     },
   },
 
+  /* ---------------- アイコンの一覧 ----------------
+     設備・条件・こだわりを、絵と短い言葉で並べる。
+     文章で書くと読まれないが、絵なら一目で分かる。 */
+  icons: {
+    label: 'Icons',
+    icon: '⬡',
+    tag: '基本',
+    about: '設備や条件を、絵と短い言葉で並べます。Wi-Fi・駐車場・禁煙など。',
+    fields: [
+      FIELD.eyebrow, FIELD.title, FIELD.text,
+      { key: 'cols', label: '横に並べる数', type: 'select',
+        options: [['c2', '2列'], ['c3', '3列'], ['c4', '4列']] },
+      { key: 'size', label: '絵の大きさ', type: 'select',
+        options: [['s', '小さめ'], ['m', 'ふつう'], ['l', '大きめ']] },
+      { key: 'items', label: '中身', type: 'list', addLabel: '1つ追加', titleKey: 'label',
+        item: [
+          { key: 'icon', label: '絵', type: 'icon' },
+          { key: 'label', label: '言葉', type: 'textarea', rows: 2 },
+        ] },
+      FIELD.bg, FIELD.anchor,
+    ],
+    defaults: {
+      eyebrow: 'FACILITIES', title: '設備・備品', text: '',
+      cols: 'c3', size: 'm',
+      items: [
+        { icon: 'screen', label: '大画面の\nスクリーン' },
+        { icon: 'speaker', label: '迫力のある\nスピーカー' },
+        { icon: 'wifi', label: 'Free Wi-Fi' },
+        { icon: 'drink', label: '飲食\n持ち込み可' },
+        { icon: 'nosmoke', label: '全面禁煙' },
+        { icon: 'shoes', label: '土足OK' },
+      ],
+      bg: '', anchor: 'facilities',
+    },
+    render: (p) => sec('icons', p, `${head(p)}
+    <div class="icos ${esc(p.cols || 'c3')} ico-${esc(p.size || 'm')}">
+${(p.items || []).map((it, i) => `      <div class="ico"${el(p, `ico${i}`, 'ia', `絵${i + 1}`)}>
+        <span class="ico-i">${iconSVG(it.icon)}</span>
+        <b${ed(`items.${i}.label`, '言葉')}>${nl2br(esc(it.label))}</b>
+      </div>`).join('\n')}
+    </div>`),
+  },
+
   /* ---------------- 写真が流れ続ける ----------------
      導入実績・取引先・受賞歴のように「並べて見せたいが、数が多くて
      縦に積むと長い」ものを、途切れずに横へ流す。
@@ -1732,7 +1775,7 @@ ${slides}
 
 /* 追加メニューに出す順番（ヘッダー・フッターは常設なので除く） */
 const ADDABLE = [
-  'hero', 'collage', 'features', 'about', 'gallery', 'video', 'strip', 'menu', 'floors', 'news', 'marquee', 'pricing', 'faq', 'cta', 'contact', 'rich',
+  'hero', 'collage', 'features', 'icons', 'about', 'gallery', 'video', 'strip', 'menu', 'floors', 'news', 'marquee', 'pricing', 'faq', 'cta', 'contact', 'rich',
   'slides', 'product3d', 'exploded', 'hscroll', 'stackcards', 'timeline', 'clipreveal',
   'carousel3d', 'slotstats', 'svgdraw', 'shift',
 ];

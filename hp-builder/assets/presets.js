@@ -138,6 +138,10 @@ const SECTION_PRESETS = [
     about: '上に写真、下に説明。事例や商品を並べるとき。',
     props: { style: 'image', cols: 'c3' } },
 
+  { key: 'icons', type: 'icons', group: 'カード', label: 'Icon Grid',
+    about: '設備や条件を、絵と短い言葉で並べる。Wi-Fi・駐車場・禁煙など。',
+    props: {} },
+
   { key: 'pricing', type: 'pricing', group: 'カード', label: 'Pricing ×3',
     about: '真ん中だけ目立たせる形。', props: { cols: 'c3' } },
 

@@ -200,6 +200,21 @@ input,select,textarea{font:inherit}
   padding:8px 10px;font-size:11.5px;white-space:nowrap
 }
 .img-f .pick:hover{border-color:var(--pri)}
+/* 絵をえらぶ。名前ではなく絵で選べるように、大きめに並べる */
+.ic-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:10px}
+.ic-cell{
+  display:flex;flex-direction:column;align-items:center;gap:7px;padding:14px 8px;
+  background:var(--panel2);border:1px solid var(--line);border-radius:10px;color:var(--tx)
+}
+.ic-cell:hover{border-color:var(--pri)}
+.ic-cell.on{border-color:var(--pri);background:#20293a}
+.ic-cell svg{width:34px;height:34px}
+.ic-cell small{font-size:10.5px;color:var(--tx2);line-height:1.4;text-align:center}
+/* 欄の中に出す、いま選ばれている絵 */
+.ico-pick{display:flex;align-items:center;justify-content:center;gap:9px}
+.ico-prev{display:grid;place-items:center;width:22px;height:22px;flex:none}
+.ico-prev svg{width:100%;height:100%}
+
 /* こまかい調整はたたんでおく。最初に見せるのは中身だけ */
 .adv{border-top:1px solid var(--line);margin-top:6px;padding-top:12px}
 .adv > summary{
@@ -713,6 +728,15 @@ ${textFillCSS(usedFills(state))}
     <p class="modal-sub" id="animSub">くり返し再生されます。カードにマウスを乗せる（タップする）とすぐ再生します。</p>
     <div class="gal-wrap"><iframe id="animFrame" title="アニメーションのサンプル"></iframe></div>
     <div class="modal-foot"><button class="tb-btn" id="animClose">閉じる</button></div>
+  </div>
+</div>
+
+<!-- ================= 絵をえらぶ ================= -->
+<div class="modal" id="iconModal" hidden>
+  <div class="modal-box">
+    <h2>絵をえらぶ</h2>
+    <div class="ic-grid" id="iconGrid"></div>
+    <div class="modal-foot"><button class="tb-btn" id="iconClose">閉じる</button></div>
   </div>
 </div>
 
@@ -2177,6 +2201,27 @@ a:not(.btn):not(.logo){transition:opacity .5s cubic-bezier(.165,.84,.44,1)}
 .rv .grid > *:nth-child(n+5),.rv .nws-i:nth-child(n+5),.rv .flr-i:nth-child(n+5){transition-delay:.44s}
 .rv .btn-row{transition-delay:.5s}
 
+/* ---------- アイコンの一覧 ----------
+   絵と短い言葉を縦に組んで、横に並べる。
+   絵の色は文字の色に従うので、配色を変えても浮かない。 */
+.icos{display:grid;gap:clamp(28px,3.6vw,56px) clamp(18px,2.4vw,40px);justify-items:center;text-align:center}
+.icos.c2{grid-template-columns:repeat(2,1fr)}
+.icos.c3{grid-template-columns:repeat(3,1fr)}
+.icos.c4{grid-template-columns:repeat(4,1fr)}
+.ico{display:flex;flex-direction:column;align-items:center;gap:14px;max-width:220px}
+.ico-i{display:grid;place-items:center;color:var(--c-text)}
+.ico-svg{display:block;width:100%;height:100%}
+.ico-s .ico-i{width:44px;height:44px}
+.ico-m .ico-i{width:62px;height:62px}
+.ico-l .ico-i{width:84px;height:84px}
+.ico b{font-size:clamp(14px,1.05vw,17px);font-weight:700;line-height:1.65}
+/* 濃い地・メインカラーの上では、絵も文字と同じ色にする */
+.bg-dark .ico-i,.bg-primary .ico-i{color:inherit}
+@media(max-width:640px){
+  .icos.c3,.icos.c4{grid-template-columns:repeat(2,1fr)}
+  .ico-l .ico-i{width:64px;height:64px}
+}
+
 /* ---------- 写真が流れ続ける ----------
    同じ並びを2組出し、1組ぶん（=50%）動かして継ぎ目を消す。
    写真の枠は .strp-pic。形も土台も、ほかの写真と同じように効く。 */
@@ -3102,6 +3147,90 @@ const textFillCSS = (keys) => keys.filter((k) => TEXT_FILLS[k])
 
 </script>
 <script>
+/* ===== assets/icons.js ===== */
+/* ================================================================
+   線で描いたアイコン
+
+   設備・条件を並べる欄（Wi-Fi・駐車場・禁煙…）のために持つ。
+   絵文字と違って端末で形が変わらず、色も太さもページに合わせられる。
+
+   中身は 24×24 のパスだけ。線は currentColor なので、文字の色に従う。
+   絵柄は増やしやすいよう、ここに1行ずつ足すだけの形にしてある。
+   ================================================================ */
+const ICONS = {
+  wifi: {
+    label: 'Wi-Fi',
+    d: `<path d="M2.6 8.6a15 15 0 0 1 18.8 0"/><path d="M6.1 12.3a10 10 0 0 1 11.8 0"/>
+        <path d="M9.4 15.9a5 5 0 0 1 5.2 0"/><circle cx="12" cy="19.3" r="1.15" fill="currentColor" stroke="none"/>`,
+  },
+  screen: {
+    label: 'スクリーン',
+    d: `<rect x="3" y="4.2" width="18" height="12" rx="1.3"/><path d="M12 16.2v3.2"/><path d="M8.4 19.4h7.2"/>`,
+  },
+  speaker: {
+    label: 'スピーカー',
+    d: `<rect x="7.6" y="3" width="8.8" height="18" rx="1.6"/><circle cx="12" cy="8" r="1.7"/>
+        <circle cx="12" cy="15.2" r="2.7"/>`,
+  },
+  drink: {
+    label: '飲みもの',
+    d: `<path d="M6.6 7.4h10.8l-1 12.2a1.7 1.7 0 0 1-1.7 1.5H9.3a1.7 1.7 0 0 1-1.7-1.5z"/>
+        <path d="M5.4 7.4h13.2"/><path d="M13.2 7.4 14.7 3.2"/>`,
+  },
+  food: {
+    label: '食べもの',
+    d: `<path d="M4 9.6c0-3 3.6-5.1 8-5.1s8 2.1 8 5.1"/><path d="M4 12.6h16"/>
+        <path d="M4.4 15.6h15.2a4 4 0 0 1-4 4H8.4a4 4 0 0 1-4-4z"/>`,
+  },
+  nosmoke: {
+    label: '禁煙',
+    d: `<circle cx="12" cy="12" r="8.8"/><path d="M5.9 18.1 18.1 5.9"/>
+        <rect x="5.4" y="13.1" width="9.8" height="2.9" rx="1.2"/><path d="M12.3 13.1v2.9"/>
+        <path d="M16.2 9.4c1.1 1 1.1 2.2 0 3.2"/>`,
+  },
+  shoes: {
+    label: '土足',
+    d: `<path d="M3.6 18.7v-5.1c0-.6.5-1.1 1.1-1.1h2.5c.5 0 1-.3 1.2-.7l1.3-2.3c.2-.4.6-.6 1-.6.6 0 1.1.5 1.1 1.1v1.4c0 1.4.8 2.6 2.1 3.1l3.9 1.6c1.2.5 2 1.7 2 3 0 .6-.5 1.1-1.1 1.1H4.7a1.1 1.1 0 0 1-1.1-1.1z"/>
+        <path d="M3.6 16.6h4.6"/>`,
+  },
+  parking: {
+    label: '駐車場',
+    d: `<rect x="3.4" y="3.4" width="17.2" height="17.2" rx="3.2"/>
+        <path d="M9.6 16.6V7.4h3.3a2.75 2.75 0 0 1 0 5.5H9.6"/>`,
+  },
+  card: {
+    label: 'カード決済',
+    d: `<rect x="2.6" y="5" width="18.8" height="14" rx="2.2"/><path d="M2.6 9.6h18.8"/>
+        <path d="M6.2 15h4.2"/>`,
+  },
+  clock: {
+    label: '営業時間',
+    d: `<circle cx="12" cy="12" r="8.6"/><path d="M12 6.8v5.4l3.4 2"/>`,
+  },
+  calendar: {
+    label: '予約',
+    d: `<rect x="3.4" y="5" width="17.2" height="15.6" rx="2.2"/><path d="M3.4 10h17.2"/>
+        <path d="M8 3v4"/><path d="M16 3v4"/>`,
+  },
+  paw: {
+    label: 'ペット',
+    d: `<circle cx="7.4" cy="9" r="1.85"/><circle cx="12" cy="6.9" r="1.95"/><circle cx="16.6" cy="9" r="1.85"/>
+        <path d="M12 11.5c3 0 5 2.2 5 4.4 0 2-1.7 3.4-3.6 3-.9-.2-1.9-.2-2.8 0-1.9.4-3.6-1-3.6-3 0-2.2 2-4.4 5-4.4z"/>`,
+  },
+};
+
+/* 一覧・選択肢で使う並び */
+const ICON_LIST = Object.keys(ICONS).map((k) => [k, ICONS[k].label]);
+
+/* 絵を1つ描く。線の太さは枠の大きさに合わせて少し変える */
+function iconSVG(key) {
+  const it = ICONS[key] || ICONS.wifi;
+  return `<svg class="ico-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+  stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${it.d}</svg>`;
+}
+
+</script>
+<script>
 /* ===== assets/blocks.js ===== */
 /* ブロックの定義。
    1ブロック = { label, icon, fields(編集フォームの項目), defaults(初期値), render(HTML生成) }
@@ -3901,6 +4030,49 @@ ${info ? `      <dl class="info">\n${info}\n      </dl>` : ''}
 ${form}
     </div>`);
     },
+  },
+
+  /* ---------------- アイコンの一覧 ----------------
+     設備・条件・こだわりを、絵と短い言葉で並べる。
+     文章で書くと読まれないが、絵なら一目で分かる。 */
+  icons: {
+    label: 'Icons',
+    icon: '⬡',
+    tag: '基本',
+    about: '設備や条件を、絵と短い言葉で並べます。Wi-Fi・駐車場・禁煙など。',
+    fields: [
+      FIELD.eyebrow, FIELD.title, FIELD.text,
+      { key: 'cols', label: '横に並べる数', type: 'select',
+        options: [['c2', '2列'], ['c3', '3列'], ['c4', '4列']] },
+      { key: 'size', label: '絵の大きさ', type: 'select',
+        options: [['s', '小さめ'], ['m', 'ふつう'], ['l', '大きめ']] },
+      { key: 'items', label: '中身', type: 'list', addLabel: '1つ追加', titleKey: 'label',
+        item: [
+          { key: 'icon', label: '絵', type: 'icon' },
+          { key: 'label', label: '言葉', type: 'textarea', rows: 2 },
+        ] },
+      FIELD.bg, FIELD.anchor,
+    ],
+    defaults: {
+      eyebrow: 'FACILITIES', title: '設備・備品', text: '',
+      cols: 'c3', size: 'm',
+      items: [
+        { icon: 'screen', label: '大画面の\nスクリーン' },
+        { icon: 'speaker', label: '迫力のある\nスピーカー' },
+        { icon: 'wifi', label: 'Free Wi-Fi' },
+        { icon: 'drink', label: '飲食\n持ち込み可' },
+        { icon: 'nosmoke', label: '全面禁煙' },
+        { icon: 'shoes', label: '土足OK' },
+      ],
+      bg: '', anchor: 'facilities',
+    },
+    render: (p) => sec('icons', p, `${head(p)}
+    <div class="icos ${esc(p.cols || 'c3')} ico-${esc(p.size || 'm')}">
+${(p.items || []).map((it, i) => `      <div class="ico"${el(p, `ico${i}`, 'ia', `絵${i + 1}`)}>
+        <span class="ico-i">${iconSVG(it.icon)}</span>
+        <b${ed(`items.${i}.label`, '言葉')}>${nl2br(esc(it.label))}</b>
+      </div>`).join('\n')}
+    </div>`),
   },
 
   /* ---------------- 写真が流れ続ける ----------------
@@ -4837,7 +5009,7 @@ ${slides}
 
 /* 追加メニューに出す順番（ヘッダー・フッターは常設なので除く） */
 const ADDABLE = [
-  'hero', 'collage', 'features', 'about', 'gallery', 'video', 'strip', 'menu', 'floors', 'news', 'marquee', 'pricing', 'faq', 'cta', 'contact', 'rich',
+  'hero', 'collage', 'features', 'icons', 'about', 'gallery', 'video', 'strip', 'menu', 'floors', 'news', 'marquee', 'pricing', 'faq', 'cta', 'contact', 'rich',
   'slides', 'product3d', 'exploded', 'hscroll', 'stackcards', 'timeline', 'clipreveal',
   'carousel3d', 'slotstats', 'svgdraw', 'shift',
 ];
@@ -6172,6 +6344,10 @@ const SECTION_PRESETS = [
   { key: 'features-image', type: 'features', group: 'カード', label: 'Cards ×3 (Photo)',
     about: '上に写真、下に説明。事例や商品を並べるとき。',
     props: { style: 'image', cols: 'c3' } },
+
+  { key: 'icons', type: 'icons', group: 'カード', label: 'Icon Grid',
+    about: '設備や条件を、絵と短い言葉で並べる。Wi-Fi・駐車場・禁煙など。',
+    props: {} },
 
   { key: 'pricing', type: 'pricing', group: 'カード', label: 'Pricing ×3',
     about: '真ん中だけ目立たせる形。', props: { cols: 'c3' } },
@@ -7893,6 +8069,29 @@ function firstImage(props) {
   return '';
 }
 
+/* 絵を選ぶ一覧。名前ではなく絵で選べるように、小さく並べる */
+let iconPick = null;
+function openIconGallery(path, current) {
+  iconPick = path;
+  $('#iconGrid').innerHTML = ICON_LIST.map(([k, label]) =>
+    `<button class="ic-cell${k === current ? ' on' : ''}" data-ic="${k}" title="${esc(label)}">
+      ${iconSVG(k)}<small>${esc(label)}</small>
+    </button>`).join('');
+  openModal('#iconModal');
+}
+$('#iconGrid').addEventListener('click', (e) => {
+  const k = e.target.closest('[data-ic]')?.dataset.ic;
+  if (!k || !iconPick) return;
+  const b = state.blocks.find((x) => x.id === selected);
+  if (b) {
+    setPath(b.props, iconPick.replace(/^props\./, ''), k);
+    renderEditor(); renderPreview(true); save(`icon:${iconPick}:${b.id}`);
+  }
+  closeModal('#iconModal');
+  iconPick = null;
+});
+$('#iconClose').addEventListener('click', () => { iconPick = null; closeModal('#iconModal'); });
+
 function openDecoGallery(kind, current, onPick) {
   decoPick = onPick;
   const k = GAL_KINDS[kind] || GAL_KINDS.deco;
@@ -8034,6 +8233,10 @@ function inputHTML(f, val, path) {
     case 'range':
       return `<div class="f-row"><input type="range" ${p} min="${f.min ?? 0}" max="${f.max ?? 100}" value="${val ?? 0}" data-suffix="${esc(f.suffix || '')}">
         <span class="f-val">${val ?? 0}${f.suffix || ''}</span></div>`;
+    case 'icon':
+      return `<button class="pick wide ico-pick" data-iconpick="${path}">
+        <span class="ico-prev">${iconSVG(val || 'wifi')}</span>${esc((ICONS[val] || {}).label || '選ぶ')}
+      </button>`;
     case 'mask':
       return `<button class="pick wide" data-mask="${path}">${val ? '別の形にする' : '形の画像を読み込む'}</button>
         ${val ? `<div class="mask-prev" style="-webkit-mask-image:url('${esc(val)}');mask-image:url('${esc(val)}')"></div>
@@ -8230,6 +8433,15 @@ function setTextFill(val) {
 /* 要素パネルの操作 */
 $('#tab-edit').addEventListener('click', (e) => {
   if (e.target.closest('[data-elclose]')) { selectedEl = null; renderEditor(); highlight(); return; }
+
+  /* 絵を選ぶ */
+  const ip = e.target.closest('[data-iconpick]');
+  if (ip) {
+    const b0 = state.blocks.find((x) => x.id === selected);
+    const cur = b0 ? getPath(b0.props, ip.dataset.iconpick.replace(/^props\./, '')) : '';
+    openIconGallery(ip.dataset.iconpick, cur);
+    return;
+  }
 
   /* 文字を自分の画像で塗る */
   if (e.target.closest('[data-txfimg]') && selectedEl) {

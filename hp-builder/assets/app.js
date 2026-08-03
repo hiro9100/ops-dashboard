@@ -1288,6 +1288,29 @@ function firstImage(props) {
   return '';
 }
 
+/* 絵を選ぶ一覧。名前ではなく絵で選べるように、小さく並べる */
+let iconPick = null;
+function openIconGallery(path, current) {
+  iconPick = path;
+  $('#iconGrid').innerHTML = ICON_LIST.map(([k, label]) =>
+    `<button class="ic-cell${k === current ? ' on' : ''}" data-ic="${k}" title="${esc(label)}">
+      ${iconSVG(k)}<small>${esc(label)}</small>
+    </button>`).join('');
+  openModal('#iconModal');
+}
+$('#iconGrid').addEventListener('click', (e) => {
+  const k = e.target.closest('[data-ic]')?.dataset.ic;
+  if (!k || !iconPick) return;
+  const b = state.blocks.find((x) => x.id === selected);
+  if (b) {
+    setPath(b.props, iconPick.replace(/^props\./, ''), k);
+    renderEditor(); renderPreview(true); save(`icon:${iconPick}:${b.id}`);
+  }
+  closeModal('#iconModal');
+  iconPick = null;
+});
+$('#iconClose').addEventListener('click', () => { iconPick = null; closeModal('#iconModal'); });
+
 function openDecoGallery(kind, current, onPick) {
   decoPick = onPick;
   const k = GAL_KINDS[kind] || GAL_KINDS.deco;
@@ -1429,6 +1452,10 @@ function inputHTML(f, val, path) {
     case 'range':
       return `<div class="f-row"><input type="range" ${p} min="${f.min ?? 0}" max="${f.max ?? 100}" value="${val ?? 0}" data-suffix="${esc(f.suffix || '')}">
         <span class="f-val">${val ?? 0}${f.suffix || ''}</span></div>`;
+    case 'icon':
+      return `<button class="pick wide ico-pick" data-iconpick="${path}">
+        <span class="ico-prev">${iconSVG(val || 'wifi')}</span>${esc((ICONS[val] || {}).label || '選ぶ')}
+      </button>`;
     case 'mask':
       return `<button class="pick wide" data-mask="${path}">${val ? '別の形にする' : '形の画像を読み込む'}</button>
         ${val ? `<div class="mask-prev" style="-webkit-mask-image:url('${esc(val)}');mask-image:url('${esc(val)}')"></div>
@@ -1625,6 +1652,15 @@ function setTextFill(val) {
 /* 要素パネルの操作 */
 $('#tab-edit').addEventListener('click', (e) => {
   if (e.target.closest('[data-elclose]')) { selectedEl = null; renderEditor(); highlight(); return; }
+
+  /* 絵を選ぶ */
+  const ip = e.target.closest('[data-iconpick]');
+  if (ip) {
+    const b0 = state.blocks.find((x) => x.id === selected);
+    const cur = b0 ? getPath(b0.props, ip.dataset.iconpick.replace(/^props\./, '')) : '';
+    openIconGallery(ip.dataset.iconpick, cur);
+    return;
+  }
 
   /* 文字を自分の画像で塗る */
   if (e.target.closest('[data-txfimg]') && selectedEl) {
