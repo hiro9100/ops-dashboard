@@ -1192,32 +1192,81 @@ p:last-child{margin-bottom:0}
 .car-it:has(img) b,.car-it:has(img) small{color:#fff}
 
 /* ---------- スロット式カウンター ---------- */
-.slots{display:grid;gap:24px;text-align:center}
+.slots{display:grid;gap:clamp(28px,3vw,60px);text-align:center}
 /* 桁は縦に回すので transform がかかる。background-clip:text は
    変形した子孫の文字には効かず、数字がまるごと消える（実測で確認）。
-   ここは単色で塗る。 */
-.slot{display:inline-flex;font-family:Menlo,monospace;font-weight:800;
-  font-size:clamp(30px,3.8889vw,77.7778px);line-height:1.1;overflow:hidden;
+   ここは単色で塗る。
+
+   数字は「読ませる」ものではなく「効かせる」もの。小さいと、
+   ただの注記に見えて何も残らない。見出しと同じくらいの大きさにする。
+   等幅フォントではなく見出しのフォントを使い、桁が揃うよう tnum を効かせる
+   （回る桁は0〜9を縦に積むので、桁ごとの幅が揺れると数字が踊る）。 */
+.slot{display:inline-flex;font-family:var(--font-head);font-weight:800;
+  font-size:clamp(44px,5.5vw,110px);line-height:1.05;overflow:hidden;
+  letter-spacing:-.02em;font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1;
   color:var(--c-text);-webkit-text-fill-color:currentColor}
 /* メインカラーが明るいと、背景に対して数字が沈む（緑#00f04b と #f4f4f4 で
    コントラスト比 1.41 だった）。文字色を少し混ぜて、どの配色でも読める濃さにする。 */
 .slot .col u{color:color-mix(in srgb,var(--c-primary) 62%,var(--c-text))}
 .bg-primary .slot,.bg-dark .slot{color:inherit}
 .bg-primary .slot .col u,.bg-dark .slot .col u{color:inherit}
-.slot .col{height:1.1em;overflow:hidden}
+/* 桁の窓の高さ・1桁ぶんの送り・行の高さは、3つとも 1.1em でそろえる。
+   JS が translateY(-数字×1.1em) で送るので、どれかがずれると
+   上下の桁が窓からはみ出して見える（見出しの行間を詰めたときに起きた）。 */
+.slot .col{height:1.1em;overflow:hidden;line-height:1.1}
+.slot .col u,.slot .fix{line-height:1.1}
 .slot .col u{display:block;text-decoration:none;transition:transform 1.6s cubic-bezier(.16,1,.3,1)}
 .slot .fix{opacity:.6}
-.slots small{display:block;color:var(--c-muted);font-size:12.5px;margin-top:6px}
+.slots small{display:block;color:var(--c-muted);font-size:clamp(12.5px,.75vw,15px);
+  margin-top:12px;letter-spacing:.08em;font-weight:600}
 
-/* ---------- SVG線画 ---------- */
-.draw-wrap{max-width:720px;margin:0 auto}
-.draw-wrap svg{width:100%;height:auto;overflow:visible}
-.draw-wrap path,.draw-wrap line,.draw-wrap rect,.draw-wrap polyline,.draw-wrap circle{
-  stroke-dasharray:var(--len);stroke-dashoffset:var(--len);
-  transition:stroke-dashoffset 1.6s cubic-bezier(.4,0,.2,1)}
-.draw-wrap.in path,.draw-wrap.in line,.draw-wrap.in rect,
-.draw-wrap.in polyline,.draw-wrap.in circle{stroke-dashoffset:0}
-.draw-lbl{display:flex;justify-content:space-around;margin-top:14px;font-size:12px;color:var(--c-muted)}
+/* ---------- 折れ線・棒グラフ ----------
+   線1本と枠だけの図は、作りかけの下書きに見える。
+   面（グラデーション）・目盛り・点を敷いて、図として成立させる。 */
+.draw-wrap{max-width:760px;margin:0 auto}
+/* 図に使う色。濃い地の上では主役の色が沈むので、その帯の文字色で描く */
+.chart{--c-chart:var(--c-primary);--c-chart2:var(--c-accent)}
+.bg-dark .chart,.bg-primary .chart{--c-chart:currentColor;--c-chart2:currentColor}
+.draw-plot{position:relative}
+.draw-plot svg{width:100%;height:auto;overflow:visible;display:block}
+
+/* うっすらとしたマス目。数えるためではなく、高さを比べるための下敷き */
+.chart .gl{stroke:var(--c-border);stroke-width:1;opacity:.6}
+.chart .axis{stroke:var(--c-border);stroke-width:1.5}
+.chart .ln{stroke:var(--c-chart2)}
+/* 点のふちは、その帯の地の色で抜く。線に重なっても点が読める */
+.chart .dot{fill:var(--c-chart2);stroke:var(--c-bg)}
+.bg-surface .chart .dot{stroke:var(--c-surface)}
+.bg-dark .chart .dot{stroke:var(--c-dark)}
+.bg-primary .chart .dot{stroke:var(--c-primary)}
+.bg-dark .chart .gl,.bg-primary .chart .gl,
+.bg-dark .chart .axis,.bg-primary .chart .axis{stroke:currentColor;opacity:.3}
+
+/* 棒は下から立ち上がる。線を引く動き（dasharray）は塗りには効かない */
+.chart .bar{transform-box:fill-box;transform-origin:50% 100%;transform:scaleY(0)}
+.chart.in .bar{transform:scaleY(1);
+  transition:transform 1s cubic-bezier(.16,1,.3,1) var(--d,0s)}
+
+/* 線は引かれて、そのあと下の面がにじむ */
+.chart .ln{stroke-dasharray:var(--len);stroke-dashoffset:var(--len)}
+.chart.in .ln{stroke-dashoffset:0;transition:stroke-dashoffset 1.5s cubic-bezier(.4,0,.2,1)}
+.chart .area{opacity:0}
+.chart.in .area{opacity:1;transition:opacity .9s ease .55s}
+.chart .dot{opacity:0;transform-box:fill-box;transform-origin:50% 50%;transform:scale(.4)}
+.chart.in .dot{opacity:1;transform:scale(1);
+  transition:opacity .35s ease var(--d,0s),transform .45s cubic-bezier(.34,1.56,.64,1) var(--d,0s)}
+
+/* ラベルと数値は、目盛りと同じ位置に置く（%で図に合わせる） */
+.draw-lbl{position:relative;height:1.9em;margin-top:10px;
+  font-size:12.5px;color:var(--c-muted);letter-spacing:.04em}
+.draw-lbl span{position:absolute;transform:translateX(-50%);white-space:nowrap}
+.bg-dark .draw-lbl,.bg-primary .draw-lbl{color:inherit;opacity:.72}
+.draw-note{position:absolute;inset:0;pointer-events:none}
+.draw-note span{
+  position:absolute;transform:translate(-50%,-150%);white-space:nowrap;
+  font-weight:800;font-size:13.5px;color:var(--c-text);letter-spacing:.02em
+}
+.bg-dark .draw-note span,.bg-primary .draw-note span{color:inherit}
 
 /* ---------- 全画面メッセージ（背景色が変わる） ---------- */
 .shift-pane{min-height:100vh;display:grid;place-items:center;text-align:center;padding:0 24px;
@@ -1257,8 +1306,9 @@ p:last-child{margin-bottom:0}
 .sl-body ul{list-style:none;margin:0;padding:0;display:grid;gap:11px}
 .sl-body li{position:relative;padding-left:24px;font-size:14.5px}
 .sl-body li::before{content:"";position:absolute;left:0;top:.62em;width:9px;height:2px;background:var(--c-primary)}
-.sl-num{display:block;font-family:Menlo,monospace;font-weight:800;line-height:1.1;
-  font-size:clamp(34px,4.4444vw,88.8889px);color:var(--c-primary);margin-bottom:14px}
+.sl-num{display:block;font-family:var(--font-head);font-weight:800;line-height:1.02;
+  font-size:clamp(46px,6vw,120px);color:var(--c-primary);margin-bottom:16px;
+  letter-spacing:-.03em;font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1}
 .sl-num span{font-size:.5em;margin-left:.1em}
 
 /* 右端のドットナビ */
@@ -1276,9 +1326,19 @@ p:last-child{margin-bottom:0}
 .sl-viz [data-draw]{stroke-dasharray:var(--len);stroke-dashoffset:var(--len)}
 .sl.play .sl-viz [data-draw]{stroke-dashoffset:0;
   transition:stroke-dashoffset 1.3s cubic-bezier(.4,0,.2,1) var(--d,0s)}
-.sl-viz .bar{transform:scaleY(0);transform-origin:50% 100%}
+/* スライドの図も、本編のグラフと同じ作りにそろえる */
+.sl-viz .gl{stroke:var(--c-border);stroke-width:1.5;opacity:.6}
+.sl-viz .axis{stroke:var(--c-border);stroke-width:2}
+.sl-viz .trk{stroke:var(--c-border);opacity:.55}
+.sl-viz .dot{fill:var(--c-primary);stroke:var(--c-bg);opacity:0;
+  transform-box:fill-box;transform-origin:50% 50%;transform:scale(.4)}
+.sl.play .sl-viz .dot{opacity:1;transform:scale(1);
+  transition:opacity .35s ease var(--d,0s),transform .45s cubic-bezier(.34,1.56,.64,1) var(--d,0s)}
+.sl-viz .area{opacity:0}
+.sl.play .sl-viz .area{opacity:1;transition:opacity .9s ease .55s}
+.sl-viz .bar{transform-box:fill-box;transform-origin:50% 100%;transform:scaleY(0)}
 .sl.play .sl-viz .bar{transform:scaleY(1);
-  transition:transform .9s cubic-bezier(.2,.7,.3,1) var(--d,0s)}
+  transition:transform 1s cubic-bezier(.16,1,.3,1) var(--d,0s)}
 .sl-body > *{opacity:0;transform:translateY(16px)}
 .sl.play .sl-body > *{opacity:1;transform:none;
   transition:opacity .7s cubic-bezier(.2,.7,.3,1) var(--d,0s),
@@ -1642,6 +1702,12 @@ a:not(.btn):not(.logo){transition:opacity .5s cubic-bezier(.165,.84,.44,1)}
   .cpic,.sec-collage .cpic{opacity:1!important;transform:rotate(var(--rot,0deg))!important}
   .cb{clip-path:none!important}
   .hero.dk-depth .hero-bg img,.hero.dk-depth .hero-in{transform:none!important}
+  /* グラフは「伸びる前」が高さ0・点が消えた状態なので、
+     動かさない設定では最初から出来上がった形で置く（図が消えては困る） */
+  .chart .bar,.sl-viz .bar{transform:scaleY(1)!important}
+  .chart .dot,.sl-viz .dot{opacity:1!important;transform:none!important}
+  .chart .area,.sl-viz .area{opacity:1!important}
+  .chart .ln,.sl-viz [data-draw]{stroke-dashoffset:0!important}
 }
 
 /* ---------- フォームの送信結果と、機械よけの欄 ----------
@@ -2428,7 +2494,7 @@ a:not(.btn):not(.logo){transition:opacity .5s cubic-bezier(.165,.84,.44,1)}
 
   /* ---------- SVG線画（線の長さを測る） ---------- */
   [].slice.call(d.querySelectorAll('.draw-wrap')).forEach(function(w){
-    [].slice.call(w.querySelectorAll('path,line,rect,polyline,circle')).forEach(function(el){
+    [].slice.call(w.querySelectorAll('[data-draw]')).forEach(function(el){
       try{ el.style.setProperty('--len', Math.ceil(el.getTotalLength())); }catch(e){}
     });
   });

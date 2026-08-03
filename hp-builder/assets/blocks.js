@@ -9,6 +9,15 @@ const esc = (s) =>
 const nl2br = (s) => esc(s).replace(/\n/g, '<br>');
 const attr = (name, v) => (v ? ` ${name}="${esc(v)}"` : '');
 
+/* 中身から決まる短い名前。SVGのグラデーションに付ける。
+   同じページに図が2つあっても混ざらないようにするためで、
+   同じ中身なら同じ名前になる（書き出すたびに変わると差分が出る）。 */
+function hashId(str) {
+  let h = 5381;
+  for (let i = 0; i < str.length; i++) h = ((h * 33) ^ str.charCodeAt(i)) >>> 0;
+  return h.toString(36);
+}
+
 /* ---------- リンク先 ----------
    リンク先は「page:<ページID>」の形でも持てる。
    住所（ファイル名）ではなくIDで持つのは、あとでページの名前を変えても
@@ -1655,47 +1664,115 @@ ${(p.items || []).map((it, i) => `      <div><span class="slot" data-slot="${esc
     </div>`),
   },
 
-  /* ---------------- SVG線画のグラフ ---------------- */
+  /* ---------------- 折れ線・棒グラフ ----------------
+     線1本と枠だけの図は、作りかけの下書きに見える。
+     面（グラデーション）と目盛りを敷いて、図として成立させる。 */
   svgdraw: {
     label: 'Line Chart',
     icon: '⌁',
     tag: '図解',
-    about: '棒グラフと折れ線が、線を引くように現れます。実績の推移や比較に。',
+    about: '折れ線の下に色が敷かれ、うっすらとマス目が入ります。実績の推移や比較に。',
     fields: [
       FIELD.eyebrow, FIELD.title, FIELD.text,
-      { key: 'items', label: '棒（最大6本）', type: 'list', addLabel: '棒を追加', titleKey: 'label',
+      { key: 'kind', label: '見せかた', type: 'select',
+        options: [['both', '棒と折れ線'], ['line', '折れ線だけ'], ['bar', '棒だけ']] },
+      { key: 'items', label: '目盛り（最大8本）', type: 'list', addLabel: '1本追加', titleKey: 'label',
         item: [
           { key: 'label', label: 'ラベル', type: 'text' },
-          { key: 'value', label: '高さ（0〜100）', type: 'range', min: 5, max: 100, suffix: '' },
+          { key: 'value', label: '高さ（0〜100）', type: 'range', min: 0, max: 100, suffix: '' },
+          { key: 'note', label: '上に出す数値（任意）', type: 'text' },
         ] },
-      { key: 'line', label: '折れ線も引く', type: 'toggle' },
+      { key: 'smooth', label: '線をなめらかにする', type: 'toggle', adv: true },
+      { key: 'grid', label: 'マス目を敷く', type: 'toggle', adv: true },
       FIELD.bg, FIELD.anchor,
     ],
     defaults: {
       eyebrow: 'GROWTH', title: '数字は伸びています', text: '導入社数の推移',
-      line: true, bg: '', anchor: 'graph',
+      kind: 'both', smooth: true, grid: true, bg: '', anchor: 'graph',
       items: [
-        { label: '2021', value: 22 }, { label: '2022', value: 38 },
-        { label: '2023', value: 55 }, { label: '2024', value: 74 },
-        { label: '2025', value: 92 },
+        { label: '2021', value: 22, note: '' }, { label: '2022', value: 38, note: '' },
+        { label: '2023', value: 55, note: '' }, { label: '2024', value: 74, note: '' },
+        { label: '2025', value: 92, note: '' },
       ],
     },
     render: (p) => {
-      const items = (p.items || []).slice(0, 6);
+      const items = (p.items || []).slice(0, 8);
       const n = items.length || 1;
-      const W = 600, H = 260, pad = 20;
-      const bw = (W - pad * 2) / n * 0.56;
-      const x = (i) => pad + (W - pad * 2) / n * (i + 0.5);
-      const y = (v) => H - 24 - (H - 60) * (Math.max(5, Math.min(100, +v || 0)) / 100);
+      /* 前の版は「折れ線も引く」の入り切りだけだった。そのころのページも
+         そのまま出せるよう、kind が無ければ line から読み替える */
+      const kind = p.kind || (p.line === false ? 'bar' : 'both');
+      const W = 680, H = 300, padX = 30, padT = 34, padB = 30;
+      const base = H - padB, top = padT;
+      const at = (v) => Math.max(0, Math.min(100, +v || 0));
+      /* 棒があるときは棒の真ん中に、折れ線だけのときは端から端まで。
+         端まで引かないと、面の右端が縦線になって切りっぱなしに見える */
+      const spread = kind === 'line' && n > 1;
+      const x = (i) => (spread
+        ? padX + ((W - padX * 2) * i) / (n - 1)
+        : padX + ((W - padX * 2) / n) * (i + 0.5));
+      const y = (v) => base - (base - top) * (at(v) / 100);
+      const bw = Math.min(74, ((W - padX * 2) / n) * 0.52);
+      const pts = items.map((it, i) => [x(i), y(it.value)]);
+      /* 同じページに2つ置いても混ざらないよう、中身から名前を作る */
+      const gid = `gr${hashId(JSON.stringify(items) + kind + (p.title || ''))}`;
+
+      /* なめらかな線。両隣を見て制御点を置く（Catmull-Rom を3次ベジェに） */
+      const curve = (q) => {
+        if (q.length < 3) return q.map((v, i) => `${i ? 'L' : 'M'}${v[0].toFixed(1)} ${v[1].toFixed(1)}`).join(' ');
+        let d = `M${q[0][0].toFixed(1)} ${q[0][1].toFixed(1)}`;
+        for (let i = 0; i < q.length - 1; i++) {
+          const p0 = q[i - 1] || q[i], p1 = q[i], p2 = q[i + 1], p3 = q[i + 2] || q[i + 1];
+          const c1 = [p1[0] + (p2[0] - p0[0]) / 6, p1[1] + (p2[1] - p0[1]) / 6];
+          const c2 = [p2[0] - (p3[0] - p1[0]) / 6, p2[1] - (p3[1] - p1[1]) / 6];
+          d += ` C${c1[0].toFixed(1)} ${c1[1].toFixed(1)} ${c2[0].toFixed(1)} ${c2[1].toFixed(1)} ${p2[0].toFixed(1)} ${p2[1].toFixed(1)}`;
+        }
+        return d;
+      };
+      const straight = (q) => q.map((v, i) => `${i ? 'L' : 'M'}${v[0].toFixed(1)} ${v[1].toFixed(1)}`).join(' ');
+      const linePath = pts.length ? (p.smooth === false ? straight(pts) : curve(pts)) : '';
+      /* 面は線と同じ形で、両端を下ろして閉じる */
+      const areaPath = pts.length
+        ? `${linePath} L${pts[pts.length - 1][0].toFixed(1)} ${base} L${pts[0][0].toFixed(1)} ${base} Z` : '';
+
+      const showLine = kind !== 'bar' && pts.length > 1;
+      const showBar = kind !== 'line';
+      const pct = (v, of) => `${((v / of) * 100).toFixed(2)}%`;
+
+      const grid = p.grid === false ? '' : [0, 25, 50, 75, 100].map((v) =>
+        `        <line class="gl" x1="${padX}" y1="${y(v).toFixed(1)}" x2="${W - padX}" y2="${y(v).toFixed(1)}"/>`).join('\n');
+
+      /* 数値もラベルも、目盛りと同じ x で置く。図とずれないように */
+      const notes = items.some((it) => it.note)
+        ? `        <div class="draw-note">${items.map((it, i) => (it.note
+          ? `<span style="left:${pct(x(i), W)};top:${pct(y(it.value), H)}">${esc(it.note)}</span>` : '')).join('')}</div>`
+        : '';
+
       return sec('svgdraw', p,
         `${head(p)}
-    <div class="draw-wrap">
-      <svg viewBox="0 0 ${W} ${H}" fill="none" stroke-width="2">
-${items.map((it, i) => `        <rect x="${(x(i) - bw / 2).toFixed(1)}" y="${y(it.value).toFixed(1)}" width="${bw.toFixed(1)}" height="${(H - 24 - y(it.value)).toFixed(1)}" rx="4" stroke="var(--c-primary)"/>`).join('\n')}
-${p.line ? `        <polyline points="${items.map((it, i) => `${x(i).toFixed(1)},${(y(it.value) - 10).toFixed(1)}`).join(' ')}" stroke="var(--c-accent)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>` : ''}
-        <line x1="${pad}" y1="${H - 24}" x2="${W - pad}" y2="${H - 24}" stroke="var(--c-border)"/>
-      </svg>
-      <div class="draw-lbl">${items.map((it, i) => `<span${ed(`items.${i}.label`, 'ラベル')}>${esc(it.label)}</span>`).join('')}</div>
+    <div class="draw-wrap chart">
+      <div class="draw-plot">
+        <svg viewBox="0 0 ${W} ${H}" fill="none" aria-hidden="true">
+          <defs>
+            <linearGradient id="${gid}b" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="var(--c-chart)" stop-opacity=".92"/>
+              <stop offset="1" stop-color="var(--c-chart)" stop-opacity=".28"/>
+            </linearGradient>
+            <linearGradient id="${gid}a" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="var(--c-chart2)" stop-opacity=".34"/>
+              <stop offset=".7" stop-color="var(--c-chart2)" stop-opacity=".07"/>
+              <stop offset="1" stop-color="var(--c-chart2)" stop-opacity="0"/>
+            </linearGradient>
+          </defs>
+${grid}
+${showLine ? `          <path class="area" d="${areaPath}" fill="url(#${gid}a)"/>` : ''}
+${showBar ? items.map((it, i) => `          <rect class="bar" x="${(x(i) - bw / 2).toFixed(1)}" y="${y(it.value).toFixed(1)}" width="${bw.toFixed(1)}" height="${Math.max(2, base - y(it.value)).toFixed(1)}" rx="7" fill="url(#${gid}b)" style="--d:${(i * 0.08).toFixed(2)}s"/>`).join('\n') : ''}
+${showLine ? `          <path class="ln" d="${linePath}" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" data-draw/>
+${pts.map((q, i) => `          <circle class="dot" cx="${q[0].toFixed(1)}" cy="${q[1].toFixed(1)}" r="5.5" stroke-width="3" style="--d:${(0.5 + i * 0.07).toFixed(2)}s"/>`).join('\n')}` : ''}
+          <line class="axis" x1="${padX}" y1="${base}" x2="${W - padX}" y2="${base}"/>
+        </svg>
+${notes}      </div>
+      <div class="draw-lbl">${items.map((it, i) =>
+    `<span style="left:${pct(x(i), W)}"${ed(`items.${i}.label`, 'ラベル')}>${esc(it.label)}</span>`).join('')}</div>
     </div>`);
     },
   },
@@ -1735,27 +1812,47 @@ ${p.line ? `        <polyline points="${items.map((it, i) => `${x(i).toFixed(1)}
     render: (p) => {
       const items = (p.items || []);
       const n = Math.max(1, items.length);
+      /* 図は3種。どれも「線1本」で終わらせず、面と目盛りを敷く */
+      const grid = (n) => [0, 1, 2, 3].map((k) =>
+        `<line class="gl" x1="10" y1="${(24 + k * 48).toFixed(0)}" x2="${n}" y2="${(24 + k * 48).toFixed(0)}"/>`).join('');
+
       const viz = (kind, i) => {
+        const gid = `sv${i}`;
         if (kind === 'line') {
-          const pts = [[10, 150], [70, 122], [130, 128], [190, 84], [250, 60], [310, 24]];
-          return `<svg viewBox="0 0 330 180" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-          <line x1="10" y1="168" x2="320" y2="168" stroke="var(--c-border)" stroke-width="2" data-draw style="--d:0s"/>
-          <polyline points="${pts.map((q) => q.join(',')).join(' ')}" stroke="var(--c-primary)" data-draw style="--d:.15s"/>
-          ${pts.map((q, k) => `<circle cx="${q[0]}" cy="${q[1]}" r="5" fill="var(--c-primary)" stroke="none" data-draw style="--d:${(0.4 + k * 0.08).toFixed(2)}s"/>`).join('')}
+          const pts = [[16, 150], [76, 120], [136, 126], [196, 80], [256, 56], [314, 22]];
+          const d = pts.map((q, k) => `${k ? 'L' : 'M'}${q[0]} ${q[1]}`).join(' ');
+          return `<svg viewBox="0 0 330 190" fill="none">
+          <defs><linearGradient id="${gid}a" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="var(--c-primary)" stop-opacity=".38"/>
+            <stop offset="1" stop-color="var(--c-primary)" stop-opacity="0"/></linearGradient></defs>
+          ${grid(320)}
+          <path class="area" d="${d} L314 168 L16 168 Z" fill="url(#${gid}a)"/>
+          <line class="axis" x1="10" y1="168" x2="320" y2="168"/>
+          <path class="ln" d="${d}" stroke="var(--c-primary)" stroke-width="3.5"
+                stroke-linecap="round" stroke-linejoin="round" data-draw style="--d:.15s"/>
+          ${pts.map((q, k) => `<circle class="dot" cx="${q[0]}" cy="${q[1]}" r="5.5" stroke-width="3" style="--d:${(0.5 + k * 0.07).toFixed(2)}s"/>`).join('')}
         </svg>`;
         }
         if (kind === 'ring') {
-          return `<svg viewBox="0 0 200 200" fill="none" stroke-width="14">
-          <circle cx="100" cy="100" r="78" stroke="var(--c-border)"/>
-          <circle cx="100" cy="100" r="78" stroke="var(--c-primary)" stroke-linecap="round"
-                  transform="rotate(-90 100 100)" data-draw style="--d:.1s"/>
+          /* 細い輪はグラフに見えない。外径いっぱいの太い輪にする */
+          return `<svg viewBox="0 0 220 220" fill="none" stroke-width="34">
+          <defs><linearGradient id="${gid}r" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="var(--c-primary)"/>
+            <stop offset="1" stop-color="var(--c-accent)"/></linearGradient></defs>
+          <circle class="trk" cx="110" cy="110" r="86"/>
+          <circle class="arc" cx="110" cy="110" r="86" stroke="url(#${gid}r)" stroke-linecap="round"
+                  transform="rotate(-90 110 110)" data-draw style="--d:.1s"/>
         </svg>`;
         }
         const hs = [34, 58, 46, 78, 96];
-        return `<svg viewBox="0 0 330 180" fill="none">
-          <line x1="10" y1="168" x2="320" y2="168" stroke="var(--c-border)" stroke-width="2" data-draw style="--d:0s"/>
-          ${hs.map((h, k) => `<rect class="bar" x="${28 + k * 60}" y="${168 - h * 1.45}" width="34" height="${h * 1.45}" rx="3"
-              fill="var(--c-primary)" style="--d:${(0.15 + k * 0.09).toFixed(2)}s"/>`).join('')}
+        return `<svg viewBox="0 0 330 190" fill="none">
+          <defs><linearGradient id="${gid}b" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="var(--c-primary)" stop-opacity=".95"/>
+            <stop offset="1" stop-color="var(--c-primary)" stop-opacity=".32"/></linearGradient></defs>
+          ${grid(320)}
+          <line class="axis" x1="10" y1="168" x2="320" y2="168"/>
+          ${hs.map((h, k) => `<rect class="bar" x="${26 + k * 60}" y="${(168 - h * 1.45).toFixed(1)}" width="38" height="${(h * 1.45).toFixed(1)}" rx="6"
+              fill="url(#${gid}b)" style="--d:${(0.15 + k * 0.09).toFixed(2)}s"/>`).join('')}
         </svg>`;
       };
 
