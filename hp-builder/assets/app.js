@@ -96,6 +96,12 @@ function newPageBlocks(kind) {
   return [same('header'), ...mid.map((t) => makeBlock(t)), same('footer')];
 }
 
+/* テンプレートの配色を、そのまま state の配色にする。
+   「薄いところを自動でそろえるか」は state だけが持つ設定なので、
+   ここで必ず付ける（付け忘れると、書き出して読み直したときに
+   持ち物が増えて、前後で中身が一致しなくなる）。 */
+const themeOf = (t) => Object.assign({ autoTone: true }, clone(t));
+
 function buildState(tplKey) {
   const t = TEMPLATES[tplKey];
   return {
@@ -105,7 +111,7 @@ function buildState(tplKey) {
       description: 'このサイトの説明を入れてください。検索結果やSNSでの共有時に表示されます。',
       lang: 'ja',
     },
-    theme: clone(t.theme),
+    theme: themeOf(t.theme),
     style: t.style || '',
     rules: !!t.rules,
     motion: clone(DEFAULT_MOTION),
@@ -126,7 +132,7 @@ function buildCustomState() {
       description: 'このサイトの説明を入れてください。検索結果やSNSでの共有時に表示されます。',
       lang: 'ja',
     },
-    theme: clone(TEMPLATES.corporate.theme),
+    theme: themeOf(TEMPLATES.corporate.theme),
     style: '',
     rules: false,
     motion: clone(DEFAULT_MOTION),
@@ -261,6 +267,9 @@ function migrate(s) {
   s.motion = Object.assign(clone(DEFAULT_MOTION), s.motion || {}); // 旧データ対策
   if (s.style === undefined) s.style = (TEMPLATES[s.template] || {}).style || '';
   s.meta = Object.assign({ title: 'My Website', description: '', lang: 'ja' }, s.meta || {});
+  /* 薄いところを自動でそろえるかどうか。前に作ったものは、そのときの色を
+     そのまま残したいので、決めた色を動かすまでは作り直さない（既定は自動）。 */
+  if (s.theme && s.theme.autoTone === undefined) s.theme.autoTone = true;
 
   /* ページを持たない時代のデータは、まるごと1枚目のページにする。
      前に作ったページを読み込んでも、そのまま続きから直せる。 */
@@ -2606,17 +2615,20 @@ $('#moreMenu').addEventListener('click', () => { $('#moreMenu').hidden = true; }
 /* ================================================================
    デザインタブ / ページ設定タブ
    ================================================================ */
+/* 決めるのは4色だけ。残りは決めた色から作る（tone.js）。
+   8色が並んでいると手が止まる。「メインカラー」「文字色」は分かるが、
+   「薄いエリア」「うすい文字」「線」「濃いエリア」は、どこに出るかを
+   知らないと決められない。 */
+const BASE_COLORS = [
+  { key: 'primary', label: 'メインカラー', type: 'color' },
+  { key: 'accent', label: 'アクセントカラー', type: 'color' },
+  { key: 'bg', label: '背景色', type: 'color' },
+  { key: 'text', label: '文字色', type: 'color' },
+];
+/* 決めた色を変えたら作り直す色。これ以外を変えても薄い色は動かさない */
+const TONE_TRIGGERS = new Set(['primary', 'bg', 'text']);
+
 const THEME_FIELDS = [
-  ['色', [
-    { key: 'primary', label: 'メインカラー', type: 'color' },
-    { key: 'accent', label: 'アクセントカラー', type: 'color' },
-    { key: 'bg', label: '背景色', type: 'color' },
-    { key: 'surface', label: '背景色（薄いエリア）', type: 'color' },
-    { key: 'text', label: '文字色', type: 'color' },
-    { key: 'muted', label: '文字色（うすい）', type: 'color' },
-    { key: 'border', label: '線の色', type: 'color' },
-    { key: 'dark', label: 'ダークエリアの色', type: 'color' },
-  ]],
   ['文字', [
     { key: 'font', label: '本文のフォント', type: 'select', options: FONTS.map((f) => [f[0], f[1]]) },
     { key: 'fontHead', label: '見出しのフォント', type: 'select', options: FONTS.map((f) => [f[0], f[1]]) },
@@ -2647,10 +2659,32 @@ const MOTION_FIELDS = [
     hint: 'マウスの環境だけで効きます。指の操作と「動きを減らす」設定では切れます' },
 ];
 
+/* 決めた色から作った4色を、名前とどこに出るかつきで見せる。
+   自動でそろえているあいだも、何色になったかは見えるようにしておく
+   （黙って決められるのがいちばん分かりにくい）。 */
+function toneStrip() {
+  const t = state.theme;
+  return `<div class="tone-list">${TONE_KEYS.map(([k, label, where]) =>
+    `<div class="tone"><i style="background:${esc(t[k])}"></i>
+      <b>${esc(label)}</b><small>${esc(where)}</small><em>${esc(t[k])}</em></div>`).join('')}</div>`;
+}
+
 function renderDesign() {
+  const auto = state.theme.autoTone !== false;
   $('#tab-design').innerHTML =
     `<div class="sec-label">配色</div>
-     <button class="anim-gal" id="btnPalGal" style="margin:0 0 14px">▦ 配色を一覧から選ぶ</button>`
+     <button class="anim-gal" id="btnPalGal" style="margin:0 0 14px">▦ 配色を一覧から選ぶ</button>
+     <div class="sec-label">決める色</div>`
+    + BASE_COLORS.map((f) =>
+      `<div class="f"><label>${esc(f.label)}</label>${inputHTML(f, state.theme[f.key], `theme.${f.key}`)}</div>`).join('')
+    + `<div class="f"><label class="sw"><input type="checkbox" data-path="theme.autoTone"${auto ? ' checked' : ''}>薄いところは自動でそろえる</label>
+        <div class="hint">上の色から、薄いエリア・うすい文字・線・濃いエリアを作ります。
+          地に対して読める明るさになるまで戻すので、色を変えても文字が潰れません。</div></div>`
+    + `<div class="sec-label">${auto ? 'ついてくる色' : '薄いところ'}</div>`
+    + (auto ? `<div id="toneStrip">${toneStrip()}</div>`
+            : TONE_KEYS.map(([k, label, where]) =>
+              `<div class="f"><label>${esc(label)}</label>${inputHTML({ key: k, type: 'color' }, state.theme[k], `theme.${k}`)}
+                <div class="hint">${esc(where)}</div></div>`).join(''))
     + THEME_FIELDS.map(([g, fs]) =>
     `<div class="sec-label">${g}</div>` + fs.map((f) => {
       const path = `theme.${f.key}`;
@@ -2766,12 +2800,28 @@ $('#tab-page').addEventListener('click', (e) => {
   save(`pg:${act}`);
 });
 
+/* 決めた色から、薄いところを作り直す。
+   自動をやめている人の色は触らない。 */
+function applyTone() {
+  if (state.theme.autoTone === false) return false;
+  Object.assign(state.theme, toneFromBase(state.theme));
+  return true;
+}
+
 function themeInput(e) {
   const el = e.target;
   const path = el.dataset.path || '';
   if (path !== 'style' && path !== 'rules'
     && !path.startsWith('theme.') && !path.startsWith('meta.') && !path.startsWith('motion.')) return;
   setPath(state, path, readEl(el));
+
+  /* 決める色を動かしたら、薄いところも一緒に動かす。
+     欄は作り直さない（色を選んでいる途中でピッカーが閉じてしまう）。
+     見えている見本の中身だけ書き替える。 */
+  if (TONE_TRIGGERS.has(path.slice(6)) && applyTone()) {
+    const strip = $('#toneStrip');
+    if (strip) strip.innerHTML = toneStrip();
+  }
 
   if (el.type === 'range') {
     el.parentElement.querySelector('.f-val').textContent = el.value + (el.dataset.suffix || '');
@@ -2800,6 +2850,12 @@ $('#tab-design').addEventListener('click', (e) => {
 /* select や toggle を変えたら、すぐ動きを確認できるよう作り直す */
 $('#tab-design').addEventListener('change', (e) => {
   const path = e.target.dataset.path || '';
+  if (path === 'theme.autoTone') {
+    /* 入れた瞬間にそろえる。「自動にしたのに何も起きない」を作らない */
+    applyTone();
+    renderDesign(); renderPreview(true); save('t:tone');
+    return;
+  }
   if (path.startsWith('motion.') || path === 'style' || path === 'rules') renderPreview(true);
 });
 $('#tab-page').addEventListener('input', themeInput);   // サイト全体の欄
@@ -3264,7 +3320,7 @@ $('#bldInds').addEventListener('click', (e) => {
   state.biz = Object.assign({}, state.biz, { ind: k });
   /* 写真がまだ無いうちは、業種の色に寄せる。あとで写真を入れたら
      そちらから作り直すので、ここで決めた色は残らない */
-  if (!bldPhotos.length) state.theme = themeFromIndustry(state.theme, k);
+  if (!bldPhotos.length) { state.theme = themeFromIndustry(state.theme, k); applyTone(); }
   renderBldInds();
   spreadPhotos();     // 仮の絵も、その業種のものに描き直す
   applyBiz();
@@ -3343,7 +3399,7 @@ bldPicker.addEventListener('change', async () => {
   $('#bldThumbs').innerHTML = bldPhotos.map((src) => `<img src="${esc(src)}" alt="">`).join('');
   $('#bldPickSub').textContent = `${bldPhotos.length}枚。この先のブロックにも順に入ります`;
   /* 写真に合わせて配色も寄せる。色をあとから選び直す手間を1つ減らす */
-  try { state.theme = await paletteFromPhotos(state.theme, bldPhotos); } catch { /* 色は元のまま */ }
+  try { state.theme = await paletteFromPhotos(state.theme, bldPhotos); applyTone(); } catch { /* 色は元のまま */ }
   spreadPhotos();
   refresh();
   refreshBld();
