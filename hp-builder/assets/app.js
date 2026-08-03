@@ -338,6 +338,7 @@ function fullHTML(forPublish) {
 <style>
 ${themeCSS(state.theme)}
 ${SITE_CSS}
+${shapeMaskCSS(usedShapes(state))}
 </style>
 </head>
 <body class="${esc(bodyClass())}" data-anim="${esc(state.motion.anim)}" data-reveal="${state.motion.reveal ? 1 : 0}" data-smooth="${state.motion.smooth ? 1 : 0}">
@@ -502,13 +503,22 @@ function initPreview() {
   });
 }
 
+/* いま使われている「絵から作った形」だけを集める。
+   書き出すCSSを、使っている分だけにするため。 */
+function usedShapes(st) {
+  const set = new Set();
+  (st.blocks || []).forEach((b) => { if (b.props && b.props.shape) set.add(b.props.shape); });
+  return [...set];
+}
+
 let pvTimer;
 function renderPreview(now = false) {
   if (editing) return;   // 直接編集の最中に作り直すと入力が消えるので触らない
   clearTimeout(pvTimer);
   const run = () => {
     if (!pdoc) return;
-    pdoc.getElementById('s-theme').textContent = themeCSS(state.theme);
+    pdoc.getElementById('s-theme').textContent = themeCSS(state.theme)
+      + '\n' + shapeMaskCSS(usedShapes(state));
     pdoc.body.className = bodyClass();
     pdoc.body.setAttribute('data-anim', state.motion.anim);
     pdoc.body.setAttribute('data-reveal', state.motion.reveal ? '1' : '0');
