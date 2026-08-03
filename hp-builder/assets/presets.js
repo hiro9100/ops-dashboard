@@ -172,7 +172,11 @@ const SECTION_PRESETS = [
     props: { cols: 'c3' } },
 
   { key: 'svgdraw', type: 'svgdraw', group: '一覧', label: 'Line Chart',
-    about: '線がその場で描かれる。数字の変化を見せるとき。', props: {} },
+    about: '線が引かれ、下に同じ色の薄い膜が敷かれる。数字の変化を見せるとき。', props: {} },
+
+  { key: 'svgbar', type: 'svgdraw', group: '一覧', label: 'Bar Chart',
+    about: '棒が下から立ち上がる。年ごとの比較や内訳に。',
+    props: { kind: 'bar', eyebrow: 'RESULT', title: '数字で見る', text: '' } },
 
   /* ============ 文章・帯 ============ */
   { key: 'rich', type: 'rich', group: '文章', label: 'Text',

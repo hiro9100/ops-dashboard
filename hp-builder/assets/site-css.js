@@ -1217,21 +1217,40 @@ p:last-child{margin-bottom:0}
    線1本と枠だけの図は、作りかけの下書きに見える。
    面（グラデーション）・目盛り・点を敷いて、図として成立させる。 */
 .draw-wrap{max-width:760px;margin:0 auto}
-/* 図に使う色。濃い地の上では主役の色が沈むので、その帯の文字色で描く */
-.chart{--c-chart:var(--c-primary);--c-chart2:var(--c-accent)}
-.bg-dark .chart,.bg-primary .chart{--c-chart:currentColor;--c-chart2:currentColor}
+/* 図に使う色は1色だけ。線・棒・膜・点をぜんぶ同じ色にする。
+   2色を混ぜたグラデーションは、色が濁って安っぽく見える。
+   濃さの差は、その帯の地の色へどれだけ寄せるかで作る。
+
+   濃い地の上では主役の色が沈むので、その帯の文字色で描く。 */
+.chart,.sl-viz{--c-chart:var(--c-primary);--c-chart-bg:var(--c-bg)}
+.bg-surface .chart{--c-chart-bg:var(--c-surface)}
+.bg-dark .chart{--c-chart:currentColor;--c-chart-bg:var(--c-dark)}
+.bg-primary .chart{--c-chart:currentColor;--c-chart-bg:var(--c-primary)}
 .draw-plot{position:relative}
 .draw-plot svg{width:100%;height:auto;overflow:visible;display:block}
 
 /* うっすらとしたマス目。数えるためではなく、高さを比べるための下敷き */
 .chart .gl{stroke:var(--c-border);stroke-width:1;opacity:.6}
 .chart .axis{stroke:var(--c-border);stroke-width:1.5}
-.chart .ln{stroke:var(--c-chart2)}
+.chart .ln{stroke:var(--c-chart)}
 /* 点のふちは、その帯の地の色で抜く。線に重なっても点が読める */
-.chart .dot{fill:var(--c-chart2);stroke:var(--c-bg)}
-.bg-surface .chart .dot{stroke:var(--c-surface)}
-.bg-dark .chart .dot{stroke:var(--c-dark)}
-.bg-primary .chart .dot{stroke:var(--c-primary)}
+.chart .dot{fill:var(--c-chart);stroke:var(--c-chart-bg)}
+
+/* グラデーションの色止め。同じ色の「濃い」と「薄い」だけで作る。
+   薄いほうは地の色へ寄せるので、透かしているわけではない
+   （透かすと、下にあるマス目や写真が透けて濁る）。
+
+   color-mix を読めない端末のために、まず不透明度で薄くしたものを置き、
+   読める端末だけ上書きする。読めないまま黒く塗られると図が潰れる。 */
+.chart .gb0,.sl-viz .gb0{stop-color:var(--c-chart)}
+.chart .gb1,.sl-viz .gb1{stop-color:var(--c-chart);stop-opacity:.3}
+.chart .ga0,.sl-viz .ga0{stop-color:var(--c-chart);stop-opacity:.26}
+.chart .ga1,.sl-viz .ga1{stop-color:var(--c-chart);stop-opacity:0}
+@supports (color:color-mix(in srgb,red,blue)){
+  .chart .gb1,.sl-viz .gb1{stop-color:color-mix(in srgb,var(--c-chart) 30%,var(--c-chart-bg));stop-opacity:1}
+  .chart .ga0,.sl-viz .ga0{stop-color:color-mix(in srgb,var(--c-chart) 26%,var(--c-chart-bg));stop-opacity:1}
+  .chart .ga1,.sl-viz .ga1{stop-color:var(--c-chart-bg);stop-opacity:1}
+}
 .bg-dark .chart .gl,.bg-primary .chart .gl,
 .bg-dark .chart .axis,.bg-primary .chart .axis{stroke:currentColor;opacity:.3}
 
@@ -1323,7 +1342,7 @@ p:last-child{margin-bottom:0}
 .sl-viz .gl{stroke:var(--c-border);stroke-width:1.5;opacity:.6}
 .sl-viz .axis{stroke:var(--c-border);stroke-width:2}
 .sl-viz .trk{stroke:var(--c-border);opacity:.55}
-.sl-viz .dot{fill:var(--c-primary);stroke:var(--c-bg);opacity:0;
+.sl-viz .dot{fill:var(--c-chart);stroke:var(--c-chart-bg);opacity:0;
   transform-box:fill-box;transform-origin:50% 50%;transform:scale(.4)}
 .sl.play .sl-viz .dot{opacity:1;transform:scale(1);
   transition:opacity .35s ease var(--d,0s),transform .45s cubic-bezier(.34,1.56,.64,1) var(--d,0s)}

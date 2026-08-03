@@ -1671,11 +1671,11 @@ ${(p.items || []).map((it, i) => `      <div><span class="slot" data-slot="${esc
     label: 'Line Chart',
     icon: '⌁',
     tag: '図解',
-    about: '折れ線の下に色が敷かれ、うっすらとマス目が入ります。実績の推移や比較に。',
+    about: '折れ線の下に同じ色の薄い膜が敷かれ、うっすらとマス目が入ります。実績の推移や比較に。',
     fields: [
       FIELD.eyebrow, FIELD.title, FIELD.text,
       { key: 'kind', label: '見せかた', type: 'select',
-        options: [['both', '棒と折れ線'], ['line', '折れ線だけ'], ['bar', '棒だけ']] },
+        options: [['line', '折れ線'], ['bar', '棒']] },
       { key: 'items', label: '目盛り（最大8本）', type: 'list', addLabel: '1本追加', titleKey: 'label',
         item: [
           { key: 'label', label: 'ラベル', type: 'text' },
@@ -1688,7 +1688,7 @@ ${(p.items || []).map((it, i) => `      <div><span class="slot" data-slot="${esc
     ],
     defaults: {
       eyebrow: 'GROWTH', title: '数字は伸びています', text: '導入社数の推移',
-      kind: 'both', smooth: true, grid: true, bg: '', anchor: 'graph',
+      kind: 'line', smooth: true, grid: true, bg: '', anchor: 'graph',
       items: [
         { label: '2021', value: 22, note: '' }, { label: '2022', value: 38, note: '' },
         { label: '2023', value: 55, note: '' }, { label: '2024', value: 74, note: '' },
@@ -1698,14 +1698,14 @@ ${(p.items || []).map((it, i) => `      <div><span class="slot" data-slot="${esc
     render: (p) => {
       const items = (p.items || []).slice(0, 8);
       const n = items.length || 1;
-      /* 前の版は「折れ線も引く」の入り切りだけだった。そのころのページも
-         そのまま出せるよう、kind が無ければ line から読み替える */
-      const kind = p.kind || (p.line === false ? 'bar' : 'both');
+      /* 棒と折れ線を重ねる形はやめた（線と棒で色が2つ要り、図が濁る）。
+         前の版で作ったページも開けるよう、その指定は折れ線に寄せる */
+      const kind = p.kind === 'bar' || p.line === false ? 'bar' : 'line';
       const W = 680, H = 300, padX = 30, padT = 34, padB = 30;
       const base = H - padB, top = padT;
       const at = (v) => Math.max(0, Math.min(100, +v || 0));
-      /* 棒があるときは棒の真ん中に、折れ線だけのときは端から端まで。
-         端まで引かないと、面の右端が縦線になって切りっぱなしに見える */
+      /* 棒は真ん中に、折れ線は端から端まで。
+         端まで引かないと、膜の右端が縦線になって切りっぱなしに見える */
       const spread = kind === 'line' && n > 1;
       const x = (i) => (spread
         ? padX + ((W - padX * 2) * i) / (n - 1)
@@ -1754,17 +1754,14 @@ ${(p.items || []).map((it, i) => `      <div><span class="slot" data-slot="${esc
         <svg viewBox="0 0 ${W} ${H}" fill="none" aria-hidden="true">
           <defs>
             <linearGradient id="${gid}b" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0" stop-color="var(--c-chart)" stop-opacity=".92"/>
-              <stop offset="1" stop-color="var(--c-chart)" stop-opacity=".28"/>
+              <stop class="gb0" offset="0"/><stop class="gb1" offset="1"/>
             </linearGradient>
             <linearGradient id="${gid}a" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0" stop-color="var(--c-chart2)" stop-opacity=".34"/>
-              <stop offset=".7" stop-color="var(--c-chart2)" stop-opacity=".07"/>
-              <stop offset="1" stop-color="var(--c-chart2)" stop-opacity="0"/>
+              <stop class="ga0" offset="0"/><stop class="ga1" offset="1"/>
             </linearGradient>
           </defs>
-${grid}
 ${showLine ? `          <path class="area" d="${areaPath}" fill="url(#${gid}a)"/>` : ''}
+${grid}
 ${showBar ? items.map((it, i) => `          <rect class="bar" x="${(x(i) - bw / 2).toFixed(1)}" y="${y(it.value).toFixed(1)}" width="${bw.toFixed(1)}" height="${Math.max(2, base - y(it.value)).toFixed(1)}" rx="7" fill="url(#${gid}b)" style="--d:${(i * 0.08).toFixed(2)}s"/>`).join('\n') : ''}
 ${showLine ? `          <path class="ln" d="${linePath}" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" data-draw/>
 ${pts.map((q, i) => `          <circle class="dot" cx="${q[0].toFixed(1)}" cy="${q[1].toFixed(1)}" r="5.5" stroke-width="3" style="--d:${(0.5 + i * 0.07).toFixed(2)}s"/>`).join('\n')}` : ''}
@@ -1823,10 +1820,9 @@ ${notes}      </div>
           const d = pts.map((q, k) => `${k ? 'L' : 'M'}${q[0]} ${q[1]}`).join(' ');
           return `<svg viewBox="0 0 330 190" fill="none">
           <defs><linearGradient id="${gid}a" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0" stop-color="var(--c-primary)" stop-opacity=".38"/>
-            <stop offset="1" stop-color="var(--c-primary)" stop-opacity="0"/></linearGradient></defs>
-          ${grid(320)}
+            <stop class="ga0" offset="0"/><stop class="ga1" offset="1"/></linearGradient></defs>
           <path class="area" d="${d} L314 168 L16 168 Z" fill="url(#${gid}a)"/>
+          ${grid(320)}
           <line class="axis" x1="10" y1="168" x2="320" y2="168"/>
           <path class="ln" d="${d}" stroke="var(--c-primary)" stroke-width="3.5"
                 stroke-linecap="round" stroke-linejoin="round" data-draw style="--d:.15s"/>
@@ -1837,8 +1833,7 @@ ${notes}      </div>
           /* 細い輪はグラフに見えない。外径いっぱいの太い輪にする */
           return `<svg viewBox="0 0 220 220" fill="none" stroke-width="34">
           <defs><linearGradient id="${gid}r" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0" stop-color="var(--c-primary)"/>
-            <stop offset="1" stop-color="var(--c-accent)"/></linearGradient></defs>
+            <stop class="gb0" offset="0"/><stop class="gb1" offset="1"/></linearGradient></defs>
           <circle class="trk" cx="110" cy="110" r="86"/>
           <circle class="arc" cx="110" cy="110" r="86" stroke="url(#${gid}r)" stroke-linecap="round"
                   transform="rotate(-90 110 110)" data-draw style="--d:.1s"/>
@@ -1847,8 +1842,7 @@ ${notes}      </div>
         const hs = [34, 58, 46, 78, 96];
         return `<svg viewBox="0 0 330 190" fill="none">
           <defs><linearGradient id="${gid}b" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0" stop-color="var(--c-primary)" stop-opacity=".95"/>
-            <stop offset="1" stop-color="var(--c-primary)" stop-opacity=".32"/></linearGradient></defs>
+            <stop class="gb0" offset="0"/><stop class="gb1" offset="1"/></linearGradient></defs>
           ${grid(320)}
           <line class="axis" x1="10" y1="168" x2="320" y2="168"/>
           ${hs.map((h, k) => `<rect class="bar" x="${26 + k * 60}" y="${(168 - h * 1.45).toFixed(1)}" width="38" height="${(h * 1.45).toFixed(1)}" rx="6"
