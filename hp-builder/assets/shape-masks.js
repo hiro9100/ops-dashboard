@@ -19,7 +19,7 @@ const SHAPE_MASKS = {
 };
 
 /* 抜き型を敷くCSS。使う形の分だけ作る */
-const SHAPE_FRAMES = '.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic';
+const SHAPE_FRAMES = '.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic,.vid';
 const shapeMaskCSS = (keys) => keys.filter((k) => SHAPE_MASKS[k]).map((k) => `.shp-${k} :is(${SHAPE_FRAMES}){
   border-radius:0;
   -webkit-mask-image:url("${SHAPE_MASKS[k]}");mask-image:url("${SHAPE_MASKS[k]}");

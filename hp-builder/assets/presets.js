@@ -106,6 +106,10 @@ const SECTION_PRESETS = [
   { key: 'collage-mid', type: 'collage', group: '写真', label: '写真を敷き詰めた帯',
     about: '大小の写真を隙間なく敷く。途中に挟んでも効く。', props: {} },
 
+  { key: 'video', type: 'video', group: '写真', label: '動画を1つ置く',
+    about: 'YouTube・Vimeo・動画ファイルのURLを貼るだけ。形も土台も写真と同じように使える。',
+    props: {} },
+
   { key: 'clipreveal', type: 'clipreveal', group: '写真', label: '写真が円で切り替わる',
     about: '円が広がって次の写真に入れ替わる。', props: {} },
 

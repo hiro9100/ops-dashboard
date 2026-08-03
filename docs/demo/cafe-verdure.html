@@ -97,6 +97,7 @@ p:last-child{margin-bottom:0}
 .btn.ghost:hover{opacity:1;box-shadow:none}
 .btn.accent{background:var(--c-accent);color:var(--c-on-accent,#fff);box-shadow:0 6px 20px -8px var(--c-accent)}
 .btn.sm{padding:10px 20px;font-size:14px}
+
 .btn-row{display:flex;flex-wrap:wrap;gap:14px;margin-top:32px}
 .center .btn-row,.hero.center .btn-row{justify-content:center}
 
@@ -150,7 +151,7 @@ p:last-child{margin-bottom:0}
 }
 .hero.cover .hero-title,.hero.cover .hero-text{text-shadow:0 1px 20px rgba(0,0,0,.5)}
 .hero-bg{position:absolute;inset:0;z-index:0;background:linear-gradient(135deg,var(--c-primary),var(--c-accent))}
-.hero-bg img{width:100%;height:100%;object-fit:cover}
+.hero-bg img,.hero-bg video{width:100%;height:100%;object-fit:cover;display:block}
 .hero-bg::after{content:"";position:absolute;inset:0;background:var(--hero-overlay,rgba(15,23,42,.55))}
 .hero.center.cover .hero-in,.hero.left.cover .hero-in{padding:clamp(24px,3.3333vw,66.6667px) 0}
 
@@ -843,6 +844,52 @@ p:last-child{margin-bottom:0}
 .tpl-studio .hdr{border-bottom-color:rgba(255,255,255,.12)}
 
 /* ==========================================================
+   ボタンの型
+
+   ここもスタイルやテンプレートの味付け（.sty-* / .tpl-*）より後ろに置く。
+   同じ強さの指定なので、後ろに書いたほうが勝つ。前に置くと
+   「下線だけ」を選んだのに角丸が残る、といったことが起きる（実際に起きた）。
+   ========================================================== */
+
+/* 丸（ピル） */
+.btn.pill{border-radius:999px;padding-inline:34px}
+
+/* 角なし（四角いまま） */
+.btn.square{border-radius:0}
+
+/* 白抜き。写真の上に置くとき */
+.btn.solidlight{background:#fff;color:#111;box-shadow:0 8px 24px -12px rgba(0,0,0,.6)}
+.btn.solidlight:hover{box-shadow:0 14px 30px -14px rgba(0,0,0,.7)}
+
+/* 濃い地 */
+.btn.dark{background:var(--c-text);color:var(--c-bg);box-shadow:none}
+.btn.dark:hover{box-shadow:0 12px 26px -12px rgba(0,0,0,.5)}
+
+/* 下線だけ。文字の延長のように見せる */
+.btn.link{
+  background:none;color:inherit;box-shadow:none;border:0;border-radius:0;
+  padding:6px 2px;border-bottom:2px solid currentColor
+}
+.btn.link:hover{transform:none;opacity:.6;box-shadow:none}
+
+/* 影を落とす（ずらした影） */
+.btn.hard{
+  border-radius:var(--radius);box-shadow:5px 5px 0 var(--c-text);
+  border:1.5px solid var(--c-text)
+}
+.btn.hard:hover{transform:translate(2px,2px);box-shadow:2px 2px 0 var(--c-text)}
+
+/* 矢印つき。押すと矢印だけ先に動く */
+.btn.arrow::after{content:"→";display:inline-block;transition:transform .25s ease}
+.btn.arrow:hover::after{transform:translateX(5px)}
+
+/* 大きい */
+.btn.lg{padding:19px 42px;font-size:17px}
+
+/* 横いっぱい（スマホでの申し込みボタンに） */
+.btn.full{width:100%}
+
+/* ==========================================================
    ヘッダーのバーの型
 
    ここはスタイルやテンプレートの味付け（.sty-* / .tpl-*）より
@@ -1306,10 +1353,11 @@ a:not(.btn):not(.logo){transition:opacity .5s cubic-bezier(.165,.84,.44,1)}
    枠に入りきらない部分をどこで切るか（object-position）と、
    どれだけ寄るか（scale）。値は枠の style から来る。
    何も指定がなければ、これまでどおり真ん中・等倍。 */
-:is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic,.exp-l,.car-it,.clip-side,.hero-bg) img{
+:is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic,.vid,.exp-l,.car-it,.clip-side,.hero-bg)
+  :is(img,video){
   object-position:var(--ix,50%) var(--iy,50%)
 }
-:is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic,.exp-l,.car-it,.clip-side) img{
+:is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic,.vid,.exp-l,.car-it,.clip-side) img{
   transform:scale(var(--iz,1))
 }
 /* 写真いっぱいの型。スクロール連動の型は自分で transform を持っており、
@@ -1337,6 +1385,51 @@ a:not(.btn):not(.logo){transition:opacity .5s cubic-bezier(.165,.84,.44,1)}
 .rv .grid > *:nth-child(n+5),.rv .nws-i:nth-child(n+5),.rv .flr-i:nth-child(n+5){transition-delay:.44s}
 .rv .btn-row{transition-delay:.5s}
 
+/* ---------- 動画 ----------
+   置き場所は写真の枠と同じ扱いにする（形も土台もそのまま効く）。 */
+.vid{position:relative;width:100%;overflow:hidden;border-radius:var(--radius);
+  background:var(--c-dark);box-sizing:border-box}
+.vid-16x9{aspect-ratio:16/9}
+.vid-4x3{aspect-ratio:4/3}
+.vid-1x1{aspect-ratio:1/1}
+.vid-9x16{aspect-ratio:9/16;max-width:420px;margin-inline:auto}
+.vid iframe,.vid video{position:absolute;inset:0;width:100%;height:100%;border:0;display:block;
+  object-fit:cover}
+/* 土台を敷いたときは、内側いっぱいに置き直す */
+.plt .vid iframe,.plt .vid video{position:static;height:100%}
+.vid-ph{position:absolute;inset:0;color:#fff;opacity:.5}
+
+/* ==========================================================
+   写真の土台
+
+   写真の下に色の面を敷き、写真をひと回り小さく載せる。
+   面と写真は同じ枠なので、くり抜きの形もそのまま共有する
+   （土台がアーチなら、写真もアーチの内側に収まる）。
+
+   要素を増やさず、枠の余白と地の色だけで作っている。
+   写真は枠の内側いっぱいなので、余白のぶんが土台として見える。
+   ========================================================== */
+.plt :is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic,.vid){
+  padding:var(--pt,5%) var(--pr,5%) var(--pb,5%) var(--pl,5%);
+  box-sizing:border-box
+}
+/* 写真の側は、土台の形につられて角が立つので、少しだけ丸めて収める */
+.plt :is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic,.vid) img{
+  border-radius:calc(var(--radius) * .55)
+}
+.plt-dark :is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic,.vid){background:var(--c-dark)}
+.plt-primary :is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic,.vid){background:var(--c-primary)}
+.plt-accent :is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic,.vid){background:var(--c-accent)}
+.plt-surface :is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic,.vid){background:var(--c-surface)}
+.plt-white :is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic,.vid){
+  background:#fff;box-shadow:0 24px 50px -30px rgba(15,23,42,.45)
+}
+/* ずらす。寄せた側の余白を細く、逆側を太くする */
+.pltf-br{--pt:1.5%;--pl:1.5%;--pr:9%;--pb:9%}
+.pltf-bl{--pt:1.5%;--pr:1.5%;--pl:9%;--pb:9%}
+.pltf-tr{--pb:1.5%;--pl:1.5%;--pr:9%;--pt:9%}
+.pltf-tl{--pb:1.5%;--pr:1.5%;--pl:9%;--pt:9%}
+
 /* ==========================================================
    写真の形（くり抜き）
 
@@ -1349,30 +1442,30 @@ a:not(.btn):not(.logo){transition:opacity .5s cubic-bezier(.165,.84,.44,1)}
 :is(.shp-round,.shp-circle,.shp-arch,.shp-leaf,.shp-hex,.shp-slant,.shp-egg,
   .shp-slats,.shp-arches,.shp-wave,.shp-blob,
   .shp-step,.shp-notch,.shp-ticket,.shp-sparkle,.shp-cross,.shp-diamond)
-  :is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic){
+  :is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic,.vid){
   /* 角丸と重ねると形が濁るので、抜くときは角丸を落とす */
   border-radius:0
 }
-.shp-round :is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic){
+.shp-round :is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic,.vid){
   border-radius:clamp(18px,2.2vw,44px)
 }
-.shp-circle :is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic){
+.shp-circle :is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic,.vid){
   clip-path:circle(50% at 50% 50%);aspect-ratio:1/1
 }
-.shp-arch :is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic){
+.shp-arch :is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic,.vid){
   border-radius:999px 999px 0 0
 }
 /* 木の葉：対角の2隅だけを大きく丸める */
-.shp-leaf :is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic){
+.shp-leaf :is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic,.vid){
   border-radius:clamp(40px,7vw,140px) 0 clamp(40px,7vw,140px) 0
 }
-.shp-hex :is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic){
+.shp-hex :is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic,.vid){
   clip-path:polygon(25% 0,75% 0,100% 50%,75% 100%,25% 100%,0 50%)
 }
-.shp-slant :is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic){
+.shp-slant :is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic,.vid){
   clip-path:polygon(0 0,100% 0,100% 88%,0 100%)
 }
-.shp-egg :is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic){
+.shp-egg :is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic,.vid){
   border-radius:50% 50% 46% 46% / 58% 58% 42% 42%
 }
 
@@ -1385,28 +1478,28 @@ a:not(.btn):not(.logo){transition:opacity .5s cubic-bezier(.165,.84,.44,1)}
    preserveAspectRatio='none' と mask-size:100% 100% で、枠の形に
    合わせて伸び縮みする。丸い部分は枠の縦横比なりに平たくなるが、
    見本の絵と同じ出かたなので、これでよい。 */
-.shp-slats :is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic){
+.shp-slats :is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic,.vid){
   border-radius:0;
   -webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M0.0 0 L22.0 0 L22.0 85 A11 15 0 0 1 0.0 85 Z M26.0 15 A11 15 0 0 1 48.0 15 L48.0 100 L26.0 100 Z M52.0 0 L74.0 0 L74.0 85 A11 15 0 0 1 52.0 85 Z M78.0 15 A11 15 0 0 1 100.0 15 L100.0 100 L78.0 100 Z' fill='%23000'/%3E%3C/svg%3E");
   mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M0.0 0 L22.0 0 L22.0 85 A11 15 0 0 1 0.0 85 Z M26.0 15 A11 15 0 0 1 48.0 15 L48.0 100 L26.0 100 Z M52.0 0 L74.0 0 L74.0 85 A11 15 0 0 1 52.0 85 Z M78.0 15 A11 15 0 0 1 100.0 15 L100.0 100 L78.0 100 Z' fill='%23000'/%3E%3C/svg%3E");
   -webkit-mask-size:100% 100%;mask-size:100% 100%;
   -webkit-mask-repeat:no-repeat;mask-repeat:no-repeat
 }
-.shp-arches :is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic){
+.shp-arches :is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic,.vid){
   border-radius:0;
   -webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M0.0 18 A15.5 18 0 0 1 31.0 18 L31.0 100 L0.0 100 Z M34.5 18 A15.5 18 0 0 1 65.5 18 L65.5 100 L34.5 100 Z M69.0 18 A15.5 18 0 0 1 100.0 18 L100.0 100 L69.0 100 Z' fill='%23000'/%3E%3C/svg%3E");
   mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M0.0 18 A15.5 18 0 0 1 31.0 18 L31.0 100 L0.0 100 Z M34.5 18 A15.5 18 0 0 1 65.5 18 L65.5 100 L34.5 100 Z M69.0 18 A15.5 18 0 0 1 100.0 18 L100.0 100 L69.0 100 Z' fill='%23000'/%3E%3C/svg%3E");
   -webkit-mask-size:100% 100%;mask-size:100% 100%;
   -webkit-mask-repeat:no-repeat;mask-repeat:no-repeat
 }
-.shp-wave :is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic){
+.shp-wave :is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic,.vid){
   border-radius:0;
   -webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M0 0 L100 0 L100 84 C83 100 67 68 50 84 C33 100 17 68 0 84 Z' fill='%23000'/%3E%3C/svg%3E");
   mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M0 0 L100 0 L100 84 C83 100 67 68 50 84 C33 100 17 68 0 84 Z' fill='%23000'/%3E%3C/svg%3E");
   -webkit-mask-size:100% 100%;mask-size:100% 100%;
   -webkit-mask-repeat:no-repeat;mask-repeat:no-repeat
 }
-.shp-blob :is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic){
+.shp-blob :is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic,.vid){
   border-radius:0;
   -webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M52 1 C80 -2 99 18 97 45 C95 72 78 99 49 98 C21 97 1 77 2 48 C3 21 24 4 52 1 Z' fill='%23000'/%3E%3C/svg%3E");
   mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M52 1 C80 -2 99 18 97 45 C95 72 78 99 49 98 C21 97 1 77 2 48 C3 21 24 4 52 1 Z' fill='%23000'/%3E%3C/svg%3E");
@@ -1415,7 +1508,7 @@ a:not(.btn):not(.logo){transition:opacity .5s cubic-bezier(.165,.84,.44,1)}
 }
 
 /* 段ちがい */
-.shp-step :is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic){
+.shp-step :is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic,.vid){
   border-radius:0;
   -webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M0 31.6 A4.5 4.5 0 0 1 4.5 27.1 L41.3 27.1 A4.5 4.5 0 0 0 45.8 22.6 L45.8 4.5 A4.5 4.5 0 0 1 50.3 0 L95.5 0 A4.5 4.5 0 0 1 100 4.5 L100 34.9 A4.5 4.5 0 0 1 95.5 39.4 L78.5 39.4 A4.5 4.5 0 0 0 74 43.9 L74 95.5 A4.5 4.5 0 0 1 69.5 100 L4.5 100 A4.5 4.5 0 0 1 0 95.5 Z' fill='%23000'/%3E%3C/svg%3E");
   mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M0 31.6 A4.5 4.5 0 0 1 4.5 27.1 L41.3 27.1 A4.5 4.5 0 0 0 45.8 22.6 L45.8 4.5 A4.5 4.5 0 0 1 50.3 0 L95.5 0 A4.5 4.5 0 0 1 100 4.5 L100 34.9 A4.5 4.5 0 0 1 95.5 39.4 L78.5 39.4 A4.5 4.5 0 0 0 74 43.9 L74 95.5 A4.5 4.5 0 0 1 69.5 100 L4.5 100 A4.5 4.5 0 0 1 0 95.5 Z' fill='%23000'/%3E%3C/svg%3E");
@@ -1423,7 +1516,7 @@ a:not(.btn):not(.logo){transition:opacity .5s cubic-bezier(.165,.84,.44,1)}
   -webkit-mask-repeat:no-repeat;mask-repeat:no-repeat
 }
 /* 角を四角く欠く */
-.shp-notch :is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic){
+.shp-notch :is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic,.vid){
   border-radius:0;
   -webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M5 0 L61 0 A5 5 0 0 1 66 5 L66 29 A5 5 0 0 0 71 34 L95 34 A5 5 0 0 1 100 39 L100 95 A5 5 0 0 1 95 100 L5 100 A5 5 0 0 1 0 95 L0 5 A5 5 0 0 1 5 0 Z' fill='%23000'/%3E%3C/svg%3E");
   mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M5 0 L61 0 A5 5 0 0 1 66 5 L66 29 A5 5 0 0 0 71 34 L95 34 A5 5 0 0 1 100 39 L100 95 A5 5 0 0 1 95 100 L5 100 A5 5 0 0 1 0 95 L0 5 A5 5 0 0 1 5 0 Z' fill='%23000'/%3E%3C/svg%3E");
@@ -1431,7 +1524,7 @@ a:not(.btn):not(.logo){transition:opacity .5s cubic-bezier(.165,.84,.44,1)}
   -webkit-mask-repeat:no-repeat;mask-repeat:no-repeat
 }
 /* チケット（左右がへこむ） */
-.shp-ticket :is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic){
+.shp-ticket :is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic,.vid){
   border-radius:0;
   -webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M6 0 L94 0 A6 6 0 0 1 100 6 L100 37 A13 13 0 0 0 100 63 L100 94 A6 6 0 0 1 94 100 L6 100 A6 6 0 0 1 0 94 L0 63 A13 13 0 0 0 0 37 L0 6 A6 6 0 0 1 6 0 Z' fill='%23000'/%3E%3C/svg%3E");
   mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M6 0 L94 0 A6 6 0 0 1 100 6 L100 37 A13 13 0 0 0 100 63 L100 94 A6 6 0 0 1 94 100 L6 100 A6 6 0 0 1 0 94 L0 63 A13 13 0 0 0 0 37 L0 6 A6 6 0 0 1 6 0 Z' fill='%23000'/%3E%3C/svg%3E");
@@ -1439,7 +1532,7 @@ a:not(.btn):not(.logo){transition:opacity .5s cubic-bezier(.165,.84,.44,1)}
   -webkit-mask-repeat:no-repeat;mask-repeat:no-repeat
 }
 /* 4点のきらめき */
-.shp-sparkle :is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic){
+.shp-sparkle :is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic,.vid){
   border-radius:0;
   -webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M50 0 C50 34 66 50 100 50 C66 50 50 66 50 100 C50 66 34 50 0 50 C34 50 50 34 50 0 Z' fill='%23000'/%3E%3C/svg%3E");
   mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M50 0 C50 34 66 50 100 50 C66 50 50 66 50 100 C50 66 34 50 0 50 C34 50 50 34 50 0 Z' fill='%23000'/%3E%3C/svg%3E");
@@ -1447,7 +1540,7 @@ a:not(.btn):not(.logo){transition:opacity .5s cubic-bezier(.165,.84,.44,1)}
   -webkit-mask-repeat:no-repeat;mask-repeat:no-repeat
 }
 /* 丸みのある十字 */
-.shp-cross :is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic){
+.shp-cross :is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic,.vid){
   border-radius:0;
   -webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M38 0 L62 0 A7 7 0 0 1 69 7 L69 24 A7 7 0 0 0 76 31 L93 31 A7 7 0 0 1 100 38 L100 62 A7 7 0 0 1 93 69 L76 69 A7 7 0 0 0 69 76 L69 93 A7 7 0 0 1 62 100 L38 100 A7 7 0 0 1 31 93 L31 76 A7 7 0 0 0 24 69 L7 69 A7 7 0 0 1 0 62 L0 38 A7 7 0 0 1 7 31 L24 31 A7 7 0 0 0 31 24 L31 7 A7 7 0 0 1 38 0 Z' fill='%23000'/%3E%3C/svg%3E");
   mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M38 0 L62 0 A7 7 0 0 1 69 7 L69 24 A7 7 0 0 0 76 31 L93 31 A7 7 0 0 1 100 38 L100 62 A7 7 0 0 1 93 69 L76 69 A7 7 0 0 0 69 76 L69 93 A7 7 0 0 1 62 100 L38 100 A7 7 0 0 1 31 93 L31 76 A7 7 0 0 0 24 69 L7 69 A7 7 0 0 1 0 62 L0 38 A7 7 0 0 1 7 31 L24 31 A7 7 0 0 0 31 24 L31 7 A7 7 0 0 1 38 0 Z' fill='%23000'/%3E%3C/svg%3E");
@@ -1455,7 +1548,7 @@ a:not(.btn):not(.logo){transition:opacity .5s cubic-bezier(.165,.84,.44,1)}
   -webkit-mask-repeat:no-repeat;mask-repeat:no-repeat
 }
 /* 角の丸いひし形 */
-.shp-diamond :is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic){
+.shp-diamond :is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic,.vid){
   border-radius:0;
   -webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M42.0 8.0 Q50 0 58.0 8.0 L92.0 42.0 Q100 50 92.0 58.0 L58.0 92.0 Q50 100 42.0 92.0 L8.0 58.0 Q0 50 8.0 42.0 Z' fill='%23000'/%3E%3C/svg%3E");
   mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M42.0 8.0 Q50 0 58.0 8.0 L92.0 42.0 Q100 50 92.0 58.0 L58.0 92.0 Q50 100 42.0 92.0 L8.0 58.0 Q0 50 8.0 42.0 Z' fill='%23000'/%3E%3C/svg%3E");
@@ -1465,7 +1558,7 @@ a:not(.btn):not(.logo){transition:opacity .5s cubic-bezier(.165,.84,.44,1)}
 
 /* 自分で用意した形。マスクの画像はブロックの --shape から来る。
    透明なところが抜ける絵として作ってあるので、そのまま敷けばよい。 */
-.shp-own :is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic){
+.shp-own :is(.hero-media,.about-media,.gal figure,.flr-pic,.hs-card,.cpic,.vid){
   border-radius:0;
   -webkit-mask-image:var(--shape);
   mask-image:var(--shape);

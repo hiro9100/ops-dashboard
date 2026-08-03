@@ -17,7 +17,7 @@ const media = (src, alt) => (src ? img(src, alt) : '<span class="ph" aria-hidden
 /* セクションの外枠 */
 function sec(type, p, inner, extraClass = '') {
   const cls = ['sec', `sec-${type}`, p.bg ? `bg-${p.bg}` : '',
-    p.shape ? `shp-${p.shape}` : '', extraClass].filter(Boolean).join(' ');
+    p.shape ? `shp-${p.shape}` : '', ...plateCls(p), extraClass].filter(Boolean).join(' ');
   return `<section class="${cls}"${attr('id', p.anchor)}${maskVar(p)}>\n  <div class="wrap">\n${inner}\n  </div>\n</section>`;
 }
 
@@ -25,6 +25,44 @@ function sec(type, p, inner, extraClass = '') {
    画像そのものを持つので長くなるが、外から読み込むものは増えない。 */
 const maskVar = (p) => (p.shape === 'own' && p.shapeMask
   ? ` style="--shape:url('${esc(p.shapeMask)}')"` : '');
+
+/* 土台のクラス。色と、どちらへずらすか */
+const plateCls = (p) => (p.plate
+  ? ['plt', `plt-${p.plate}`, p.plateShift ? `pltf-${p.plateShift}` : ''].filter(Boolean)
+  : []);
+
+/* ---------------- 動画の埋め込み ----------------
+   動画そのものは持たず、URLから置き場所だけを作る。
+   YouTube と Vimeo は先方の再生器を借り、動画ファイルは自前で再生する。 */
+const isFileVideo = (u) => /\.(mp4|webm|ogv|mov)(\?|$)/i.test(String(u || ''));
+
+function videoSrc(url) {
+  const u = String(url || '').trim();
+  if (!u) return null;
+  let m = u.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([\w-]{6,})/);
+  if (m) return { kind: 'embed', src: `https://www.youtube-nocookie.com/embed/${m[1]}` };
+  m = u.match(/vimeo\.com\/(?:video\/)?(\d+)/);
+  if (m) return { kind: 'embed', src: `https://player.vimeo.com/video/${m[1]}` };
+  if (isFileVideo(u)) return { kind: 'file', src: u };
+  return null;
+}
+
+function videoTag(p) {
+  const v = videoSrc(p.url);
+  if (!v) {
+    return '      <span class="ph vid-ph" aria-hidden="true"></span>';
+  }
+  if (v.kind === 'embed') {
+    return `      <iframe src="${esc(v.src)}" title="${esc(p.title || '動画')}" loading="lazy"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+        allowfullscreen></iframe>`;
+  }
+  /* 自動再生は、音が出ない・その場で再生する、の2つが揃わないと
+     端末側に止められる。両方まとめて付ける。 */
+  const auto = p.auto ? ' autoplay muted loop playsinline' : ' controls playsinline';
+  return `      <video src="${esc(v.src)}"${p.poster ? ` poster="${esc(p.poster)}"` : ''}${auto}
+        preload="metadata"></video>`;
+}
 
 /* 見出しブロック（アイキャッチ・タイトル・サブ） */
 function head(p, align = 'center') {
@@ -34,11 +72,30 @@ ${p.eyebrow ? `      <span class="eyebrow"${el(p, 'eyebrow', 'ta', '小見出し
 }
 
 /* ボタン群 */
+/* ボタンの型。見た目・大きさ・矢印を、それぞれ別に選べる */
+const BTN_STYLES = [
+  ['primary', '塗り（メインカラー）'],
+  ['accent', '塗り（アクセント）'],
+  ['ghost', '枠線だけ'],
+  ['pill', '丸（ピル）'],
+  ['square', '角なし（四角）'],
+  ['dark', '濃い地'],
+  ['solidlight', '白抜き（写真の上に）'],
+  ['link', '下線だけ'],
+  ['hard', 'ずらした影'],
+];
+
 function buttons(list, extraClass = '') {
   if (!list || !list.length) return '';
   const items = list
     .filter((b) => b.label)
-    .map((b) => `      <a class="btn${b.style && b.style !== 'primary' ? ' ' + b.style : ''}" href="${esc(b.href || '#')}">${esc(b.label)}</a>`)
+    .map((b) => {
+      const cls = ['btn',
+        b.style && b.style !== 'primary' ? b.style : '',
+        b.size || '',
+        b.arrow ? 'arrow' : ''].filter(Boolean).join(' ');
+      return `      <a class="${cls}" href="${esc(b.href || '#')}">${esc(b.label)}</a>`;
+    })
     .join('\n');
   return items ? `    <div class="btn-row ${extraClass}">\n${items}\n    </div>` : '';
 }
@@ -250,6 +307,25 @@ const FIELD = {
      選び方は「型」ではなく「持ち込み」なので、選択肢とは別に持つ。 */
   shapeMask: { key: 'shapeMask', label: '形の画像', type: 'mask',
     showIf: (p) => p.shape === 'own' },
+
+  /* 土台。写真の下に色の面を敷き、写真をひと回り小さく載せる。
+     面のかたちは「写真の形」と同じものを使うので、22種そのまま選べる。 */
+  plate: {
+    key: 'plate', label: '写真の土台', type: 'select',
+    options: [
+      ['', 'なし'], ['dark', '濃い地'], ['primary', 'メインカラー'],
+      ['accent', 'アクセント'], ['surface', '薄いグレー'], ['white', '白'],
+    ],
+    hint: '写真の下に色の面を敷いて、写真をひと回り小さく載せます',
+  },
+  plateShift: {
+    key: 'plateShift', label: '土台の見せ方', type: 'select',
+    options: [
+      ['', '写真のまわりに均等'], ['br', '右下にずらす'], ['bl', '左下にずらす'],
+      ['tr', '右上にずらす'], ['tl', '左上にずらす'],
+    ],
+    showIf: (p) => !!p.plate,
+  },
   anchor: { key: 'anchor', label: 'アンカーID', type: 'text', hint: 'メニューから #about のようにリンクできます' },
   eyebrow: { key: 'eyebrow', label: '小見出し', type: 'text' },
   title: { key: 'title', label: '見出し', type: 'textarea', rows: 2 },
@@ -261,7 +337,10 @@ const FIELD = {
   btnItem: [
     { key: 'label', label: 'ボタン文字', type: 'text' },
     { key: 'href', label: 'リンク先', type: 'text' },
-    { key: 'style', label: '見た目', type: 'select', options: [['primary', 'メイン'], ['ghost', '枠線'], ['accent', 'アクセント']] },
+    { key: 'style', label: '見た目', type: 'select', options: BTN_STYLES },
+    { key: 'size', label: '大きさ', type: 'select',
+      options: [['', 'ふつう'], ['lg', '大きい'], ['sm', '小さい'], ['full', '横いっぱい']] },
+    { key: 'arrow', label: '矢印をつける', type: 'toggle' },
   ],
 };
 
@@ -371,6 +450,9 @@ const BLOCKS = {
       { key: 'title', label: 'キャッチコピー', type: 'textarea', rows: 2 },
       { key: 'text', label: '説明文', type: 'textarea' },
       { key: 'image', label: '画像URL', type: 'image' },
+      { key: 'video', label: '背景の動画URL（.mp4）', type: 'text',
+        showIf: (p) => p.layout === 'cover',
+        hint: '入れると写真のかわりに動画が流れます。音は出ません' },
       { key: 'overlay', label: '背景画像の暗さ', type: 'range', min: 0, max: 90, suffix: '%',
         showIf: (p) => p.layout === 'cover' },
       { key: 'scroll', label: 'スクロール連動', type: 'select', options: HERO_SCROLLS, gallery: 'scroll',
@@ -386,10 +468,12 @@ const BLOCKS = {
       { key: 'buttons', label: 'ボタン', type: 'list', addLabel: 'ボタンを追加', titleKey: 'label', item: FIELD.btnItem },
       FIELD.shape,
       FIELD.shapeMask,
+      FIELD.plate,
+      FIELD.plateShift,
       FIELD.bg, FIELD.anchor,
     ],
     defaults: {
-      layout: 'center', eyebrow: 'WELCOME',
+      layout: 'center', video: '', eyebrow: 'WELCOME',
       title: 'ここにいちばん伝えたい\nキャッチコピーを',
       text: 'サービスの魅力を1〜2行で。訪れた人が「自分に関係ある」と感じる言葉を置きましょう。',
       image: '', overlay: 55, bg: '', anchor: 'top',
@@ -407,6 +491,7 @@ const BLOCKS = {
         /* 形は、写真を枠に入れている型（左右ならび）でだけ効かせる。
            背景いっぱいの写真を切り抜いても、画面の角が欠けるだけになる。 */
         !cover && p.shape ? `shp-${p.shape}` : '',
+        ...(cover ? [] : plateCls(p)),
         p.deco && p.deco !== 'none' ? `has-deco dk-${p.deco}` : ''].filter(Boolean).join(' ');
       const body = `      ${p.eyebrow ? `<span class="eyebrow"${el(p, 'eyebrow', 'ta', '小見出し', 'eyebrow')}>${esc(p.eyebrow)}</span>` : ''}
       ${p.title ? `<h1 class="hero-title"${el(p, 'title', 'ta', 'キャッチコピー', 'title')}>${nl2br(p.title)}</h1>` : ''}
@@ -414,9 +499,15 @@ const BLOCKS = {
 ${buttons(p.buttons)}`;
       /* 写真いっぱいの型。枠の目印を付けて、押せば選び直せるようにする
          （位置と大きさの調整もここから届く） */
+      /* 背景に動画があればそちらを流す。無ければ写真。
+         自動再生は「音が出ない・その場で再生する」が揃わないと端末に止められる。 */
+      const bgMedia = isFileVideo(p.video)
+        ? `<video src="${esc(p.video)}" autoplay muted loop playsinline preload="metadata"${
+          p.image ? ` poster="${esc(p.image)}"` : ''}></video>`
+        : img(p.image, '');
       const bg = cover
         ? `  <div class="hero-bg" style="--hero-overlay:rgba(15,23,42,${(p.overlay ?? 55) / 100})"`
-          + `${imgSlot('image', p)} data-elname="背景の写真">${img(p.image, '')}</div>\n`
+          + `${imgSlot('image', p)} data-elname="背景の写真">${bgMedia}</div>\n`
         : '';
       /* 中央ぞろえ・左ぞろえでも、写真を入れたら文章の下に置く。
          入れても何も起きないと、入れた本人には壊れて見える（実際に指摘された）。 */
@@ -468,6 +559,8 @@ ${maskLayer}${guts}
         ] },
       FIELD.shape,
       FIELD.shapeMask,
+      FIELD.plate,
+      FIELD.plateShift,
       FIELD.bg, FIELD.anchor,
     ],
     defaults: {
@@ -506,6 +599,8 @@ ${(p.items || []).map((it, i) => `      <div class="card"${el(p, `card${i}`, 'ia
       { key: 'buttons', label: 'ボタン', type: 'list', addLabel: 'ボタンを追加', titleKey: 'label', item: FIELD.btnItem },
       FIELD.shape,
       FIELD.shapeMask,
+      FIELD.plate,
+      FIELD.plateShift,
       FIELD.bg, FIELD.anchor,
     ],
     defaults: {
@@ -539,6 +634,8 @@ ${buttons(p.buttons)}
         ] },
       FIELD.shape,
       FIELD.shapeMask,
+      FIELD.plate,
+      FIELD.plateShift,
       FIELD.bg, FIELD.anchor,
     ],
     defaults: {
@@ -692,6 +789,39 @@ ${form}
     },
   },
 
+  /* ---------------- 動画 ----------------
+     動画そのものは持たない。1ファイルに収める作りなので、数十MBの
+     動画を抱え込むと保存も公開もできなくなる。
+     YouTube・Vimeo・動画ファイルのURLを受け取って、置き場所だけを作る。 */
+  video: {
+    label: '動画',
+    icon: '▶',
+    tag: '写真',
+    about: 'YouTube・Vimeo・動画ファイルのURLを貼ると、そのまま置けます。',
+    fields: [
+      FIELD.eyebrow, FIELD.title, FIELD.text,
+      { key: 'url', label: '動画のURL', type: 'text',
+        hint: 'YouTube・Vimeo のページのURL、または .mp4 のURL' },
+      { key: 'poster', label: '再生前に出す画像（動画ファイルのとき）', type: 'image',
+        showIf: (p) => isFileVideo(p.url) },
+      { key: 'ratio', label: '画面の形', type: 'select',
+        options: [['16x9', '横長（16:9）'], ['4x3', '横長（4:3）'], ['1x1', '正方形'], ['9x16', '縦長（スマホ動画）']] },
+      { key: 'auto', label: '自動で再生する（音は出ません）', type: 'toggle',
+        hint: '動画ファイルのときだけ効きます' },
+      FIELD.shape, FIELD.shapeMask, FIELD.plate, FIELD.plateShift,
+      FIELD.bg, FIELD.anchor,
+    ],
+    defaults: {
+      eyebrow: 'MOVIE', title: '動画で見る', text: '',
+      url: '', poster: '', ratio: '16x9', auto: false,
+      shape: '', shapeMask: '', plate: '', plateShift: '', bg: '', anchor: 'movie',
+    },
+    render: (p) => sec('video', p, `${head(p)}
+    <div class="vid vid-${esc(p.ratio || '16x9')}"${el(p, 'video', 'ia', '動画')}>
+${videoTag(p)}
+    </div>`),
+  },
+
   /* ---------------- 自由テキスト ---------------- */
   rich: {
     label: '自由テキスト',
@@ -770,6 +900,8 @@ ${p.more ? `    <div class="btn-row"><a class="btn ghost" href="${esc(p.moreHref
         ] },
       FIELD.shape,
       FIELD.shapeMask,
+      FIELD.plate,
+      FIELD.plateShift,
       FIELD.bg, FIELD.anchor,
     ],
     defaults: {
@@ -1152,6 +1284,8 @@ ${(p.items || []).map((it, i) => `      <div class="exp-l" style="background:${e
         ] },
       FIELD.shape,
       FIELD.shapeMask,
+      FIELD.plate,
+      FIELD.plateShift,
       FIELD.bg, FIELD.anchor,
     ],
     defaults: {
@@ -1521,7 +1655,7 @@ ${slides}
 
 /* 追加メニューに出す順番（ヘッダー・フッターは常設なので除く） */
 const ADDABLE = [
-  'hero', 'collage', 'features', 'about', 'gallery', 'menu', 'floors', 'news', 'marquee', 'pricing', 'faq', 'cta', 'contact', 'rich',
+  'hero', 'collage', 'features', 'about', 'gallery', 'video', 'menu', 'floors', 'news', 'marquee', 'pricing', 'faq', 'cta', 'contact', 'rich',
   'slides', 'product3d', 'exploded', 'hscroll', 'stackcards', 'timeline', 'clipreveal',
   'carousel3d', 'slotstats', 'svgdraw', 'shift',
 ];
