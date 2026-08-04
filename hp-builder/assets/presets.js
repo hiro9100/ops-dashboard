@@ -135,6 +135,28 @@ const HERO_PRESETS = [
       buttons: [],
     } },
 
+  /* まるく切り抜いた写真が、大きさ違いで漂う型。
+     大きな見出しが丸の上を横切って、そこだけ色が変わって見える。 */
+  { key: 'orbit', type: 'hero', label: 'Floating Circles',
+    about: 'まるく抜いた写真が、大きさを変えて浮かぶ。大きな見出しが上を横切る。',
+    props: {
+      layout: 'orbit', bg: '', eyebrow: 'BILLBOARD',
+      title: 'ALL FOR\nONE STAGE',
+      text: 'その場に立つ人も、支える人も、見に来た人も。\nぜんぶそろって、ひとつの舞台になる。',
+      orbs: [{ src: '' }, { src: '' }, { src: '' }, { src: '' }],
+      buttons: [{ label: 'About', href: '#about', style: 'ghost' }],
+    } },
+
+  { key: 'orbit-5', type: 'hero', label: 'Floating Circles (5)',
+    about: '丸を5つに増やした形。写真が多い業種、にぎやかに見せたいときに。',
+    props: {
+      layout: 'orbit', bg: 'surface', eyebrow: 'GALLERY',
+      title: 'まるい景色',
+      text: '写真を5枚まで置けます。大きさと場所は、こちらで決めます。',
+      orbs: [{ src: '' }, { src: '' }, { src: '' }, { src: '' }, { src: '' }],
+      buttons: [],
+    } },
+
   /* パッケージの表側を、そのままページの頭にした型。
      大きな品名、まわりの短い言葉、丸い印、帯のラベル。 */
   { key: 'goods-pack', type: 'hero', label: 'Package',

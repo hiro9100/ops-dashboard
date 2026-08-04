@@ -410,6 +410,34 @@ function lineArtLayer(p) {
     + (lab ? `  <span class="hsign hsign-low" aria-hidden="true">${esc(lab)}</span>\n` : '');
 }
 
+/* ---------- まるく切り抜いた写真が浮かぶ（orbit） ----------
+   大きさのちがう丸を、ばらばらの高さに置いてゆっくり漂わせる。
+   置き場所は5つ決め打ち。うち2つは画面の端から出しておく。
+   はみ出させないと「並べた」ように見えて、浮いている感じが出ない。
+
+   後ろの点線は等高線のつもり。丸のうしろに一枚あるだけで、
+   丸が「空にある」のか「紙に貼ってある」のかが決まる。 */
+const ORB_MAX = 5;
+const ORB_LINES = `    <svg class="orb-map" viewBox="0 0 1200 760" preserveAspectRatio="xMidYMid slice"
+      aria-hidden="true" focusable="false">`
+  + [0, 1, 2, 3, 4, 5].map((i) =>
+    `<ellipse cx="620" cy="392" rx="${300 + i * 118}" ry="${190 + i * 76}" transform="rotate(-14 620 392)"/>`
+  ).join('')
+  + `</svg>`;
+
+function orbitLayer(p) {
+  const list = (p.orbs || []).slice(0, ORB_MAX);
+  if (!list.length) return '';
+  const orbs = list.map((o, i) => {
+    const src = (o && o.src) || '';
+    return `    <div class="orb orb-${i + 1}${src ? '' : ' ph'}"`
+      + `${el(p, `orb${i}`, 'ia', `まるい写真 ${i + 1}`)}`
+      + `${imgSlot(`orbs.${i}.src`, p)}`
+      + `${styleVars(src ? `--orb:url('${esc(src)}')` : '')}></div>`;
+  }).join('\n');
+  return `  <div class="orbs">\n${ORB_LINES}\n${orbs}\n  </div>\n`;
+}
+
 /* 丸い印と、帯のラベル。パッケージの「砂糖不使用」「送料無料」のような、
    ひと目で伝わる短い言葉を置く。円のまわりを回る文字は SVG の textPath。
    id はページの中で重ならないよう、中身から作る（hashId）。 */
@@ -737,11 +765,17 @@ const BLOCKS = {
       { key: 'layout', label: 'レイアウト', type: 'select',
         options: [['center', '中央ぞろえ'], ['left', '左ぞろえ'], ['split', '左右に画像'],
           ['pack', '商品パッケージ'], ['cover', '背景画像いっぱい'],
-          ['ribbon', '動画＋色の帯'], ['mark', 'ロゴ抜き'], ['lineart', '線のかたち']] },
+          ['ribbon', '動画＋色の帯'], ['mark', 'ロゴ抜き'], ['lineart', '線のかたち'],
+          ['orbit', 'まるい写真が浮かぶ']] },
       FIELD.eyebrow,
       { key: 'title', label: 'キャッチコピー', type: 'textarea', rows: 2 },
       { key: 'text', label: '説明文', type: 'textarea' },
-      { key: 'image', label: '画像URL', type: 'image' },
+      { key: 'image', label: '写真', type: 'image', showIf: (p) => p.layout !== 'orbit' },
+      /* 「まるい写真が浮かぶ」は写真が主役なので、1枚ではなく並びで持つ。
+         置き場所が5つしかないので、6枚目からは出ない */
+      { key: 'orbs', label: 'まるい写真（5枚まで）', type: 'list', addLabel: '写真を追加',
+        showIf: (p) => p.layout === 'orbit',
+        item: [{ key: 'src', label: '写真', type: 'image' }] },
       { key: 'video', label: '背景の動画', type: 'text',
         showIf: (p) => p.layout === 'cover',
         hint: '入れると写真のかわりに動画が流れます。音は出ません' },
@@ -791,6 +825,7 @@ const BLOCKS = {
       melt: 'none', meltMask: '', meltDepth: 100,
       badge: '', badgeRing: '', tag: '',
       markMask: '', art: 'flow', scrollLabel: 'Scroll',
+      orbs: [{ src: '' }, { src: '' }, { src: '' }, { src: '' }],
       scroll: 'none', scrollLen: 200,
       buttons: [
         { label: '無料で相談する', href: '#contact', style: 'primary' },
@@ -831,7 +866,7 @@ ${marks}${buttons(p.buttons)}`;
         : '';
       /* 中央ぞろえ・左ぞろえでも、写真を入れたら文章の下に置く。
          入れても何も起きないと、入れた本人には壊れて見える（実際に指摘された）。 */
-      const wide = !cover && p.layout !== 'split' && p.layout !== 'pack' && p.image
+      const wide = !cover && !['split', 'pack', 'orbit'].includes(p.layout) && p.image
         ? `\n      <div class="hero-media hero-wide"${el(p, 'image', 'ia', '画像')}`
           + `${imgSlot('image', p)}>${media(p.image, p.title)}</div>`
         : '';
@@ -861,7 +896,8 @@ ${heroMarks(p)}${buttons(p.buttons)}
       /* 型ごとの飾りは、背景と中身のあいだに敷く */
       const artLayer = ribbon ? ribbonLayer(p)
         : p.layout === 'mark' ? markLayer(p)
-          : p.layout === 'lineart' ? lineArtLayer(p) : '';
+          : p.layout === 'lineart' ? lineArtLayer(p)
+            : p.layout === 'orbit' ? orbitLayer(p) : '';
       const guts = `${bg}${artLayer}${decoLayer(p)}  <div class="wrap">
 ${inner}
   </div>

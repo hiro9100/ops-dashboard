@@ -327,6 +327,112 @@ p:last-child{margin-bottom:0}
   font-family:var(--font-mono,"SF Mono",Menlo,Consolas,monospace);
   letter-spacing:.12em;text-transform:none;color:var(--c-muted)
 }
+
+/* ---------- まるい写真が浮かぶ（orbit） ----------
+   大きさのちがう丸を、ばらばらの高さに置いて漂わせる。
+   2つは枠の外へ出しておく。はみ出させないと「並べた」ように見えて、
+   浮いている感じが出ない。 */
+.hero.orbit{
+  position:relative;overflow:hidden;
+  padding:clamp(64px,9vw,160px) 0 clamp(72px,10vw,180px)
+}
+/* 見出しを丸の上に重ねたい。.hero-in が z-index を持つと、そこが
+   別の階層になって、混ぜ合わせ（下の mix-blend-mode）が丸まで届かない。
+   ここだけ階層を作らせず、丸のあとに描かせる。 */
+.hero.orbit .hero-in{
+  z-index:auto;min-height:min(66svh,640px);display:grid;align-content:center
+}
+.orbs{position:absolute;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+/* 後ろの等高線。丸のうしろに一枚あるだけで、丸が紙に貼ってあるのではなく
+   空にあるように見える */
+.orb-map{
+  position:absolute;inset:-10%;width:120%;height:120%;
+  color:var(--c-text);opacity:.13
+}
+.orb-map ellipse{
+  fill:none;stroke:currentColor;stroke-width:1;
+  stroke-dasharray:2 9;vector-effect:non-scaling-stroke
+}
+.orb{
+  position:absolute;border-radius:50%;pointer-events:auto;overflow:hidden;
+  background-image:var(--orb);background-size:cover;background-position:center;
+  /* 写真が入るまでは、地の色を少し濃くしただけの丸を置く。
+     枠線だけだと「入れ忘れ」に見えて、形が伝わらない */
+  box-shadow:0 24px 60px -24px rgba(0,0,0,.35);
+  animation:orbfloat var(--orb-t,9s) var(--orb-d,0s) ease-in-out infinite alternate;
+  will-change:transform
+}
+.orb.ph{
+  background-image:linear-gradient(150deg,
+    color-mix(in srgb,var(--c-primary) 24%,var(--c-surface)),
+    color-mix(in srgb,var(--c-accent) 20%,var(--c-surface)))
+}
+@supports not (color:color-mix(in srgb,red,blue)){
+  .orb.ph{background-image:linear-gradient(150deg,var(--c-surface),var(--c-border))}
+}
+/* 置き場所。%は枠の横幅ぶん。見出しのまわりに寄せて、離して置かない。
+   散らすと「浮いている」ではなく「散らかっている」になる。
+   大きい2つは端から出し、小さい3つで間を埋める。 */
+.orb-1{width:38%;left:-10%;top:-8%;--orb-t:11s}
+.orb-2{width:30%;right:-8%;top:16%;--orb-t:9s;--orb-d:-2.5s}
+.orb-3{width:15%;left:6%;bottom:4%;--orb-t:8s;--orb-d:-1.2s}
+.orb-4{width:9%;right:25%;top:1%;--orb-t:7s;--orb-d:-3.4s}
+.orb-5{width:17%;left:44%;bottom:-9%;--orb-t:10s;--orb-d:-4.6s}
+.orb::before{content:"";display:block;padding-top:100%}
+
+@keyframes orbfloat{
+  from{transform:translate3d(0,14px,0) rotate(-.6deg)}
+  to{transform:translate3d(0,-16px,0) rotate(.6deg)}
+}
+@media (prefers-reduced-motion:reduce){ .orb{animation:none} }
+
+/* 見出しは丸の上を横切る。混ぜ合わせを「差」にすると、
+   紙の上では地に近い色どうしなので黒く沈み、写真の上では明るく浮く。
+   1つの見出しで、2色に見える。 */
+.hero.orbit .hero-title{
+  position:relative;z-index:3;
+  font-size:clamp(38px,8.2vw,164px);line-height:.96;letter-spacing:-.02em;
+  font-weight:800;text-transform:uppercase;margin:0;
+  color:color-mix(in srgb,var(--c-bg) 84%,#fff);
+  mix-blend-mode:difference
+}
+/* 濃い地のときは沈んでしまうので、混ぜない */
+.hero.orbit.bg-dark .hero-title,.hero.orbit.bg-primary .hero-title{
+  color:#fff;mix-blend-mode:normal
+}
+@supports not (mix-blend-mode:difference){
+  .hero.orbit .hero-title{color:var(--c-text);mix-blend-mode:normal}
+}
+@supports not (color:color-mix(in srgb,red,blue)){
+  .hero.orbit .hero-title{color:var(--c-text);mix-blend-mode:normal}
+}
+.hero.orbit .eyebrow{
+  position:relative;z-index:3;letter-spacing:.22em;
+  color:color-mix(in srgb,var(--c-bg) 84%,#fff);
+  mix-blend-mode:difference;opacity:.66
+}
+.hero.orbit.bg-dark .eyebrow,.hero.orbit.bg-primary .eyebrow{
+  color:var(--c-muted);mix-blend-mode:normal;opacity:1
+}
+@supports not (mix-blend-mode:difference){
+  .hero.orbit .eyebrow{color:var(--c-muted);mix-blend-mode:normal;opacity:1}
+}
+/* 文章とボタンは、読めることが先。丸には重ねず、地を敷いて前に出す */
+.hero.orbit .hero-text{
+  position:relative;z-index:3;max-width:38ch;margin-top:clamp(18px,2vw,34px);
+  font-size:clamp(13.5px,1.05vw,20px);line-height:2.05
+}
+.hero.orbit .btn-row{position:relative;z-index:3}
+
+@media(max-width:900px){
+  .orb-1{width:60%;left:-16%;top:1%}
+  .orb-2{width:42%;right:-12%;top:27%}
+  .orb-3{width:24%;left:6%;bottom:2%}
+  .orb-4{width:15%;right:14%;top:3%}
+  .orb-5{width:19%;left:44%;bottom:-6%}
+  .hero.orbit .hero-in{min-height:min(66svh,600px)}
+}
+
 @media(max-width:640px){
   .rib-1{min-height:min(66svh,560px)}
   .hero.mark .hero-in,.hero.lineart .hero-in{min-height:min(62svh,560px)}
