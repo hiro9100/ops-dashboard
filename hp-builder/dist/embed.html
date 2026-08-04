@@ -1092,11 +1092,17 @@ p:last-child{margin-bottom:0}
 
 /* ---------- セクション共通 ---------- */
 .sec{padding:clamp(56px,6.6667vw,133.3333px) 0;position:relative}
-.sec.bg-surface{background:var(--c-surface)}
-.sec.bg-primary{background:var(--c-primary);color:var(--c-on-primary,#fff)}
-.sec.bg-dark{background:var(--c-dark);color:var(--c-on-dark,#fff)}
-.sec.bg-primary .sec-sub{color:color-mix(in srgb,var(--c-on-primary,#fff) 72%,transparent)}
-.sec.bg-dark .sec-sub{color:color-mix(in srgb,var(--c-on-dark,#fff) 72%,transparent)}
+/* 地の色は、ふつうの段（.sec）だけでなくヒーローにも効かせる。
+   ヒーローにも「背景色」の欄はあるのに、ここに .hero が無かったせいで
+   何も起きていなかった（テンプレートの1つが bg:'dark' を当てにしている）。 */
+.sec.bg-surface,.hero.bg-surface{background:var(--c-surface)}
+.sec.bg-primary,.hero.bg-primary{background:var(--c-primary);color:var(--c-on-primary,#fff)}
+.sec.bg-dark,.hero.bg-dark{background:var(--c-dark);color:var(--c-on-dark,#fff)}
+.sec.bg-primary .sec-sub,.hero.bg-primary .hero-text{color:color-mix(in srgb,var(--c-on-primary,#fff) 72%,transparent)}
+.sec.bg-dark .sec-sub,.hero.bg-dark .hero-text{color:color-mix(in srgb,var(--c-on-dark,#fff) 72%,transparent)}
+@supports not (color:color-mix(in srgb,red,blue)){
+  .hero.bg-primary .hero-text,.hero.bg-dark .hero-text{color:inherit;opacity:.78}
+}
 .sec.bg-primary .card,.sec.bg-dark .card{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.18)}
 
 .sec-head{max-width:760px;margin:0 auto clamp(32px,3.8889vw,77.7778px);text-align:center}
@@ -1183,6 +1189,38 @@ p:last-child{margin-bottom:0}
 .hero-bg img,.hero-bg video{width:100%;height:100%;object-fit:cover;display:block}
 .hero-bg::after{content:"";position:absolute;inset:0;background:var(--hero-overlay,rgba(15,23,42,.55))}
 .hero.center.cover .hero-in,.hero.left.cover .hero-in{padding:clamp(24px,3.3333vw,66.6667px) 0}
+
+/* ---------- 溶け落ちる縁（メルト） ----------
+   下の段の地の色を、ヒーローの下からすくい上げた形。色は currentColor
+   ひとつだけにしてある。ヒーロー側の配色が何であれ、下の段とは必ず
+   同じ色になるので、継ぎ目が出ない。
+
+   枠は viewBox と同じ比（1200:120）にする。高さを別に決めて横だけ
+   伸ばすと、しずくが平たいタブに化ける。深さを変えたいときは、
+   下を軸にして縦へ伸ばす（--melt-d）。transform は場所を取らないので、
+   深くしてもヒーローの高さは変わらず、上へ食い込むだけになる。 */
+.melt{
+  position:absolute;left:-1px;right:-1px;bottom:-1px;z-index:3;pointer-events:none;
+  aspect-ratio:1200/120;height:auto;
+  transform:scaleY(var(--melt-d,1));transform-origin:bottom;
+  color:var(--c-bg);line-height:0
+}
+.melt svg{display:block;width:100%;height:100%}
+.melt path{fill:currentColor}
+/* 地の色を持つ段が下に来るときは、そちらの色で流し込む。
+   ヒーローの次の段が持っている色を、ヒーロー側からは知れないので、
+   隣どうしの組み合わせをここで書いておく。 */
+.hero.has-melt + .sec.bg-surface,.hero.has-melt + .sec.bg-primary,
+.hero.has-melt + .sec.bg-dark{margin-top:0}
+.hero.has-melt:has(+ .sec.bg-surface) .melt{color:var(--c-surface)}
+.hero.has-melt:has(+ .sec.bg-primary) .melt{color:var(--c-primary)}
+.hero.has-melt:has(+ .sec.bg-dark) .melt{color:var(--c-dark)}
+/* 文字が縁まで下りてきたときに、しずくに食われないよう下を空ける。
+   % の余白は「幅に対する割合」なので、メルトの高さ（幅の10分の1）と
+   同じ物差しで測れる。深さを変えても、そのぶん一緒に空く。 */
+.hero.has-melt{padding-bottom:calc(clamp(28px,3vw,60px) + 10% * var(--melt-d,1))}
+/* スクロール連動の型は、貼り付いた枠の内側の底に置く */
+.hero.hsc.has-melt .melt{bottom:0}
 
 /* ==========================================================
    コラージュ・ヒーロー
@@ -4424,10 +4462,18 @@ function sec(type, p, inner, extraClass = '') {
   return `<section class="${cls}"${attr('id', p.anchor)}${maskVar(p)}>\n  <div class="wrap">\n${inner}\n  </div>\n</section>`;
 }
 
+/* CSS変数をまとめて1つの style 属性にする。
+   属性を2つ書くと後ろが捨てられるので、必ずここを通す。 */
+const styleVars = (...pairs) => {
+  const on = pairs.filter((v) => v);
+  return on.length ? ` style="${on.join(';')}"` : '';
+};
+
 /* 自分で用意した形を、CSS変数としてブロックに渡す。
    画像そのものを持つので長くなるが、外から読み込むものは増えない。 */
-const maskVar = (p) => (p.shape === 'own' && p.shapeMask
-  ? ` style="--shape:url('${esc(p.shapeMask)}')"` : '');
+const maskVal = (p) => (p.shape === 'own' && p.shapeMask
+  ? `--shape:url('${esc(p.shapeMask)}')` : '');
+const maskVar = (p) => styleVars(maskVal(p));
 
 /* 土台のクラス。色と、どちらへずらすか */
 const plateCls = (p) => (p.plate
@@ -4578,6 +4624,123 @@ const HERO_DECOS = [
   ['silk', 'Silk'],
   ['cursor', 'Cursor'],
 ];
+
+/* ---------------- 溶け落ちる縁（メルト） ----------------
+   ヒーローの下の縁を、直線ではなく「上から流れ落ちた」形にする。
+
+   描いているのは、下の段の地の色（--c-bg）を、ヒーローの下から
+   すくい上げた形。だから色を持たない——currentColor だけで、
+   どの配色でも下の段と必ず同じ色になる。ヒーロー側に色や写真が
+   あってはじめて見える（白い地に白を注いでも何も起きない）。
+
+   viewBox は 1200×120 に固定。枠のほうを同じ比（aspect-ratio）にして、
+   伸ばさずに出す。横だけ伸ばすと、しずくが平たいタブに化ける
+   （最初そうなっていて、まったく溶けに見えなかった）。
+   深さを変えたいときは、CSS で下を軸に縦へ伸ばす。 */
+const HERO_MELTS = [
+  ['none', 'None'],
+  ['drip', 'Drip'],
+  ['pour', 'Pour'],
+  ['wave', 'Wave'],
+  ['bubble', 'Bubble'],
+  ['ink', 'Ink'],
+];
+
+/* 溶け方は「しずくの並び」で持つ。パスを直に書くと、深さや首の太さを
+   あとから直せない（実際、最初に手で書いたものは垂れが浅すぎた）。
+
+   しずく = [中心x, 首の半幅, 垂れる深さ]。
+   首から下りて、丸い先で止まって、また上がる。しずくとしずくのあいだは
+   ゆるく下に膨らませてつなぐ。まっすぐつなぐと、そこだけ定規の線に見える。 */
+const MELT_SHAPES = {
+  /* しずく：長short短がばらばら。いちばん動きが出る */
+  drip: { base: 30, drops: [
+    [64, 20, 58], [148, 13, 26], [232, 26, 84], [330, 15, 40],
+    [408, 22, 66], [500, 12, 20], [566, 28, 92], [668, 16, 46],
+    [752, 20, 30], [838, 25, 74], [936, 13, 24], [1010, 21, 56],
+    [1104, 15, 36], [1170, 18, 68],
+  ] },
+
+  /* とろみ：数は少なく、太くて深い。注いだ塊が落ちきる手前。
+     幅も深さもばらばらにしないと、丸が等間隔に並んだだけに見える */
+  pour: { base: 20, drops: [
+    [132, 54, 46], [372, 106, 94], [640, 62, 24], [900, 88, 72], [1152, 40, 44],
+  ] },
+
+  /* なみ：しずくを持たない。ゆるい起伏だけで区切る */
+  wave: { base: 52, wave: [[0, 0], [260, 30], [520, -14], [780, 26], [1040, -8], [1200, 14]] },
+
+  /* 玉：垂れは浅く、切れた玉が下に残る。[中心x, 中心y, 半径] */
+  bubble: { base: 34, drops: [
+    [76, 18, 34], [188, 22, 20], [300, 16, 44], [402, 24, 26],
+    [520, 19, 38], [628, 15, 22], [742, 25, 48], [858, 17, 28],
+    [962, 21, 36], [1078, 16, 24], [1168, 20, 42],
+  ], balls: [[126, 92, 13], [352, 104, 10], [572, 96, 15], [800, 108, 11], [1024, 94, 12]] },
+
+  /* にじみ：細かく浅い。紙にインクが染みたような縁 */
+  ink: { base: 46, drops: [
+    [40, 14, 16], [96, 10, 8], [148, 16, 22], [206, 11, 10], [258, 14, 18],
+    [312, 9, 7], [360, 17, 24], [420, 12, 12], [472, 14, 17], [528, 10, 8],
+    [578, 16, 21], [636, 11, 11], [688, 15, 19], [744, 9, 7], [792, 17, 23],
+    [852, 12, 13], [906, 14, 16], [960, 10, 9], [1010, 16, 20], [1068, 11, 11],
+    [1120, 15, 18], [1174, 10, 8],
+  ] },
+};
+
+const H = 120;                       /* viewBox の高さ。下はここで閉じる */
+const n1 = (v) => Math.round(v * 10) / 10;
+
+/* しずく1つ。首から下り、少し腹をふくらませて、丸い先で止まり、また上がる。
+   先の制御点を外へ開くと底が平らな「タブ」になる。内へ寄せて丸く止める。 */
+const dropArc = (cx, w, base, d) =>
+  `C${n1(cx - w * 1.16)},${n1(base + d * 0.44)} ${n1(cx - w * 0.6)},${n1(base + d)} ${n1(cx)},${n1(base + d)}`
+  + `C${n1(cx + w * 0.6)},${n1(base + d)} ${n1(cx + w * 1.16)},${n1(base + d * 0.44)} ${n1(cx + w)},${n1(base)}`;
+
+/* しずくとしずくのあいだ。ゆるく下へ膨らませる */
+const gap = (x1, x2, base) => `C${n1(x1 + (x2 - x1) * 0.34)},${n1(base + 7)} `
+  + `${n1(x2 - (x2 - x1) * 0.34)},${n1(base + 7)} ${n1(x2)},${n1(base)}`;
+
+/* 切れて残った玉。円ひとつを、閉じた部分パスとして足す（evenodd で穴になる） */
+const ball = (cx, cy, r) => `M${n1(cx - r)},${n1(cy)}`
+  + `a${r},${r} 0 1,0 ${r * 2},0a${r},${r} 0 1,0 ${-r * 2},0Z`;
+
+function meltPath(key) {
+  const sp = MELT_SHAPES[key];
+  if (!sp) return '';
+  const b = sp.base;
+  if (sp.wave) {
+    /* 起伏だけ。点と点を、水平の制御点でなめらかにつなぐ */
+    const pts = sp.wave;
+    let d = `M0,${H} L0,${n1(b + pts[0][1])}`;
+    for (let i = 1; i < pts.length; i += 1) {
+      const [x0, y0] = pts[i - 1], [x1, y1] = pts[i], m = (x1 - x0) * 0.5;
+      d += `C${n1(x0 + m)},${n1(b + y0)} ${n1(x1 - m)},${n1(b + y1)} ${n1(x1)},${n1(b + y1)}`;
+    }
+    return `${d} L1200,${H} Z`;
+  }
+  let d = `M0,${H} L0,${b}`;
+  let x = 0;
+  sp.drops.forEach(([cx, w, dep]) => {
+    d += gap(x, cx - w, b);
+    d += dropArc(cx, w, b, dep);
+    x = cx + w;
+  });
+  d += `${gap(x, 1200, b)} L1200,${H} Z`;
+  (sp.balls || []).forEach(([cx, cy, r]) => { d += ball(cx, cy, r); });
+  return d;
+}
+
+/* 使う形だけ、その場で組み立てる */
+const MELT_PATHS = Object.fromEntries(Object.keys(MELT_SHAPES).map((k) => [k, meltPath(k)]));
+
+/* ヒーローの下に敷く1枚。色は持たず、CSS の currentColor に任せる */
+function meltLayer(p) {
+  const k = p.melt && p.melt !== 'none' ? p.melt : '';
+  if (!k || !MELT_PATHS[k]) return '';
+  return `  <div class="melt melt-${esc(k)}" aria-hidden="true"><svg viewBox="0 0 1200 120"`
+    + ' preserveAspectRatio="none" focusable="false">'
+    + `<path fill-rule="evenodd" d="${MELT_PATHS[k]}"/></svg></div>\n`;
+}
 
 /* 雲・オーロラの配置。実行時に乱数を使うと再読み込みのたびに絵が変わって
    落ち着かないので、値は決め打ちで持つ。
@@ -4876,10 +5039,17 @@ const BLOCKS = {
       { key: 'decoStrength', label: '装飾の強さ', type: 'range', min: 10, max: 100, suffix: '%',
         showIf: (p) => p.deco && p.deco !== 'none' },
       { key: 'decoLabel', label: '丸の中の文字', type: 'text', showIf: (p) => p.deco === 'cursor' },
+      { key: 'melt', label: '下の縁の溶け方', type: 'select', options: HERO_MELTS, gallery: 'melt',
+        hint: 'ヒーローに色か写真があるときに見えます（下の段の地の色で流し込みます）' },
+      { key: 'meltDepth', label: '溶けの深さ', type: 'range', min: 50, max: 180, suffix: '%',
+        showIf: (p) => p.melt && p.melt !== 'none' },
       { key: 'grain', label: 'フィルムの粒状感を足す', type: 'toggle' },
       { key: 'buttons', label: 'ボタン', type: 'list', addLabel: 'ボタンを追加', titleKey: 'label', item: FIELD.btnItem },
-      FIELD.shape,
-      FIELD.shapeMask,
+      /* ヒーローの写真の形は、枠に写真を入れている型でしか効かない。
+         いつでも効く「下の縁の溶け方」を前に出したいので、こちらはたたむ。
+         ほかのブロックでは今までどおり前に出す。 */
+      Object.assign({}, FIELD.shape, { adv: true }),
+      Object.assign({}, FIELD.shapeMask, { adv: true }),
       FIELD.plate,
       FIELD.plateShift,
       FIELD.bg, FIELD.anchor,
@@ -4890,6 +5060,7 @@ const BLOCKS = {
       text: 'サービスの魅力を1〜2行で。訪れた人が「自分に関係ある」と感じる言葉を置きましょう。',
       image: '', overlay: 55, bg: '', anchor: 'top',
       deco: 'none', decoStrength: 60, grain: false, decoLabel: 'SCROLL',
+      melt: 'none', meltDepth: 100,
       scroll: 'none', scrollLen: 200,
       buttons: [
         { label: '無料で相談する', href: '#contact', style: 'primary' },
@@ -4904,6 +5075,7 @@ const BLOCKS = {
            背景いっぱいの写真を切り抜いても、画面の角が欠けるだけになる。 */
         !cover && p.shape ? `shp-${p.shape}` : '',
         ...(cover ? [] : plateCls(p)),
+        p.melt && p.melt !== 'none' && MELT_PATHS[p.melt] ? 'has-melt' : '',
         p.deco && p.deco !== 'none' ? `has-deco dk-${p.deco}` : ''].filter(Boolean).join(' ');
       const body = `      ${p.eyebrow ? `<span class="eyebrow"${el(p, 'eyebrow', 'ta', '小見出し', 'eyebrow')}>${esc(p.eyebrow)}</span>` : ''}
       ${p.title ? `<h1 class="hero-title"${el(p, 'title', 'ta', 'キャッチコピー', 'title')}>${nl2br(p.title)}</h1>` : ''}
@@ -4938,15 +5110,20 @@ ${buttons(p.buttons)}`;
       const sc = p.scroll && p.scroll !== 'none' ? p.scroll : '';
       const guts = `${bg}${decoLayer(p)}  <div class="wrap">
 ${inner}
-  </div>`;
+  </div>
+${meltLayer(p)}`;
+      const meltVal = p.melt && p.melt !== 'none' && (p.meltDepth ?? 100) !== 100
+        ? `--melt-d:${(Math.max(50, Math.min(180, p.meltDepth ?? 100)) / 100).toFixed(2)}` : '';
       if (!sc) {
-        return `<section class="${cls}"${attr('id', p.anchor)}${maskVar(p)}${needsPointer ? ' data-hpt' : ''}>
+        return `<section class="${cls}"${attr('id', p.anchor)}`
+          + `${styleVars(maskVal(p), meltVal)}${needsPointer ? ' data-hpt' : ''}>
 ${guts}
 </section>`;
       }
       const maskLayer = sc === 'maskzoom' ? maskZoomLayer(p) : '';
-      return `<section class="${cls} hsc hsc-${esc(sc)}"${attr('id', p.anchor)}${maskVar(p)}${needsPointer ? ' data-hpt' : ''}`
-        + ` data-heroscroll style="--pin:${Math.max(120, Math.min(320, p.scrollLen ?? 200))}vh">
+      return `<section class="${cls} hsc hsc-${esc(sc)}"${attr('id', p.anchor)}${needsPointer ? ' data-hpt' : ''}`
+        + ` data-heroscroll${styleVars(maskVal(p), meltVal,
+          `--pin:${Math.max(120, Math.min(320, p.scrollLen ?? 200))}vh`)}>
   <div class="hsc-in">
 ${maskLayer}${guts}
   </div>
@@ -7692,6 +7869,29 @@ const HERO_PRESETS = [
   { key: 'collage', type: 'collage', label: 'Collage',
     about: '敷き詰めた写真に、斜めの写真と縦書きの帯を重ねる。',
     props: {} },
+
+  /* 溶け落ちる縁。下の縁をまっすぐ切らず、上から流れ落ちた形にする。
+     縁だけが違う型なので、地の色と並べかたはそれぞれ変えてある。
+     同じ絵が5枚ならぶと、どれを選べばいいのか分からなくなる。 */
+  { key: 'melt-drip', type: 'hero', label: 'Melt: Drip',
+    about: '色の帯の下から、太さの違うしずくが垂れる。いちばん動きが出る。',
+    props: { layout: 'center', bg: 'primary', melt: 'drip' } },
+
+  { key: 'melt-pour', type: 'hero', label: 'Melt: Pour',
+    about: '写真いっぱいの下を、大きな塊がひとつゆっくり流れ落ちる。',
+    props: { layout: 'cover', melt: 'pour', overlay: 45 } },
+
+  { key: 'melt-wave', type: 'hero', label: 'Melt: Wave',
+    about: 'やわらかい波で下と分ける。いちばん静か。',
+    props: { layout: 'left', bg: 'surface', melt: 'wave' } },
+
+  { key: 'melt-bubble', type: 'hero', label: 'Melt: Bubble',
+    about: '垂れの先が切れて、丸い玉だけが下に残る。',
+    props: { layout: 'center', bg: 'dark', melt: 'bubble' } },
+
+  { key: 'melt-ink', type: 'hero', label: 'Melt: Ink',
+    about: '細かい凹凸。紙にインクが染みたような縁になる。',
+    props: { layout: 'cover', melt: 'ink', overlay: 50, grain: true } },
 ];
 
 /* ---------------- 2段目から下 ----------------
@@ -9783,6 +9983,11 @@ body{margin:0;background:#0d1016;padding:14px;
 .dc-scale .hdr-in{height:72px}
 /* ヘッダーの見本は、バーとその下が少し見えれば足りる */
 .dc-hdr{height:96px}
+/* 溶け方の見本。下の縁が主役なので、ヒーローを短くして縁を大きく見せる。
+   下に地の色の帯を少し残さないと、どこまでが溶けなのか分からない。 */
+.dc-melt{height:150px}
+.dc-melt .dc-scale .hero{min-height:470px}
+.dc-melt .dc-scale{padding-bottom:90px}
 /* 形の見本は、抜けかたが分かればよい。数が多いので小さめに並べて、
    ひと目で見比べられるようにする */
 .dg.small{grid-template-columns:repeat(auto-fill,196px)}
@@ -9826,6 +10031,15 @@ const DECO_ABOUT = {
   spot: 'ポインタのまわりだけが明るくなります。',
   depth: '写真と文字が逆向きに動いて、立体に見えます。',
   silk: '絹のような光の帯が、ゆっくり横切ります。',
+};
+
+const MELT_ABOUT = {
+  none: '下の縁はまっすぐ。ふつうの区切りです。',
+  drip: '太さの違うしずくが、ばらばらの長さで垂れます。いちばん動きが出ます。',
+  pour: '大きな塊がひとつ、ゆっくり流れ落ちます。落ち着いた見え方に。',
+  wave: 'やわらかい波。区切りをつけたいだけのときに。',
+  bubble: '垂れの先が切れて、丸い玉だけが下に残ります。',
+  ink: '細かい凹凸。紙にインクが染みたような縁になります。',
 };
 
 const SCROLL_ABOUT = {
@@ -9907,6 +10121,9 @@ const GAL_KINDS = {
   shape: { list: () => FIELD.shape.options, about: SHAPE_ABOUT, what: '写真の形',
     title: '写真の形を選ぶ',
     sub: 'いまの写真で、抜けかたを並べています。' },
+  melt: { list: () => HERO_MELTS, about: MELT_ABOUT, what: '下の縁の溶け方',
+    title: '下の縁の溶け方を選ぶ',
+    sub: 'いまのヒーローの下を、それぞれの形で流し込んでいます。' },
   hdr: { list: () => HDR_BARS, about: HDR_ABOUT, what: 'ヘッダーのバー',
     title: 'ヘッダーのバーを選ぶ',
     sub: 'いまのヘッダーを、それぞれの型で出しています。下はヒーローの頭です。' },
@@ -10015,6 +10232,14 @@ function decoCards(kind, current) {
         key === 'own' && b0.props.shapeMask ? `;--shape:url('${esc(b0.props.shapeMask)}')` : ''}">
         <div class="about-media" style="aspect-ratio:16/10">${
           im ? `<img src="${esc(im)}" alt="">` : '<span class="ph"></span>'}</div></div>`;
+    } else if (kind === 'melt') {
+      /* 溶け方は「ヒーローの下の縁」なので、下まで入る高さで見せる。
+         色も写真も無いヒーローだと白に白を流すことになって何も見えない。
+         見本のときだけメインカラーを敷いて、形が分かるようにする。 */
+      const plain = !base.image && !base.bg && base.layout !== 'cover';
+      sample = BLOCKS.hero.render(Object.assign({}, base,
+        { anchor: '', anims: {}, scroll: 'none', melt: key, meltDepth: 100 },
+        plain ? { bg: 'primary' } : {}));
     } else if (kind === 'hdr') {
       sample = BLOCKS.header.render(Object.assign({}, hprops, { bar: key, sticky: false }))
         + BLOCKS.hero.render(Object.assign({}, base,
@@ -10028,7 +10253,7 @@ function decoCards(kind, current) {
     const frozen = kind === 'scroll' && key !== 'none' ? ' style="--p:.45"' : '';
     return `<div class="dc${key === current ? ' on' : ''}" data-k="${esc(key)}" role="button" tabindex="0" title="${esc(about[key] || '')}">
       <span class="dc-hit"></span>
-      <div class="dc-prev${kind === 'hdr' ? ' dc-hdr' : ''}${kind === 'shape' ? ' dc-shape' : ''}${kind === 'ftr' ? ' dc-ftr' : ''}">
+      <div class="dc-prev${kind === 'hdr' ? ' dc-hdr' : ''}${kind === 'shape' ? ' dc-shape' : ''}${kind === 'ftr' ? ' dc-ftr' : ''}${kind === 'melt' ? ' dc-melt' : ''}">
         <div class="dc-scale ${esc(bodyClass())}"${frozen}>${sample}</div></div>
       <div class="dc-meta"><b>${esc(label)}</b></div>
     </div>`;
@@ -10282,7 +10507,7 @@ function fieldHTML(f, props, base) {
    「打つもの」ではなく「選ぶもの」になったので、前に出す。 */
 const ADV_KEYS = new Set([
   'anchor', 'bg', 'cols', 'plate', 'plateShift',
-  'speed', 'dir', 'size', 'ratio', 'scrollLen', 'decoStrength', 'decoLabel',
+  'speed', 'dir', 'size', 'ratio', 'scrollLen', 'decoStrength', 'decoLabel', 'meltDepth',
   'overlay', 'grain', 'sticky', 'height', 'sep', 'outline', 'auto', 'poster',
   'action', 'method',
 ]);

@@ -1451,6 +1451,11 @@ body{margin:0;background:#0d1016;padding:14px;
 .dc-scale .hdr-in{height:72px}
 /* ヘッダーの見本は、バーとその下が少し見えれば足りる */
 .dc-hdr{height:96px}
+/* 溶け方の見本。下の縁が主役なので、ヒーローを短くして縁を大きく見せる。
+   下に地の色の帯を少し残さないと、どこまでが溶けなのか分からない。 */
+.dc-melt{height:150px}
+.dc-melt .dc-scale .hero{min-height:470px}
+.dc-melt .dc-scale{padding-bottom:90px}
 /* 形の見本は、抜けかたが分かればよい。数が多いので小さめに並べて、
    ひと目で見比べられるようにする */
 .dg.small{grid-template-columns:repeat(auto-fill,196px)}
@@ -1494,6 +1499,15 @@ const DECO_ABOUT = {
   spot: 'ポインタのまわりだけが明るくなります。',
   depth: '写真と文字が逆向きに動いて、立体に見えます。',
   silk: '絹のような光の帯が、ゆっくり横切ります。',
+};
+
+const MELT_ABOUT = {
+  none: '下の縁はまっすぐ。ふつうの区切りです。',
+  drip: '太さの違うしずくが、ばらばらの長さで垂れます。いちばん動きが出ます。',
+  pour: '大きな塊がひとつ、ゆっくり流れ落ちます。落ち着いた見え方に。',
+  wave: 'やわらかい波。区切りをつけたいだけのときに。',
+  bubble: '垂れの先が切れて、丸い玉だけが下に残ります。',
+  ink: '細かい凹凸。紙にインクが染みたような縁になります。',
 };
 
 const SCROLL_ABOUT = {
@@ -1575,6 +1589,9 @@ const GAL_KINDS = {
   shape: { list: () => FIELD.shape.options, about: SHAPE_ABOUT, what: '写真の形',
     title: '写真の形を選ぶ',
     sub: 'いまの写真で、抜けかたを並べています。' },
+  melt: { list: () => HERO_MELTS, about: MELT_ABOUT, what: '下の縁の溶け方',
+    title: '下の縁の溶け方を選ぶ',
+    sub: 'いまのヒーローの下を、それぞれの形で流し込んでいます。' },
   hdr: { list: () => HDR_BARS, about: HDR_ABOUT, what: 'ヘッダーのバー',
     title: 'ヘッダーのバーを選ぶ',
     sub: 'いまのヘッダーを、それぞれの型で出しています。下はヒーローの頭です。' },
@@ -1683,6 +1700,14 @@ function decoCards(kind, current) {
         key === 'own' && b0.props.shapeMask ? `;--shape:url('${esc(b0.props.shapeMask)}')` : ''}">
         <div class="about-media" style="aspect-ratio:16/10">${
           im ? `<img src="${esc(im)}" alt="">` : '<span class="ph"></span>'}</div></div>`;
+    } else if (kind === 'melt') {
+      /* 溶け方は「ヒーローの下の縁」なので、下まで入る高さで見せる。
+         色も写真も無いヒーローだと白に白を流すことになって何も見えない。
+         見本のときだけメインカラーを敷いて、形が分かるようにする。 */
+      const plain = !base.image && !base.bg && base.layout !== 'cover';
+      sample = BLOCKS.hero.render(Object.assign({}, base,
+        { anchor: '', anims: {}, scroll: 'none', melt: key, meltDepth: 100 },
+        plain ? { bg: 'primary' } : {}));
     } else if (kind === 'hdr') {
       sample = BLOCKS.header.render(Object.assign({}, hprops, { bar: key, sticky: false }))
         + BLOCKS.hero.render(Object.assign({}, base,
@@ -1696,7 +1721,7 @@ function decoCards(kind, current) {
     const frozen = kind === 'scroll' && key !== 'none' ? ' style="--p:.45"' : '';
     return `<div class="dc${key === current ? ' on' : ''}" data-k="${esc(key)}" role="button" tabindex="0" title="${esc(about[key] || '')}">
       <span class="dc-hit"></span>
-      <div class="dc-prev${kind === 'hdr' ? ' dc-hdr' : ''}${kind === 'shape' ? ' dc-shape' : ''}${kind === 'ftr' ? ' dc-ftr' : ''}">
+      <div class="dc-prev${kind === 'hdr' ? ' dc-hdr' : ''}${kind === 'shape' ? ' dc-shape' : ''}${kind === 'ftr' ? ' dc-ftr' : ''}${kind === 'melt' ? ' dc-melt' : ''}">
         <div class="dc-scale ${esc(bodyClass())}"${frozen}>${sample}</div></div>
       <div class="dc-meta"><b>${esc(label)}</b></div>
     </div>`;
@@ -1950,7 +1975,7 @@ function fieldHTML(f, props, base) {
    「打つもの」ではなく「選ぶもの」になったので、前に出す。 */
 const ADV_KEYS = new Set([
   'anchor', 'bg', 'cols', 'plate', 'plateShift',
-  'speed', 'dir', 'size', 'ratio', 'scrollLen', 'decoStrength', 'decoLabel',
+  'speed', 'dir', 'size', 'ratio', 'scrollLen', 'decoStrength', 'decoLabel', 'meltDepth',
   'overlay', 'grain', 'sticky', 'height', 'sep', 'outline', 'auto', 'poster',
   'action', 'method',
 ]);

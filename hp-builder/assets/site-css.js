@@ -34,11 +34,17 @@ p:last-child{margin-bottom:0}
 
 /* ---------- セクション共通 ---------- */
 .sec{padding:clamp(56px,6.6667vw,133.3333px) 0;position:relative}
-.sec.bg-surface{background:var(--c-surface)}
-.sec.bg-primary{background:var(--c-primary);color:var(--c-on-primary,#fff)}
-.sec.bg-dark{background:var(--c-dark);color:var(--c-on-dark,#fff)}
-.sec.bg-primary .sec-sub{color:color-mix(in srgb,var(--c-on-primary,#fff) 72%,transparent)}
-.sec.bg-dark .sec-sub{color:color-mix(in srgb,var(--c-on-dark,#fff) 72%,transparent)}
+/* 地の色は、ふつうの段（.sec）だけでなくヒーローにも効かせる。
+   ヒーローにも「背景色」の欄はあるのに、ここに .hero が無かったせいで
+   何も起きていなかった（テンプレートの1つが bg:'dark' を当てにしている）。 */
+.sec.bg-surface,.hero.bg-surface{background:var(--c-surface)}
+.sec.bg-primary,.hero.bg-primary{background:var(--c-primary);color:var(--c-on-primary,#fff)}
+.sec.bg-dark,.hero.bg-dark{background:var(--c-dark);color:var(--c-on-dark,#fff)}
+.sec.bg-primary .sec-sub,.hero.bg-primary .hero-text{color:color-mix(in srgb,var(--c-on-primary,#fff) 72%,transparent)}
+.sec.bg-dark .sec-sub,.hero.bg-dark .hero-text{color:color-mix(in srgb,var(--c-on-dark,#fff) 72%,transparent)}
+@supports not (color:color-mix(in srgb,red,blue)){
+  .hero.bg-primary .hero-text,.hero.bg-dark .hero-text{color:inherit;opacity:.78}
+}
 .sec.bg-primary .card,.sec.bg-dark .card{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.18)}
 
 .sec-head{max-width:760px;margin:0 auto clamp(32px,3.8889vw,77.7778px);text-align:center}
@@ -125,6 +131,38 @@ p:last-child{margin-bottom:0}
 .hero-bg img,.hero-bg video{width:100%;height:100%;object-fit:cover;display:block}
 .hero-bg::after{content:"";position:absolute;inset:0;background:var(--hero-overlay,rgba(15,23,42,.55))}
 .hero.center.cover .hero-in,.hero.left.cover .hero-in{padding:clamp(24px,3.3333vw,66.6667px) 0}
+
+/* ---------- 溶け落ちる縁（メルト） ----------
+   下の段の地の色を、ヒーローの下からすくい上げた形。色は currentColor
+   ひとつだけにしてある。ヒーロー側の配色が何であれ、下の段とは必ず
+   同じ色になるので、継ぎ目が出ない。
+
+   枠は viewBox と同じ比（1200:120）にする。高さを別に決めて横だけ
+   伸ばすと、しずくが平たいタブに化ける。深さを変えたいときは、
+   下を軸にして縦へ伸ばす（--melt-d）。transform は場所を取らないので、
+   深くしてもヒーローの高さは変わらず、上へ食い込むだけになる。 */
+.melt{
+  position:absolute;left:-1px;right:-1px;bottom:-1px;z-index:3;pointer-events:none;
+  aspect-ratio:1200/120;height:auto;
+  transform:scaleY(var(--melt-d,1));transform-origin:bottom;
+  color:var(--c-bg);line-height:0
+}
+.melt svg{display:block;width:100%;height:100%}
+.melt path{fill:currentColor}
+/* 地の色を持つ段が下に来るときは、そちらの色で流し込む。
+   ヒーローの次の段が持っている色を、ヒーロー側からは知れないので、
+   隣どうしの組み合わせをここで書いておく。 */
+.hero.has-melt + .sec.bg-surface,.hero.has-melt + .sec.bg-primary,
+.hero.has-melt + .sec.bg-dark{margin-top:0}
+.hero.has-melt:has(+ .sec.bg-surface) .melt{color:var(--c-surface)}
+.hero.has-melt:has(+ .sec.bg-primary) .melt{color:var(--c-primary)}
+.hero.has-melt:has(+ .sec.bg-dark) .melt{color:var(--c-dark)}
+/* 文字が縁まで下りてきたときに、しずくに食われないよう下を空ける。
+   % の余白は「幅に対する割合」なので、メルトの高さ（幅の10分の1）と
+   同じ物差しで測れる。深さを変えても、そのぶん一緒に空く。 */
+.hero.has-melt{padding-bottom:calc(clamp(28px,3vw,60px) + 10% * var(--melt-d,1))}
+/* スクロール連動の型は、貼り付いた枠の内側の底に置く */
+.hero.hsc.has-melt .melt{bottom:0}
 
 /* ==========================================================
    コラージュ・ヒーロー

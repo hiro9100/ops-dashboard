@@ -72,6 +72,29 @@ const HERO_PRESETS = [
   { key: 'collage', type: 'collage', label: 'Collage',
     about: '敷き詰めた写真に、斜めの写真と縦書きの帯を重ねる。',
     props: {} },
+
+  /* 溶け落ちる縁。下の縁をまっすぐ切らず、上から流れ落ちた形にする。
+     縁だけが違う型なので、地の色と並べかたはそれぞれ変えてある。
+     同じ絵が5枚ならぶと、どれを選べばいいのか分からなくなる。 */
+  { key: 'melt-drip', type: 'hero', label: 'Melt: Drip',
+    about: '色の帯の下から、太さの違うしずくが垂れる。いちばん動きが出る。',
+    props: { layout: 'center', bg: 'primary', melt: 'drip' } },
+
+  { key: 'melt-pour', type: 'hero', label: 'Melt: Pour',
+    about: '写真いっぱいの下を、大きな塊がひとつゆっくり流れ落ちる。',
+    props: { layout: 'cover', melt: 'pour', overlay: 45 } },
+
+  { key: 'melt-wave', type: 'hero', label: 'Melt: Wave',
+    about: 'やわらかい波で下と分ける。いちばん静か。',
+    props: { layout: 'left', bg: 'surface', melt: 'wave' } },
+
+  { key: 'melt-bubble', type: 'hero', label: 'Melt: Bubble',
+    about: '垂れの先が切れて、丸い玉だけが下に残る。',
+    props: { layout: 'center', bg: 'dark', melt: 'bubble' } },
+
+  { key: 'melt-ink', type: 'hero', label: 'Melt: Ink',
+    about: '細かい凹凸。紙にインクが染みたような縁になる。',
+    props: { layout: 'cover', melt: 'ink', overlay: 50, grain: true } },
 ];
 
 /* ---------------- 2段目から下 ----------------
