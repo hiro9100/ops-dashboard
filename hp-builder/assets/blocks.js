@@ -212,6 +212,9 @@ const HERO_DECOS = [
   ['depth', 'Depth'],
   ['silk', 'Silk'],
   ['cursor', 'Cursor'],
+  ['dots', 'Dots'],
+  ['blur', 'Blur'],
+  ['grain', 'Grain'],
 ];
 
 /* ---------------- 溶け落ちる縁（メルト） ----------------
@@ -499,6 +502,14 @@ const AURORA_BLOBS = [
   [40, 62, 58, 62, -58, 1.16, 44, -22, 0.34, 38, 'var(--c-primary)'],
 ];
 
+/* にじむ光。3つだけを大きく置いて、強くぼかす。
+   数を増やすとぼけが混ざって、ただの色ムラになる。 */
+const BLUR_BLOBS = [
+  [12, 18, 58, 120, -70, 1.24, 34, 0, 0.62, 30, 'var(--c-primary)'],
+  [66, 6, 50, -140, 84, 1.2, 42, -12, 0.5, 22, 'var(--c-accent)'],
+  [40, 62, 62, 96, -96, 1.28, 50, -26, 0.44, 38, 'var(--c-primary)'],
+];
+
 /* 外側の <i> がポインタ視差、内側の <b> がゆっくりした漂い。
    ひとつの要素に両方の transform は書けないので、2枚に分けている。 */
 function blobs(list, withColor) {
@@ -541,6 +552,11 @@ function decoLayer(p) {
   else if (kind === 'spot') inner = '    <i class="sp"></i>';
   else if (kind === 'cursor') inner = `    <i class="cur"><b>${esc(p.decoLabel || 'SCROLL')}</b></i>`;
   else if (kind === 'dust') inner = '    <canvas class="du"></canvas>';
+  /* 網点。要素はいらない。地に敷いた点の並びを、片側だけ濃く残す */
+  else if (kind === 'dots') inner = '    <i class="dt"></i>';
+  /* にじむ光。雲より数を減らして、そのぶん大きく強くぼかす */
+  else if (kind === 'blur') inner = blobs(BLUR_BLOBS, true);
+  else if (kind === 'grain') inner = '    <u class="grain"></u>';
   else if (kind === 'silk') {
     inner = [0, 1, 2, 3, 4].map((i) =>
       `    <i class="sk" style="--n:${i};animation-duration:${20 + i * 5}s;animation-delay:${-i * 4}s"></i>`).join('\n');
@@ -766,7 +782,7 @@ const BLOCKS = {
         options: [['center', '中央ぞろえ'], ['left', '左ぞろえ'], ['split', '左右に画像'],
           ['pack', '商品パッケージ'], ['cover', '背景画像いっぱい'],
           ['ribbon', '動画＋色の帯'], ['mark', 'ロゴ抜き'], ['lineart', '線のかたち'],
-          ['orbit', 'まるい写真が浮かぶ']] },
+          ['orbit', 'まるい写真が浮かぶ'], ['poster', '大きな名前＋1枚の写真']] },
       FIELD.eyebrow,
       { key: 'title', label: 'キャッチコピー', type: 'textarea', rows: 2 },
       { key: 'text', label: '説明文', type: 'textarea' },
@@ -791,6 +807,9 @@ const BLOCKS = {
       { key: 'markMask', label: 'ロゴ・マークの画像', type: 'mask',
         showIf: (p) => p.layout === 'mark',
         hint: '白地に黒で描いた形を読み込むと、そこだけ色が透けて動きます' },
+      { key: 'side', label: '右の縦書き（欧文）', type: 'text',
+        showIf: (p) => p.layout === 'poster',
+        hint: '写真の右わきに縦で立ちます。空にすると出しません' },
       { key: 'art', label: '線のかたち', type: 'select',
         options: [['flow', '流れる線'], ['fan', '重なる面'], ['ring', '同心の輪']],
         showIf: (p) => p.layout === 'lineart' },
@@ -824,7 +843,7 @@ const BLOCKS = {
       deco: 'none', decoStrength: 60, grain: false, decoLabel: 'SCROLL',
       melt: 'none', meltMask: '', meltDepth: 100,
       badge: '', badgeRing: '', tag: '',
-      markMask: '', art: 'flow', scrollLabel: 'Scroll',
+      markMask: '', art: 'flow', scrollLabel: 'Scroll', side: 'PORTFOLIO',
       orbs: [{ src: '' }, { src: '' }, { src: '' }, { src: '' }],
       scroll: 'none', scrollLen: 200,
       buttons: [
@@ -866,7 +885,7 @@ ${marks}${buttons(p.buttons)}`;
         : '';
       /* 中央ぞろえ・左ぞろえでも、写真を入れたら文章の下に置く。
          入れても何も起きないと、入れた本人には壊れて見える（実際に指摘された）。 */
-      const wide = !cover && !['split', 'pack', 'orbit'].includes(p.layout) && p.image
+      const wide = !cover && !['split', 'pack', 'orbit', 'poster'].includes(p.layout) && p.image
         ? `\n      <div class="hero-media hero-wide"${el(p, 'image', 'ia', '画像')}`
           + `${imgSlot('image', p)}>${media(p.image, p.title)}</div>`
         : '';
@@ -884,7 +903,19 @@ ${marks}${buttons(p.buttons)}`;
 ${heroMarks(p)}${buttons(p.buttons)}
       </div>
     </div>`
-        : (p.layout === 'split' || p.layout === 'pack')
+        : p.layout === 'poster'
+          /* 大きな名前を先に置き、写真をその下へ食い込ませる。
+             名前は写真より外へはみ出したままにする（＝紙の上に残す）。 */
+          ? `    <div class="hero-in">
+      ${p.title ? `<h1 class="hero-title"${el(p, 'title', 'ta', 'キャッチコピー', 'title')}>${nl2br(p.title)}</h1>` : ''}
+      <div class="pst-stage">
+        <div class="pst-pic"${el(p, 'image', 'ia', '写真')}${imgSlot('image', p)}>${media(p.image, p.title)}</div>
+${p.side ? `        <span class="pst-side"${el(p, 'side', 'ta', '右の縦書き', 'side')}>${esc(p.side)}</span>\n` : ''}      </div>
+      ${p.eyebrow ? `<span class="eyebrow"${el(p, 'eyebrow', 'ta', '小見出し', 'eyebrow')}>${nl2br(p.eyebrow)}</span>` : ''}
+      ${p.text ? `<p class="hero-text"${el(p, 'text', 'ta', '説明文', 'text')}>${nl2br(p.text)}</p>` : ''}
+${heroMarks(p)}${buttons(p.buttons)}
+    </div>`
+          : (p.layout === 'split' || p.layout === 'pack')
           ? `    <div class="hero-in">
       <div>\n${body}\n      </div>
       <div class="hero-media"${el(p, 'image', 'ia', '画像')}${imgSlot('image', p)}>${media(p.image, p.title)}</div>

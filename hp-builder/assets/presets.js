@@ -141,8 +141,8 @@ const HERO_PRESETS = [
     about: 'まるく抜いた写真が、大きさを変えて浮かぶ。大きな見出しが上を横切る。',
     props: {
       layout: 'orbit', bg: '', eyebrow: 'BILLBOARD',
-      title: 'ALL FOR\nONE STAGE',
-      text: 'その場に立つ人も、支える人も、見に来た人も。\nぜんぶそろって、ひとつの舞台になる。',
+      title: 'ぜんぶそろって、\nひとつの舞台。',
+      text: 'その場に立つ人も、支える人も、見に来た人も。\n役がちがうだけで、みんな同じ舞台の上にいます。',
       orbs: [{ src: '' }, { src: '' }, { src: '' }, { src: '' }],
       buttons: [{ label: 'About', href: '#about', style: 'ghost' }],
     } },
@@ -155,6 +155,28 @@ const HERO_PRESETS = [
       text: '写真を5枚まで置けます。大きさと場所は、こちらで決めます。',
       orbs: [{ src: '' }, { src: '' }, { src: '' }, { src: '' }, { src: '' }],
       buttons: [],
+    } },
+
+  /* 大きな名前を先に置き、写真をその下へ食い込ませる型。
+     名前は写真の外へはみ出したまま残る。 */
+  { key: 'poster', type: 'hero', label: 'Poster',
+    about: '名前を大きく置き、ひとまわり内側の写真をその下へ食い込ませる。右わきに縦の欧文。',
+    props: {
+      layout: 'poster', bg: '', eyebrow: 'TROMBONE / ARRANGER',
+      title: '池本 重孝',
+      side: 'Ikemoto Shigetaka',
+      text: '舞台の上と、その手前と。音のあるところに、だいたい居ます。',
+      buttons: [{ label: 'About', href: '#about', style: 'ghost' }],
+    } },
+
+  { key: 'poster-shop', type: 'hero', label: 'Poster (Shop)',
+    about: '同じ組みかたで、店名を大きく。写真は縦長でも横長でも収まる。',
+    props: {
+      layout: 'poster', bg: 'surface', eyebrow: '', deco: 'grain',
+      title: '朝と、\nパンと。',
+      side: 'Since 1994',
+      text: '毎朝5時に窯を入れます。焼き上がりから並べるので、\n昼すぎには棚が空になることもあります。',
+      buttons: [{ label: 'お品書き', href: '#menu', style: 'primary' }],
     } },
 
   /* パッケージの表側を、そのままページの頭にした型。

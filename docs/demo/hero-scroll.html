@@ -429,6 +429,106 @@ p:last-child{margin-bottom:0}
   .hero.orbit .hero-in{min-height:min(66svh,600px)}
 }
 
+
+/* ---------- 大きな名前＋1枚の写真（poster） ----------
+   写真は枠よりひとまわり内側。名前は写真の上に置き、上と横へはみ出させる。
+   はみ出した分は紙の上に残るので、白抜きのままだと消える。
+   ふちの線だけを地の色で入れて、紙の上では輪郭、写真の上では白で読ませる。 */
+.hero.poster{
+  overflow:hidden;padding:clamp(40px,5vw,86px) 0 clamp(56px,7vw,120px)
+}
+.hero.poster .hero-in{z-index:2;display:block}
+.hero.poster .hero-title{
+  position:relative;z-index:3;margin:0;
+  font-size:clamp(46px,10.6vw,212px);line-height:.92;letter-spacing:-.018em;
+  font-weight:500;font-family:var(--font-head);
+  /* 写真の上まで下ろす。em なので、字を大きくしても食い込み方は変わらない */
+  margin-bottom:-.34em;
+  color:#fff;
+  -webkit-text-stroke:.013em color-mix(in srgb,var(--c-text) 46%,transparent);
+  paint-order:stroke fill
+}
+@supports not (color:color-mix(in srgb,red,blue)){
+  .hero.poster .hero-title{-webkit-text-stroke:0;color:var(--c-text)}
+}
+@supports not ((-webkit-text-stroke:1px red)){
+  .hero.poster .hero-title{color:var(--c-text)}
+}
+/* 濃い地なら、ふちは要らない */
+.hero.poster.bg-dark .hero-title,.hero.poster.bg-primary .hero-title{
+  -webkit-text-stroke:0
+}
+.pst-stage{position:relative;z-index:1}
+.pst-pic{
+  position:relative;overflow:hidden;border-radius:var(--radius-sm,2px);
+  aspect-ratio:16/11;background:var(--c-surface)
+}
+.pst-pic img,.pst-pic video{
+  width:100%;height:100%;object-fit:cover;display:block;
+  object-position:calc(var(--ix,50%)) calc(var(--iy,50%));
+  transform:scale(var(--iz,1))
+}
+/* 右わきの縦書き。欧文なので writing-mode に任せてよい
+   （日本語の縦書きと違って、字送りの表を持たない書体でも崩れない） */
+.pst-side{
+  position:absolute;z-index:3;right:0;top:0;
+  transform:translateX(calc(100% + clamp(10px,1.1vw,22px)));
+  writing-mode:vertical-rl;
+  font-family:var(--font-head);font-size:clamp(10px,.86vw,17px);
+  letter-spacing:.36em;text-transform:uppercase;color:var(--c-muted);
+  white-space:nowrap
+}
+.hero.poster .eyebrow{
+  display:block;margin-top:clamp(20px,2.4vw,42px);letter-spacing:.2em
+}
+.hero.poster .hero-text{
+  max-width:46ch;margin-top:clamp(10px,1.2vw,20px);
+  font-size:clamp(13.5px,1.05vw,20px);line-height:2
+}
+/* 縦書きを置くぶん、右に道をあける */
+.hero.poster > .wrap{padding-right:clamp(34px,4.4vw,88px)}
+
+@media(max-width:640px){
+  .pst-pic{aspect-ratio:3/4}
+  .hero.poster .hero-title{font-size:clamp(40px,13.4vw,86px);margin-bottom:-.3em}
+  /* 上に貼り付くヘッダーがあると頭がぶつかるので、少し下げてから始める */
+  .pst-side{
+    top:14%;font-size:11px;letter-spacing:.3em;
+    transform:translateX(calc(100% + 9px))
+  }
+  .hero.poster > .wrap{padding-right:30px}
+}
+
+/* ---------- 網点（dots） ----------
+   点の並びを一枚敷いて、片側だけ濃く残す。全面に均一だと壁紙になる。 */
+.deco .dt{
+  position:absolute;inset:0;
+  background-image:radial-gradient(currentColor 1.1px,transparent 1.2px);
+  background-size:clamp(9px,.85vw,17px) clamp(9px,.85vw,17px);
+  color:var(--c-text);opacity:calc(.16 * var(--deco-k,1));
+  -webkit-mask-image:radial-gradient(120% 90% at 82% 12%,#000 8%,rgba(0,0,0,.35) 46%,transparent 78%);
+  mask-image:radial-gradient(120% 90% at 82% 12%,#000 8%,rgba(0,0,0,.35) 46%,transparent 78%)
+}
+.hero.cover .deco .dt,.bg-dark .deco .dt,.bg-primary .deco .dt{color:#fff;opacity:calc(.2 * var(--deco-k,1))}
+
+/* ---------- にじむ光（blur） ----------
+   オーロラと同じ組みかたで、数を3つに減らし、そのぶん大きく強くぼかす。
+   輪郭が残ると「玉」に見えるので、内側からいきなり透明へ落とす。
+   .deco b は地を持たない（型ごとにここで決める）ので、書き忘れると
+   何も出ない。実際いちど、動きだけ書いて真っ白になった。 */
+[data-deco="blur"] b{
+  background:radial-gradient(circle at 42% 40%,
+    color-mix(in srgb,var(--col) 44%,white),
+    color-mix(in srgb,var(--col) 62%,white) 40%,transparent 74%);
+  filter:blur(clamp(48px,6.6vw,130px)) saturate(1.35);will-change:transform;
+  animation-name:deco-drift;animation-timing-function:ease-in-out;animation-iteration-count:infinite
+}
+@supports not (color:color-mix(in srgb,red,blue)){
+  [data-deco="blur"] b{
+    background:radial-gradient(circle at 42% 40%,var(--col),transparent 72%)
+  }
+}
+
 @media(max-width:640px){
   .rib-1{min-height:min(66svh,560px)}
   .hero.mark .hero-in,.hero.lineart .hero-in{min-height:min(62svh,560px)}
