@@ -179,7 +179,8 @@ const note = (ok, msg) => { console.log(`${ok ? '  ok ' : '  NG '} ${msg}`); if 
     await page.goto(base + '/app/', { waitUntil: 'load' });
     await page.waitForTimeout(1500);
     const info = await page.evaluate(() => {
-      const f = document.querySelector('iframe');
+      /* 見取り図の iframe のほうが先に置いてあるので、名前で取る */
+      const f = document.querySelector('#preview');
       const d = f && f.contentDocument;
       return {
         iframe: !!f,

@@ -518,6 +518,12 @@ function stateFromHTML(text) {
    プレビュー
    ================================================================ */
 const PREVIEW_CSS = `
+/* スマホで1つを直しているあいだは、そのブロックだけを出す。
+   消すのではなく隠すだけなので、隣を見て色を決めているところ
+   （溶ける縁の :has(+ .sec.bg-dark) など）はそのまま正しく出る。
+   このときは枠線を出さない。1つしか無いのに囲っても意味がない */
+body.__solo > *:not(.__sel){display:none}
+body.__solo > .__sel{outline-color:transparent}
 [data-bid]{position:relative;transition:outline-color .15s}
 [data-bid]{outline:2px solid transparent;outline-offset:-2px}
 [data-bid]:hover{outline-color:rgba(76,141,255,.45);cursor:pointer}
@@ -599,7 +605,11 @@ function initPreview() {
         if (!blk) return;
         const elt = e.target.closest('[data-el]');
         if (elt) selectEl(blk.dataset.bid, elt.dataset.el, elt.dataset.elkind, elt.dataset.elname, elt.dataset.prop);
-        else { selectedEl = null; select(blk.dataset.bid); }
+        else {
+          selectedEl = null; select(blk.dataset.bid);
+          /* スマホでは、押したブロックだけを大きく出す形に切り替える */
+          if (isMobile()) enterFocus();
+        }
 
         /* 画像枠。まだ写真が入っていなければ、そのまま端末の写真選択を開く。
            入っているときに開いてしまうと、位置を直したいだけのときに
@@ -697,6 +707,7 @@ function renderPreview(now = false) {
       + '\n' + shapeMaskCSS(usedShapes(state))
       + '\n' + textFillCSS(usedFills(state));
     pdoc.body.className = bodyClass();
+    pdoc.body.classList.toggle('__solo', focusMode);
     pdoc.body.setAttribute('data-anim', state.motion.anim);
     pdoc.body.setAttribute('data-reveal', state.motion.reveal ? '1' : '0');
     pdoc.body.setAttribute('data-smooth', state.motion.smooth ? '1' : '0');
@@ -712,6 +723,7 @@ function renderPreview(now = false) {
     s.textContent = SITE_JS;
     pdoc.body.appendChild(s);
     markSelectedEl();
+    renderRail();
   };
   now ? run() : (pvTimer = setTimeout(run, 160));
 }
@@ -720,6 +732,7 @@ function highlight() {
   if (!pdoc) return;
   $$('[data-bid]', pdoc).forEach((el) => el.classList.toggle('__sel', el.dataset.bid === selected));
   markSelectedEl();
+  railSel();
 }
 
 /* 選択中の要素に枠を戻す（プレビューを作り直すと消えるため） */
@@ -730,6 +743,173 @@ function markSelectedEl() {
   const blk = pdoc.querySelector(`[data-bid="${selected}"]`);
   const el = blk && blk.querySelector(`[data-el="${selectedEl.role}"]`);
   if (el) el.classList.add('__elsel');
+}
+
+/* ================================================================
+   ページ全体の見取り図（スマホで1つを直しているあいだ、左に細く出る）
+
+   アイコンを並べた一覧ではなく、ページそのものを縦に圧縮した絵を出す。
+   本物を縮めて写すので「どんな見た目のどこを触っているのか」が一目で分かり、
+   別のところを押せばそのまま移れる。パソコンでは左に一覧が常に出ているので使わない。
+   ================================================================ */
+let raildoc = null;
+let railInit = false;
+/* 縮めた絵の、これ以上細くしない幅。長いページを1本に押し込むと
+   糸のようになって、色の帯すら見分けられなくなる */
+const RAIL_MINW = 34;
+
+function initRail() {
+  if (railInit) return;
+  railInit = true;
+  const f = $('#railFrame');
+  f.addEventListener('load', () => {
+    raildoc = f.contentDocument;
+    raildoc.getElementById('s-base').textContent = SITE_CSS;
+    renderRail();
+  }, { once: true });
+  f.srcdoc = `<!DOCTYPE html><html lang="ja"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style id="s-base"></style><style id="s-theme"></style><style id="s-fix"></style>
+</head><body></body></html>`;
+}
+
+/* 画面いっぱいの高さを使うところ（ヒーローなど）は 100svh で決まる。
+   見取り図は全ページを1枚に引き伸ばして写すので、そのままだと
+   iframe の高さ＝ページ丈になり、ヒーローがページと同じ高さまで膨らむ。
+   さらにそれがページ丈を押し上げて、いつまでも決まらない。
+   プレビューと同じ「1画面ぶん」に固定してから写す。 */
+const railFix = (h) => `
+.hero .hero-in{min-height:min(${Math.round(h * 0.78)}px,760px)!important}
+.hero.mark .hero-in,.hero.lineart .hero-in{min-height:min(${Math.round(h * 0.72)}px,740px)!important}
+.rib-1{min-height:min(${Math.round(h * 0.66)}px,560px)!important}
+.cg-s{min-height:min(${Math.round(h * 0.72)}px,620px)!important}
+.cg-m{min-height:min(${Math.round(h * 0.86)}px,800px)!important}
+.cg-l{min-height:${h}px!important}
+.hsc{height:${h * 2}px!important}
+.hsc-in,.pin-in,.clip-box{height:${h}px!important}
+.shift-pane{min-height:${h}px!important}
+`;
+
+function renderRail() {
+  if (!focusMode) return;
+  if (!raildoc) return initRail();
+  raildoc.getElementById('s-theme').textContent = themeCSS(state.theme)
+    + '\n' + shapeMaskCSS(usedShapes(state))
+    + '\n' + textFillCSS(usedFills(state));
+  raildoc.body.className = bodyClass();
+  /* 動きは止める。豆粒の絵で走らせても見えないし、
+     「出てくる動き」を入れると、まだ出ていないところが白いままになる */
+  raildoc.body.setAttribute('data-anim', 'none');
+  raildoc.body.setAttribute('data-reveal', '0');
+  raildoc.body.innerHTML = bodyHTML();
+  [...raildoc.body.children].forEach((el, i) => {
+    const b = page().blocks[i];
+    if (b) el.dataset.bid = b.id;
+  });
+  layoutRail();
+}
+
+function layoutRail() {
+  if (!raildoc || !focusMode) return;
+  const box = $('#railBox'), inn = $('#railIn'), fr = $('#railFrame');
+  const availW = box.clientWidth, availH = box.clientHeight;
+  if (!availW || !availH) return;
+
+  const vh = Math.max(320, Math.round(parseFloat($('#frame').style.height) || 640));
+  raildoc.getElementById('s-fix').textContent = railFix(vh);
+
+  /* まず1画面ぶんの高さで組んでページ丈を測り、それから全部が写る高さに伸ばす */
+  fr.style.width = `${devW}px`;
+  fr.style.height = `${vh}px`;
+  const pageH = Math.max(vh, raildoc.body.scrollHeight);
+  fr.style.height = `${pageH}px`;
+
+  /* 縦は帯に全部収まるように、横は帯からはみ出さないように、小さいほうを取る。
+     ただし、長いページを丸ごと押し込むと糸のように細くなって何も分からない。
+     一定の細さで止めて、そこから先は帯のほうをスクロールさせる。 */
+  const k = Math.max(Math.min(availH / pageH, availW / devW), Math.min(availW, RAIL_MINW) / devW);
+  fr.style.transform = `scale(${k})`;
+  inn.style.width = `${Math.round(devW * k)}px`;
+  inn.style.height = `${Math.round(pageH * k)}px`;
+
+  $('#railHits').innerHTML = [...raildoc.body.children]
+    .filter((el) => el.dataset.bid)
+    .map((el) => {
+      const r = el.getBoundingClientRect();
+      /* つぶれて押せなくなるので、下限を決めておく */
+      return `<button class="rl" data-id="${esc(el.dataset.bid)}" aria-label="${esc(blockName(el.dataset.bid))}"
+        style="top:${Math.round(r.top * k)}px;height:${Math.max(9, Math.round(r.height * k))}px"></button>`;
+    }).join('');
+  railSel();
+}
+
+function blockName(id) {
+  const b = page().blocks.find((x) => x.id === id);
+  if (!b) return '';
+  return String(b.props.title || b.props.logo || BLOCKS[b.type].label);
+}
+
+/* いま触っているところだけを明るく残す。
+   長いページで帯がスクロールしているときは、そこまで送る */
+function railSel() {
+  let on = null;
+  $$('#railHits .rl').forEach((b) => {
+    const yes = b.dataset.id === selected;
+    b.classList.toggle('on', yes);
+    if (yes) on = b;
+  });
+  if (on) on.scrollIntoView({ block: 'nearest' });
+}
+
+$('#railHits').addEventListener('click', (e) => {
+  const b = e.target.closest('.rl');
+  if (!b || b.dataset.id === selected) return;
+  selectedEl = null;
+  select(b.dataset.id);
+  switchTab('edit');
+  if (pdoc) pdoc.defaultView.scrollTo(0, 0);
+});
+$('#railOut').addEventListener('click', () => exitFocus());
+
+/* ================================================================
+   スマホ：1つだけを大きく出して直す形
+
+   一覧から1つ選ぶと、一覧は消えずに左へ縦圧縮され、
+   選んだブロックだけが真ん中に、直す欄が下半分に出る。
+   ================================================================ */
+let focusMode = false;
+
+function enterFocus() {
+  if (!isMobile()) return;
+  if (focusMode) { if (pdoc) pdoc.defaultView.scrollTo(0, 0); railSel(); return; }
+  focusMode = true;
+  $('.app').classList.add('focus');
+  $('#rail').hidden = false;
+  closeSheets();
+  switchTab('edit');
+  applyDevice();
+  renderPreview(true);
+  if (pdoc) pdoc.defaultView.scrollTo(0, 0);
+  updateFocusNav();
+}
+
+function exitFocus() {
+  if (!focusMode) return;
+  focusMode = false;
+  $('.app').classList.remove('focus');
+  $('#rail').hidden = true;
+  applyDevice();
+  renderPreview(true);
+  updateFocusNav();
+  scrollToBlock(selected);
+}
+
+/* 下のナビの「構成」は、1つを直しているあいだ「全体にもどる」になる。
+   その形のときに開ける一覧はもう左に出ているので、同じ場所は要らない */
+function updateFocusNav() {
+  const b = $('#mList');
+  if (b) b.innerHTML = focusMode ? '<span>⤢</span>全体' : '<span>▤</span>構成';
+  $$('#mnav button').forEach((x) => x.classList.remove('on'));
 }
 
 /* ================================================================
@@ -803,13 +983,13 @@ function selectEl(blockId, role, kind, name, prop) {
   selected = blockId;
   selectedEl = { role, kind, name, prop };
   renderList(); renderEditor(); highlight();
-  if (isMobile()) openSheetForEdit();
+  if (isMobile()) { enterFocus(); openSheetForEdit(); }
 }
 /* スマホで要素を選んだとき、編集シートが閉じていれば開く。
-   シートで下半分が隠れるので、選んだ要素を上のほうへ寄せておく。 */
+   下半分が編集の欄で隠れるので、選んだ要素を上のほうへ寄せておく。 */
 function openSheetForEdit() {
   switchTab('edit');
-  if (!$('#panelRight').classList.contains('open')) openSheet('right', 'edit');
+  if (!focusMode && !$('#panelRight').classList.contains('open')) openSheet('right', 'edit');
   const el = pdoc && pdoc.querySelector('[data-el].__elsel');
   if (el) setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'start' }), 60);
 }
@@ -975,7 +1155,13 @@ $('#blockList').addEventListener('click', (e) => {
   const i = page().blocks.findIndex((b) => b.id === id);
   const act = e.target.closest('button')?.dataset.act;
 
-  if (!act) { selectedEl = null; select(id); scrollToBlock(id); return; }
+  if (!act) {
+    selectedEl = null; select(id);
+    /* スマホでは、選んだブロックだけを大きく出す形に切り替える。
+       一覧は消えず、左に縦圧縮されて残る */
+    if (isMobile()) enterFocus(); else scrollToBlock(id);
+    return;
+  }
   if (act === 'up' && i > 0) page().blocks.splice(i - 1, 0, page().blocks.splice(i, 1)[0]);
   if (act === 'down' && i < page().blocks.length - 1) page().blocks.splice(i + 1, 0, page().blocks.splice(i, 1)[0]);
   if (act === 'dup') {
@@ -3545,6 +3731,7 @@ function openBuild(fresh) {
   renderNeeds();
   closeModal('#tplModal');
   closeModal('#easyModal');
+  exitFocus();     // 組み立て中はページ全体が見えていないと選べない
   refresh();
   openModal('#buildModal');
   refreshBld();
@@ -3600,6 +3787,7 @@ function pickTemplate(k) {
   selectedEl = null;
   closed.clear();
   closeModal('#tplModal');
+  exitFocus();     // 中身が丸ごと変わるので、まずページ全体を見せる
   refresh();
   resetHistory();     // テンプレートを選び直したらそこを起点にする
   flash(`「${TEMPLATES[k].name}」を読み込みました`);
@@ -3907,6 +4095,7 @@ async function openSiteFile(file) {
   closeModal('#tplModal');
   closeModal('#buildModal');
   if (isMobile()) closeSheets();
+  exitFocus();     // 中身が丸ごと変わるので、まずページ全体を見せる
   refresh();
   resetHistory();
   flash(`「${state.meta.title}」を読み込みました`);
@@ -3956,10 +4145,12 @@ $('#btnReset').addEventListener('click', () => {
 let devW = 1280;
 
 function applyDevice() {
-  const stage = $('#stage'), fit = $('#fit'), frame = $('#frame');
-  if (!stage || !fit || !frame) return;
+  const stage = $('#stage'), pv = $('#pv'), fit = $('#fit'), frame = $('#frame');
+  if (!stage || !pv || !fit || !frame) return;
   const cs = getComputedStyle(stage);
-  const availW = stage.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+  /* 幅は「プレビューの置き場」を見る。見取り図を左に出しているときは、
+     そのぶんが最初から引かれている */
+  const availW = pv.clientWidth;
   const availH = stage.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
   if (availW <= 0 || availH <= 0) return;
   /* 縮めるのは入りきらないときだけ。広い画面で引き伸ばすと粗くなる。
@@ -3980,6 +4171,7 @@ function applyDevice() {
     z.hidden = k >= 0.999;
     z.textContent = `${Math.round(k * 100)}%`;
   }
+  layoutRail();   // 見取り図も同じ幅・同じ1画面ぶんで組み直す
 }
 
 function setDevice(w) {
@@ -4014,6 +4206,14 @@ const isMobile = () => matchMedia('(max-width:820px)').matches;
 
 function openSheet(which, tabTo) {
   if (!isMobile()) { if (tabTo) switchTab(tabTo); return; }
+  /* 1つを直している形のときは、右の欄はもう下半分に出ている。
+     開け閉めするものが無いので、見る欄を切り替えるだけ */
+  if (focusMode && which === 'right') {
+    if (tabTo) switchTab(tabTo);
+    $$('#mnav button[data-sheet]').forEach((b) =>
+      b.classList.toggle('on', b.dataset.sheet === 'right' && b.dataset.tabTo === tabTo));
+    return;
+  }
   const target = which === 'left' ? $('#panelLeft') : $('#panelRight');
   const other = which === 'left' ? $('#panelRight') : $('#panelLeft');
   other.classList.remove('open');
@@ -4045,13 +4245,14 @@ function switchTab(name) {
 $('#mnav').addEventListener('click', (e) => {
   const b = e.target.closest('button');
   if (!b) return;
+  if (b.id === 'mList' && focusMode) return exitFocus();
   if (b.dataset.sheet) openSheet(b.dataset.sheet, b.dataset.tabTo);
   else if (b.id === 'mAdd') { closeSheets(); openAddGallery(); }
   else if (b.id === 'mPublish') { closeSheets(); openPublish(); }
 });
 $('#veil').addEventListener('click', closeSheets);
 $$('[data-closesheet]').forEach((b) => b.addEventListener('click', closeSheets));
-addEventListener('resize', () => { if (!isMobile()) closeSheets(); });
+addEventListener('resize', () => { if (!isMobile()) { closeSheets(); exitFocus(); } });
 
 /* ---------------- 起動 ---------------- */
 (async function start() {

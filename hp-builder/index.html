@@ -54,11 +54,26 @@
 
   <!-- ================= 中央：プレビュー ================= -->
   <main class="stage" id="stage">
-    <!-- 縮めて出すときのために、外側にもう1枚かぶせる。
-         transform は場所を取らないので、この枠が縮んだぶんの大きさを持つ -->
-    <div class="fit" id="fit">
-      <div class="frame" id="frame">
-        <iframe id="preview" title="プレビュー"></iframe>
+    <!-- スマホで1つのブロックを直しているあいだ、ページ全体の見取り図を
+         左に細く出しておく。いまどこを触っているかが分かり、
+         別のところを押せばそのまま移れる。パソコンでは出さない。 -->
+    <aside class="rail" id="rail" hidden>
+      <button class="rail-out" id="railOut" title="ページ全体にもどる">⤢</button>
+      <div class="rail-box" id="railBox">
+        <div class="rail-in" id="railIn">
+          <iframe id="railFrame" title="ページ全体の見取り図" tabindex="-1" aria-hidden="true"></iframe>
+          <div class="rail-hits" id="railHits"></div>
+        </div>
+      </div>
+    </aside>
+
+    <div class="pv" id="pv">
+      <!-- 縮めて出すときのために、外側にもう1枚かぶせる。
+           transform は場所を取らないので、この枠が縮んだぶんの大きさを持つ -->
+      <div class="fit" id="fit">
+        <div class="frame" id="frame">
+          <iframe id="preview" title="プレビュー"></iframe>
+        </div>
       </div>
     </div>
   </main>
@@ -77,7 +92,7 @@
   </aside>
   <!-- ================= スマホ用の下部ナビ ================= -->
   <nav class="mnav" id="mnav">
-    <button data-sheet="left"><span>▤</span>構成</button>
+    <button data-sheet="left" id="mList"><span>▤</span>構成</button>
     <button data-sheet="right" data-tab-to="edit"><span>✎</span>編集</button>
     <button data-sheet="right" data-tab-to="design"><span>◐</span>デザイン</button>
     <button id="mAdd"><span>＋</span>追加</button>

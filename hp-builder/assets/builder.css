@@ -184,6 +184,55 @@ input,select,textarea{font:inherit}
   grid-area:stage;background:#0a0c10;padding:18px;overflow:auto;
   display:flex;justify-content:center;align-items:flex-start
 }
+/* プレビューの置き場。見取り図を左に出したとき、残りの幅がここになる。
+   幅の計算（applyDevice）はこの箱を見るので、見取り図のぶんが自然に引かれる */
+.pv{flex:1;min-width:0;display:flex;justify-content:center;align-items:flex-start}
+
+/* ---------- 左の見取り図（スマホでブロックを直しているあいだ） ----------
+   ページ全体を1本に縦圧縮して出す。いまどこを触っているかが分かり、
+   別のところを押せばそのまま移れる。パソコンでは出さない。 */
+.rail{
+  flex:none;width:88px;align-self:stretch;display:flex;flex-direction:column;
+  align-items:center;gap:6px;min-height:0
+}
+.rail[hidden]{display:none}
+.rail-out{
+  flex:none;width:100%;background:var(--panel2);border:1px solid var(--line);
+  border-radius:6px;padding:4px 0;font-size:13px;line-height:1.2;color:var(--tx2)
+}
+.rail-out:hover{color:var(--tx);border-color:var(--pri)}
+/* 長いページは、細くしすぎずに帯のほうを送る。
+   align-items が center のままだと、送っても上が切れて出せない */
+.rail-box{
+  flex:1;min-height:0;width:100%;overflow-y:auto;overflow-x:hidden;
+  display:flex;justify-content:center;align-items:flex-start;
+  scrollbar-width:none
+}
+.rail-box::-webkit-scrollbar{display:none}
+/* 縮めた絵の実寸を持つ箱。transform は場所を取らないので、これが無いと
+   縮めても元の大きさぶん場所を取る（プレビューの .fit と同じ理由） */
+/* margin:auto なら、収まるときは真ん中に置かれ、はみ出すときは
+   上を切らずにそのまま送れる（align-items:center だと上が切れて出せない） */
+.rail-in{
+  position:relative;margin:auto 0;flex:none;
+  background:#000;border-radius:5px;overflow:hidden;
+  box-shadow:0 4px 16px rgba(0,0,0,.6)
+}
+.rail-in iframe{
+  position:absolute;top:0;left:0;border:0;display:block;
+  transform-origin:top left;pointer-events:none
+}
+.rail-hits{position:absolute;inset:0}
+/* 触っていないところは伏せて、触っているところだけを明るく残す。
+   細いので、枠を足すより「まわりを暗くする」ほうが一目で分かる */
+.rl{
+  position:absolute;left:0;right:0;padding:0;border:0;border-radius:0;
+  background:rgba(6,8,12,.6);transition:background .15s
+}
+.rl.on{
+  background:transparent;border-radius:4px;z-index:2;
+  box-shadow:0 0 0 2px #fff,0 0 0 4px rgba(0,0,0,.5)
+}
 /* 縮めたぶんの大きさを持つ枠。transform は場所を取らないので、
    これが無いと縮めても元の大きさぶん場所を取り、はみ出す */
 .fit{flex:0 0 auto;overflow:hidden;border-radius:10px;
@@ -503,6 +552,56 @@ input,select,textarea{font:inherit}
 @media(max-width:820px) and (orientation:landscape){
   .panel.left,.panel.right{height:76vh}
 }
+
+/* ==========================================================
+   スマホ：1つのブロックを直しているあいだ（focus）
+
+   一覧から1つ選ぶと、画面がこう変わる。
+
+     上半分 … 左に「ページ全体の縦圧縮版」、右に選んだブロックだけ
+     下半分 … その場で直せる欄
+
+   一覧は消えず、細くなって左に残る。だから「いま何ページ目のどこか」を
+   見失わないし、別のところを押せばそのまま移れる。
+   ========================================================== */
+@media(max-width:820px){
+  .app.focus{
+    /* 上半分＝見取り図＋選んだブロック、下半分＝直す欄。
+       minmax(0,…) を付けないと、中身の高さで行が伸びて下がはみ出す */
+    grid-template-rows:calc(48px + var(--sat)) minmax(0,1fr) minmax(0,1fr) calc(60px + var(--sab));
+    grid-template-areas:"top" "stage" "right" "nav";
+  }
+  /* 上に一段あけるのは、幅の切り替えを置く場所。プレビューに重ねると、
+     ちょうど右上あたりの文字や写真が押せなくなる */
+  .app.focus .stage{padding:32px 8px 8px;gap:8px;align-items:stretch}
+  .app.focus .pv{align-items:flex-start}
+
+  /* 直す欄は、下から出るシートではなく画面の下半分に据える。
+     開け閉めしないので、つまみも幕も要らない */
+  .app.focus .panel.right{
+    position:static;grid-area:right;height:auto;min-height:0;z-index:1;
+    transform:none;border-radius:0;border-top:1px solid var(--line);
+    border-left:0;box-shadow:none;transition:none
+  }
+  .app.focus .panel.right .sheet-close{display:none}
+  .app.focus .panel.right .tabs button{padding:9px 4px}
+  .app.focus .panel-body{padding:12px 14px}
+
+  /* 幅の切り替えは、下半分に隠れてしまうので上へ移す。
+     stage に空けた一段に収める（プレビューには重ねない） */
+  .app.focus .devices{
+    left:auto;right:8px;transform:none;
+    top:calc(48px + var(--sat) + 3px);bottom:auto
+  }
+  .app.focus .devices button{padding:3px 9px;font-size:11px}
+  .app.focus .dev-zoom{font-size:10px}
+
+  /* 見取り図はスマホでは細く。画面の1/4以上を取らせない */
+  .app.focus .rail{width:min(76px,22vw)}
+}
+
+/* 見取り図はスマホ専用。パソコンでは左に一覧がずっと出ているので要らない */
+@media(min-width:821px){ .rail{display:none} }
 
 .edit-now{width:100%;margin-bottom:8px;background:#243149;border-color:#3a4f74}
 .edit-now:hover{background:#2b3b58;border-color:var(--pri)}
