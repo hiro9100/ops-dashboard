@@ -197,6 +197,13 @@ input,select,textarea{font:inherit}
 /* ================= 右：編集フォーム ================= */
 .f{margin-bottom:15px}
 .f > label{display:block;font-size:11.5px;font-weight:700;color:var(--tx2);margin-bottom:5px}
+/* 書体の見本。選んだものが実際にどう出るかを、その場で見せる */
+.font-eg{
+  margin-top:6px;padding:7px 10px;border-radius:6px;
+  background:var(--panel2);border:1px solid var(--line);
+  color:var(--tx);font-size:16px;line-height:1.5;white-space:nowrap;
+  overflow:hidden;text-overflow:ellipsis
+}
 .f input[type=text],.f input[type=number],.f textarea,.f select{
   width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:6px;
   padding:8px 10px;color:var(--tx);font-size:12.5px

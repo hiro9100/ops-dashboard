@@ -1894,7 +1894,8 @@ function inputHTML(f, val, path) {
       return `<textarea ${p} rows="${f.rows || 4}">${esc(val ?? '')}</textarea>`;
     case 'select':
       return `<select ${p}>${f.options.map(([v, l]) =>
-        `<option value="${esc(v)}"${String(val ?? '') === String(v) ? ' selected' : ''}>${esc(l)}</option>`).join('')}</select>`;
+        `<option value="${esc(v)}"${f.optStyle ? ` style="${esc(f.optStyle(v))}"` : ''}${
+          String(val ?? '') === String(v) ? ' selected' : ''}>${esc(l)}</option>`).join('')}</select>`;
     case 'toggle':
       return `<label class="sw"><input type="checkbox" ${p}${val ? ' checked' : ''}>${esc(f.label)}</label>`;
     case 'color':
@@ -2700,8 +2701,12 @@ const TONE_TRIGGERS = new Set(['primary', 'bg', 'text']);
 
 const THEME_FIELDS = [
   ['文字', [
-    { key: 'font', label: '本文のフォント', type: 'select', options: FONTS.map((f) => [f[0], f[1]]) },
-    { key: 'fontHead', label: '見出しのフォント', type: 'select', options: FONTS.map((f) => [f[0], f[1]]) },
+    /* 選択肢そのものをその書体で出す。名前だけ並べても、どれがどれだか
+       分からない。極太や高コントラストの書体は、本文には出さない */
+    { key: 'font', label: '本文のフォント', type: 'select',
+      options: BODY_FONTS.map((f) => [f[0], f[1]]), optStyle: (v) => `font-family:${fontStack(v)}` },
+    { key: 'fontHead', label: '見出しのフォント', type: 'select',
+      options: FONTS.map((f) => [f[0], f[1]]), optStyle: (v) => `font-family:${fontStack(v)}` },
   ]],
   ['かたち', [
     { key: 'radius', label: '角の丸み', type: 'range', min: 0, max: 32, suffix: 'px' },
@@ -2759,7 +2764,11 @@ function renderDesign() {
     `<div class="sec-label">${g}</div>` + fs.map((f) => {
       const path = `theme.${f.key}`;
       const val = state.theme[f.key];
-      return `<div class="f"><label>${esc(f.label)}</label>${inputHTML(f, val, path)}</div>`;
+      /* 書体は、選んだものを実際に出して見せる。選択肢に色を付けても
+         端末によっては出ないので、下に見本を1行置く */
+      const sample = /^font/.test(f.key)
+        ? `<div class="font-eg" style="font-family:${esc(fontStack(val))}">あア亜 Aa Bb 0123</div>` : '';
+      return `<div class="f"><label>${esc(f.label)}</label>${inputHTML(f, val, path)}${sample}</div>`;
     }).join('')).join('')
     + `<div class="sec-label">デザインの型</div>`
     + `<div class="f"><label>全体の造形</label>

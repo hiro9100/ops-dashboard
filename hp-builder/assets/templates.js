@@ -2,14 +2,48 @@
    blocks には各ブロックの「初期値からの上書き分」だけを書く。
    （BLOCKS[type].defaults にマージされる） */
 
+/* 書体は、端末に入っているものだけを使う。読み込む書体を足すと
+   ネットのつながらないところで崩れるし、書き出したHTMLも重くなる。
+
+   並べる順は「先に欧文の顔、そのあと必ず日本語の顔」。逆にすると、
+   Impact のような欧文だけの書体を選んでも、日本語がその手前で
+   拾われて何も変わらない。
+
+   4つめは「見出し専用」の印。極太や高コントラストの書体は、
+   本文の大きさにすると読めない。本文の欄には出さない。 */
 const FONTS = [
   ['gothic', 'ゴシック（標準）', '"Helvetica Neue",Arial,"Hiragino Kaku Gothic ProN","Hiragino Sans",Meiryo,sans-serif'],
   ['mincho', '明朝（上品・和風）', '"Hiragino Mincho ProN","Yu Mincho",YuMincho,"Noto Serif JP",serif'],
   ['round', '丸ゴシック（やわらかい）', '"Hiragino Maru Gothic ProN","Quicksand",  "Hiragino Sans",Meiryo,sans-serif'],
   ['mono', '等幅（かっこいい）', '"SF Mono",Menlo,Consolas,"Hiragino Sans",monospace'],
+
+  ['geo', '幾何学サンセリフ（すっきり）',
+    'Futura,"Futura PT","Century Gothic","Avenir Next",Avenir,"Hiragino Maru Gothic ProN","Yu Gothic","Noto Sans JP",sans-serif'],
+  ['humanist', '上品なサンセリフ',
+    'Optima,"Gill Sans","Gill Sans MT","Trebuchet MS","Hiragino Sans","Yu Gothic","Noto Sans JP",sans-serif'],
+  ['serifen', '欧文セリフ（落ち着き）',
+    'Georgia,"Times New Roman",Times,"Hiragino Mincho ProN","Yu Mincho","Noto Serif JP",serif'],
+  ['slab', 'スラブセリフ（角のある）',
+    'Rockwell,"Rockwell Nova","Bookman Old Style",Georgia,"Hiragino Mincho ProN","Yu Mincho","Noto Serif JP",serif'],
+  ['ud', '教科書体（読みやすい）',
+    '"UD デジタル教科書体 NK-R","Klee One","Hiragino Mincho ProN","Yu Mincho","Noto Serif JP",serif'],
+  ['pop', 'ポップ体（にぎやか）',
+    '"HGP創英角ポップ体","Chalkboard SE","Comic Sans MS","Hiragino Maru Gothic ProN","Yu Gothic",sans-serif'],
+
+  /* ここから下は見出し専用 */
+  ['impact', 'インパクト（極太・見出し）',
+    'Impact,Haettenschweiler,Anton,"Arial Black","Hiragino Kaku Gothic StdN W8","Hiragino Sans","Yu Gothic","Noto Sans JP",sans-serif', true],
+  ['black', '極太ゴシック（見出し）',
+    '"Arial Black","Helvetica Neue",Helvetica,"Hiragino Kaku Gothic StdN W8","Hiragino Sans","Yu Gothic","Noto Sans JP",sans-serif', true],
+  ['condensed', '細長ゴシック（見出し）',
+    '"Arial Narrow",Haettenschweiler,Oswald,"Roboto Condensed","Hiragino Sans","Yu Gothic","Noto Sans JP",sans-serif', true],
+  ['didone', 'モード誌のセリフ（見出し）',
+    'Didot,"Bodoni 72","Bodoni MT","Playfair Display",Georgia,"Hiragino Mincho ProN","Yu Mincho","Noto Serif JP",serif', true],
 ];
 
 const fontStack = (key) => (FONTS.find((f) => f[0] === key) || FONTS[0])[2];
+/* 本文に出してよいものだけ */
+const BODY_FONTS = FONTS.filter((f) => !f[3]);
 
 /* ============================================================
    配色パレット
