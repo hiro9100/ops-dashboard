@@ -19,9 +19,10 @@
     <span class="saved" id="saved"></span>
 
     <div class="devices" id="devices">
-      <button data-w="100%" class="on">PC</button>
-      <button data-w="820px">タブレット</button>
-      <button data-w="390px">スマホ</button>
+      <button data-w="1280" class="on">PC</button>
+      <button data-w="820">タブ<i>レット</i></button>
+      <button data-w="390">スマ<i>ホ</i></button>
+      <span class="dev-zoom" id="devZoom" hidden></span>
     </div>
 
     <button class="tb-btn" id="btnExport">ファイルに保存</button>
@@ -52,9 +53,13 @@
   </aside>
 
   <!-- ================= 中央：プレビュー ================= -->
-  <main class="stage">
-    <div class="frame" id="frame">
-      <iframe id="preview" title="プレビュー"></iframe>
+  <main class="stage" id="stage">
+    <!-- 縮めて出すときのために、外側にもう1枚かぶせる。
+         transform は場所を取らないので、この枠が縮んだぶんの大きさを持つ -->
+    <div class="fit" id="fit">
+      <div class="frame" id="frame">
+        <iframe id="preview" title="プレビュー"></iframe>
+      </div>
     </div>
   </main>
 

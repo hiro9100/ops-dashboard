@@ -66,9 +66,18 @@ input,select,textarea{font:inherit}
 .more-menu button:hover{background:#2f3644}
 .more-menu button.danger{color:var(--danger)}
 
-.devices{display:flex;background:var(--panel2);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
-.devices button{background:transparent;border:0;padding:7px 12px;font-size:12px;color:var(--tx2)}
+.devices{display:flex;align-items:center;background:var(--panel2);
+  border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.devices button{background:transparent;border:0;padding:7px 12px;font-size:12px;color:var(--tx2);
+  white-space:nowrap}
+.devices button i{font-style:normal}
 .devices button.on{background:#2d3441;color:var(--tx);font-weight:700}
+/* 縮めて見せているときの倍率。出さないと「文字が小さい」と誤解される */
+.dev-zoom{
+  padding:0 9px;font-size:10.5px;font-weight:700;color:var(--tx2);
+  border-left:1px solid var(--line);align-self:stretch;display:grid;place-items:center
+}
+.dev-zoom[hidden]{display:none}
 
 /* ================= パネル共通 ================= */
 .panel{background:var(--panel);display:flex;flex-direction:column;min-height:0}
@@ -175,9 +184,13 @@ input,select,textarea{font:inherit}
   grid-area:stage;background:#0a0c10;padding:18px;overflow:auto;
   display:flex;justify-content:center;align-items:flex-start
 }
+/* 縮めたぶんの大きさを持つ枠。transform は場所を取らないので、
+   これが無いと縮めても元の大きさぶん場所を取り、はみ出す */
+.fit{flex:0 0 auto;overflow:hidden;border-radius:10px;
+  box-shadow:0 20px 60px rgba(0,0,0,.5);transition:width .2s ease,height .2s ease}
 .frame{
-  width:100%;height:100%;background:#fff;border-radius:10px;overflow:hidden;
-  box-shadow:0 20px 60px rgba(0,0,0,.5);transition:width .2s ease
+  background:#fff;overflow:hidden;transform-origin:top left;
+  transition:width .2s ease
 }
 .frame iframe{width:100%;height:100%;border:0;display:block}
 
@@ -413,12 +426,27 @@ input,select,textarea{font:inherit}
     grid-template-areas:"top" "stage" "nav";
   }
   /* 公開は下のナビに置いたので、上のバーからは外す */
-  .brand,.devices,#btnCode,#btnReset,#btnExport,#btnPublish{display:none}
+  .brand,#btnCode,#btnReset,#btnExport,#btnPublish{display:none}
+  /* 幅の切り替えは、スマホでも使える。上のバーには場所が無いので、
+     プレビューの下に小さく浮かせる。スマホから PC の並びを確かめたい、
+     という用があるので、隠してはいけない */
+  .devices{
+    position:fixed;left:50%;transform:translateX(-50%);
+    bottom:calc(68px + var(--sab));z-index:55;
+    background:rgba(24,28,36,.92);backdrop-filter:blur(8px);
+    box-shadow:0 8px 24px rgba(0,0,0,.5)
+  }
+  /* 狭いので、名前は頭の2文字だけにする（タブ／スマ） */
+  .devices button{padding:7px 12px;font-size:12px}
+  .devices button i{display:none}
+  .dev-zoom{padding:0 9px;font-size:10.5px}
+  /* シートを開いているあいだは邪魔になるので引っ込める */
+  body:has(.panel.open) .devices{opacity:0;pointer-events:none}
   .topbar{gap:8px;padding:var(--sat) 10px 0}
   .tb-btn{padding:7px 12px;font-size:12px}
   .saved{min-width:0;font-size:11px}
-  .stage{padding:10px}
-  .frame{border-radius:8px;width:100%!important}
+  .stage{padding:10px 10px 44px}
+  .fit{border-radius:8px}
 
   /* パネルを下から出るシートにする */
   .panel.left,.panel.right{

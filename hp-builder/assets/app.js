@@ -3934,12 +3934,59 @@ $('#btnReset').addEventListener('click', () => {
   localStorage.removeItem(STORE_KEY);
   location.reload();
 });
+/* ================================================================
+   プレビューの幅（PC / タブレット / スマホ）
+
+   欲しい幅が画面より広いときは、そのままでは出せない。iframe を
+   「欲しい幅」で作ったうえで、外から縮めて見せる。中の CSS は
+   欲しい幅で組まれるので、スマホからでも PC の並びをそのまま確かめられる。
+   逆に PC からスマホ幅にするのは、ただ細くするだけで足りる。
+   ================================================================ */
+let devW = 1280;
+
+function applyDevice() {
+  const stage = $('#stage'), fit = $('#fit'), frame = $('#frame');
+  if (!stage || !fit || !frame) return;
+  const cs = getComputedStyle(stage);
+  const availW = stage.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+  const availH = stage.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
+  if (availW <= 0 || availH <= 0) return;
+  /* 縮めるのは入りきらないときだけ。広い画面で引き伸ばすと粗くなる。
+     ほんの少し足りないだけ（1割ほど）なら、縮めずに枠のほうを詰める。
+     スマホでスマホ幅を出すたびに「95%」と出ても、意味がない */
+  const w = availW < devW && availW > devW * 0.88 ? availW : devW;
+  const k = Math.min(1, availW / w);
+  const h = Math.max(320, Math.round(availH / k));
+  frame.style.width = `${Math.round(w)}px`;
+  frame.style.height = `${h}px`;
+  frame.style.transform = k < 1 ? `scale(${k.toFixed(4)})` : '';
+  fit.style.width = `${Math.round(w * k)}px`;
+  fit.style.height = `${Math.round(h * k)}px`;
+  const z = $('#devZoom');
+  if (z) {
+    /* 縮めているときは、そのことを出す。出さないと「文字が小さい」と
+       誤解される（実物と見え方が違う理由が分からない） */
+    z.hidden = k >= 0.999;
+    z.textContent = `${Math.round(k * 100)}%`;
+  }
+}
+
+function setDevice(w) {
+  devW = w;
+  $$('#devices button').forEach((x) => x.classList.toggle('on', +x.dataset.w === w));
+  applyDevice();
+}
+
 $('#devices').addEventListener('click', (e) => {
   const b = e.target.closest('button');
   if (!b) return;
-  $$('#devices button').forEach((x) => x.classList.toggle('on', x === b));
-  $('#frame').style.width = b.dataset.w;
+  setDevice(+b.dataset.w);
 });
+addEventListener('resize', applyDevice);
+/* 最初は、いま見ている端末に合わせる。スマホで開いていきなり PC 幅だと、
+   何が起きたのか分からない。
+   （isMobile はこの下で宣言しているので、ここでは同じ条件を直に書く） */
+setDevice(matchMedia('(max-width:820px)').matches ? 390 : 1280);
 $$('.modal').forEach((m) => m.addEventListener('click', (e) => { if (e.target === m) m.hidden = true; }));
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape') $$('.modal').forEach((m) => (m.hidden = true)); });
 
