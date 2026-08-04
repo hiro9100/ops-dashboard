@@ -240,7 +240,7 @@ function save(key) {
     } catch (e) {
       /* 画像を入れすぎるとブラウザの保存上限（おおむね5MB）を超える。
          編集も書き出しも続けられるので、その旨だけ伝える。 */
-      flash('自動保存の上限を超えました。今すぐHTMLを書き出してください');
+      flash('控えが上限に達しました。いま「保存」を押してください');
     }
   }, 400);
 }
@@ -636,7 +636,7 @@ function initPreview() {
         const slot = e.target.closest('[data-imgprop]');
         const blk = e.target.closest('[data-bid]');
         clearDropSlot();
-        if (!slot || !blk) { flash('画像の枠に重ねて放してください'); return; }
+        if (!slot || !blk) { flash('写真の枠に重ねて放してください'); return; }
         const f = e.dataTransfer.files[0];
         if (f) setImage(blk.dataset.bid, slot.dataset.imgprop, f);
       });
@@ -1371,9 +1371,9 @@ body{margin:0;background:#0d1016;padding:${u(14)}px;
   background:#171a21;border:${u(1)}px solid #2a2f3a;border-radius:${u(12)}px;overflow:hidden;
   transition:border-color .15s,transform .15s;color:#e7ebf0;font:inherit}
 .gc-hit{position:absolute;inset:0;z-index:5}
-.gc:hover{border-color:#4c8dff;transform:translateY(-${u(3)}px)}
+.gc:hover{border-color:#8b9099}
 /* いま当たっている形。選び直す画面で「どれが今のか」が要る */
-.gc.on{border-color:#4c8dff;box-shadow:0 0 0 ${u(2)}px rgba(76,141,255,.35)}
+.gc.on{border-color:#fff;box-shadow:0 0 0 ${u(2)}px rgba(255,255,255,.22)}
 /* 高さと中の縮尺は、下の script が実寸から決める。
    ここに書くのは、その値が入るまでの見た目だけ */
 .gc-prev{height:${u(176)}px;overflow:hidden;position:relative;background:var(--c-bg);
@@ -1487,8 +1487,8 @@ body{margin:0;background:#0d1016;padding:14px;
 /* 再生のたびに中身を作り替えるので、クリックは動かない層で受ける
    （作り替えた瞬間に押すとクリックが消えるため） */
 .ag-hit{position:absolute;inset:0;z-index:5;background:transparent}
-.ag-card:hover{border-color:#4c8dff;transform:translateY(-2px)}
-.ag-card.on{border-color:#4c8dff;box-shadow:0 0 0 1px #4c8dff inset}
+.ag-card:hover{border-color:#8b9099}
+.ag-card.on{border-color:#fff;box-shadow:0 0 0 1px #fff inset}
 .ag-stage{height:88px;display:grid;place-items:center;overflow:hidden;
   background:var(--c-bg);color:var(--c-text);border-bottom:1px solid #2a2f3a;padding:8px}
 .ag-txt{font-size:18px;font-weight:800;color:var(--c-text);font-family:var(--font-head);
@@ -1602,8 +1602,8 @@ body{margin:0;background:#0d1016;padding:14px;
 .dg{display:grid;grid-template-columns:repeat(auto-fill,292px);gap:13px;justify-content:center}
 .dc{position:relative;background:#171a21;border:1px solid #2a2f3a;border-radius:11px;
   overflow:hidden;cursor:pointer;transition:border-color .15s,transform .15s}
-.dc:hover{border-color:#4c8dff;transform:translateY(-3px)}
-.dc.on{border-color:#4c8dff;box-shadow:0 0 0 1px #4c8dff inset}
+.dc:hover{border-color:#8b9099}
+.dc.on{border-color:#fff;box-shadow:0 0 0 1px #fff inset}
 /* 見本の中の要素を押せてしまうと選べないので、当たり判定は1枚かぶせる。
    ポインタの動きは下まで通す必要があるため、クリックだけを受ける。 */
 .dc-hit{position:absolute;inset:0;z-index:9}
@@ -1953,7 +1953,7 @@ function addBlock(type) {
   if (isMobile()) closeSheets();
   refresh();
   setTimeout(() => scrollToBlock(nb.id), 240);
-  flash(`「${BLOCKS[type].label}」を追加しました`);
+  flash(`「${BLOCKS[type].label}」を置きました`);
 }
 
 function openAddGallery() {
@@ -2070,7 +2070,7 @@ function inputHTML(f, val, path) {
     case 'textarea':
       return `<textarea ${p} rows="${f.rows || 4}">${esc(val ?? '')}</textarea>`;
     case 'select':
-      return `<select ${p}>${f.options.map(([v, l]) =>
+      return `<select ${p}${f.num ? ' data-num' : ''}>${f.options.map(([v, l]) =>
         `<option value="${esc(v)}"${f.optStyle ? ` style="${esc(f.optStyle(v))}"` : ''}${
           String(val ?? '') === String(v) ? ' selected' : ''}>${esc(l)}</option>`).join('')}</select>`;
     case 'toggle':
@@ -2103,6 +2103,7 @@ function inputHTML(f, val, path) {
 }
 
 function fieldHTML(f, props, base) {
+  if (f.type === 'hidden') return '';   // 値は持つが、人には見せない欄
   if (f.showIf && !f.showIf(props)) return '';
   const path = `${base}.${f.key}`;
   const val = props[f.key];
@@ -2156,9 +2157,9 @@ function fieldHTML(f, props, base) {
    「打つもの」ではなく「選ぶもの」になったので、前に出す。 */
 const ADV_KEYS = new Set([
   'anchor', 'bg', 'cols', 'plate', 'plateShift',
-  'dir', 'size', 'ratio', 'scrollLen', 'decoStrength', 'decoLabel', 'meltDepth',
-  'overlay', 'grain', 'sticky', 'height', 'sep', 'outline', 'auto', 'poster',
-  'action', 'method',
+  'dir', 'size', 'ratio', 'decoLabel',
+  'sticky', 'sep', 'outline', 'auto', 'poster',
+  'action',
 ]);
 const isAdv = (f) => f.adv === true || ADV_KEYS.has(f.key);
 
@@ -2166,7 +2167,7 @@ function renderEditor() {
   const box = $('#tab-edit');
   const b = page().blocks.find((x) => x.id === selected);
   if (!b) {
-    box.innerHTML = `<div class="empty">左の一覧、またはプレビューを<br>クリックしてブロックを選んでください。</div>`;
+    box.innerHTML = `<div class="empty">ブロックを選ぶと、<br>ここに中身が出ます。</div>`;
     return;
   }
   const def = BLOCKS[b.type];
@@ -2178,7 +2179,7 @@ function renderEditor() {
   box.innerHTML = `<div class="edit-head"><span class="bl-ic">${def.icon}</span>${esc(def.label)}</div>`
     + elementPanel(b)
     + basic.map((f) => fieldHTML(f, b.props, 'props')).join('')
-    + (advHTML ? `<details class="adv"${open}><summary>こまかい調整</summary>${advHTML}</details>` : '');
+    + (advHTML ? `<details class="adv"${open}><summary>詳細</summary>${advHTML}</details>` : '');
   box.scrollTop = keep;
 }
 
@@ -2194,9 +2195,9 @@ function elementPanel(b) {
     /* 使い方の説明は、必要になった人だけが読めばいい。
        ふだんは1行にして、たたんでおく。 */
     return `<details class="el-hint"><summary>プレビューの触りかた</summary>
-      <b>ダブルクリック</b>で文字をその場で書き換え。<br>
-      <b>1回クリック</b>で、その要素に動きを付ける。<br>
-      <b>写真をクリック</b>で、大きさと位置を直す（空の枠なら写真を選ぶ）。
+      文字を1回押す — 動きを付ける<br>
+      文字をもう1回押す — その場で書き替える<br>
+      写真を押す — 寄せる・差し替える
     </details>`;
   }
   /* 写真の枠を選んだとき。位置と大きさをここで直す */
@@ -2226,10 +2227,10 @@ function elementPanel(b) {
           <span class="f-val">${f.y}%</span>
         </div>
       </div>
-      <div class="el-tip">枠から出た分が切れます。顔や商品が切れていたら、ここで寄せてください。</div>
-      <button class="tb-btn" data-fitreset>まん中・等倍に戻す</button>
-      <button class="tb-btn" data-repick="${esc(selectedEl.prop)}">写真を選び直す</button>
-      <button class="tb-btn" data-cut="props.${esc(selectedEl.prop)}">背景をぬく</button>
+      <div class="el-tip">枠から出た分は切れます。</div>
+      <button class="tb-btn" data-fitreset>まん中に戻す</button>
+      <button class="tb-btn" data-repick="${esc(selectedEl.prop)}">写真を替える</button>
+      <button class="tb-btn" data-cut="props.${esc(selectedEl.prop)}">背景を抜く</button>
     </div>`;
   }
 
@@ -2239,16 +2240,16 @@ function elementPanel(b) {
   const cur = cfg.a || 'none';
   return `<div class="el-panel">
     <div class="eh">
-      <span class="badge">${isText ? 'テキスト' : '画像・要素'}</span>
+      <span class="badge">${isText ? '文字' : '要素'}</span>
       <span class="en">${esc(selectedEl.name)}</span>
       <button class="ex" data-elclose title="選択を解除">✕</button>
     </div>
-    ${selectedEl.prop ? `<button class="tb-btn edit-now" data-editnow>✎ 文字を編集</button>
-      <div class="el-tip">プレビューをダブルタップしても編集できます</div>` : ''}
-    <div class="f"><label>アニメーション</label>
+    ${selectedEl.prop ? `<button class="tb-btn edit-now" data-editnow>文字を打ち替える</button>
+      <div class="el-tip">プレビューを続けて2回押しても直せます</div>` : ''}
+    <div class="f"><label>動き</label>
       <select data-elk="a">${list.map(([v, l]) =>
         `<option value="${v}"${cur === v ? ' selected' : ''}>${esc(l)}</option>`).join('')}</select>
-      <button class="anim-gal" data-animgal="${isText ? 'ta' : 'ia'}">▦ サンプルを見ながら選ぶ</button>
+      <button class="anim-gal" data-animgal="${isText ? 'ta' : 'ia'}">見本から選ぶ</button>
     </div>
     ${isText ? textFillField(b) : ''}
   </div>`;
@@ -2261,9 +2262,9 @@ function textFillField(b) {
   return `<div class="f"><label>文字の塗り</label>
     <select data-txfill>${TEXT_FILL_LIST.map(([v, l]) =>
       `<option value="${v}"${cur === v ? ' selected' : ''}>${esc(l)}</option>`).join('')}</select>
-    ${cur === 'own' ? `<button class="pick wide" data-txfimg>${own ? '別の画像にする' : '画像を選ぶ'}</button>
+    ${cur === 'own' ? `<button class="pick wide" data-txfimg>${own ? '画像を替える' : '画像を選ぶ'}</button>
       ${own ? `<img class="img-thumb" src="${esc(own)}" alt="">` : ''}` : ''}
-    <div class="hint">背景を文字の形に切り抜きます。文字は文字のままなので、あとから書き換えられます。</div>
+    <div class="hint">背景を文字の形に切り抜きます。文字は文字のまま残ります。</div>
   </div>`;
 }
 
@@ -2382,6 +2383,9 @@ function setPath(root, path, val) {
 function readEl(el) {
   if (el.type === 'checkbox') return el.checked;
   if (el.type === 'range' || el.type === 'number') return Number(el.value);
+  /* 数で持っている設定を、言葉で選ばせている欄。文字のまま入れると
+     書き出して読み直したときに中身が食い違う */
+  if (el.dataset.num !== undefined) return Number(el.value);
   return el.value;
 }
 
@@ -2522,8 +2526,8 @@ async function toDataURL(file) {
 async function setImage(blockId, prop, file) {
   const b = page().blocks.find((x) => x.id === blockId);
   if (!b || !file) return;
-  if (!file.type.startsWith('image/')) { flash('画像ファイルを選んでください'); return; }
-  flash('画像を読み込んでいます…');
+  if (!file.type.startsWith('image/')) { flash('写真のファイルを選んでください'); return; }
+  flash('読み込んでいます…');
   try {
     const url = await toDataURL(file);
     setPath(b.props, prop, url);
@@ -2533,7 +2537,7 @@ async function setImage(blockId, prop, file) {
     flash(total > 3500 ? `画像を入れました（合計約${total}KB・保存上限が近いです）`
                        : `画像を入れました（約${kb}KB）`);
   } catch (e) {
-    flash('画像を読み込めませんでした');
+    flash('この写真は読み込めませんでした');
   }
 }
 
@@ -2601,8 +2605,8 @@ const FILL_MAX = 900;
 async function setFillImage(blockId, prop, file) {
   const b = page().blocks.find((x) => x.id === blockId);
   if (!b || !file) return;
-  if (!file.type.startsWith('image/')) { flash('画像ファイルを選んでください'); return; }
-  flash('画像を読み込んでいます…');
+  if (!file.type.startsWith('image/')) { flash('写真のファイルを選んでください'); return; }
+  flash('読み込んでいます…');
   try {
     const src = await loadImage(file);
     const scale = Math.min(1, FILL_MAX / Math.max(src.width, src.height));
@@ -2621,14 +2625,14 @@ async function setFillImage(blockId, prop, file) {
     renderEditor(); renderPreview(true); save(`txfimg:${role}:${blockId}`);
     flash(`この画像で文字を塗ります（約${Math.round(url.length / 1400)}KB）`);
   } catch (e) {
-    flash('画像を読み込めませんでした');
+    flash('この写真は読み込めませんでした');
   }
 }
 
 async function setMask(blockId, prop, file) {
   const b = page().blocks.find((x) => x.id === blockId);
   if (!b || !file) return;
-  if (!file.type.startsWith('image/')) { flash('画像ファイルを選んでください'); return; }
+  if (!file.type.startsWith('image/')) { flash('写真のファイルを選んでください'); return; }
   flash('形を読み取っています…');
   try {
     const url = await fileToMask(file);
@@ -2640,7 +2644,7 @@ async function setMask(blockId, prop, file) {
     renderEditor(); renderPreview(true); save(`mask:${prop}:${blockId}`);
     flash(`この形で抜きます（約${Math.round(url.length / 1400)}KB）`);
   } catch (e) {
-    flash('この画像からは形を読み取れませんでした');
+    flash('この写真からは形を読み取れませんでした');
   }
 }
 
@@ -2778,7 +2782,7 @@ function openCutout(blockId, prop) {
     openModal('#cutModal');
     cutRender();
   };
-  im.onerror = () => flash('この画像は読み込めませんでした（別のサイトの画像は抜けません）');
+  im.onerror = () => flash('この写真は読み込めませんでした（よそのサイトの写真は抜けません）');
   im.src = src;
 }
 
@@ -2869,18 +2873,26 @@ const BASE_COLORS = [
 /* 決めた色を変えたら作り直す色。これ以外を変えても薄い色は動かさない */
 const TONE_TRIGGERS = new Set(['primary', 'bg', 'text']);
 
+/* 角の丸み。数字は持つが、選ぶのは言葉。
+   テンプレートは 0〜22 の細かい値を持っているので、いちばん近い段を選んで見せる。
+   人が選び直すまでは、テンプレートの値をそのまま使う（勝手に丸めない）。 */
+const RADII = [[0, '角ばった'], [8, '標準'], [18, 'やわらかい'], [28, '丸い']];
+const nearestRadius = (v) =>
+  RADII.reduce((a, r) => (Math.abs(r[0] - v) < Math.abs(a - v) ? r[0] : a), RADII[0][0]);
+
 const THEME_FIELDS = [
-  ['文字', [
+  ['書体', [
     /* 選択肢そのものをその書体で出す。名前だけ並べても、どれがどれだか
        分からない。極太や高コントラストの書体は、本文には出さない */
-    { key: 'font', label: '本文のフォント', type: 'select',
+    { key: 'font', label: '本文', type: 'select',
       options: BODY_FONTS.map((f) => [f[0], f[1]]), optStyle: (v) => `font-family:${fontStack(v)}` },
-    { key: 'fontHead', label: '見出しのフォント', type: 'select',
+    { key: 'fontHead', label: '見出し', type: 'select',
       options: FONTS.map((f) => [f[0], f[1]]), optStyle: (v) => `font-family:${fontStack(v)}` },
   ]],
   ['かたち', [
-    { key: 'radius', label: '角の丸み', type: 'range', min: 0, max: 32, suffix: 'px' },
-    { key: 'max', label: 'コンテンツの幅', type: 'range', min: 880, max: 1400, suffix: 'px' },
+    /* px の数字ではなく、見た目の言葉で選ぶ。
+       「角の丸み 14px」と言われて決められる人は、ほとんどいない */
+    { key: 'radius', label: '角', type: 'select', options: RADII, num: true, snap: nearestRadius },
   ]],
 ];
 
@@ -2897,18 +2909,18 @@ const STYLES = [
    ほとんどの人は決められないし、決めても良くならない。
    値そのものは state に残していて（DEFAULT_MOTION）、見た目は前と同じ。 */
 const MOTION_FIELDS = [
-  { key: 'anim', label: '見出しの文字アニメ', type: 'select', options: TEXT_ANIMS,
-    hint: 'すべての見出しに適用されます（ヒーローは個別に変更できます）' },
-  { key: 'reveal', label: 'ブロックをスクロールで出現させる', type: 'toggle' },
-  { key: 'smooth', label: '慣性スクロール（少し滑って止まる）', type: 'toggle',
-    hint: 'マウスの環境だけで効きます。指の操作と「動きを減らす」設定では切れます' },
+  { key: 'anim', label: '見出しの出かた', type: 'select', options: TEXT_ANIMS,
+    hint: 'すべての見出しに掛かります。ヒーローだけは個別に変えられます' },
+  { key: 'reveal', label: 'スクロールで現れる', type: 'toggle' },
+  { key: 'smooth', label: '滑って止まるスクロール', type: 'toggle',
+    hint: 'マウスの環境だけ。指の操作では切れます' },
 ];
 
 function renderDesign() {
   $('#tab-design').innerHTML =
     `<div class="sec-label">配色</div>
-     <button class="anim-gal" id="btnPalGal" style="margin:0 0 14px">▦ 配色を一覧から選ぶ</button>
-     <div class="sec-label">決める色</div>`
+     <button class="anim-gal" id="btnPalGal" style="margin:0 0 14px">見本から選ぶ</button>
+     <div class="sec-label">色</div>`
     + BASE_COLORS.map((f) =>
       `<div class="f"><label>${esc(f.label)}</label>${inputHTML(f, state.theme[f.key], `theme.${f.key}`)}</div>`).join('')
     /* 薄いエリア・うすい文字・線・濃いエリアは、上の4色から作る。
@@ -2918,15 +2930,15 @@ function renderDesign() {
     + THEME_FIELDS.map(([g, fs]) =>
     `<div class="sec-label">${g}</div>` + fs.map((f) => {
       const path = `theme.${f.key}`;
-      const val = state.theme[f.key];
+      const val = f.snap ? f.snap(state.theme[f.key]) : state.theme[f.key];
       /* 書体は、選んだものを実際に出して見せる。選択肢に色を付けても
          端末によっては出ないので、下に見本を1行置く */
       const sample = /^font/.test(f.key)
         ? `<div class="font-eg" style="font-family:${esc(fontStack(val))}">あア亜 Aa Bb 0123</div>` : '';
       return `<div class="f"><label>${esc(f.label)}</label>${inputHTML(f, val, path)}${sample}</div>`;
     }).join('')).join('')
-    + `<div class="sec-label">デザインの型</div>`
-    + `<div class="f"><label>全体の造形</label>
+    + `<div class="sec-label">造形</div>`
+    + `<div class="f"><label>全体</label>
         <select data-path="style">${STYLES.map(([v, l]) =>
           `<option value="${v}"${state.style === v ? ' selected' : ''}>${esc(l)}</option>`).join('')}</select>
         <div class="hint">影・罫線・見出しの構えがまとめて変わります</div></div>`
@@ -2956,30 +2968,24 @@ function renderPage() {
     ${i === 0 ? '<div class="hint">ホームの名前とアドレスは変えられません。</div>' : `
     <div class="f"><label>アドレス</label>
       <div class="pg-path"><span>…/</span><input type="text" id="pgRepath" value="${esc(pg.path)}"><span>.html</span></div></div>`}
-    <div class="f"><label>タブに出す名前（空ならページ名＋サイト名）</label>
+    <div class="f"><label>タブに出す名前</label>
       <input type="text" data-page="title" value="${esc(pg.title)}" placeholder="${esc(pageTitle(pg))}"></div>
-    <div class="f"><label>このページの説明（空ならサイトの説明）</label>
+    <div class="f"><label>このページの説明</label>
       <textarea data-page="desc" rows="3" placeholder="${esc(pageDesc(pg))}">${esc(pg.desc)}</textarea></div>
     <div class="pg-ops">
       <button class="tb-btn" data-pgact="up"${i <= 1 ? ' disabled' : ''}>← 前へ</button>
       <button class="tb-btn" data-pgact="down"${i === 0 || i === state.pages.length - 1 ? ' disabled' : ''}>後ろへ →</button>
-      <button class="tb-btn" data-pgact="dup">複製する</button>
-      <button class="tb-btn" data-pgact="del"${i === 0 ? ' disabled' : ''}>このページを削除</button>
+      <button class="tb-btn" data-pgact="dup">複製</button>
+      <button class="tb-btn" data-pgact="del"${i === 0 ? ' disabled' : ''}>削除</button>
     </div>` : '';
 
   $('#tab-page').innerHTML = perPage + `
-    <div class="sec-label">サイト全体（ブラウザのタブ名・検索結果に出ます）</div>
+    <div class="sec-label">サイト</div>
     <div class="f"><label>${many ? 'サイトの名前' : 'ページタイトル'}</label><input type="text" data-path="meta.title" value="${esc(state.meta.title)}"></div>
     <div class="f"><label>${many ? 'サイトの説明' : 'ページの説明'}</label><textarea data-path="meta.description" rows="4">${esc(state.meta.description)}</textarea></div>
-    <div class="f"><label>言語</label><input type="text" data-path="meta.lang" value="${esc(state.meta.lang)}"></div>
-    <div class="sec-label">つかいかた</div>
-    <div class="hint" style="line-height:2">
-      ・左でブロックの並べかえ・追加・削除<br>
-      ・プレビューを直接クリックしても選べます<br>
-      ・「アンカーID」を付けると、メニューから <b>#id</b> でリンクできます<br>
-      ・ボタンやメニューの「リンク先」から、ほかのページを選べます<br>
-      ・内容はこのブラウザに自動保存されます${many ? `<br>
-      ・保存すると、${state.pages.length}枚ぶんをまとめたZIPになります` : ''}
+    <div class="hint" style="margin-top:18px">
+      中身は、このブラウザに自動で控えています。${many
+        ? `「保存」を押すと、${state.pages.length}枚まとめて1つのZIPになります。` : ''}
     </div>`;
 }
 
@@ -3110,7 +3116,7 @@ body{margin:0;background:#0d1016;padding:14px;
 .tc{display:block;width:100%;padding:0;cursor:pointer;color:#e7ebf0;font:inherit;position:relative;
   background:#171a21;border:1px solid #2a2f3a;border-radius:12px;overflow:hidden;
   transition:border-color .15s,transform .15s}
-.tc:hover{border-color:#4c8dff;transform:translateY(-3px)}
+.tc:hover{border-color:#8b9099}
 .tc-hit{position:absolute;inset:0;z-index:5}
 .tc-prev{height:250px;overflow:hidden;border-bottom:1px solid #2a2f3a}
 .tc-scale{width:1300px;transform:scale(.246);transform-origin:top left;pointer-events:none;
@@ -3137,8 +3143,8 @@ body{margin:0;background:#0d1016;padding:14px;
 .pc{display:block;width:100%;padding:0;cursor:pointer;color:#e7ebf0;font:inherit;position:relative;
   background:#171a21;border:1px solid #2a2f3a;border-radius:12px;overflow:hidden;
   transition:border-color .15s,transform .15s}
-.pc:hover{border-color:#4c8dff;transform:translateY(-3px)}
-.pc.on{border-color:#4c8dff;box-shadow:0 0 0 1px #4c8dff inset}
+.pc:hover{border-color:#8b9099}
+.pc.on{border-color:#fff;box-shadow:0 0 0 1px #fff inset}
 .pc-hit{position:absolute;inset:0;z-index:5}
 .pc-prev{height:208px;overflow:hidden;border-bottom:1px solid #2a2f3a}
 .pc-scale{width:1300px;transform:scale(.206);transform-origin:top left;pointer-events:none;
@@ -3314,10 +3320,10 @@ const bldNeedBlock = new Map();   // 使い道 → 置いたブロックのID
 const bldStep = () => BLD_STEPS[bldI];
 
 const BLD_HEAD = {
-  hero: ['① サイトの雰囲気をえらぶ', 'いちばん上に来る、顔になる部分です。ここでサイトの印象が決まります。'],
-  needs: ['② 必要なものをえらぶ', 'いま要りそうなものにチェックを付けてください。あとから足せます。'],
-  shape: ['③ かたちをえらぶ', '選んだものを、ひとつずつ見ていきます。'],
-  done: ['できました', 'ここから細かいところを整えます。'],
+  hero: ['① 顔をえらぶ', 'いちばん上に来る一枚。ここでサイトの印象が決まります。'],
+  needs: ['② 中身をえらぶ', 'いま要りそうなものに印を。あとから足せます。'],
+  shape: ['③ かたちをえらぶ', '選んだものを、ひとつずつ。'],
+  done: ['出来ました', 'ここから細部を詰めます。'],
 };
 
 /* ③で見ていく順。かたちが1つしかないものは選ばせない（見せるものが無い） */
@@ -3631,7 +3637,7 @@ bldPicker.addEventListener('change', async () => {
   const files = [...bldPicker.files].filter((f) => f.type.startsWith('image/'));
   bldPicker.value = '';
   if (!files.length) return;
-  flash('写真を読み込んでいます…');
+  flash('読み込んでいます…');
   for (const f of files) {
     try { bldPhotos.push(await toDataURL(f)); } catch { /* 読めない1枚は飛ばす */ }
   }
@@ -3651,11 +3657,11 @@ $('#bldFinish').addEventListener('click', (e) => {
   if (!k) return;
   finishBuild();
   if (k === 'color') { switchTab('design'); if (isMobile()) openSheet('right', 'design'); }
-  else if (k === 'anim') { switchTab('design'); if (isMobile()) openSheet('right', 'design'); flash('「動き」の欄で、出かたと速さを変えられます'); }
+  else if (k === 'anim') { switchTab('design'); if (isMobile()) openSheet('right', 'design'); flash('「動き」の欄で、出かたを選べます'); }
   else {
     switchTab('edit');
     if (isMobile()) openSheet('right', 'edit');
-    flash('プレビューの写真をクリックすると、大きさと位置を直せます');
+    flash('プレビューの写真を押すと、寄せかたを直せます');
   }
 });
 
@@ -3681,7 +3687,7 @@ function openBuild(fresh) {
   selectedEl = null;
   closed.clear();
   $('#bldThumbs').innerHTML = '';
-  $('#bldPickSub').textContent = '入れなくても大丈夫です。業種に合わせた仮の絵が入ります';
+  $('#bldPickSub').textContent = '無ければ、業種に合わせて見繕います';
   BIZ_FIELDS.forEach(([id, key]) => { $(`#${id}`).value = (state.biz && state.biz[key]) || ''; });
   $('#bizMore').open = false;
   renderBldInds();
@@ -3738,7 +3744,7 @@ $('#btnTemplates').addEventListener('click', () => {
 });
 $('#tplClose').addEventListener('click', () => closeModal('#tplModal'));
 function pickTemplate(k) {
-  if (askBeforeSwitch && !confirm('テンプレートを切り替えると、いまの内容は置きかわります。よろしいですか？')) return;
+  if (askBeforeSwitch && !confirm('型を替えると、いまの中身は入れ替わります。よろしいですか？')) return;
   state = buildState(k);
   selected = page().blocks[1]?.id || page().blocks[0]?.id;
   selectedEl = null;
@@ -3747,7 +3753,7 @@ function pickTemplate(k) {
   exitFocus();     // 中身が丸ごと変わるので、まずページ全体を見せる
   refresh();
   resetHistory();     // テンプレートを選び直したらそこを起点にする
-  flash(`「${TEMPLATES[k].name}」を読み込みました`);
+  flash(`「${TEMPLATES[k].name}」に入れ替えました`);
 }
 
 /* ================================================================
@@ -3772,8 +3778,8 @@ $('#btnExport').addEventListener('click', () => {
   setTimeout(() => URL.revokeObjectURL(a.href), 1000);
   /* このHTMLが控えも兼ねていることは、伝えないと気づけない */
   flash(many
-    ? `${name} を書き出しました（${files.length}ページ）。中の index.html を開けば続きから編集できます`
-    : 'index.html を書き出しました。このファイルを開けば続きから編集できます');
+    ? `${name} を保存しました（${files.length}ページ）。中の index.html を開けば、つづきから直せます`
+    : 'index.html を保存しました。このファイルを開けば、つづきから直せます');
 });
 /* ================================================================
    公開する
@@ -3896,7 +3902,7 @@ function renderPub() {
 
   if (pubStep === 1) {
     $('#pubTitle').textContent = 'どこに公開しますか？';
-    $('#pubSub').textContent = 'はじめてなら、いちばん上をおすすめします。';
+    $('#pubSub').textContent = '迷ったら、いちばん上を。';
     const cloud = cloudReady() ? [`<button data-host="cloud">
       <b>このまま公開する<em>おすすめ</em></b>
       <small>押すだけで終わります。登録も、ファイルの置き場所も要りません。</small></button>`] : [];
@@ -3907,7 +3913,7 @@ function renderPub() {
     const h = HOSTS.find((x) => x.key === pubHost);
     const folder = (state.meta.title || 'mysite').replace(/[\\/:*?"<>|\s]+/g, '-').slice(0, 24);
     $('#pubTitle').textContent = h.name;
-    $('#pubSub').textContent = '上から順に進めてください。';
+    $('#pubSub').textContent = '上から順に。';
     $('#pubGuide').innerHTML = h.steps(folder).map((s) => `<li>${esc(s.t)}
       ${s.s ? `<small>${esc(s.s)}</small>` : ''}
       ${s.btn ? `<button class="tb-btn" data-act="${esc(s.act)}"${s.url ? ` data-url="${esc(s.url)}"` : ''}>${esc(s.btn)}</button>` : ''}
@@ -4035,14 +4041,14 @@ async function openSiteFile(file) {
     s = stateFromHTML(await file.text());
   } catch { /* 下のメッセージへ */ }
   if (s === 'sub') {
-    flash('これは2ページ目以降のファイルです。index.html を読み込んでください');
+    flash('これは2ページ目以降のファイルです。index.html を開いてください');
     return;
   }
   if (!s) {
-    flash('このHTMLはこのツールで作ったものではないようです');
+    flash('このHTMLは、このツールで作ったものではないようです');
     return;
   }
-  if (!confirm('読み込むと、いまの内容は置きかわります。よろしいですか？')) return;
+  if (!confirm('開くと、いまの中身は入れ替わります。よろしいですか？')) return;
   state = migrate(s);
   pageIdx = 0;
   selected = page().blocks[1]?.id || page().blocks[0]?.id;
@@ -4055,7 +4061,7 @@ async function openSiteFile(file) {
   exitFocus();     // 中身が丸ごと変わるので、まずページ全体を見せる
   refresh();
   resetHistory();
-  flash(`「${state.meta.title}」を読み込みました`);
+  flash(`「${state.meta.title}」を開きました`);
 }
 
 $('#btnOpen').addEventListener('click', () => htmlPicker.click());
@@ -4079,15 +4085,8 @@ addEventListener('drop', (e) => {
   openSiteFile(f);
 });
 
-$('#btnCode').addEventListener('click', () => { $('#codeArea').value = fullHTML(); openModal('#codeModal'); });
-$('#codeClose').addEventListener('click', () => closeModal('#codeModal'));
-$('#codeCopy').addEventListener('click', async () => {
-  const ta = $('#codeArea');
-  try { await navigator.clipboard.writeText(ta.value); } catch (e) { ta.select(); document.execCommand('copy'); }
-  flash('コピーしました');
-});
 $('#btnReset').addEventListener('click', () => {
-  if (!confirm('編集した内容をすべて消して、テンプレート選択に戻ります。よろしいですか？')) return;
+  if (!confirm('中身をすべて消して、はじめに戻ります。よろしいですか？')) return;
   localStorage.removeItem(STORE_KEY);
   location.reload();
 });

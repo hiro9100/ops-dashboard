@@ -3,9 +3,21 @@
 /* ビルダー（編集画面）のUI。生成されるサイトの見た目とは無関係。 */
 *,*::before,*::after{box-sizing:border-box}
 :root{
-  --bg:#0f1115; --panel:#171a21; --panel2:#1e222b; --line:#2a2f3a;
-  --tx:#e7ebf0; --tx2:#98a2b3; --pri:#4c8dff; --danger:#f2565c;
-  --r:8px;
+  /* 編集画面の地は、色みをできるだけ抜いた黒。青みや茶みが残っていると、
+     となりに置いたページの色がその分だけ違って見える。
+     色を持っていいのは、作っているページのほうだけ。 */
+  --bg:#0b0c0e;        /* いちばん奥 */
+  --panel:#121316;     /* 左右のパネル */
+  --panel2:#191b1f;    /* 欄とボタンの地 */
+  --panel3:#22252a;    /* 触れたとき */
+  --line:#24262b;      /* 罫線 */
+  --line2:#33363d;     /* 少し強い罫線 */
+  --tx:#eceef1;
+  --tx2:#8b9099;       /* 補助の文字 */
+  --tx3:#5f646d;       /* 名札・単位 */
+  --pri:#4a7cf7;
+  --danger:#e5484d;
+  --r:7px;
 
   /* 画面の四隅の「触れない場所」。スマホの時計やホームバーが重なる帯で、
      ここを避けないと上のバーが時計の下に潜って切れて見える（実機で起きた）。
@@ -39,18 +51,26 @@ input,select,textarea{font:inherit}
   /* シートを開いている間もここのボタン（取り消しなど）は押せるようにする */
   position:relative;z-index:80
 }
-.brand{font-weight:800;letter-spacing:.02em;margin-right:6px;white-space:nowrap}
-.saved{color:var(--tx2);font-size:11.5px;margin-right:auto;min-width:80px}
+.brand{
+  font-size:12px;font-weight:700;letter-spacing:.14em;color:var(--tx2);
+  margin-right:8px;white-space:nowrap
+}
+.saved{color:var(--tx3);font-size:10.5px;letter-spacing:.04em;margin-right:auto;min-width:80px}
 
 .tb-btn{
   background:var(--panel2);border:1px solid var(--line);border-radius:var(--r);
-  padding:7px 13px;font-size:12.5px;font-weight:600;white-space:nowrap;
-  transition:background .15s,border-color .15s
+  padding:7px 14px;font-size:12px;font-weight:600;letter-spacing:.02em;white-space:nowrap;
+  transition:background .14s,border-color .14s,color .14s
 }
-.tb-btn:hover{background:#262b36;border-color:#3a4150}
-.tb-btn.primary{background:var(--pri);border-color:var(--pri);color:#fff}
-.tb-btn.primary:hover{background:#3d7cf0}
+.tb-btn:hover{background:var(--panel3);border-color:var(--line2)}
+/* いちばん進めたい1つだけ、地と文字を入れ替える。
+   色を足すより、白黒がひっくり返るほうが強く、しかも配色を邪魔しない */
+.tb-btn.primary{background:var(--tx);border-color:var(--tx);color:#0b0c0e;font-weight:700}
+.tb-btn.primary:hover{background:#fff;border-color:#fff}
 .tb-btn.danger:hover{border-color:var(--danger);color:var(--danger)}
+:where(button,input,select,textarea):focus-visible{
+  outline:2px solid var(--pri);outline-offset:1px
+}
 
 /* たまにしか使わないものをしまう場所。
    上のバーに全部並べると、初めての人が何から押せばいいか分からなくなる。 */
@@ -65,18 +85,20 @@ input,select,textarea{font:inherit}
   display:block;width:100%;text-align:left;background:transparent;border:0;
   padding:9px 11px;border-radius:6px;font-size:12.5px;color:var(--tx)
 }
-.more-menu button:hover{background:#2f3644}
+.more-menu button:hover{background:var(--panel3)}
 .more-menu button.danger{color:var(--danger)}
 
 .devices{display:flex;align-items:center;background:var(--panel2);
   border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
-.devices button{background:transparent;border:0;padding:7px 12px;font-size:12px;color:var(--tx2);
-  white-space:nowrap}
+.devices button{background:transparent;border:0;padding:7px 13px;font-size:11.5px;
+  color:var(--tx3);letter-spacing:.04em;white-space:nowrap;transition:color .14s}
+.devices button:hover{color:var(--tx2)}
 .devices button i{font-style:normal}
-.devices button.on{background:#2d3441;color:var(--tx);font-weight:700}
+.devices button.on{background:var(--panel3);color:var(--tx);font-weight:700}
 /* 縮めて見せているときの倍率。出さないと「文字が小さい」と誤解される */
 .dev-zoom{
-  padding:0 9px;font-size:10.5px;font-weight:700;color:var(--tx2);
+  padding:0 10px;font-size:10px;font-weight:700;color:var(--tx3);
+  font-variant-numeric:tabular-nums;letter-spacing:.04em;
   border-left:1px solid var(--line);align-self:stretch;display:grid;place-items:center
 }
 .dev-zoom[hidden]{display:none}
@@ -86,39 +108,56 @@ input,select,textarea{font:inherit}
 .panel.left{grid-area:left;border-right:1px solid var(--line)}
 .panel.right{grid-area:right;border-left:1px solid var(--line)}
 .panel-h{
-  padding:12px 14px;font-size:11px;font-weight:800;letter-spacing:.14em;
-  color:var(--tx2);border-bottom:1px solid var(--line)
+  padding:14px 15px 12px;font-size:10px;font-weight:700;letter-spacing:.2em;
+  color:var(--tx3);border-bottom:1px solid var(--line)
 }
 .panel-body{padding:14px;overflow-y:auto;flex:1;min-height:0}
 
 .tabs{display:flex;border-bottom:1px solid var(--line)}
 .tabs button{
-  flex:1;background:transparent;border:0;border-bottom:2px solid transparent;
-  padding:13px 4px;font-size:12px;color:var(--tx2);font-weight:600
+  flex:1;background:transparent;border:0;border-bottom:1px solid transparent;
+  padding:14px 4px 12px;font-size:11.5px;color:var(--tx3);font-weight:600;letter-spacing:.08em;
+  transition:color .14s
 }
-.tabs button.on{color:var(--tx);border-bottom-color:var(--pri)}
+.tabs button:hover{color:var(--tx2)}
+.tabs button.on{color:var(--tx);border-bottom-color:var(--tx)}
 
 /* ================= 左：ブロック一覧 ================= */
 .blocklist{overflow-y:auto;flex:1;padding:8px;min-height:0}
 .bl-item{
-  display:flex;align-items:center;gap:8px;padding:9px 10px;border-radius:var(--r);
-  border:1px solid transparent;margin-bottom:3px;user-select:none
+  position:relative;display:flex;align-items:center;gap:9px;padding:9px 10px;
+  border-radius:var(--r);border:1px solid transparent;margin-bottom:2px;user-select:none;
+  transition:background .14s
 }
 .bl-item:hover{background:var(--panel2)}
-.bl-item.on{background:#20293a;border-color:var(--pri)}
+/* 選んでいるものは、枠で囲うより「左に1本」のほうが静か。
+   一覧が縦に並ぶので、線が揃って読み筋になる */
+.bl-item.on{background:var(--panel2)}
+.bl-item.on::before{
+  content:"";position:absolute;left:0;top:7px;bottom:7px;width:2px;
+  border-radius:2px;background:var(--tx)
+}
 .bl-ic{
   width:24px;height:24px;flex:none;display:grid;place-items:center;
-  background:var(--panel2);border-radius:6px;font-size:12px;color:var(--tx2)
+  background:var(--panel2);border:1px solid var(--line);border-radius:6px;
+  font-size:12px;color:var(--tx3)
 }
-.bl-item.on .bl-ic{background:var(--pri);color:#fff}
-.bl-name{flex:1;font-size:12.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.bl-sub{font-size:10.5px;color:var(--tx2);font-weight:400}
-.bl-ops{display:flex;gap:1px;opacity:0;transition:opacity .12s}
-.bl-item:hover .bl-ops,.bl-item.on .bl-ops{opacity:1}
+.bl-item.on .bl-ic{background:var(--panel3);border-color:var(--line2);color:var(--tx)}
+.bl-name{flex:1;min-width:0;font-size:12.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bl-sub{font-size:10px;color:var(--tx3);font-weight:400;letter-spacing:.04em}
+.bl-ops{
+  position:absolute;right:7px;top:50%;transform:translateY(-50%);
+  display:flex;gap:1px;background:linear-gradient(90deg,transparent,var(--panel2) 14px);
+  padding-left:18px;
+  /* 透明にするだけでは、見えないボタンにキーボードの焦点が入ってしまう。
+     visibility を落とせば、押せないし、焦点も飛ばない */
+  opacity:0;visibility:hidden;transition:opacity .12s,visibility .12s
+}
+.bl-item:hover .bl-ops,.bl-item.on .bl-ops{opacity:1;visibility:visible}
 .bl-ops button{
   background:transparent;border:0;padding:2px 5px;font-size:12px;color:var(--tx2);border-radius:4px;line-height:1
 }
-.bl-ops button:hover{background:#39404f;color:var(--tx)}
+.bl-ops button:hover{background:var(--panel3);color:var(--tx)}
 .bl-fixed{font-size:10px;color:var(--tx2);padding:0 4px}
 
 /* ドラッグ&ドロップ */
@@ -127,9 +166,9 @@ input,select,textarea{font:inherit}
 .bl-item.dragging{opacity:.4}
 .bl-item.over-top{box-shadow:0 -2px 0 0 var(--pri)}
 .bl-item.over-bottom{box-shadow:0 2px 0 0 var(--pri)}
-.blocklist.dropping{background:#151a24}
+.blocklist.dropping{background:#101114}
 .bl-grip{
-  color:#4a5464;font-size:12px;line-height:1;cursor:grab;flex:none;
+  color:var(--tx3);font-size:12px;line-height:1;cursor:grab;flex:none;
   touch-action:none;             /* 指で掴んでいる間は一覧をスクロールさせない */
   padding:6px 2px;margin:-6px 0
 }
@@ -139,22 +178,22 @@ input,select,textarea{font:inherit}
 
 /* 要素アニメのパネル */
 .el-panel{
-  border:1px solid var(--pri);border-radius:var(--r);background:#18202e;
+  border:1px solid var(--line2);border-radius:var(--r);background:#171a1f;
   padding:12px;margin:-2px 0 16px
 }
 .el-panel .eh{display:flex;align-items:center;gap:8px;margin-bottom:11px}
 .el-panel .badge{
-  background:var(--pri);color:#fff;font-size:10.5px;font-weight:800;
+  background:var(--tx);color:#0b0c0e;font-size:10px;font-weight:800;letter-spacing:.06em;
   border-radius:4px;padding:2px 7px;flex:none
 }
 .el-panel .en{flex:1;font-size:12.5px;font-weight:700;overflow:hidden;
   text-overflow:ellipsis;white-space:nowrap}
 .el-panel .ex{background:transparent;border:0;color:var(--tx2);padding:2px 5px;border-radius:4px;font-size:12px}
-.el-panel .ex:hover{background:#39404f;color:var(--tx)}
+.el-panel .ex:hover{background:var(--panel3);color:var(--tx)}
 .el-panel .f{margin-bottom:10px}
 .el-panel .f:last-child{margin-bottom:0}
 .el-hint{
-  font-size:11.5px;color:var(--tx2);background:#13161d;border:1px dashed var(--line);
+  font-size:11.5px;color:var(--tx2);background:#131417;border:1px dashed var(--line);
   border-radius:var(--r);padding:11px 12px;margin:-2px 0 16px;line-height:1.75
 }
 .el-hint > summary{cursor:pointer;list-style:none;font-weight:700;color:var(--tx2)}
@@ -168,7 +207,7 @@ input,select,textarea{font:inherit}
   width:100%;background:var(--panel2);border:1px dashed var(--line);border-radius:var(--r);
   padding:10px;font-size:12.5px;font-weight:700;color:var(--tx2)
 }
-.add-btn:hover{color:var(--tx);border-color:var(--pri)}
+.add-btn:hover{color:var(--tx);border-color:var(--line2)}
 .add-btn.sub{margin-top:6px;font-weight:600;font-size:12px}
 .add-menu{
   position:absolute;bottom:56px;left:10px;right:10px;background:var(--panel2);
@@ -179,11 +218,11 @@ input,select,textarea{font:inherit}
   display:flex;align-items:center;gap:9px;width:100%;background:transparent;border:0;
   padding:9px 10px;border-radius:6px;font-size:12.5px;text-align:left
 }
-.add-menu button:hover{background:#2f3644}
+.add-menu button:hover{background:var(--panel3)}
 
 /* ================= 中央：プレビュー ================= */
 .stage{
-  grid-area:stage;background:#0a0c10;padding:18px;overflow:auto;
+  grid-area:stage;background:#08090a;padding:20px;overflow:auto;
   display:flex;justify-content:center;align-items:flex-start
 }
 /* プレビューの置き場。見取り図を左に出したとき、残りの幅がここになる。
@@ -202,7 +241,7 @@ input,select,textarea{font:inherit}
   flex:none;width:100%;background:var(--panel2);border:1px solid var(--line);
   border-radius:6px;padding:4px 0;font-size:13px;line-height:1.2;color:var(--tx2)
 }
-.rail-out:hover{color:var(--tx);border-color:var(--pri)}
+.rail-out:hover{color:var(--tx);border-color:var(--line2)}
 /* 長いページは、細くしすぎずに帯のほうを送る。
    align-items が center のままだと、送っても上が切れて出せない */
 .rail-box{
@@ -237,8 +276,9 @@ input,select,textarea{font:inherit}
 }
 /* 縮めたぶんの大きさを持つ枠。transform は場所を取らないので、
    これが無いと縮めても元の大きさぶん場所を取り、はみ出す */
-.fit{flex:0 0 auto;overflow:hidden;border-radius:10px;
-  box-shadow:0 20px 60px rgba(0,0,0,.5);transition:width .2s ease,height .2s ease}
+.fit{flex:0 0 auto;overflow:hidden;border-radius:8px;
+  box-shadow:0 1px 0 rgba(255,255,255,.06),0 24px 64px -12px rgba(0,0,0,.7);
+  transition:width .2s ease,height .2s ease}
 .frame{
   background:#fff;overflow:hidden;transform-origin:top left;
   transition:width .2s ease
@@ -247,7 +287,10 @@ input,select,textarea{font:inherit}
 
 /* ================= 右：編集フォーム ================= */
 .f{margin-bottom:15px}
-.f > label{display:block;font-size:11.5px;font-weight:700;color:var(--tx2);margin-bottom:5px}
+.f > label{
+  display:block;font-size:11px;font-weight:600;color:var(--tx2);
+  letter-spacing:.04em;margin-bottom:6px
+}
 /* 書体の見本。選んだものが実際にどう出るかを、その場で見せる */
 .font-eg{
   margin-top:6px;padding:7px 10px;border-radius:6px;
@@ -257,18 +300,23 @@ input,select,textarea{font:inherit}
 }
 .f input[type=text],.f input[type=number],.f textarea,.f select{
   width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:6px;
-  padding:8px 10px;color:var(--tx);font-size:12.5px
+  padding:9px 11px;color:var(--tx);font-size:12.5px;
+  transition:border-color .14s,background .14s
 }
+.f input[type=text]:hover,.f textarea:hover,.f select:hover{border-color:var(--line2)}
 .f textarea{resize:vertical;min-height:70px;line-height:1.7}
-.f input:focus,.f textarea:focus,.f select:focus{outline:none;border-color:var(--pri)}
-.f .hint{font-size:10.5px;color:var(--tx2);margin-top:4px}
+.f input:focus,.f textarea:focus,.f select:focus{outline:none;border-color:var(--tx3);background:var(--panel3)}
+.f .hint{font-size:10.5px;color:var(--tx3);margin-top:5px;line-height:1.65}
 
 .f-row{display:flex;align-items:center;gap:9px}
 .f-row input[type=color]{
   width:34px;height:30px;padding:0;background:none;border:1px solid var(--line);border-radius:6px;cursor:pointer
 }
 .f-row input[type=range]{flex:1;accent-color:var(--pri)}
-.f-val{font-size:11.5px;color:var(--tx2);min-width:42px;text-align:right}
+.f-val{
+  font-size:11px;color:var(--tx3);min-width:42px;text-align:right;
+  font-variant-numeric:tabular-nums
+}
 
 .sw{display:flex;align-items:center;gap:9px;cursor:pointer;font-size:12.5px;font-weight:600}
 .sw input{width:16px;height:16px;accent-color:var(--pri);cursor:pointer}
@@ -279,7 +327,7 @@ input,select,textarea{font:inherit}
   flex:none;background:var(--panel2);border:1px solid var(--line);border-radius:6px;
   padding:8px 10px;font-size:11.5px;white-space:nowrap
 }
-.img-f .pick:hover{border-color:var(--pri)}
+.img-f .pick:hover{border-color:var(--line2)}
 /* 絵をえらぶ。名前ではなく絵で選べるように、大きめに並べる */
 /* ================= ページ =================
    1枚しかないうちは出さない（renderPageBar が hidden にする） */
@@ -295,8 +343,8 @@ input,select,textarea{font:inherit}
   white-space:nowrap;cursor:pointer
 }
 .pagebar .pg small{font-size:10px;font-weight:400;color:var(--tx3,#6b7280);letter-spacing:.02em}
-.pagebar .pg:hover{border-color:var(--pri)}
-.pagebar .pg.on{border-color:var(--pri);background:#20293a;color:var(--tx)}
+.pagebar .pg:hover{border-color:var(--line2)}
+.pagebar .pg.on{border-color:var(--line2);background:var(--panel3);color:var(--tx)}
 .pagebar .pg.add{justify-content:center;align-items:center;font-size:16px;padding:7px 13px;color:var(--tx2)}
 .pg-path{display:flex;align-items:center;gap:2px}
 .pg-path span{font-size:12px;color:var(--tx2);flex:none}
@@ -308,7 +356,7 @@ input,select,textarea{font:inherit}
 }
 .pg-kinds button b{display:block;font-size:13px}
 .pg-kinds button small{display:block;font-size:11px;color:var(--tx2);margin-top:2px;line-height:1.5}
-.pg-kinds button.on{border-color:var(--pri);background:#20293a}
+.pg-kinds button.on{border-color:var(--tx3);background:var(--panel3)}
 .pg-ops{display:flex;flex-wrap:wrap;gap:6px;margin:2px 0 14px}
 .pg-ops .tb-btn{font-size:11.5px;padding:6px 10px}
 
@@ -326,14 +374,14 @@ input,select,textarea{font:inherit}
   width:100%;padding:11px 13px;margin:0 0 6px;font:inherit;font-size:13px;
   background:var(--panel2);border:1px solid var(--line);border-radius:9px;color:var(--tx)
 }
-.ic-find:focus{outline:none;border-color:var(--pri)}
+.ic-find:focus{outline:none;border-color:var(--tx3)}
 .ic-none{color:var(--tx2);font-size:13px;padding:22px 2px}
 .ic-cell{
   display:flex;flex-direction:column;align-items:center;gap:7px;padding:14px 8px;
   background:var(--panel2);border:1px solid var(--line);border-radius:10px;color:var(--tx)
 }
-.ic-cell:hover{border-color:var(--pri)}
-.ic-cell.on{border-color:var(--pri);background:#20293a}
+.ic-cell:hover{border-color:var(--line2)}
+.ic-cell.on{border-color:var(--tx3);background:var(--panel3)}
 .ic-cell svg{width:34px;height:34px}
 .ic-cell small{font-size:10.5px;color:var(--tx2);line-height:1.4;text-align:center}
 /* 欄の中に出す、いま選ばれている絵 */
@@ -382,20 +430,20 @@ input,select,textarea{font:inherit}
 .cut-note{font-size:11.5px;color:var(--tx2);margin:-4px 0 12px;min-height:18px}
 
 /* 繰り返し項目 */
-.list{border:1px solid var(--line);border-radius:var(--r);padding:8px;background:#13161d}
+.list{border:1px solid var(--line);border-radius:var(--r);padding:8px;background:#131417}
 .li{border:1px solid var(--line);border-radius:6px;margin-bottom:7px;background:var(--panel)}
 .li-h{display:flex;align-items:center;gap:6px;padding:7px 9px;cursor:pointer}
 .li-h .t{flex:1;font-size:12px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .li-h .n{font-size:10.5px;color:var(--tx2);font-weight:700;min-width:15px}
 .li-h button{background:transparent;border:0;color:var(--tx2);padding:2px 5px;border-radius:4px;font-size:12px;line-height:1}
-.li-h button:hover{background:#39404f;color:var(--tx)}
+.li-h button:hover{background:var(--panel3);color:var(--tx)}
 .li-b{padding:2px 10px 10px;border-top:1px solid var(--line)}
 .li-b .f{margin:11px 0 0}
 .li-add{
   width:100%;background:transparent;border:1px dashed var(--line);border-radius:6px;
   padding:8px;font-size:12px;color:var(--tx2);font-weight:600
 }
-.li-add:hover{color:var(--tx);border-color:var(--pri)}
+.li-add:hover{color:var(--tx);border-color:var(--line2)}
 
 .empty{color:var(--tx2);text-align:center;padding:44px 16px;font-size:12.5px;line-height:1.9}
 .sec-label{
@@ -439,7 +487,7 @@ input,select,textarea{font:inherit}
   background:var(--panel2);border:1px solid var(--line);border-radius:11px;overflow:hidden;
   text-align:left;padding:0;transition:border-color .15s,transform .15s
 }
-.tpl-card:hover{border-color:var(--pri);transform:translateY(-3px)}
+.tpl-card:hover{border-color:var(--line2)}
 .tpl-prev{height:132px;display:flex;flex-direction:column;gap:5px;padding:13px}
 .tpl-prev .bar{height:9px;border-radius:2px;opacity:.9}
 .tpl-prev .big{height:24px;border-radius:3px;margin-top:5px}
@@ -455,7 +503,7 @@ input,select,textarea{font:inherit}
 }
 
 .el-tip{
-  font-size:11px;color:var(--tx2);background:#12161f;border-radius:5px;
+  font-size:11px;color:var(--tx2);background:#131417;border-radius:5px;
   padding:6px 9px;margin:-3px 0 11px;line-height:1.6
 }
 
@@ -516,7 +564,7 @@ input,select,textarea{font:inherit}
   }
   .panel.open{transform:none}
   .sheet-close{
-    display:block;width:44px;height:5px;border:0;border-radius:99px;background:#39404f;
+    display:block;width:44px;height:5px;border:0;border-radius:99px;background:var(--panel3);
     margin:9px auto 3px;padding:0;flex:none
   }
   .panel-h{padding:8px 14px 10px}
@@ -534,8 +582,8 @@ input,select,textarea{font:inherit}
     align-items:center;justify-content:center;gap:3px;padding:0
   }
   .mnav button span{font-size:15px;line-height:1}
-  .mnav button.on{color:var(--pri)}
-  .mnav button:last-child{color:var(--pri)}
+  .mnav button.on{color:var(--tx)}
+  .mnav button:last-child{color:var(--tx)}
 
   /* 追加メニューはシートの中で上に開く */
   .add-menu{bottom:52px;max-height:44vh}
@@ -605,8 +653,8 @@ input,select,textarea{font:inherit}
 /* 見取り図はスマホ専用。パソコンでは左に一覧がずっと出ているので要らない */
 @media(min-width:821px){ .rail{display:none} }
 
-.edit-now{width:100%;margin-bottom:8px;background:#243149;border-color:#3a4f74}
-.edit-now:hover{background:#2b3b58;border-color:var(--pri)}
+.edit-now{width:100%;margin-bottom:8px;background:var(--panel3);border-color:var(--line2)}
+.edit-now:hover{background:#2a2e34;border-color:var(--tx3)}
 
 /* 取り消し / やり直し */
 .tb-btn.ico{padding:6px 11px;font-size:15px;line-height:1.2}
@@ -627,8 +675,8 @@ input,select,textarea{font:inherit}
   background:var(--panel2);border:1px solid var(--line);border-radius:999px;
   padding:6px 15px;font-size:12px;font-weight:700;color:var(--tx2);transition:.15s
 }
-.cat-bar button:hover{color:var(--tx);border-color:#3a4150}
-.cat-bar button.on{background:var(--pri);border-color:var(--pri);color:#fff}
+.cat-bar button:hover{color:var(--tx);border-color:var(--line2)}
+.cat-bar button.on{background:var(--tx);border-color:var(--tx);color:#0b0c0e}
 .gal-wrap{
   /* 高さは枠じたいが持つ。中の iframe は場所取りをしないので
      （縮める都合で浮かせている）、枠が 0 に潰れないようにする。 */
@@ -657,7 +705,7 @@ input,select,textarea{font:inherit}
    ========================================================== */
 .ez-dots{display:flex;gap:6px;margin-bottom:16px}
 .ez-dots i{flex:1;height:3px;border-radius:2px;background:var(--line);transition:background .25s}
-.ez-dots i.on{background:var(--pri)}
+.ez-dots i.on{background:var(--tx)}
 
 .ez-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:9px}
 .ez-grid button{
@@ -666,7 +714,7 @@ input,select,textarea{font:inherit}
   padding:15px 14px;font-size:13px;font-weight:700;color:var(--tx);
   transition:border-color .15s,transform .15s
 }
-.ez-grid button:hover{border-color:var(--pri);transform:translateY(-2px)}
+.ez-grid button:hover{border-color:var(--line2);background:var(--panel3)}
 .ez-grid button b{font-size:21px;font-weight:400;line-height:1}
 
 .ez-input{
@@ -674,14 +722,14 @@ input,select,textarea{font:inherit}
   border:1px solid var(--line);border-radius:12px;color:var(--tx);
   padding:17px 16px;font-size:17px;font-family:inherit
 }
-.ez-input:focus{outline:0;border-color:var(--pri)}
+.ez-input:focus{outline:0;border-color:var(--tx3)}
 
 .ez-drop{
   width:100%;display:block;text-align:center;cursor:pointer;
   background:var(--panel2);border:1.5px dashed var(--line);border-radius:14px;
   padding:30px 18px;color:var(--tx);transition:border-color .15s,background .15s
 }
-.ez-drop:hover{border-color:var(--pri);background:#1b2029}
+.ez-drop:hover{border-color:var(--line2);background:var(--panel3)}
 .ez-drop b{display:block;font-size:15px;margin-bottom:5px}
 .ez-drop small{color:var(--tx2);font-size:11.5px;line-height:1.6}
 
@@ -698,7 +746,7 @@ input,select,textarea{font:inherit}
   text-align:left;background:var(--panel2);border:1px solid var(--line);border-radius:14px;
   padding:20px 18px;color:var(--tx);transition:border-color .15s,transform .15s
 }
-.ez-ways button:hover{border-color:var(--pri);transform:translateY(-2px)}
+.ez-ways button:hover{border-color:var(--line2);background:var(--panel3)}
 .ez-ways b{display:block;font-size:15px;margin-bottom:7px}
 .ez-ways small{display:block;color:var(--tx2);font-size:12px;line-height:1.75}
 @media (max-width:640px){ .ez-ways{grid-template-columns:1fr} }
@@ -720,15 +768,15 @@ input,select,textarea{font:inherit}
   font-size:11px;font-weight:700;color:var(--tx2);
   padding:6px 8px;border-radius:7px;background:var(--panel2);border:1px solid var(--line)
 }
-.bld-steps span.past{color:var(--tx);border-color:#3a4150}
-.bld-steps span.on{color:#fff;background:var(--pri);border-color:var(--pri)}
+.bld-steps span.past{color:var(--tx);border-color:var(--line2)}
+.bld-steps span.on{color:#0b0c0e;background:var(--tx);border-color:var(--tx)}
 
 /* どの段にも出す一言。戻せないと思うと、人は選べなくなって手が止まる */
 .bld-anytime{
   margin:-12px 0 16px;font-size:11.5px;color:var(--tx2);
-  background:#13161d;border:1px dashed var(--line);border-radius:8px;padding:9px 12px
+  background:#131417;border:1px dashed var(--line);border-radius:8px;padding:9px 12px
 }
-.bld-anytime::before{content:"↺ ";color:var(--pri);font-weight:800}
+.bld-anytime::before{content:"↺ ";color:var(--tx3);font-weight:700}
 
 /* ②「何が要るか」のチェック */
 .need-list{
@@ -740,14 +788,14 @@ input,select,textarea{font:inherit}
   background:var(--panel2);border:1px solid var(--line);border-radius:11px;padding:13px 14px;
   transition:border-color .15s,background .15s
 }
-.need:hover{border-color:var(--pri)}
-.need.on{border-color:var(--pri);background:#20293a}
+.need:hover{border-color:var(--line2)}
+.need.on{border-color:var(--tx3);background:var(--panel3)}
 .need input{width:18px;height:18px;margin:1px 0 0;accent-color:var(--pri);flex:none}
 .need b{display:block;font-size:13px;font-weight:700}
 .need small{display:block;font-size:11.5px;color:var(--tx2);line-height:1.6;margin-top:2px}
 
 /* ③でいま見ているものを、積み上がりの帯で光らせる */
-.bld-strip span.on{border-color:var(--pri);background:#20293a;color:var(--tx)}
+.bld-strip span.on{border-color:var(--tx3);background:var(--panel3);color:var(--tx)}
 
 .ez-drop.sm{padding:16px 14px;margin-bottom:2px}
 .ez-drop.sm b{font-size:13.5px;margin-bottom:3px}
@@ -755,7 +803,7 @@ input,select,textarea{font:inherit}
 #bldFinish .ez-grid{grid-template-columns:repeat(auto-fill,minmax(132px,1fr));gap:7px;margin-bottom:16px}
 #bldFinish .ez-grid button{padding:11px 12px;font-size:12px}
 #bldFinish .ez-grid button b{font-size:17px}
-#bldFinish .ez-grid button.on{border-color:var(--pri);background:#20293a}
+#bldFinish .ez-grid button.on{border-color:var(--tx3);background:var(--panel3)}
 #bldFinish{max-height:60vh;overflow-y:auto;padding-right:2px}
 
 /* 仕上げの入口。ここで終わりではなく、次に何ができるかを見せる */
@@ -764,7 +812,7 @@ input,select,textarea{font:inherit}
   text-align:left;background:var(--panel2);border:1px solid var(--line);border-radius:12px;
   padding:16px 15px;color:var(--tx);transition:border-color .15s,transform .15s
 }
-.fin-grid button:hover{border-color:var(--pri);transform:translateY(-2px)}
+.fin-grid button:hover{border-color:var(--line2);background:var(--panel3)}
 .fin-grid b{display:block;font-size:13.5px;margin-bottom:5px}
 .fin-grid small{display:block;color:var(--tx2);font-size:11.5px;line-height:1.7}
 @media (max-width:640px){ .fin-grid{grid-template-columns:1fr} }
@@ -778,7 +826,7 @@ input,select,textarea{font:inherit}
   background:var(--panel2);border:1px solid var(--line);border-radius:12px;
   padding:15px 16px;color:var(--tx);transition:border-color .15s,transform .15s
 }
-.pub-list button:hover{border-color:var(--pri);transform:translateY(-2px)}
+.pub-list button:hover{border-color:var(--line2);background:var(--panel3)}
 .pub-list b{display:block;font-size:14px;margin-bottom:4px}
 .pub-list b em{
   font-style:normal;font-size:10.5px;font-weight:800;color:var(--pri);
@@ -820,10 +868,11 @@ input,select,textarea{font:inherit}
 
 /* アニメーションのサンプル一覧を開くボタン */
 .anim-gal{
-  width:100%;margin-top:7px;background:#243149;border:1px solid #3a4f74;border-radius:6px;
-  padding:8px;font-size:12px;font-weight:700;color:var(--tx)
+  width:100%;margin-top:7px;background:var(--panel2);border:1px solid var(--line);border-radius:6px;
+  padding:9px;font-size:11.5px;font-weight:600;letter-spacing:.06em;color:var(--tx2);
+  transition:background .14s,border-color .14s,color .14s
 }
-.anim-gal:hover{background:#2b3b58;border-color:var(--pri)}
+.anim-gal:hover{background:var(--panel3);border-color:var(--line2);color:var(--tx)}
 
 /* ================= 届いたお問い合わせ ================= */
 .inbox{max-height:56vh;overflow-y:auto;margin-bottom:4px}
@@ -857,7 +906,7 @@ ${textFillCSS(usedFills(state))}
 
     <button class="tb-btn ico" id="btnUndo" title="元に戻す（Ctrl/⌘+Z）" disabled>↶</button>
     <button class="tb-btn ico" id="btnRedo" title="やり直す（Ctrl/⌘+Shift+Z）" disabled>↷</button>
-    <button class="tb-btn" id="btnTemplates">テンプレートを選ぶ</button>
+    <button class="tb-btn" id="btnTemplates">型を選ぶ</button>
     <span class="saved" id="saved"></span>
 
     <div class="devices" id="devices">
@@ -867,17 +916,16 @@ ${textFillCSS(usedFills(state))}
       <span class="dev-zoom" id="devZoom" hidden></span>
     </div>
 
-    <button class="tb-btn" id="btnExport">ファイルに保存</button>
-    <button class="tb-btn primary" id="btnPublish">公開する</button>
+    <button class="tb-btn" id="btnExport">保存</button>
+    <button class="tb-btn primary" id="btnPublish">公開</button>
 
     <!-- たまにしか使わないものは、ここにしまう -->
     <div class="more-wrap">
       <button class="tb-btn ico" id="btnMore" aria-label="そのほか" aria-expanded="false">…</button>
       <div class="more-menu" id="moreMenu" hidden>
-        <button id="btnInbox">届いたお問い合わせ</button>
-        <button id="btnOpen">保存したファイルから続ける</button>
-        <button id="btnCode">中のHTMLを見る</button>
-        <button id="btnReset" class="danger">まっさらから作り直す</button>
+        <button id="btnInbox">届いた問い合わせ</button>
+        <button id="btnOpen">保存したファイルを開く</button>
+        <button id="btnReset" class="danger">白紙に戻す</button>
       </div>
     </div>
   </header>
@@ -885,12 +933,12 @@ ${textFillCSS(usedFills(state))}
   <!-- ================= 左：ブロック一覧 ================= -->
   <aside class="panel left" id="panelLeft">
     <button class="sheet-close" data-closesheet aria-label="閉じる"></button>
-    <div class="panel-h">ページの構成</div>
+    <div class="panel-h">構成</div>
     <div id="pageBar" class="pagebar" hidden></div>
     <div id="blockList" class="blocklist"></div>
     <div class="add-wrap">
-      <button class="add-btn" id="btnAdd">＋ ブロックを追加</button>
-      <button class="add-btn sub" id="btnAddPage">＋ ページを追加</button>
+      <button class="add-btn" id="btnAdd">＋ ブロックを足す</button>
+      <button class="add-btn sub" id="btnAddPage">＋ ページを足す</button>
     </div>
   </aside>
 
@@ -924,9 +972,9 @@ ${textFillCSS(usedFills(state))}
   <aside class="panel right" id="panelRight">
     <button class="sheet-close" data-closesheet aria-label="閉じる"></button>
     <div class="tabs">
-      <button class="on" data-tab="edit">ブロック編集</button>
+      <button class="on" data-tab="edit">内容</button>
       <button data-tab="design">デザイン</button>
-      <button data-tab="page">ページ設定</button>
+      <button data-tab="page">ページ</button>
     </div>
     <div class="panel-body" id="tab-edit"></div>
     <div class="panel-body" id="tab-design" hidden></div>
@@ -935,9 +983,9 @@ ${textFillCSS(usedFills(state))}
   <!-- ================= スマホ用の下部ナビ ================= -->
   <nav class="mnav" id="mnav">
     <button data-sheet="left" id="mList"><span>▤</span>構成</button>
-    <button data-sheet="right" data-tab-to="edit"><span>✎</span>編集</button>
+    <button data-sheet="right" data-tab-to="edit"><span>✎</span>内容</button>
     <button data-sheet="right" data-tab-to="design"><span>◐</span>デザイン</button>
-    <button id="mAdd"><span>＋</span>追加</button>
+    <button id="mAdd"><span>＋</span>足す</button>
     <button id="mPublish"><span>↑</span>公開</button>
   </nav>
 </div>
@@ -947,24 +995,24 @@ ${textFillCSS(usedFills(state))}
 <!-- ================= はじめる（起動時の正面） ================= -->
 <div class="modal" id="easyModal" hidden>
   <div class="modal-box">
-    <h2 id="ezTitle">どうやって作りますか？</h2>
-    <p class="modal-sub" id="ezSub">どちらでも、あとから全部変えられます。</p>
+    <h2 id="ezTitle">はじめかた</h2>
+    <p class="modal-sub" id="ezSub">どちらを選んでも、あとから作り替えられます。</p>
 
     <div id="ezStep0">
       <div class="ez-ways">
         <button data-way="tpl">
-          <b>テンプレートから選ぶ</b>
-          <small>出来上がったページを選んで、文字と写真を差し替えます。<br>いちばん早く形になります。</small>
+          <b>型から選ぶ</b>
+          <small>出来上がった一式から選び、文字と写真を差し替える。<br>いちばん早く形になります。</small>
         </button>
         <button data-way="scratch">
-          <b>空白からカスタマイズする</b>
-          <small>ヒーロー・ブロック・ヘッダー／フッターを、順に選んで組み上げます。</small>
+          <b>白紙から組む</b>
+          <small>顔・中身・上下を、順に選んで積み上げます。</small>
         </button>
       </div>
     </div>
 
     <div class="modal-foot">
-      <button class="tb-btn" id="ezOpen">保存したファイルから続ける</button>
+      <button class="tb-btn" id="ezOpen">つづきから</button>
     </div>
   </div>
 </div>
@@ -972,12 +1020,12 @@ ${textFillCSS(usedFills(state))}
 <!-- ================= テンプレート選択 ================= -->
 <div class="modal" id="tplModal" hidden>
   <div class="modal-box wide">
-    <h2>テンプレートを選ぶ</h2>
-    <p class="modal-sub">選ぶと、いまの内容は置きかわります。</p>
+    <h2>型を選ぶ</h2>
+    <p class="modal-sub">いまの中身は入れ替わります。</p>
     <div class="gal-wrap"><iframe id="tplFrame" title="テンプレートのサンプル"></iframe></div>
     <div class="modal-foot">
-      <button class="tb-btn" id="tplToEasy">はじめに戻る</button>
-      <button class="tb-btn" id="tplToBuild">空白から組む</button>
+      <button class="tb-btn" id="tplToEasy">もどる</button>
+      <button class="tb-btn" id="tplToBuild">白紙から組む</button>
       <button class="tb-btn" id="tplClose">閉じる</button>
     </div>
   </div>
@@ -989,13 +1037,13 @@ ${textFillCSS(usedFills(state))}
     <div class="bld-steps" id="bldSteps"></div>
     <h2 id="bldTitle">サイトの雰囲気をえらぶ</h2>
     <p class="modal-sub" id="bldSub"></p>
-    <p class="bld-anytime">内容も順番も、あとからいつでも変えられます。まずは形にしましょう。</p>
+    <p class="bld-anytime">中身も順番も、あとから。いまは形だけ決めます。</p>
 
     <!-- ① 雰囲気（＝いちばん上）のときだけ出る、写真の欄 -->
     <div id="bldPhoto" hidden>
       <button class="ez-drop sm" id="bldPick">
-        <b>写真をえらぶ</b>
-        <small id="bldPickSub">入れなくても大丈夫です。仮の絵が入ります</small>
+        <b>写真</b>
+        <small id="bldPickSub">無ければ、こちらで見繕います</small>
       </button>
       <div class="ez-thumbs" id="bldThumbs"></div>
     </div>
@@ -1011,24 +1059,24 @@ ${textFillCSS(usedFills(state))}
     <!-- ④ 仕上げ -->
     <div id="bldFinish" hidden>
       <div class="fin-grid">
-        <button data-fin="photo"><b>写真の位置と大きさ</b>
-          <small>プレビューの写真をクリックすると、その場で寄せたり動かしたりできます</small></button>
-        <button data-fin="color"><b>色を変える</b>
-          <small>配色を丸ごと入れ替えるか、1色ずつ選びます</small></button>
-        <button data-fin="anim"><b>動きを付ける</b>
-          <small>文字の出かた、スクロールで現れる速さなど</small></button>
+        <button data-fin="photo"><b>写真の寄せ</b>
+          <small>プレビューの写真を押すと、その場で寄せたり動かしたり</small></button>
+        <button data-fin="color"><b>色</b>
+          <small>配色を丸ごと入れ替えるか、1色ずつ</small></button>
+        <button data-fin="anim"><b>動き</b>
+          <small>文字の出かた、スクロールでの現れかた</small></button>
       </div>
       <details class="adv" id="bizMore">
-        <summary>お店の名前と連絡先を入れておく（あとからでも）</summary>
-        <div class="sec-label">どんなお店・会社ですか？</div>
+        <summary>店名と連絡先（あとからでも）</summary>
+        <div class="sec-label">業種</div>
         <div class="ez-grid" id="bldInds"></div>
-        <div class="f"><label>お店・会社の名前</label>
+        <div class="f"><label>店名・社名</label>
           <input type="text" id="bizName" maxlength="40" placeholder="例：カフェ ヴェルデュール" autocomplete="organization"></div>
         <div class="f"><label>電話番号</label><input type="tel" id="bizTel" placeholder="03-0000-0000"></div>
         <div class="f"><label>メールアドレス</label><input type="email" id="bizMail" placeholder="hello@example.com"></div>
         <div class="f"><label>住所</label><input type="text" id="bizAddr" placeholder="東京都〇〇区〇〇 1-2-3"></div>
         <div class="f"><label>営業時間</label><input type="text" id="bizHours" placeholder="平日 10:00 - 18:00"></div>
-        <p class="hint">入れると、いま置いたブロックの文章や連絡先にそのまま入ります。</p>
+        <p class="hint">置いたブロックの文章と連絡先に、そのまま入ります。</p>
       </details>
     </div>
 
@@ -1044,8 +1092,8 @@ ${textFillCSS(usedFills(state))}
 <!-- ================= ブロックを追加（サンプル付き一覧） ================= -->
 <div class="modal" id="addModal" hidden>
   <div class="modal-box wide">
-    <h2>ブロックを追加</h2>
-    <p class="modal-sub">選ぶと、いまの位置のすぐ下に入ります。順番はあとから変えられます。</p>
+    <h2>ブロックを足す</h2>
+    <p class="modal-sub">いまの位置のすぐ下に入ります。順番はあとから。</p>
     <div class="cat-bar" id="catBar"></div>
     <div class="gal-wrap"><iframe id="galFrame" title="ブロックのサンプル"></iframe></div>
     <div class="modal-foot"><button class="tb-btn" id="addClose">閉じる</button></div>
@@ -1055,8 +1103,8 @@ ${textFillCSS(usedFills(state))}
 <!-- ================= 配色の一覧 ================= -->
 <div class="modal" id="palModal" hidden>
   <div class="modal-box wide">
-    <h2>配色を選ぶ</h2>
-    <p class="modal-sub">構成はそのままで、色だけ入れ替わります。</p>
+    <h2>配色</h2>
+    <p class="modal-sub">構成はそのまま、色だけ入れ替えます。</p>
     <div class="gal-wrap"><iframe id="palFrame" title="配色のサンプル"></iframe></div>
     <div class="modal-foot"><button class="tb-btn" id="palClose">閉じる</button></div>
   </div>
@@ -1065,8 +1113,8 @@ ${textFillCSS(usedFills(state))}
 <!-- ================= アニメーションのサンプル一覧 ================= -->
 <div class="modal" id="animModal" hidden>
   <div class="modal-box wide">
-    <h2 id="animTitle">アニメーションを選ぶ</h2>
-    <p class="modal-sub" id="animSub">くり返し再生されます。カードにマウスを乗せる（タップする）とすぐ再生します。</p>
+    <h2 id="animTitle">動きを選ぶ</h2>
+    <p class="modal-sub" id="animSub">くり返し流れます。触れると、すぐ動きます。</p>
     <div class="gal-wrap"><iframe id="animFrame" title="アニメーションのサンプル"></iframe></div>
     <div class="modal-foot"><button class="tb-btn" id="animClose">閉じる</button></div>
   </div>
@@ -1075,8 +1123,8 @@ ${textFillCSS(usedFills(state))}
 <!-- ================= 絵をえらぶ ================= -->
 <div class="modal" id="iconModal" hidden>
   <div class="modal-box wide">
-    <h2>絵をえらぶ</h2>
-    <input id="iconFind" class="ic-find" type="search" placeholder="名前でしぼる（駐車、Wi-Fi、コーヒー…）">
+    <h2>絵</h2>
+    <input id="iconFind" class="ic-find" type="search" placeholder="名前でしぼる">
     <div id="iconGrid"></div>
     <div class="modal-foot"><button class="tb-btn" id="iconClose">閉じる</button></div>
   </div>
@@ -1085,7 +1133,7 @@ ${textFillCSS(usedFills(state))}
 <!-- ================= 届いたお問い合わせ ================= -->
 <div class="modal" id="inboxModal" hidden>
   <div class="modal-box wide">
-    <h2>届いたお問い合わせ</h2>
+    <h2>届いた問い合わせ</h2>
     <p class="modal-sub" id="inboxSub"></p>
     <div id="inboxList" class="inbox"></div>
     <div class="modal-foot">
@@ -1098,8 +1146,8 @@ ${textFillCSS(usedFills(state))}
 <!-- ================= ページを追加 ================= -->
 <div class="modal" id="pageModal" hidden>
   <div class="modal-box">
-    <h2>ページを追加</h2>
-    <p class="modal-sub">ヘッダーとフッターは、いまのホームのものをそのまま使います。</p>
+    <h2>ページを足す</h2>
+    <p class="modal-sub">上下は、ホームのものを引き継ぎます。</p>
     <div class="f"><label>ページの名前</label>
       <input type="text" id="pgName" placeholder="会社概要" autocomplete="off"></div>
     <div class="f"><label>アドレス</label>
@@ -1123,14 +1171,13 @@ ${textFillCSS(usedFills(state))}
 <div class="modal" id="cutModal" hidden>
   <div class="modal-box">
     <h2>背景をぬく</h2>
-    <p class="modal-sub">端末の中だけで処理します。写真はどこにも送られません。<br>
-      白い壁や単色の背景に効きます。人や雑多な背景はうまく抜けません。<br>
-      入れたあとでも、上の「取り消し」で元の写真に戻せます。</p>
+    <p class="modal-sub">端末の中だけで処理し、写真はどこにも送りません。<br>
+      白い壁や単色の背景に効きます。人物や雑多な背景は苦手です。</p>
 
     <div class="cut-view"><canvas id="cutCanvas"></canvas></div>
 
     <div class="f">
-      <label>ぬく範囲（広げるほど、背景に近い色まで消えます）</label>
+      <label>ぬく範囲</label>
       <div class="f-row">
         <input type="range" id="cutTol" min="4" max="60" value="22">
         <span class="f-val" id="cutTolVal">22</span>
@@ -1149,8 +1196,8 @@ ${textFillCSS(usedFills(state))}
 <div class="modal" id="pubModal" hidden>
   <div class="modal-box">
     <div class="ez-dots" id="pubDots"></div>
-    <h2 id="pubTitle">どこに公開しますか？</h2>
-    <p class="modal-sub" id="pubSub">はじめてなら、いちばん上をおすすめします。</p>
+    <h2 id="pubTitle">公開先</h2>
+    <p class="modal-sub" id="pubSub">迷ったら、いちばん上を。</p>
 
     <div id="pubStep1">
       <div class="pub-list" id="pubHosts"></div>
@@ -1161,8 +1208,8 @@ ${textFillCSS(usedFills(state))}
     </div>
 
     <div id="pubStep3" hidden>
-      <p class="pub-note">公開できたら、そのアドレスを控えておきます。<br>
-        次からは「公開する」を押すと、更新のしかたがすぐ出ます。</p>
+      <p class="pub-note">公開できたら、アドレスを控えます。<br>
+        次からは「公開」を押すと、更新のしかたが出ます。</p>
       <input class="ez-input" id="pubUrl" type="url" inputmode="url"
              placeholder="https://…" autocomplete="url">
       <div class="pub-live" id="pubLive" hidden></div>
@@ -1172,19 +1219,6 @@ ${textFillCSS(usedFills(state))}
       <button class="tb-btn" id="pubBack" hidden>もどる</button>
       <button class="tb-btn" id="pubClose">閉じる</button>
       <button class="tb-btn primary" id="pubNext" hidden>つぎへ</button>
-    </div>
-  </div>
-</div>
-
-<!-- ================= HTML表示 ================= -->
-<div class="modal" id="codeModal" hidden>
-  <div class="modal-box wide">
-    <h2>書き出されるHTML</h2>
-    <p class="modal-sub">このまま1ファイルで動きます。サーバーにアップすれば公開できます。</p>
-    <textarea id="codeArea" readonly spellcheck="false"></textarea>
-    <div class="modal-foot">
-      <button class="tb-btn" id="codeCopy">コピー</button>
-      <button class="tb-btn" id="codeClose">閉じる</button>
     </div>
   </div>
 </div>
@@ -5547,7 +5581,9 @@ const FIELD = {
     ],
     showIf: (p) => !!p.plate,
   },
-  anchor: { key: 'anchor', label: 'アンカーID', type: 'text', hint: 'メニューから #about のようにリンクできます' },
+  /* 見出しへの飛び先。置いた時点で自動で付き、リンク先の一覧にも出るので、
+     人が打つ欄は置かない（#id という書き方を見せないため） */
+  anchor: { key: 'anchor', label: '', type: 'hidden' },
   eyebrow: { key: 'eyebrow', label: '小見出し', type: 'text' },
   title: { key: 'title', label: '見出し', type: 'textarea', rows: 2 },
   text: { key: 'text', label: '説明文', type: 'textarea' },
@@ -5626,7 +5662,7 @@ const BLOCKS = {
       { key: 'bar', label: 'バーの型', type: 'select', options: HDR_BARS, gallery: 'hdr',
         hint: 'ベタ塗りはメインカラーで塗って、文字を白にします' },
       { key: 'logo', label: 'サイト名 / ロゴ文字', type: 'text' },
-      { key: 'logoImage', label: 'ロゴ画像URL（任意）', type: 'image' },
+      { key: 'logoImage', label: 'ロゴ画像', type: 'image' },
       /* 重ねる型は、ヒーローの上に置くために流れから外している。
          固定と両立しないので、効かない設定は出さない。 */
       { key: 'sticky', label: 'スクロールしても上に固定', type: 'toggle',
@@ -5637,7 +5673,7 @@ const BLOCKS = {
           { key: 'label', label: '表示名', type: 'text' },
           { key: 'href', label: 'リンク先', type: 'link' },
         ] },
-      { key: 'cta', label: 'ボタン文字（空でボタン無し）', type: 'text' },
+      { key: 'cta', label: 'ボタンの文字', type: 'text' },
       { key: 'ctaHref', label: 'ボタンのリンク先', type: 'link' },
     ],
     defaults: {
@@ -5673,18 +5709,16 @@ const BLOCKS = {
       { key: 'title', label: 'キャッチコピー', type: 'textarea', rows: 2 },
       { key: 'text', label: '説明文', type: 'textarea' },
       { key: 'image', label: '画像URL', type: 'image' },
-      { key: 'video', label: '背景の動画URL（.mp4）', type: 'text',
+      { key: 'video', label: '背景の動画', type: 'text',
         showIf: (p) => p.layout === 'cover',
         hint: '入れると写真のかわりに動画が流れます。音は出ません' },
-      { key: 'overlay', label: '背景画像の暗さ', type: 'range', min: 0, max: 90, suffix: '%',
-        showIf: (p) => p.layout === 'cover' },
       /* 丸い印と、帯のラベル。商品の「砂糖不使用」「送料無料」のような、
          ひと目で伝えたい短い言葉を置く場所。どちらも空なら出ない。 */
-      { key: 'badge', label: '丸い印の文字（空で無し）', type: 'textarea', rows: 2,
+      { key: 'badge', label: '丸い印の文字', type: 'textarea', rows: 2,
         hint: '改行すると2行になります。「砂糖\n不使用」など' },
       { key: 'badgeRing', label: '丸のまわりの文字', type: 'text', adv: true,
         showIf: (p) => !!p.badge, hint: '円にそって回ります。空なら線だけ' },
-      { key: 'tag', label: '帯のラベル（空で無し）', type: 'text',
+      { key: 'tag', label: '帯のラベル', type: 'text',
         hint: '「こだわりの素材」「送料無料」など、ひとこと' },
       /* 型ごとにしか使わない欄。その型を選んだときだけ出す */
       { key: 'markMask', label: 'ロゴ・マークの画像', type: 'mask',
@@ -5702,20 +5736,13 @@ const BLOCKS = {
          決めることが増えて最初の1枚にたどり着けない。 */
       { key: 'scroll', label: 'スクロール連動', type: 'select', options: HERO_SCROLLS, gallery: 'scroll',
         adv: true, hint: '選ぶとヒーローが画面に貼り付き、スクロールの進み具合で動きます' },
-      { key: 'scrollLen', label: '動ききるまでの長さ', type: 'range', min: 120, max: 320, suffix: '%',
-        showIf: (p) => p.scroll && p.scroll !== 'none' },
       { key: 'deco', label: '装飾の動き', type: 'select', options: HERO_DECOS, gallery: 'deco',
         adv: true, hint: 'ポインタ追従は指の環境では自動で止まります' },
-      { key: 'decoStrength', label: '装飾の強さ', type: 'range', min: 10, max: 100, suffix: '%',
-        showIf: (p) => p.deco && p.deco !== 'none' },
       { key: 'decoLabel', label: '丸の中の文字', type: 'text', showIf: (p) => p.deco === 'cursor' },
       { key: 'melt', label: '下の縁の形', type: 'select', options: HERO_MELTS, gallery: 'melt',
         adv: true, hint: 'ヒーローに色か写真があるときに見えます（下の段の地の色で流し込みます）' },
       { key: 'meltMask', label: '縁の画像', type: 'mask', showIf: (p) => p.melt === 'own',
         hint: '白地に黒で縁の形を描いた画像を読み込むと、そのとおりに流し込みます' },
-      { key: 'meltDepth', label: '縁の深さ', type: 'range', min: 50, max: 180, suffix: '%',
-        showIf: (p) => p.melt && p.melt !== 'none' },
-      { key: 'grain', label: 'フィルムの粒状感を足す', type: 'toggle' },
       Object.assign({}, FIELD.shape, { adv: true }),
       Object.assign({}, FIELD.shapeMask, { adv: true }),
       FIELD.plate,
@@ -5842,7 +5869,7 @@ ${maskLayer}${guts}
         options: [['icon', 'アイコン'], ['num', '番号（手順）'], ['paren', '( 01 ) 形式の番号'], ['image', '画像']] },
       { key: 'items', label: '項目', type: 'list', addLabel: '項目を追加', titleKey: 'title',
         item: [
-          { key: 'icon', label: 'アイコン（絵文字）', type: 'text' },
+          { key: 'icon', label: 'アイコン', type: 'text' },
           { key: 'image', label: '画像URL', type: 'image' },
           { key: 'title', label: 'タイトル', type: 'text' },
           { key: 'text', label: '説明', type: 'textarea' },
@@ -5920,7 +5947,7 @@ ${buttons(p.buttons)}
       { key: 'items', label: '画像', type: 'list', addLabel: '画像を追加', titleKey: 'alt',
         item: [
           { key: 'src', label: '画像URL', type: 'image' },
-          { key: 'alt', label: '説明（代替テキスト）', type: 'text' },
+          { key: 'alt', label: '写真の説明', type: 'text' },
         ] },
       FIELD.shape,
       FIELD.shapeMask,
@@ -5951,8 +5978,8 @@ ${(p.items || []).map((it, i) => `      <figure${el(p, `img${i}`, 'ia', `画像$
         item: [
           { key: 'name', label: 'プラン名', type: 'text' },
           { key: 'price', label: '価格', type: 'text' },
-          { key: 'unit', label: '単位（/月 など）', type: 'text' },
-          { key: 'features', label: '含まれる内容（改行区切り）', type: 'textarea' },
+          { key: 'unit', label: '単位', type: 'text' },
+          { key: 'features', label: '含まれる内容', type: 'textarea' },
           { key: 'btn', label: 'ボタン文字', type: 'text' },
           { key: 'href', label: 'ボタンのリンク先', type: 'link' },
           { key: 'featured', label: 'おすすめとして目立たせる', type: 'toggle' },
@@ -6155,7 +6182,7 @@ ${(p.items || []).map((it, i) => `      <div class="ico"${el(p, `ico${i}`, 'ia',
         options: [['plain', '写真だけ'], ['card', 'カード（写真の下に文章）']] },
       { key: 'size', label: '大きさ', type: 'select',
         options: [['s', '小さめ'], ['m', 'ふつう'], ['l', '大きめ']] },
-      { key: 'ratio', label: '写真の形（縦横比）', type: 'select',
+      { key: 'ratio', label: '縦横比', type: 'select',
         options: [['4x3', '横長（4:3）'], ['1x1', '正方形'], ['16x9', '横長（16:9）'], ['3x4', '縦長（3:4）']] },
       { key: 'dir', label: '向き', type: 'select', options: [['l', '右から左へ'], ['r', '左から右へ']] },
       { key: 'items', label: '中身', type: 'list', addLabel: '1つ追加', titleKey: 'title',
@@ -6163,7 +6190,7 @@ ${(p.items || []).map((it, i) => `      <div class="ico"${el(p, `ico${i}`, 'ia',
           { key: 'image', label: '写真', type: 'image' },
           { key: 'title', label: '見出し', type: 'text' },
           { key: 'text', label: '説明', type: 'text' },
-          { key: 'href', label: 'リンク先（空でリンクなし）', type: 'link' },
+          { key: 'href', label: 'リンク先', type: 'link' },
         ] },
       FIELD.shape, FIELD.shapeMask, FIELD.plate, FIELD.plateShift,
       FIELD.bg, FIELD.anchor,
@@ -6220,7 +6247,7 @@ ${(p.items || []).map((it, i) => `      <div class="ico"${el(p, `ico${i}`, 'ia',
       FIELD.eyebrow, FIELD.title, FIELD.text,
       { key: 'url', label: '動画のURL', type: 'text',
         hint: 'YouTube・Vimeo のページのURL、または .mp4 のURL' },
-      { key: 'poster', label: '再生前に出す画像（動画ファイルのとき）', type: 'image',
+      { key: 'poster', label: '再生前に出す絵', type: 'image',
         showIf: (p) => isFileVideo(p.url) },
       { key: 'ratio', label: '画面の形', type: 'select',
         options: [['16x9', '横長（16:9）'], ['4x3', '横長（4:3）'], ['1x1', '正方形'], ['9x16', '縦長（スマホ動画）']] },
@@ -6246,7 +6273,7 @@ ${videoTag(p)}
     icon: '¶',
     fields: [
       FIELD.title,
-      { key: 'body', label: '本文（空行で段落）', type: 'textarea', rows: 10 },
+      { key: 'body', label: '本文', type: 'textarea', hint: '空の行で、段落が分かれます', rows: 10 },
       { key: 'align', label: '配置', type: 'select', options: [['center', '中央寄せ'], ['left', '左寄せ']] },
       FIELD.bg, FIELD.anchor,
     ],
@@ -6275,7 +6302,7 @@ ${videoTag(p)}
           { key: 'title', label: '見出し', type: 'text' },
           { key: 'href', label: 'リンク先', type: 'link' },
         ] },
-      { key: 'more', label: 'もっと見るボタン（空で非表示）', type: 'text' },
+      { key: 'more', label: 'もっと見る', type: 'text' },
       { key: 'moreHref', label: 'ボタンのリンク先', type: 'link' },
       FIELD.bg, FIELD.anchor,
     ],
@@ -6357,9 +6384,8 @@ ${(p.items || []).map((it, i) => `      <div class="flr-i"${el(p, `fl${i}`, 'ia'
       { key: 'text', label: '流す言葉', type: 'text' },
       { key: 'sep', label: '区切り記号', type: 'text', hint: '空にすると言葉だけが並びます' },
       { key: 'dir', label: '向き', type: 'select', options: [['l', '左へ'], ['r', '右へ']] },
-      { key: 'size', label: '文字の大きさ', type: 'range', min: 30, max: 180, suffix: 'px' },
       { key: 'outline', label: '中を抜いた文字にする', type: 'toggle' },
-      { key: 'href', label: 'リンク先（空でリンクなし）', type: 'link' },
+      { key: 'href', label: 'リンク先', type: 'link' },
       FIELD.bg, FIELD.anchor,
     ],
     defaults: {
@@ -6391,18 +6417,15 @@ ${body}
     tag: '演出',
     about: '写真を敷き詰めた背景に、斜めの写真と縦書きの白い帯を重ねます。イベント・採用・特集の顔に。',
     fields: [
-      { key: 'bandR', label: '縦書きの帯（右寄せ・1行＝1列）', type: 'textarea', rows: 3,
+      { key: 'bandR', label: '縦書きの帯（右）', type: 'textarea', rows: 3,
         hint: '1行で1列。日本語の縦書きなので、最初の行がいちばん右に来ます' },
-      { key: 'bandL', label: '縦書きの帯（左寄せ・1行＝1列）', type: 'textarea', rows: 3 },
+      { key: 'bandL', label: '縦書きの帯（左）', type: 'textarea', rows: 3 },
       { key: 'photos', label: '写真', type: 'list', addLabel: '写真を追加', titleKey: 'alt',
         item: [
           { key: 'src', label: '画像', type: 'image' },
-          { key: 'alt', label: '説明（代替テキスト）', type: 'text' },
+          { key: 'alt', label: '写真の説明', type: 'text' },
         ] },
-      { key: 'front', label: '手前に斜めで出す枚数', type: 'range', min: 2, max: 5 },
-      { key: 'dark', label: '背景の暗さ', type: 'range', min: 20, max: 85, suffix: '%' },
       { key: 'gray', label: '背景の色を抜く', type: 'toggle' },
-      { key: 'float', label: 'ゆっくり浮かせる', type: 'toggle' },
       { key: 'tall', label: '高さ', type: 'select',
         options: [['s', '低め'], ['m', 'ふつう'], ['l', '画面いっぱい']] },
       FIELD.anchor,
@@ -6538,9 +6561,9 @@ ${p.note ? `    <p class="menu-note"${ed('note', '注記')}>${esc(p.note)}</p>` 
           { key: 'note', label: '補足', type: 'text' },
           { key: 'href', label: 'ボタンのリンク先', type: 'link' },
         ] },
-      { key: 'btn', label: 'ボタン文字（空でボタン無し）', type: 'text' },
+      { key: 'btn', label: 'ボタンの文字', type: 'text' },
       { key: 'btnStyle', label: 'ボタンの見た目', type: 'select', options: BTN_STYLES },
-      { key: 'more', label: 'もっと見るボタン（空で非表示）', type: 'text' },
+      { key: 'more', label: 'もっと見る', type: 'text' },
       { key: 'moreHref', label: 'そのリンク先', type: 'link' },
       FIELD.shape, FIELD.shapeMask,
       FIELD.bg, FIELD.anchor,
@@ -6744,15 +6767,12 @@ ${inner}
       { key: 'text', label: '補足', type: 'text' },
       { key: 'shape', label: '形', type: 'select',
         options: [['slab', '板（スマホ・タブレット風）'], ['box', '箱（パッケージ風）'], ['tall', '縦長（ボトル・缶風）']] },
-      { key: 'turns', label: '回転する回数', type: 'range', min: 1, max: 3, suffix: '周' },
-      { key: 'height', label: 'スクロールの長さ', type: 'range', min: 200, max: 600, suffix: 'vh' },
       { key: 'body', label: '本体の色', type: 'color' },
       { key: 'face', label: '正面の色', type: 'color' },
       { key: 'items', label: '途中で出す説明', type: 'list', addLabel: '説明を追加', titleKey: 'value',
         item: [
           { key: 'value', label: '数値・見出し', type: 'text' },
           { key: 'label', label: '説明', type: 'text' },
-          { key: 'at', label: '出すタイミング（0〜100%）', type: 'range', min: 0, max: 95, suffix: '%' },
         ] },
       FIELD.bg, FIELD.anchor,
     ],
@@ -6794,7 +6814,6 @@ ${(p.items || []).map((it) => `      <div data-at="${(+it.at || 0) / 100}"><b>${
     fields: [
       { key: 'title', label: '見出し', type: 'text' },
       { key: 'text', label: '補足', type: 'text' },
-      { key: 'height', label: 'スクロールの長さ', type: 'range', min: 200, max: 600, suffix: 'vh' },
       { key: 'items', label: '層（上から順）', type: 'list', addLabel: '層を追加', titleKey: 'label',
         item: [
           { key: 'label', label: '層の名前', type: 'text' },
@@ -6836,7 +6855,6 @@ ${(p.items || []).map((it, i) => `      <div class="exp-l" style="background:${e
     tall: true,
     fields: [
       FIELD.eyebrow, { key: 'title', label: '見出し', type: 'text' },
-      { key: 'height', label: 'スクロールの長さ', type: 'range', min: 200, max: 600, suffix: 'vh' },
       { key: 'items', label: 'カード', type: 'list', addLabel: 'カードを追加', titleKey: 'title',
         item: [
           { key: 'no', label: '番号', type: 'text' },
@@ -6923,7 +6941,7 @@ ${(p.items || []).map((it, i) => `      <div class="stackcard">
       FIELD.eyebrow, FIELD.title, FIELD.text,
       { key: 'items', label: '項目', type: 'list', addLabel: '項目を追加', titleKey: 'title',
         item: [
-          { key: 'label', label: 'ラベル（STEP 01 など）', type: 'text' },
+          { key: 'label', label: 'ラベル', type: 'text' },
           { key: 'title', label: '見出し', type: 'text' },
           { key: 'text', label: '説明', type: 'textarea' },
         ] },
@@ -6959,7 +6977,6 @@ ${(p.items || []).map((it, i) => `      <div class="tl-item">
     about: 'スクロールすると円が開いて、下の世界に入れ替わります。ビフォーアフターや転換に。',
     tall: true,
     fields: [
-      { key: 'height', label: 'スクロールの長さ', type: 'range', min: 150, max: 500, suffix: 'vh' },
       { key: 'titleA', label: '手前の見出し', type: 'text' },
       { key: 'textA', label: '手前の説明', type: 'text' },
       { key: 'imageA', label: '手前の画像URL', type: 'image' },
@@ -7040,7 +7057,7 @@ ${(p.items || []).map((it, i) => `      <div class="car-it"${imgSlot(`items.${i}
       FIELD.eyebrow, FIELD.title, FIELD.text, FIELD.cols,
       { key: 'items', label: '数値', type: 'list', addLabel: '数値を追加', titleKey: 'value',
         item: [
-          { key: 'value', label: '数値（記号もOK）', type: 'text' },
+          { key: 'value', label: '数値', type: 'text' },
           { key: 'label', label: '説明', type: 'text' },
         ] },
       FIELD.bg, FIELD.anchor,
@@ -7076,11 +7093,10 @@ ${(p.items || []).map((it, i) => `      <div><span class="slot" data-slot="${esc
       { key: 'items', label: '目盛り（最大8本）', type: 'list', addLabel: '1本追加', titleKey: 'label',
         item: [
           { key: 'label', label: 'ラベル', type: 'text' },
-          { key: 'value', label: '高さ（0〜100）', type: 'range', min: 0, max: 100, suffix: '' },
-          { key: 'note', label: '上に出す数値（任意）', type: 'text' },
+          { key: 'value', label: '高さ', type: 'range', min: 0, max: 100, suffix: '' },
+          { key: 'note', label: '上に出す数値', type: 'text' },
         ] },
       { key: 'smooth', label: '線をなめらかにする', type: 'toggle', adv: true },
-      { key: 'grid', label: 'マス目を敷く', type: 'toggle', adv: true },
       FIELD.bg, FIELD.anchor,
     ],
     defaults: {
@@ -7184,8 +7200,8 @@ ${notes}      </div>
           { key: 'no', label: '番号', type: 'text' },
           { key: 'title', label: '見出し', type: 'text' },
           { key: 'lead', label: 'リード文', type: 'textarea' },
-          { key: 'bullets', label: '箇条書き（改行区切り）', type: 'textarea' },
-          { key: 'num', label: '大きな数字（任意）', type: 'text' },
+          { key: 'bullets', label: '箇条書き', type: 'textarea' },
+          { key: 'num', label: '大きな数字', type: 'text' },
           { key: 'suffix', label: '数字の単位', type: 'text' },
           { key: 'viz', label: '左の図', type: 'select',
             options: [['bar', '棒グラフが伸びる'], ['line', '線が描かれる'], ['ring', '円が満ちる']] },
@@ -9672,7 +9688,7 @@ function save(key) {
     } catch (e) {
       /* 画像を入れすぎるとブラウザの保存上限（おおむね5MB）を超える。
          編集も書き出しも続けられるので、その旨だけ伝える。 */
-      flash('自動保存の上限を超えました。今すぐHTMLを書き出してください');
+      flash('控えが上限に達しました。いま「保存」を押してください');
     }
   }, 400);
 }
@@ -10068,7 +10084,7 @@ function initPreview() {
         const slot = e.target.closest('[data-imgprop]');
         const blk = e.target.closest('[data-bid]');
         clearDropSlot();
-        if (!slot || !blk) { flash('画像の枠に重ねて放してください'); return; }
+        if (!slot || !blk) { flash('写真の枠に重ねて放してください'); return; }
         const f = e.dataTransfer.files[0];
         if (f) setImage(blk.dataset.bid, slot.dataset.imgprop, f);
       });
@@ -10803,9 +10819,9 @@ body{margin:0;background:#0d1016;padding:${u(14)}px;
   background:#171a21;border:${u(1)}px solid #2a2f3a;border-radius:${u(12)}px;overflow:hidden;
   transition:border-color .15s,transform .15s;color:#e7ebf0;font:inherit}
 .gc-hit{position:absolute;inset:0;z-index:5}
-.gc:hover{border-color:#4c8dff;transform:translateY(-${u(3)}px)}
+.gc:hover{border-color:#8b9099}
 /* いま当たっている形。選び直す画面で「どれが今のか」が要る */
-.gc.on{border-color:#4c8dff;box-shadow:0 0 0 ${u(2)}px rgba(76,141,255,.35)}
+.gc.on{border-color:#fff;box-shadow:0 0 0 ${u(2)}px rgba(255,255,255,.22)}
 /* 高さと中の縮尺は、下の script が実寸から決める。
    ここに書くのは、その値が入るまでの見た目だけ */
 .gc-prev{height:${u(176)}px;overflow:hidden;position:relative;background:var(--c-bg);
@@ -10919,8 +10935,8 @@ body{margin:0;background:#0d1016;padding:14px;
 /* 再生のたびに中身を作り替えるので、クリックは動かない層で受ける
    （作り替えた瞬間に押すとクリックが消えるため） */
 .ag-hit{position:absolute;inset:0;z-index:5;background:transparent}
-.ag-card:hover{border-color:#4c8dff;transform:translateY(-2px)}
-.ag-card.on{border-color:#4c8dff;box-shadow:0 0 0 1px #4c8dff inset}
+.ag-card:hover{border-color:#8b9099}
+.ag-card.on{border-color:#fff;box-shadow:0 0 0 1px #fff inset}
 .ag-stage{height:88px;display:grid;place-items:center;overflow:hidden;
   background:var(--c-bg);color:var(--c-text);border-bottom:1px solid #2a2f3a;padding:8px}
 .ag-txt{font-size:18px;font-weight:800;color:var(--c-text);font-family:var(--font-head);
@@ -11034,8 +11050,8 @@ body{margin:0;background:#0d1016;padding:14px;
 .dg{display:grid;grid-template-columns:repeat(auto-fill,292px);gap:13px;justify-content:center}
 .dc{position:relative;background:#171a21;border:1px solid #2a2f3a;border-radius:11px;
   overflow:hidden;cursor:pointer;transition:border-color .15s,transform .15s}
-.dc:hover{border-color:#4c8dff;transform:translateY(-3px)}
-.dc.on{border-color:#4c8dff;box-shadow:0 0 0 1px #4c8dff inset}
+.dc:hover{border-color:#8b9099}
+.dc.on{border-color:#fff;box-shadow:0 0 0 1px #fff inset}
 /* 見本の中の要素を押せてしまうと選べないので、当たり判定は1枚かぶせる。
    ポインタの動きは下まで通す必要があるため、クリックだけを受ける。 */
 .dc-hit{position:absolute;inset:0;z-index:9}
@@ -11385,7 +11401,7 @@ function addBlock(type) {
   if (isMobile()) closeSheets();
   refresh();
   setTimeout(() => scrollToBlock(nb.id), 240);
-  flash(`「${BLOCKS[type].label}」を追加しました`);
+  flash(`「${BLOCKS[type].label}」を置きました`);
 }
 
 function openAddGallery() {
@@ -11502,7 +11518,7 @@ function inputHTML(f, val, path) {
     case 'textarea':
       return `<textarea ${p} rows="${f.rows || 4}">${esc(val ?? '')}</textarea>`;
     case 'select':
-      return `<select ${p}>${f.options.map(([v, l]) =>
+      return `<select ${p}${f.num ? ' data-num' : ''}>${f.options.map(([v, l]) =>
         `<option value="${esc(v)}"${f.optStyle ? ` style="${esc(f.optStyle(v))}"` : ''}${
           String(val ?? '') === String(v) ? ' selected' : ''}>${esc(l)}</option>`).join('')}</select>`;
     case 'toggle':
@@ -11535,6 +11551,7 @@ function inputHTML(f, val, path) {
 }
 
 function fieldHTML(f, props, base) {
+  if (f.type === 'hidden') return '';   // 値は持つが、人には見せない欄
   if (f.showIf && !f.showIf(props)) return '';
   const path = `${base}.${f.key}`;
   const val = props[f.key];
@@ -11588,9 +11605,9 @@ function fieldHTML(f, props, base) {
    「打つもの」ではなく「選ぶもの」になったので、前に出す。 */
 const ADV_KEYS = new Set([
   'anchor', 'bg', 'cols', 'plate', 'plateShift',
-  'dir', 'size', 'ratio', 'scrollLen', 'decoStrength', 'decoLabel', 'meltDepth',
-  'overlay', 'grain', 'sticky', 'height', 'sep', 'outline', 'auto', 'poster',
-  'action', 'method',
+  'dir', 'size', 'ratio', 'decoLabel',
+  'sticky', 'sep', 'outline', 'auto', 'poster',
+  'action',
 ]);
 const isAdv = (f) => f.adv === true || ADV_KEYS.has(f.key);
 
@@ -11598,7 +11615,7 @@ function renderEditor() {
   const box = $('#tab-edit');
   const b = page().blocks.find((x) => x.id === selected);
   if (!b) {
-    box.innerHTML = `<div class="empty">左の一覧、またはプレビューを<br>クリックしてブロックを選んでください。</div>`;
+    box.innerHTML = `<div class="empty">ブロックを選ぶと、<br>ここに中身が出ます。</div>`;
     return;
   }
   const def = BLOCKS[b.type];
@@ -11610,7 +11627,7 @@ function renderEditor() {
   box.innerHTML = `<div class="edit-head"><span class="bl-ic">${def.icon}</span>${esc(def.label)}</div>`
     + elementPanel(b)
     + basic.map((f) => fieldHTML(f, b.props, 'props')).join('')
-    + (advHTML ? `<details class="adv"${open}><summary>こまかい調整</summary>${advHTML}</details>` : '');
+    + (advHTML ? `<details class="adv"${open}><summary>詳細</summary>${advHTML}</details>` : '');
   box.scrollTop = keep;
 }
 
@@ -11626,9 +11643,9 @@ function elementPanel(b) {
     /* 使い方の説明は、必要になった人だけが読めばいい。
        ふだんは1行にして、たたんでおく。 */
     return `<details class="el-hint"><summary>プレビューの触りかた</summary>
-      <b>ダブルクリック</b>で文字をその場で書き換え。<br>
-      <b>1回クリック</b>で、その要素に動きを付ける。<br>
-      <b>写真をクリック</b>で、大きさと位置を直す（空の枠なら写真を選ぶ）。
+      文字を1回押す — 動きを付ける<br>
+      文字をもう1回押す — その場で書き替える<br>
+      写真を押す — 寄せる・差し替える
     </details>`;
   }
   /* 写真の枠を選んだとき。位置と大きさをここで直す */
@@ -11658,10 +11675,10 @@ function elementPanel(b) {
           <span class="f-val">${f.y}%</span>
         </div>
       </div>
-      <div class="el-tip">枠から出た分が切れます。顔や商品が切れていたら、ここで寄せてください。</div>
-      <button class="tb-btn" data-fitreset>まん中・等倍に戻す</button>
-      <button class="tb-btn" data-repick="${esc(selectedEl.prop)}">写真を選び直す</button>
-      <button class="tb-btn" data-cut="props.${esc(selectedEl.prop)}">背景をぬく</button>
+      <div class="el-tip">枠から出た分は切れます。</div>
+      <button class="tb-btn" data-fitreset>まん中に戻す</button>
+      <button class="tb-btn" data-repick="${esc(selectedEl.prop)}">写真を替える</button>
+      <button class="tb-btn" data-cut="props.${esc(selectedEl.prop)}">背景を抜く</button>
     </div>`;
   }
 
@@ -11671,16 +11688,16 @@ function elementPanel(b) {
   const cur = cfg.a || 'none';
   return `<div class="el-panel">
     <div class="eh">
-      <span class="badge">${isText ? 'テキスト' : '画像・要素'}</span>
+      <span class="badge">${isText ? '文字' : '要素'}</span>
       <span class="en">${esc(selectedEl.name)}</span>
       <button class="ex" data-elclose title="選択を解除">✕</button>
     </div>
-    ${selectedEl.prop ? `<button class="tb-btn edit-now" data-editnow>✎ 文字を編集</button>
-      <div class="el-tip">プレビューをダブルタップしても編集できます</div>` : ''}
-    <div class="f"><label>アニメーション</label>
+    ${selectedEl.prop ? `<button class="tb-btn edit-now" data-editnow>文字を打ち替える</button>
+      <div class="el-tip">プレビューを続けて2回押しても直せます</div>` : ''}
+    <div class="f"><label>動き</label>
       <select data-elk="a">${list.map(([v, l]) =>
         `<option value="${v}"${cur === v ? ' selected' : ''}>${esc(l)}</option>`).join('')}</select>
-      <button class="anim-gal" data-animgal="${isText ? 'ta' : 'ia'}">▦ サンプルを見ながら選ぶ</button>
+      <button class="anim-gal" data-animgal="${isText ? 'ta' : 'ia'}">見本から選ぶ</button>
     </div>
     ${isText ? textFillField(b) : ''}
   </div>`;
@@ -11693,9 +11710,9 @@ function textFillField(b) {
   return `<div class="f"><label>文字の塗り</label>
     <select data-txfill>${TEXT_FILL_LIST.map(([v, l]) =>
       `<option value="${v}"${cur === v ? ' selected' : ''}>${esc(l)}</option>`).join('')}</select>
-    ${cur === 'own' ? `<button class="pick wide" data-txfimg>${own ? '別の画像にする' : '画像を選ぶ'}</button>
+    ${cur === 'own' ? `<button class="pick wide" data-txfimg>${own ? '画像を替える' : '画像を選ぶ'}</button>
       ${own ? `<img class="img-thumb" src="${esc(own)}" alt="">` : ''}` : ''}
-    <div class="hint">背景を文字の形に切り抜きます。文字は文字のままなので、あとから書き換えられます。</div>
+    <div class="hint">背景を文字の形に切り抜きます。文字は文字のまま残ります。</div>
   </div>`;
 }
 
@@ -11814,6 +11831,9 @@ function setPath(root, path, val) {
 function readEl(el) {
   if (el.type === 'checkbox') return el.checked;
   if (el.type === 'range' || el.type === 'number') return Number(el.value);
+  /* 数で持っている設定を、言葉で選ばせている欄。文字のまま入れると
+     書き出して読み直したときに中身が食い違う */
+  if (el.dataset.num !== undefined) return Number(el.value);
   return el.value;
 }
 
@@ -11954,8 +11974,8 @@ async function toDataURL(file) {
 async function setImage(blockId, prop, file) {
   const b = page().blocks.find((x) => x.id === blockId);
   if (!b || !file) return;
-  if (!file.type.startsWith('image/')) { flash('画像ファイルを選んでください'); return; }
-  flash('画像を読み込んでいます…');
+  if (!file.type.startsWith('image/')) { flash('写真のファイルを選んでください'); return; }
+  flash('読み込んでいます…');
   try {
     const url = await toDataURL(file);
     setPath(b.props, prop, url);
@@ -11965,7 +11985,7 @@ async function setImage(blockId, prop, file) {
     flash(total > 3500 ? `画像を入れました（合計約${total}KB・保存上限が近いです）`
                        : `画像を入れました（約${kb}KB）`);
   } catch (e) {
-    flash('画像を読み込めませんでした');
+    flash('この写真は読み込めませんでした');
   }
 }
 
@@ -12033,8 +12053,8 @@ const FILL_MAX = 900;
 async function setFillImage(blockId, prop, file) {
   const b = page().blocks.find((x) => x.id === blockId);
   if (!b || !file) return;
-  if (!file.type.startsWith('image/')) { flash('画像ファイルを選んでください'); return; }
-  flash('画像を読み込んでいます…');
+  if (!file.type.startsWith('image/')) { flash('写真のファイルを選んでください'); return; }
+  flash('読み込んでいます…');
   try {
     const src = await loadImage(file);
     const scale = Math.min(1, FILL_MAX / Math.max(src.width, src.height));
@@ -12053,14 +12073,14 @@ async function setFillImage(blockId, prop, file) {
     renderEditor(); renderPreview(true); save(`txfimg:${role}:${blockId}`);
     flash(`この画像で文字を塗ります（約${Math.round(url.length / 1400)}KB）`);
   } catch (e) {
-    flash('画像を読み込めませんでした');
+    flash('この写真は読み込めませんでした');
   }
 }
 
 async function setMask(blockId, prop, file) {
   const b = page().blocks.find((x) => x.id === blockId);
   if (!b || !file) return;
-  if (!file.type.startsWith('image/')) { flash('画像ファイルを選んでください'); return; }
+  if (!file.type.startsWith('image/')) { flash('写真のファイルを選んでください'); return; }
   flash('形を読み取っています…');
   try {
     const url = await fileToMask(file);
@@ -12072,7 +12092,7 @@ async function setMask(blockId, prop, file) {
     renderEditor(); renderPreview(true); save(`mask:${prop}:${blockId}`);
     flash(`この形で抜きます（約${Math.round(url.length / 1400)}KB）`);
   } catch (e) {
-    flash('この画像からは形を読み取れませんでした');
+    flash('この写真からは形を読み取れませんでした');
   }
 }
 
@@ -12210,7 +12230,7 @@ function openCutout(blockId, prop) {
     openModal('#cutModal');
     cutRender();
   };
-  im.onerror = () => flash('この画像は読み込めませんでした（別のサイトの画像は抜けません）');
+  im.onerror = () => flash('この写真は読み込めませんでした（よそのサイトの写真は抜けません）');
   im.src = src;
 }
 
@@ -12301,18 +12321,26 @@ const BASE_COLORS = [
 /* 決めた色を変えたら作り直す色。これ以外を変えても薄い色は動かさない */
 const TONE_TRIGGERS = new Set(['primary', 'bg', 'text']);
 
+/* 角の丸み。数字は持つが、選ぶのは言葉。
+   テンプレートは 0〜22 の細かい値を持っているので、いちばん近い段を選んで見せる。
+   人が選び直すまでは、テンプレートの値をそのまま使う（勝手に丸めない）。 */
+const RADII = [[0, '角ばった'], [8, '標準'], [18, 'やわらかい'], [28, '丸い']];
+const nearestRadius = (v) =>
+  RADII.reduce((a, r) => (Math.abs(r[0] - v) < Math.abs(a - v) ? r[0] : a), RADII[0][0]);
+
 const THEME_FIELDS = [
-  ['文字', [
+  ['書体', [
     /* 選択肢そのものをその書体で出す。名前だけ並べても、どれがどれだか
        分からない。極太や高コントラストの書体は、本文には出さない */
-    { key: 'font', label: '本文のフォント', type: 'select',
+    { key: 'font', label: '本文', type: 'select',
       options: BODY_FONTS.map((f) => [f[0], f[1]]), optStyle: (v) => `font-family:${fontStack(v)}` },
-    { key: 'fontHead', label: '見出しのフォント', type: 'select',
+    { key: 'fontHead', label: '見出し', type: 'select',
       options: FONTS.map((f) => [f[0], f[1]]), optStyle: (v) => `font-family:${fontStack(v)}` },
   ]],
   ['かたち', [
-    { key: 'radius', label: '角の丸み', type: 'range', min: 0, max: 32, suffix: 'px' },
-    { key: 'max', label: 'コンテンツの幅', type: 'range', min: 880, max: 1400, suffix: 'px' },
+    /* px の数字ではなく、見た目の言葉で選ぶ。
+       「角の丸み 14px」と言われて決められる人は、ほとんどいない */
+    { key: 'radius', label: '角', type: 'select', options: RADII, num: true, snap: nearestRadius },
   ]],
 ];
 
@@ -12329,18 +12357,18 @@ const STYLES = [
    ほとんどの人は決められないし、決めても良くならない。
    値そのものは state に残していて（DEFAULT_MOTION）、見た目は前と同じ。 */
 const MOTION_FIELDS = [
-  { key: 'anim', label: '見出しの文字アニメ', type: 'select', options: TEXT_ANIMS,
-    hint: 'すべての見出しに適用されます（ヒーローは個別に変更できます）' },
-  { key: 'reveal', label: 'ブロックをスクロールで出現させる', type: 'toggle' },
-  { key: 'smooth', label: '慣性スクロール（少し滑って止まる）', type: 'toggle',
-    hint: 'マウスの環境だけで効きます。指の操作と「動きを減らす」設定では切れます' },
+  { key: 'anim', label: '見出しの出かた', type: 'select', options: TEXT_ANIMS,
+    hint: 'すべての見出しに掛かります。ヒーローだけは個別に変えられます' },
+  { key: 'reveal', label: 'スクロールで現れる', type: 'toggle' },
+  { key: 'smooth', label: '滑って止まるスクロール', type: 'toggle',
+    hint: 'マウスの環境だけ。指の操作では切れます' },
 ];
 
 function renderDesign() {
   $('#tab-design').innerHTML =
     `<div class="sec-label">配色</div>
-     <button class="anim-gal" id="btnPalGal" style="margin:0 0 14px">▦ 配色を一覧から選ぶ</button>
-     <div class="sec-label">決める色</div>`
+     <button class="anim-gal" id="btnPalGal" style="margin:0 0 14px">見本から選ぶ</button>
+     <div class="sec-label">色</div>`
     + BASE_COLORS.map((f) =>
       `<div class="f"><label>${esc(f.label)}</label>${inputHTML(f, state.theme[f.key], `theme.${f.key}`)}</div>`).join('')
     /* 薄いエリア・うすい文字・線・濃いエリアは、上の4色から作る。
@@ -12350,15 +12378,15 @@ function renderDesign() {
     + THEME_FIELDS.map(([g, fs]) =>
     `<div class="sec-label">${g}</div>` + fs.map((f) => {
       const path = `theme.${f.key}`;
-      const val = state.theme[f.key];
+      const val = f.snap ? f.snap(state.theme[f.key]) : state.theme[f.key];
       /* 書体は、選んだものを実際に出して見せる。選択肢に色を付けても
          端末によっては出ないので、下に見本を1行置く */
       const sample = /^font/.test(f.key)
         ? `<div class="font-eg" style="font-family:${esc(fontStack(val))}">あア亜 Aa Bb 0123</div>` : '';
       return `<div class="f"><label>${esc(f.label)}</label>${inputHTML(f, val, path)}${sample}</div>`;
     }).join('')).join('')
-    + `<div class="sec-label">デザインの型</div>`
-    + `<div class="f"><label>全体の造形</label>
+    + `<div class="sec-label">造形</div>`
+    + `<div class="f"><label>全体</label>
         <select data-path="style">${STYLES.map(([v, l]) =>
           `<option value="${v}"${state.style === v ? ' selected' : ''}>${esc(l)}</option>`).join('')}</select>
         <div class="hint">影・罫線・見出しの構えがまとめて変わります</div></div>`
@@ -12388,30 +12416,24 @@ function renderPage() {
     ${i === 0 ? '<div class="hint">ホームの名前とアドレスは変えられません。</div>' : `
     <div class="f"><label>アドレス</label>
       <div class="pg-path"><span>…/</span><input type="text" id="pgRepath" value="${esc(pg.path)}"><span>.html</span></div></div>`}
-    <div class="f"><label>タブに出す名前（空ならページ名＋サイト名）</label>
+    <div class="f"><label>タブに出す名前</label>
       <input type="text" data-page="title" value="${esc(pg.title)}" placeholder="${esc(pageTitle(pg))}"></div>
-    <div class="f"><label>このページの説明（空ならサイトの説明）</label>
+    <div class="f"><label>このページの説明</label>
       <textarea data-page="desc" rows="3" placeholder="${esc(pageDesc(pg))}">${esc(pg.desc)}</textarea></div>
     <div class="pg-ops">
       <button class="tb-btn" data-pgact="up"${i <= 1 ? ' disabled' : ''}>← 前へ</button>
       <button class="tb-btn" data-pgact="down"${i === 0 || i === state.pages.length - 1 ? ' disabled' : ''}>後ろへ →</button>
-      <button class="tb-btn" data-pgact="dup">複製する</button>
-      <button class="tb-btn" data-pgact="del"${i === 0 ? ' disabled' : ''}>このページを削除</button>
+      <button class="tb-btn" data-pgact="dup">複製</button>
+      <button class="tb-btn" data-pgact="del"${i === 0 ? ' disabled' : ''}>削除</button>
     </div>` : '';
 
   $('#tab-page').innerHTML = perPage + `
-    <div class="sec-label">サイト全体（ブラウザのタブ名・検索結果に出ます）</div>
+    <div class="sec-label">サイト</div>
     <div class="f"><label>${many ? 'サイトの名前' : 'ページタイトル'}</label><input type="text" data-path="meta.title" value="${esc(state.meta.title)}"></div>
     <div class="f"><label>${many ? 'サイトの説明' : 'ページの説明'}</label><textarea data-path="meta.description" rows="4">${esc(state.meta.description)}</textarea></div>
-    <div class="f"><label>言語</label><input type="text" data-path="meta.lang" value="${esc(state.meta.lang)}"></div>
-    <div class="sec-label">つかいかた</div>
-    <div class="hint" style="line-height:2">
-      ・左でブロックの並べかえ・追加・削除<br>
-      ・プレビューを直接クリックしても選べます<br>
-      ・「アンカーID」を付けると、メニューから <b>#id</b> でリンクできます<br>
-      ・ボタンやメニューの「リンク先」から、ほかのページを選べます<br>
-      ・内容はこのブラウザに自動保存されます${many ? `<br>
-      ・保存すると、${state.pages.length}枚ぶんをまとめたZIPになります` : ''}
+    <div class="hint" style="margin-top:18px">
+      中身は、このブラウザに自動で控えています。${many
+        ? `「保存」を押すと、${state.pages.length}枚まとめて1つのZIPになります。` : ''}
     </div>`;
 }
 
@@ -12542,7 +12564,7 @@ body{margin:0;background:#0d1016;padding:14px;
 .tc{display:block;width:100%;padding:0;cursor:pointer;color:#e7ebf0;font:inherit;position:relative;
   background:#171a21;border:1px solid #2a2f3a;border-radius:12px;overflow:hidden;
   transition:border-color .15s,transform .15s}
-.tc:hover{border-color:#4c8dff;transform:translateY(-3px)}
+.tc:hover{border-color:#8b9099}
 .tc-hit{position:absolute;inset:0;z-index:5}
 .tc-prev{height:250px;overflow:hidden;border-bottom:1px solid #2a2f3a}
 .tc-scale{width:1300px;transform:scale(.246);transform-origin:top left;pointer-events:none;
@@ -12569,8 +12591,8 @@ body{margin:0;background:#0d1016;padding:14px;
 .pc{display:block;width:100%;padding:0;cursor:pointer;color:#e7ebf0;font:inherit;position:relative;
   background:#171a21;border:1px solid #2a2f3a;border-radius:12px;overflow:hidden;
   transition:border-color .15s,transform .15s}
-.pc:hover{border-color:#4c8dff;transform:translateY(-3px)}
-.pc.on{border-color:#4c8dff;box-shadow:0 0 0 1px #4c8dff inset}
+.pc:hover{border-color:#8b9099}
+.pc.on{border-color:#fff;box-shadow:0 0 0 1px #fff inset}
 .pc-hit{position:absolute;inset:0;z-index:5}
 .pc-prev{height:208px;overflow:hidden;border-bottom:1px solid #2a2f3a}
 .pc-scale{width:1300px;transform:scale(.206);transform-origin:top left;pointer-events:none;
@@ -12746,10 +12768,10 @@ const bldNeedBlock = new Map();   // 使い道 → 置いたブロックのID
 const bldStep = () => BLD_STEPS[bldI];
 
 const BLD_HEAD = {
-  hero: ['① サイトの雰囲気をえらぶ', 'いちばん上に来る、顔になる部分です。ここでサイトの印象が決まります。'],
-  needs: ['② 必要なものをえらぶ', 'いま要りそうなものにチェックを付けてください。あとから足せます。'],
-  shape: ['③ かたちをえらぶ', '選んだものを、ひとつずつ見ていきます。'],
-  done: ['できました', 'ここから細かいところを整えます。'],
+  hero: ['① 顔をえらぶ', 'いちばん上に来る一枚。ここでサイトの印象が決まります。'],
+  needs: ['② 中身をえらぶ', 'いま要りそうなものに印を。あとから足せます。'],
+  shape: ['③ かたちをえらぶ', '選んだものを、ひとつずつ。'],
+  done: ['出来ました', 'ここから細部を詰めます。'],
 };
 
 /* ③で見ていく順。かたちが1つしかないものは選ばせない（見せるものが無い） */
@@ -13063,7 +13085,7 @@ bldPicker.addEventListener('change', async () => {
   const files = [...bldPicker.files].filter((f) => f.type.startsWith('image/'));
   bldPicker.value = '';
   if (!files.length) return;
-  flash('写真を読み込んでいます…');
+  flash('読み込んでいます…');
   for (const f of files) {
     try { bldPhotos.push(await toDataURL(f)); } catch { /* 読めない1枚は飛ばす */ }
   }
@@ -13083,11 +13105,11 @@ $('#bldFinish').addEventListener('click', (e) => {
   if (!k) return;
   finishBuild();
   if (k === 'color') { switchTab('design'); if (isMobile()) openSheet('right', 'design'); }
-  else if (k === 'anim') { switchTab('design'); if (isMobile()) openSheet('right', 'design'); flash('「動き」の欄で、出かたと速さを変えられます'); }
+  else if (k === 'anim') { switchTab('design'); if (isMobile()) openSheet('right', 'design'); flash('「動き」の欄で、出かたを選べます'); }
   else {
     switchTab('edit');
     if (isMobile()) openSheet('right', 'edit');
-    flash('プレビューの写真をクリックすると、大きさと位置を直せます');
+    flash('プレビューの写真を押すと、寄せかたを直せます');
   }
 });
 
@@ -13113,7 +13135,7 @@ function openBuild(fresh) {
   selectedEl = null;
   closed.clear();
   $('#bldThumbs').innerHTML = '';
-  $('#bldPickSub').textContent = '入れなくても大丈夫です。業種に合わせた仮の絵が入ります';
+  $('#bldPickSub').textContent = '無ければ、業種に合わせて見繕います';
   BIZ_FIELDS.forEach(([id, key]) => { $(`#${id}`).value = (state.biz && state.biz[key]) || ''; });
   $('#bizMore').open = false;
   renderBldInds();
@@ -13170,7 +13192,7 @@ $('#btnTemplates').addEventListener('click', () => {
 });
 $('#tplClose').addEventListener('click', () => closeModal('#tplModal'));
 function pickTemplate(k) {
-  if (askBeforeSwitch && !confirm('テンプレートを切り替えると、いまの内容は置きかわります。よろしいですか？')) return;
+  if (askBeforeSwitch && !confirm('型を替えると、いまの中身は入れ替わります。よろしいですか？')) return;
   state = buildState(k);
   selected = page().blocks[1]?.id || page().blocks[0]?.id;
   selectedEl = null;
@@ -13179,7 +13201,7 @@ function pickTemplate(k) {
   exitFocus();     // 中身が丸ごと変わるので、まずページ全体を見せる
   refresh();
   resetHistory();     // テンプレートを選び直したらそこを起点にする
-  flash(`「${TEMPLATES[k].name}」を読み込みました`);
+  flash(`「${TEMPLATES[k].name}」に入れ替えました`);
 }
 
 /* ================================================================
@@ -13204,8 +13226,8 @@ $('#btnExport').addEventListener('click', () => {
   setTimeout(() => URL.revokeObjectURL(a.href), 1000);
   /* このHTMLが控えも兼ねていることは、伝えないと気づけない */
   flash(many
-    ? `${name} を書き出しました（${files.length}ページ）。中の index.html を開けば続きから編集できます`
-    : 'index.html を書き出しました。このファイルを開けば続きから編集できます');
+    ? `${name} を保存しました（${files.length}ページ）。中の index.html を開けば、つづきから直せます`
+    : 'index.html を保存しました。このファイルを開けば、つづきから直せます');
 });
 /* ================================================================
    公開する
@@ -13328,7 +13350,7 @@ function renderPub() {
 
   if (pubStep === 1) {
     $('#pubTitle').textContent = 'どこに公開しますか？';
-    $('#pubSub').textContent = 'はじめてなら、いちばん上をおすすめします。';
+    $('#pubSub').textContent = '迷ったら、いちばん上を。';
     const cloud = cloudReady() ? [`<button data-host="cloud">
       <b>このまま公開する<em>おすすめ</em></b>
       <small>押すだけで終わります。登録も、ファイルの置き場所も要りません。</small></button>`] : [];
@@ -13339,7 +13361,7 @@ function renderPub() {
     const h = HOSTS.find((x) => x.key === pubHost);
     const folder = (state.meta.title || 'mysite').replace(/[\\/:*?"<>|\s]+/g, '-').slice(0, 24);
     $('#pubTitle').textContent = h.name;
-    $('#pubSub').textContent = '上から順に進めてください。';
+    $('#pubSub').textContent = '上から順に。';
     $('#pubGuide').innerHTML = h.steps(folder).map((s) => `<li>${esc(s.t)}
       ${s.s ? `<small>${esc(s.s)}</small>` : ''}
       ${s.btn ? `<button class="tb-btn" data-act="${esc(s.act)}"${s.url ? ` data-url="${esc(s.url)}"` : ''}>${esc(s.btn)}</button>` : ''}
@@ -13467,14 +13489,14 @@ async function openSiteFile(file) {
     s = stateFromHTML(await file.text());
   } catch { /* 下のメッセージへ */ }
   if (s === 'sub') {
-    flash('これは2ページ目以降のファイルです。index.html を読み込んでください');
+    flash('これは2ページ目以降のファイルです。index.html を開いてください');
     return;
   }
   if (!s) {
-    flash('このHTMLはこのツールで作ったものではないようです');
+    flash('このHTMLは、このツールで作ったものではないようです');
     return;
   }
-  if (!confirm('読み込むと、いまの内容は置きかわります。よろしいですか？')) return;
+  if (!confirm('開くと、いまの中身は入れ替わります。よろしいですか？')) return;
   state = migrate(s);
   pageIdx = 0;
   selected = page().blocks[1]?.id || page().blocks[0]?.id;
@@ -13487,7 +13509,7 @@ async function openSiteFile(file) {
   exitFocus();     // 中身が丸ごと変わるので、まずページ全体を見せる
   refresh();
   resetHistory();
-  flash(`「${state.meta.title}」を読み込みました`);
+  flash(`「${state.meta.title}」を開きました`);
 }
 
 $('#btnOpen').addEventListener('click', () => htmlPicker.click());
@@ -13511,15 +13533,8 @@ addEventListener('drop', (e) => {
   openSiteFile(f);
 });
 
-$('#btnCode').addEventListener('click', () => { $('#codeArea').value = fullHTML(); openModal('#codeModal'); });
-$('#codeClose').addEventListener('click', () => closeModal('#codeModal'));
-$('#codeCopy').addEventListener('click', async () => {
-  const ta = $('#codeArea');
-  try { await navigator.clipboard.writeText(ta.value); } catch (e) { ta.select(); document.execCommand('copy'); }
-  flash('コピーしました');
-});
 $('#btnReset').addEventListener('click', () => {
-  if (!confirm('編集した内容をすべて消して、テンプレート選択に戻ります。よろしいですか？')) return;
+  if (!confirm('中身をすべて消して、はじめに戻ります。よろしいですか？')) return;
   localStorage.removeItem(STORE_KEY);
   location.reload();
 });

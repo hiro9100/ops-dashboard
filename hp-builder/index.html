@@ -15,7 +15,7 @@
 
     <button class="tb-btn ico" id="btnUndo" title="元に戻す（Ctrl/⌘+Z）" disabled>↶</button>
     <button class="tb-btn ico" id="btnRedo" title="やり直す（Ctrl/⌘+Shift+Z）" disabled>↷</button>
-    <button class="tb-btn" id="btnTemplates">テンプレートを選ぶ</button>
+    <button class="tb-btn" id="btnTemplates">型を選ぶ</button>
     <span class="saved" id="saved"></span>
 
     <div class="devices" id="devices">
@@ -25,17 +25,16 @@
       <span class="dev-zoom" id="devZoom" hidden></span>
     </div>
 
-    <button class="tb-btn" id="btnExport">ファイルに保存</button>
-    <button class="tb-btn primary" id="btnPublish">公開する</button>
+    <button class="tb-btn" id="btnExport">保存</button>
+    <button class="tb-btn primary" id="btnPublish">公開</button>
 
     <!-- たまにしか使わないものは、ここにしまう -->
     <div class="more-wrap">
       <button class="tb-btn ico" id="btnMore" aria-label="そのほか" aria-expanded="false">…</button>
       <div class="more-menu" id="moreMenu" hidden>
-        <button id="btnInbox">届いたお問い合わせ</button>
-        <button id="btnOpen">保存したファイルから続ける</button>
-        <button id="btnCode">中のHTMLを見る</button>
-        <button id="btnReset" class="danger">まっさらから作り直す</button>
+        <button id="btnInbox">届いた問い合わせ</button>
+        <button id="btnOpen">保存したファイルを開く</button>
+        <button id="btnReset" class="danger">白紙に戻す</button>
       </div>
     </div>
   </header>
@@ -43,12 +42,12 @@
   <!-- ================= 左：ブロック一覧 ================= -->
   <aside class="panel left" id="panelLeft">
     <button class="sheet-close" data-closesheet aria-label="閉じる"></button>
-    <div class="panel-h">ページの構成</div>
+    <div class="panel-h">構成</div>
     <div id="pageBar" class="pagebar" hidden></div>
     <div id="blockList" class="blocklist"></div>
     <div class="add-wrap">
-      <button class="add-btn" id="btnAdd">＋ ブロックを追加</button>
-      <button class="add-btn sub" id="btnAddPage">＋ ページを追加</button>
+      <button class="add-btn" id="btnAdd">＋ ブロックを足す</button>
+      <button class="add-btn sub" id="btnAddPage">＋ ページを足す</button>
     </div>
   </aside>
 
@@ -82,9 +81,9 @@
   <aside class="panel right" id="panelRight">
     <button class="sheet-close" data-closesheet aria-label="閉じる"></button>
     <div class="tabs">
-      <button class="on" data-tab="edit">ブロック編集</button>
+      <button class="on" data-tab="edit">内容</button>
       <button data-tab="design">デザイン</button>
-      <button data-tab="page">ページ設定</button>
+      <button data-tab="page">ページ</button>
     </div>
     <div class="panel-body" id="tab-edit"></div>
     <div class="panel-body" id="tab-design" hidden></div>
@@ -93,9 +92,9 @@
   <!-- ================= スマホ用の下部ナビ ================= -->
   <nav class="mnav" id="mnav">
     <button data-sheet="left" id="mList"><span>▤</span>構成</button>
-    <button data-sheet="right" data-tab-to="edit"><span>✎</span>編集</button>
+    <button data-sheet="right" data-tab-to="edit"><span>✎</span>内容</button>
     <button data-sheet="right" data-tab-to="design"><span>◐</span>デザイン</button>
-    <button id="mAdd"><span>＋</span>追加</button>
+    <button id="mAdd"><span>＋</span>足す</button>
     <button id="mPublish"><span>↑</span>公開</button>
   </nav>
 </div>
@@ -105,24 +104,24 @@
 <!-- ================= はじめる（起動時の正面） ================= -->
 <div class="modal" id="easyModal" hidden>
   <div class="modal-box">
-    <h2 id="ezTitle">どうやって作りますか？</h2>
-    <p class="modal-sub" id="ezSub">どちらでも、あとから全部変えられます。</p>
+    <h2 id="ezTitle">はじめかた</h2>
+    <p class="modal-sub" id="ezSub">どちらを選んでも、あとから作り替えられます。</p>
 
     <div id="ezStep0">
       <div class="ez-ways">
         <button data-way="tpl">
-          <b>テンプレートから選ぶ</b>
-          <small>出来上がったページを選んで、文字と写真を差し替えます。<br>いちばん早く形になります。</small>
+          <b>型から選ぶ</b>
+          <small>出来上がった一式から選び、文字と写真を差し替える。<br>いちばん早く形になります。</small>
         </button>
         <button data-way="scratch">
-          <b>空白からカスタマイズする</b>
-          <small>ヒーロー・ブロック・ヘッダー／フッターを、順に選んで組み上げます。</small>
+          <b>白紙から組む</b>
+          <small>顔・中身・上下を、順に選んで積み上げます。</small>
         </button>
       </div>
     </div>
 
     <div class="modal-foot">
-      <button class="tb-btn" id="ezOpen">保存したファイルから続ける</button>
+      <button class="tb-btn" id="ezOpen">つづきから</button>
     </div>
   </div>
 </div>
@@ -130,12 +129,12 @@
 <!-- ================= テンプレート選択 ================= -->
 <div class="modal" id="tplModal" hidden>
   <div class="modal-box wide">
-    <h2>テンプレートを選ぶ</h2>
-    <p class="modal-sub">選ぶと、いまの内容は置きかわります。</p>
+    <h2>型を選ぶ</h2>
+    <p class="modal-sub">いまの中身は入れ替わります。</p>
     <div class="gal-wrap"><iframe id="tplFrame" title="テンプレートのサンプル"></iframe></div>
     <div class="modal-foot">
-      <button class="tb-btn" id="tplToEasy">はじめに戻る</button>
-      <button class="tb-btn" id="tplToBuild">空白から組む</button>
+      <button class="tb-btn" id="tplToEasy">もどる</button>
+      <button class="tb-btn" id="tplToBuild">白紙から組む</button>
       <button class="tb-btn" id="tplClose">閉じる</button>
     </div>
   </div>
@@ -147,13 +146,13 @@
     <div class="bld-steps" id="bldSteps"></div>
     <h2 id="bldTitle">サイトの雰囲気をえらぶ</h2>
     <p class="modal-sub" id="bldSub"></p>
-    <p class="bld-anytime">内容も順番も、あとからいつでも変えられます。まずは形にしましょう。</p>
+    <p class="bld-anytime">中身も順番も、あとから。いまは形だけ決めます。</p>
 
     <!-- ① 雰囲気（＝いちばん上）のときだけ出る、写真の欄 -->
     <div id="bldPhoto" hidden>
       <button class="ez-drop sm" id="bldPick">
-        <b>写真をえらぶ</b>
-        <small id="bldPickSub">入れなくても大丈夫です。仮の絵が入ります</small>
+        <b>写真</b>
+        <small id="bldPickSub">無ければ、こちらで見繕います</small>
       </button>
       <div class="ez-thumbs" id="bldThumbs"></div>
     </div>
@@ -169,24 +168,24 @@
     <!-- ④ 仕上げ -->
     <div id="bldFinish" hidden>
       <div class="fin-grid">
-        <button data-fin="photo"><b>写真の位置と大きさ</b>
-          <small>プレビューの写真をクリックすると、その場で寄せたり動かしたりできます</small></button>
-        <button data-fin="color"><b>色を変える</b>
-          <small>配色を丸ごと入れ替えるか、1色ずつ選びます</small></button>
-        <button data-fin="anim"><b>動きを付ける</b>
-          <small>文字の出かた、スクロールで現れる速さなど</small></button>
+        <button data-fin="photo"><b>写真の寄せ</b>
+          <small>プレビューの写真を押すと、その場で寄せたり動かしたり</small></button>
+        <button data-fin="color"><b>色</b>
+          <small>配色を丸ごと入れ替えるか、1色ずつ</small></button>
+        <button data-fin="anim"><b>動き</b>
+          <small>文字の出かた、スクロールでの現れかた</small></button>
       </div>
       <details class="adv" id="bizMore">
-        <summary>お店の名前と連絡先を入れておく（あとからでも）</summary>
-        <div class="sec-label">どんなお店・会社ですか？</div>
+        <summary>店名と連絡先（あとからでも）</summary>
+        <div class="sec-label">業種</div>
         <div class="ez-grid" id="bldInds"></div>
-        <div class="f"><label>お店・会社の名前</label>
+        <div class="f"><label>店名・社名</label>
           <input type="text" id="bizName" maxlength="40" placeholder="例：カフェ ヴェルデュール" autocomplete="organization"></div>
         <div class="f"><label>電話番号</label><input type="tel" id="bizTel" placeholder="03-0000-0000"></div>
         <div class="f"><label>メールアドレス</label><input type="email" id="bizMail" placeholder="hello@example.com"></div>
         <div class="f"><label>住所</label><input type="text" id="bizAddr" placeholder="東京都〇〇区〇〇 1-2-3"></div>
         <div class="f"><label>営業時間</label><input type="text" id="bizHours" placeholder="平日 10:00 - 18:00"></div>
-        <p class="hint">入れると、いま置いたブロックの文章や連絡先にそのまま入ります。</p>
+        <p class="hint">置いたブロックの文章と連絡先に、そのまま入ります。</p>
       </details>
     </div>
 
@@ -202,8 +201,8 @@
 <!-- ================= ブロックを追加（サンプル付き一覧） ================= -->
 <div class="modal" id="addModal" hidden>
   <div class="modal-box wide">
-    <h2>ブロックを追加</h2>
-    <p class="modal-sub">選ぶと、いまの位置のすぐ下に入ります。順番はあとから変えられます。</p>
+    <h2>ブロックを足す</h2>
+    <p class="modal-sub">いまの位置のすぐ下に入ります。順番はあとから。</p>
     <div class="cat-bar" id="catBar"></div>
     <div class="gal-wrap"><iframe id="galFrame" title="ブロックのサンプル"></iframe></div>
     <div class="modal-foot"><button class="tb-btn" id="addClose">閉じる</button></div>
@@ -213,8 +212,8 @@
 <!-- ================= 配色の一覧 ================= -->
 <div class="modal" id="palModal" hidden>
   <div class="modal-box wide">
-    <h2>配色を選ぶ</h2>
-    <p class="modal-sub">構成はそのままで、色だけ入れ替わります。</p>
+    <h2>配色</h2>
+    <p class="modal-sub">構成はそのまま、色だけ入れ替えます。</p>
     <div class="gal-wrap"><iframe id="palFrame" title="配色のサンプル"></iframe></div>
     <div class="modal-foot"><button class="tb-btn" id="palClose">閉じる</button></div>
   </div>
@@ -223,8 +222,8 @@
 <!-- ================= アニメーションのサンプル一覧 ================= -->
 <div class="modal" id="animModal" hidden>
   <div class="modal-box wide">
-    <h2 id="animTitle">アニメーションを選ぶ</h2>
-    <p class="modal-sub" id="animSub">くり返し再生されます。カードにマウスを乗せる（タップする）とすぐ再生します。</p>
+    <h2 id="animTitle">動きを選ぶ</h2>
+    <p class="modal-sub" id="animSub">くり返し流れます。触れると、すぐ動きます。</p>
     <div class="gal-wrap"><iframe id="animFrame" title="アニメーションのサンプル"></iframe></div>
     <div class="modal-foot"><button class="tb-btn" id="animClose">閉じる</button></div>
   </div>
@@ -233,8 +232,8 @@
 <!-- ================= 絵をえらぶ ================= -->
 <div class="modal" id="iconModal" hidden>
   <div class="modal-box wide">
-    <h2>絵をえらぶ</h2>
-    <input id="iconFind" class="ic-find" type="search" placeholder="名前でしぼる（駐車、Wi-Fi、コーヒー…）">
+    <h2>絵</h2>
+    <input id="iconFind" class="ic-find" type="search" placeholder="名前でしぼる">
     <div id="iconGrid"></div>
     <div class="modal-foot"><button class="tb-btn" id="iconClose">閉じる</button></div>
   </div>
@@ -243,7 +242,7 @@
 <!-- ================= 届いたお問い合わせ ================= -->
 <div class="modal" id="inboxModal" hidden>
   <div class="modal-box wide">
-    <h2>届いたお問い合わせ</h2>
+    <h2>届いた問い合わせ</h2>
     <p class="modal-sub" id="inboxSub"></p>
     <div id="inboxList" class="inbox"></div>
     <div class="modal-foot">
@@ -256,8 +255,8 @@
 <!-- ================= ページを追加 ================= -->
 <div class="modal" id="pageModal" hidden>
   <div class="modal-box">
-    <h2>ページを追加</h2>
-    <p class="modal-sub">ヘッダーとフッターは、いまのホームのものをそのまま使います。</p>
+    <h2>ページを足す</h2>
+    <p class="modal-sub">上下は、ホームのものを引き継ぎます。</p>
     <div class="f"><label>ページの名前</label>
       <input type="text" id="pgName" placeholder="会社概要" autocomplete="off"></div>
     <div class="f"><label>アドレス</label>
@@ -281,14 +280,13 @@
 <div class="modal" id="cutModal" hidden>
   <div class="modal-box">
     <h2>背景をぬく</h2>
-    <p class="modal-sub">端末の中だけで処理します。写真はどこにも送られません。<br>
-      白い壁や単色の背景に効きます。人や雑多な背景はうまく抜けません。<br>
-      入れたあとでも、上の「取り消し」で元の写真に戻せます。</p>
+    <p class="modal-sub">端末の中だけで処理し、写真はどこにも送りません。<br>
+      白い壁や単色の背景に効きます。人物や雑多な背景は苦手です。</p>
 
     <div class="cut-view"><canvas id="cutCanvas"></canvas></div>
 
     <div class="f">
-      <label>ぬく範囲（広げるほど、背景に近い色まで消えます）</label>
+      <label>ぬく範囲</label>
       <div class="f-row">
         <input type="range" id="cutTol" min="4" max="60" value="22">
         <span class="f-val" id="cutTolVal">22</span>
@@ -307,8 +305,8 @@
 <div class="modal" id="pubModal" hidden>
   <div class="modal-box">
     <div class="ez-dots" id="pubDots"></div>
-    <h2 id="pubTitle">どこに公開しますか？</h2>
-    <p class="modal-sub" id="pubSub">はじめてなら、いちばん上をおすすめします。</p>
+    <h2 id="pubTitle">公開先</h2>
+    <p class="modal-sub" id="pubSub">迷ったら、いちばん上を。</p>
 
     <div id="pubStep1">
       <div class="pub-list" id="pubHosts"></div>
@@ -319,8 +317,8 @@
     </div>
 
     <div id="pubStep3" hidden>
-      <p class="pub-note">公開できたら、そのアドレスを控えておきます。<br>
-        次からは「公開する」を押すと、更新のしかたがすぐ出ます。</p>
+      <p class="pub-note">公開できたら、アドレスを控えます。<br>
+        次からは「公開」を押すと、更新のしかたが出ます。</p>
       <input class="ez-input" id="pubUrl" type="url" inputmode="url"
              placeholder="https://…" autocomplete="url">
       <div class="pub-live" id="pubLive" hidden></div>
@@ -330,19 +328,6 @@
       <button class="tb-btn" id="pubBack" hidden>もどる</button>
       <button class="tb-btn" id="pubClose">閉じる</button>
       <button class="tb-btn primary" id="pubNext" hidden>つぎへ</button>
-    </div>
-  </div>
-</div>
-
-<!-- ================= HTML表示 ================= -->
-<div class="modal" id="codeModal" hidden>
-  <div class="modal-box wide">
-    <h2>書き出されるHTML</h2>
-    <p class="modal-sub">このまま1ファイルで動きます。サーバーにアップすれば公開できます。</p>
-    <textarea id="codeArea" readonly spellcheck="false"></textarea>
-    <div class="modal-foot">
-      <button class="tb-btn" id="codeCopy">コピー</button>
-      <button class="tb-btn" id="codeClose">閉じる</button>
     </div>
   </div>
 </div>

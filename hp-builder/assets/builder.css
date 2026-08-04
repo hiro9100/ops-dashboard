@@ -1,9 +1,21 @@
 /* ビルダー（編集画面）のUI。生成されるサイトの見た目とは無関係。 */
 *,*::before,*::after{box-sizing:border-box}
 :root{
-  --bg:#0f1115; --panel:#171a21; --panel2:#1e222b; --line:#2a2f3a;
-  --tx:#e7ebf0; --tx2:#98a2b3; --pri:#4c8dff; --danger:#f2565c;
-  --r:8px;
+  /* 編集画面の地は、色みをできるだけ抜いた黒。青みや茶みが残っていると、
+     となりに置いたページの色がその分だけ違って見える。
+     色を持っていいのは、作っているページのほうだけ。 */
+  --bg:#0b0c0e;        /* いちばん奥 */
+  --panel:#121316;     /* 左右のパネル */
+  --panel2:#191b1f;    /* 欄とボタンの地 */
+  --panel3:#22252a;    /* 触れたとき */
+  --line:#24262b;      /* 罫線 */
+  --line2:#33363d;     /* 少し強い罫線 */
+  --tx:#eceef1;
+  --tx2:#8b9099;       /* 補助の文字 */
+  --tx3:#5f646d;       /* 名札・単位 */
+  --pri:#4a7cf7;
+  --danger:#e5484d;
+  --r:7px;
 
   /* 画面の四隅の「触れない場所」。スマホの時計やホームバーが重なる帯で、
      ここを避けないと上のバーが時計の下に潜って切れて見える（実機で起きた）。
@@ -37,18 +49,26 @@ input,select,textarea{font:inherit}
   /* シートを開いている間もここのボタン（取り消しなど）は押せるようにする */
   position:relative;z-index:80
 }
-.brand{font-weight:800;letter-spacing:.02em;margin-right:6px;white-space:nowrap}
-.saved{color:var(--tx2);font-size:11.5px;margin-right:auto;min-width:80px}
+.brand{
+  font-size:12px;font-weight:700;letter-spacing:.14em;color:var(--tx2);
+  margin-right:8px;white-space:nowrap
+}
+.saved{color:var(--tx3);font-size:10.5px;letter-spacing:.04em;margin-right:auto;min-width:80px}
 
 .tb-btn{
   background:var(--panel2);border:1px solid var(--line);border-radius:var(--r);
-  padding:7px 13px;font-size:12.5px;font-weight:600;white-space:nowrap;
-  transition:background .15s,border-color .15s
+  padding:7px 14px;font-size:12px;font-weight:600;letter-spacing:.02em;white-space:nowrap;
+  transition:background .14s,border-color .14s,color .14s
 }
-.tb-btn:hover{background:#262b36;border-color:#3a4150}
-.tb-btn.primary{background:var(--pri);border-color:var(--pri);color:#fff}
-.tb-btn.primary:hover{background:#3d7cf0}
+.tb-btn:hover{background:var(--panel3);border-color:var(--line2)}
+/* いちばん進めたい1つだけ、地と文字を入れ替える。
+   色を足すより、白黒がひっくり返るほうが強く、しかも配色を邪魔しない */
+.tb-btn.primary{background:var(--tx);border-color:var(--tx);color:#0b0c0e;font-weight:700}
+.tb-btn.primary:hover{background:#fff;border-color:#fff}
 .tb-btn.danger:hover{border-color:var(--danger);color:var(--danger)}
+:where(button,input,select,textarea):focus-visible{
+  outline:2px solid var(--pri);outline-offset:1px
+}
 
 /* たまにしか使わないものをしまう場所。
    上のバーに全部並べると、初めての人が何から押せばいいか分からなくなる。 */
@@ -63,18 +83,20 @@ input,select,textarea{font:inherit}
   display:block;width:100%;text-align:left;background:transparent;border:0;
   padding:9px 11px;border-radius:6px;font-size:12.5px;color:var(--tx)
 }
-.more-menu button:hover{background:#2f3644}
+.more-menu button:hover{background:var(--panel3)}
 .more-menu button.danger{color:var(--danger)}
 
 .devices{display:flex;align-items:center;background:var(--panel2);
   border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
-.devices button{background:transparent;border:0;padding:7px 12px;font-size:12px;color:var(--tx2);
-  white-space:nowrap}
+.devices button{background:transparent;border:0;padding:7px 13px;font-size:11.5px;
+  color:var(--tx3);letter-spacing:.04em;white-space:nowrap;transition:color .14s}
+.devices button:hover{color:var(--tx2)}
 .devices button i{font-style:normal}
-.devices button.on{background:#2d3441;color:var(--tx);font-weight:700}
+.devices button.on{background:var(--panel3);color:var(--tx);font-weight:700}
 /* 縮めて見せているときの倍率。出さないと「文字が小さい」と誤解される */
 .dev-zoom{
-  padding:0 9px;font-size:10.5px;font-weight:700;color:var(--tx2);
+  padding:0 10px;font-size:10px;font-weight:700;color:var(--tx3);
+  font-variant-numeric:tabular-nums;letter-spacing:.04em;
   border-left:1px solid var(--line);align-self:stretch;display:grid;place-items:center
 }
 .dev-zoom[hidden]{display:none}
@@ -84,39 +106,56 @@ input,select,textarea{font:inherit}
 .panel.left{grid-area:left;border-right:1px solid var(--line)}
 .panel.right{grid-area:right;border-left:1px solid var(--line)}
 .panel-h{
-  padding:12px 14px;font-size:11px;font-weight:800;letter-spacing:.14em;
-  color:var(--tx2);border-bottom:1px solid var(--line)
+  padding:14px 15px 12px;font-size:10px;font-weight:700;letter-spacing:.2em;
+  color:var(--tx3);border-bottom:1px solid var(--line)
 }
 .panel-body{padding:14px;overflow-y:auto;flex:1;min-height:0}
 
 .tabs{display:flex;border-bottom:1px solid var(--line)}
 .tabs button{
-  flex:1;background:transparent;border:0;border-bottom:2px solid transparent;
-  padding:13px 4px;font-size:12px;color:var(--tx2);font-weight:600
+  flex:1;background:transparent;border:0;border-bottom:1px solid transparent;
+  padding:14px 4px 12px;font-size:11.5px;color:var(--tx3);font-weight:600;letter-spacing:.08em;
+  transition:color .14s
 }
-.tabs button.on{color:var(--tx);border-bottom-color:var(--pri)}
+.tabs button:hover{color:var(--tx2)}
+.tabs button.on{color:var(--tx);border-bottom-color:var(--tx)}
 
 /* ================= 左：ブロック一覧 ================= */
 .blocklist{overflow-y:auto;flex:1;padding:8px;min-height:0}
 .bl-item{
-  display:flex;align-items:center;gap:8px;padding:9px 10px;border-radius:var(--r);
-  border:1px solid transparent;margin-bottom:3px;user-select:none
+  position:relative;display:flex;align-items:center;gap:9px;padding:9px 10px;
+  border-radius:var(--r);border:1px solid transparent;margin-bottom:2px;user-select:none;
+  transition:background .14s
 }
 .bl-item:hover{background:var(--panel2)}
-.bl-item.on{background:#20293a;border-color:var(--pri)}
+/* 選んでいるものは、枠で囲うより「左に1本」のほうが静か。
+   一覧が縦に並ぶので、線が揃って読み筋になる */
+.bl-item.on{background:var(--panel2)}
+.bl-item.on::before{
+  content:"";position:absolute;left:0;top:7px;bottom:7px;width:2px;
+  border-radius:2px;background:var(--tx)
+}
 .bl-ic{
   width:24px;height:24px;flex:none;display:grid;place-items:center;
-  background:var(--panel2);border-radius:6px;font-size:12px;color:var(--tx2)
+  background:var(--panel2);border:1px solid var(--line);border-radius:6px;
+  font-size:12px;color:var(--tx3)
 }
-.bl-item.on .bl-ic{background:var(--pri);color:#fff}
-.bl-name{flex:1;font-size:12.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.bl-sub{font-size:10.5px;color:var(--tx2);font-weight:400}
-.bl-ops{display:flex;gap:1px;opacity:0;transition:opacity .12s}
-.bl-item:hover .bl-ops,.bl-item.on .bl-ops{opacity:1}
+.bl-item.on .bl-ic{background:var(--panel3);border-color:var(--line2);color:var(--tx)}
+.bl-name{flex:1;min-width:0;font-size:12.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bl-sub{font-size:10px;color:var(--tx3);font-weight:400;letter-spacing:.04em}
+.bl-ops{
+  position:absolute;right:7px;top:50%;transform:translateY(-50%);
+  display:flex;gap:1px;background:linear-gradient(90deg,transparent,var(--panel2) 14px);
+  padding-left:18px;
+  /* 透明にするだけでは、見えないボタンにキーボードの焦点が入ってしまう。
+     visibility を落とせば、押せないし、焦点も飛ばない */
+  opacity:0;visibility:hidden;transition:opacity .12s,visibility .12s
+}
+.bl-item:hover .bl-ops,.bl-item.on .bl-ops{opacity:1;visibility:visible}
 .bl-ops button{
   background:transparent;border:0;padding:2px 5px;font-size:12px;color:var(--tx2);border-radius:4px;line-height:1
 }
-.bl-ops button:hover{background:#39404f;color:var(--tx)}
+.bl-ops button:hover{background:var(--panel3);color:var(--tx)}
 .bl-fixed{font-size:10px;color:var(--tx2);padding:0 4px}
 
 /* ドラッグ&ドロップ */
@@ -125,9 +164,9 @@ input,select,textarea{font:inherit}
 .bl-item.dragging{opacity:.4}
 .bl-item.over-top{box-shadow:0 -2px 0 0 var(--pri)}
 .bl-item.over-bottom{box-shadow:0 2px 0 0 var(--pri)}
-.blocklist.dropping{background:#151a24}
+.blocklist.dropping{background:#101114}
 .bl-grip{
-  color:#4a5464;font-size:12px;line-height:1;cursor:grab;flex:none;
+  color:var(--tx3);font-size:12px;line-height:1;cursor:grab;flex:none;
   touch-action:none;             /* 指で掴んでいる間は一覧をスクロールさせない */
   padding:6px 2px;margin:-6px 0
 }
@@ -137,22 +176,22 @@ input,select,textarea{font:inherit}
 
 /* 要素アニメのパネル */
 .el-panel{
-  border:1px solid var(--pri);border-radius:var(--r);background:#18202e;
+  border:1px solid var(--line2);border-radius:var(--r);background:#171a1f;
   padding:12px;margin:-2px 0 16px
 }
 .el-panel .eh{display:flex;align-items:center;gap:8px;margin-bottom:11px}
 .el-panel .badge{
-  background:var(--pri);color:#fff;font-size:10.5px;font-weight:800;
+  background:var(--tx);color:#0b0c0e;font-size:10px;font-weight:800;letter-spacing:.06em;
   border-radius:4px;padding:2px 7px;flex:none
 }
 .el-panel .en{flex:1;font-size:12.5px;font-weight:700;overflow:hidden;
   text-overflow:ellipsis;white-space:nowrap}
 .el-panel .ex{background:transparent;border:0;color:var(--tx2);padding:2px 5px;border-radius:4px;font-size:12px}
-.el-panel .ex:hover{background:#39404f;color:var(--tx)}
+.el-panel .ex:hover{background:var(--panel3);color:var(--tx)}
 .el-panel .f{margin-bottom:10px}
 .el-panel .f:last-child{margin-bottom:0}
 .el-hint{
-  font-size:11.5px;color:var(--tx2);background:#13161d;border:1px dashed var(--line);
+  font-size:11.5px;color:var(--tx2);background:#131417;border:1px dashed var(--line);
   border-radius:var(--r);padding:11px 12px;margin:-2px 0 16px;line-height:1.75
 }
 .el-hint > summary{cursor:pointer;list-style:none;font-weight:700;color:var(--tx2)}
@@ -166,7 +205,7 @@ input,select,textarea{font:inherit}
   width:100%;background:var(--panel2);border:1px dashed var(--line);border-radius:var(--r);
   padding:10px;font-size:12.5px;font-weight:700;color:var(--tx2)
 }
-.add-btn:hover{color:var(--tx);border-color:var(--pri)}
+.add-btn:hover{color:var(--tx);border-color:var(--line2)}
 .add-btn.sub{margin-top:6px;font-weight:600;font-size:12px}
 .add-menu{
   position:absolute;bottom:56px;left:10px;right:10px;background:var(--panel2);
@@ -177,11 +216,11 @@ input,select,textarea{font:inherit}
   display:flex;align-items:center;gap:9px;width:100%;background:transparent;border:0;
   padding:9px 10px;border-radius:6px;font-size:12.5px;text-align:left
 }
-.add-menu button:hover{background:#2f3644}
+.add-menu button:hover{background:var(--panel3)}
 
 /* ================= 中央：プレビュー ================= */
 .stage{
-  grid-area:stage;background:#0a0c10;padding:18px;overflow:auto;
+  grid-area:stage;background:#08090a;padding:20px;overflow:auto;
   display:flex;justify-content:center;align-items:flex-start
 }
 /* プレビューの置き場。見取り図を左に出したとき、残りの幅がここになる。
@@ -200,7 +239,7 @@ input,select,textarea{font:inherit}
   flex:none;width:100%;background:var(--panel2);border:1px solid var(--line);
   border-radius:6px;padding:4px 0;font-size:13px;line-height:1.2;color:var(--tx2)
 }
-.rail-out:hover{color:var(--tx);border-color:var(--pri)}
+.rail-out:hover{color:var(--tx);border-color:var(--line2)}
 /* 長いページは、細くしすぎずに帯のほうを送る。
    align-items が center のままだと、送っても上が切れて出せない */
 .rail-box{
@@ -235,8 +274,9 @@ input,select,textarea{font:inherit}
 }
 /* 縮めたぶんの大きさを持つ枠。transform は場所を取らないので、
    これが無いと縮めても元の大きさぶん場所を取り、はみ出す */
-.fit{flex:0 0 auto;overflow:hidden;border-radius:10px;
-  box-shadow:0 20px 60px rgba(0,0,0,.5);transition:width .2s ease,height .2s ease}
+.fit{flex:0 0 auto;overflow:hidden;border-radius:8px;
+  box-shadow:0 1px 0 rgba(255,255,255,.06),0 24px 64px -12px rgba(0,0,0,.7);
+  transition:width .2s ease,height .2s ease}
 .frame{
   background:#fff;overflow:hidden;transform-origin:top left;
   transition:width .2s ease
@@ -245,7 +285,10 @@ input,select,textarea{font:inherit}
 
 /* ================= 右：編集フォーム ================= */
 .f{margin-bottom:15px}
-.f > label{display:block;font-size:11.5px;font-weight:700;color:var(--tx2);margin-bottom:5px}
+.f > label{
+  display:block;font-size:11px;font-weight:600;color:var(--tx2);
+  letter-spacing:.04em;margin-bottom:6px
+}
 /* 書体の見本。選んだものが実際にどう出るかを、その場で見せる */
 .font-eg{
   margin-top:6px;padding:7px 10px;border-radius:6px;
@@ -255,18 +298,23 @@ input,select,textarea{font:inherit}
 }
 .f input[type=text],.f input[type=number],.f textarea,.f select{
   width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:6px;
-  padding:8px 10px;color:var(--tx);font-size:12.5px
+  padding:9px 11px;color:var(--tx);font-size:12.5px;
+  transition:border-color .14s,background .14s
 }
+.f input[type=text]:hover,.f textarea:hover,.f select:hover{border-color:var(--line2)}
 .f textarea{resize:vertical;min-height:70px;line-height:1.7}
-.f input:focus,.f textarea:focus,.f select:focus{outline:none;border-color:var(--pri)}
-.f .hint{font-size:10.5px;color:var(--tx2);margin-top:4px}
+.f input:focus,.f textarea:focus,.f select:focus{outline:none;border-color:var(--tx3);background:var(--panel3)}
+.f .hint{font-size:10.5px;color:var(--tx3);margin-top:5px;line-height:1.65}
 
 .f-row{display:flex;align-items:center;gap:9px}
 .f-row input[type=color]{
   width:34px;height:30px;padding:0;background:none;border:1px solid var(--line);border-radius:6px;cursor:pointer
 }
 .f-row input[type=range]{flex:1;accent-color:var(--pri)}
-.f-val{font-size:11.5px;color:var(--tx2);min-width:42px;text-align:right}
+.f-val{
+  font-size:11px;color:var(--tx3);min-width:42px;text-align:right;
+  font-variant-numeric:tabular-nums
+}
 
 .sw{display:flex;align-items:center;gap:9px;cursor:pointer;font-size:12.5px;font-weight:600}
 .sw input{width:16px;height:16px;accent-color:var(--pri);cursor:pointer}
@@ -277,7 +325,7 @@ input,select,textarea{font:inherit}
   flex:none;background:var(--panel2);border:1px solid var(--line);border-radius:6px;
   padding:8px 10px;font-size:11.5px;white-space:nowrap
 }
-.img-f .pick:hover{border-color:var(--pri)}
+.img-f .pick:hover{border-color:var(--line2)}
 /* 絵をえらぶ。名前ではなく絵で選べるように、大きめに並べる */
 /* ================= ページ =================
    1枚しかないうちは出さない（renderPageBar が hidden にする） */
@@ -293,8 +341,8 @@ input,select,textarea{font:inherit}
   white-space:nowrap;cursor:pointer
 }
 .pagebar .pg small{font-size:10px;font-weight:400;color:var(--tx3,#6b7280);letter-spacing:.02em}
-.pagebar .pg:hover{border-color:var(--pri)}
-.pagebar .pg.on{border-color:var(--pri);background:#20293a;color:var(--tx)}
+.pagebar .pg:hover{border-color:var(--line2)}
+.pagebar .pg.on{border-color:var(--line2);background:var(--panel3);color:var(--tx)}
 .pagebar .pg.add{justify-content:center;align-items:center;font-size:16px;padding:7px 13px;color:var(--tx2)}
 .pg-path{display:flex;align-items:center;gap:2px}
 .pg-path span{font-size:12px;color:var(--tx2);flex:none}
@@ -306,7 +354,7 @@ input,select,textarea{font:inherit}
 }
 .pg-kinds button b{display:block;font-size:13px}
 .pg-kinds button small{display:block;font-size:11px;color:var(--tx2);margin-top:2px;line-height:1.5}
-.pg-kinds button.on{border-color:var(--pri);background:#20293a}
+.pg-kinds button.on{border-color:var(--tx3);background:var(--panel3)}
 .pg-ops{display:flex;flex-wrap:wrap;gap:6px;margin:2px 0 14px}
 .pg-ops .tb-btn{font-size:11.5px;padding:6px 10px}
 
@@ -324,14 +372,14 @@ input,select,textarea{font:inherit}
   width:100%;padding:11px 13px;margin:0 0 6px;font:inherit;font-size:13px;
   background:var(--panel2);border:1px solid var(--line);border-radius:9px;color:var(--tx)
 }
-.ic-find:focus{outline:none;border-color:var(--pri)}
+.ic-find:focus{outline:none;border-color:var(--tx3)}
 .ic-none{color:var(--tx2);font-size:13px;padding:22px 2px}
 .ic-cell{
   display:flex;flex-direction:column;align-items:center;gap:7px;padding:14px 8px;
   background:var(--panel2);border:1px solid var(--line);border-radius:10px;color:var(--tx)
 }
-.ic-cell:hover{border-color:var(--pri)}
-.ic-cell.on{border-color:var(--pri);background:#20293a}
+.ic-cell:hover{border-color:var(--line2)}
+.ic-cell.on{border-color:var(--tx3);background:var(--panel3)}
 .ic-cell svg{width:34px;height:34px}
 .ic-cell small{font-size:10.5px;color:var(--tx2);line-height:1.4;text-align:center}
 /* 欄の中に出す、いま選ばれている絵 */
@@ -380,20 +428,20 @@ input,select,textarea{font:inherit}
 .cut-note{font-size:11.5px;color:var(--tx2);margin:-4px 0 12px;min-height:18px}
 
 /* 繰り返し項目 */
-.list{border:1px solid var(--line);border-radius:var(--r);padding:8px;background:#13161d}
+.list{border:1px solid var(--line);border-radius:var(--r);padding:8px;background:#131417}
 .li{border:1px solid var(--line);border-radius:6px;margin-bottom:7px;background:var(--panel)}
 .li-h{display:flex;align-items:center;gap:6px;padding:7px 9px;cursor:pointer}
 .li-h .t{flex:1;font-size:12px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .li-h .n{font-size:10.5px;color:var(--tx2);font-weight:700;min-width:15px}
 .li-h button{background:transparent;border:0;color:var(--tx2);padding:2px 5px;border-radius:4px;font-size:12px;line-height:1}
-.li-h button:hover{background:#39404f;color:var(--tx)}
+.li-h button:hover{background:var(--panel3);color:var(--tx)}
 .li-b{padding:2px 10px 10px;border-top:1px solid var(--line)}
 .li-b .f{margin:11px 0 0}
 .li-add{
   width:100%;background:transparent;border:1px dashed var(--line);border-radius:6px;
   padding:8px;font-size:12px;color:var(--tx2);font-weight:600
 }
-.li-add:hover{color:var(--tx);border-color:var(--pri)}
+.li-add:hover{color:var(--tx);border-color:var(--line2)}
 
 .empty{color:var(--tx2);text-align:center;padding:44px 16px;font-size:12.5px;line-height:1.9}
 .sec-label{
@@ -437,7 +485,7 @@ input,select,textarea{font:inherit}
   background:var(--panel2);border:1px solid var(--line);border-radius:11px;overflow:hidden;
   text-align:left;padding:0;transition:border-color .15s,transform .15s
 }
-.tpl-card:hover{border-color:var(--pri);transform:translateY(-3px)}
+.tpl-card:hover{border-color:var(--line2)}
 .tpl-prev{height:132px;display:flex;flex-direction:column;gap:5px;padding:13px}
 .tpl-prev .bar{height:9px;border-radius:2px;opacity:.9}
 .tpl-prev .big{height:24px;border-radius:3px;margin-top:5px}
@@ -453,7 +501,7 @@ input,select,textarea{font:inherit}
 }
 
 .el-tip{
-  font-size:11px;color:var(--tx2);background:#12161f;border-radius:5px;
+  font-size:11px;color:var(--tx2);background:#131417;border-radius:5px;
   padding:6px 9px;margin:-3px 0 11px;line-height:1.6
 }
 
@@ -514,7 +562,7 @@ input,select,textarea{font:inherit}
   }
   .panel.open{transform:none}
   .sheet-close{
-    display:block;width:44px;height:5px;border:0;border-radius:99px;background:#39404f;
+    display:block;width:44px;height:5px;border:0;border-radius:99px;background:var(--panel3);
     margin:9px auto 3px;padding:0;flex:none
   }
   .panel-h{padding:8px 14px 10px}
@@ -532,8 +580,8 @@ input,select,textarea{font:inherit}
     align-items:center;justify-content:center;gap:3px;padding:0
   }
   .mnav button span{font-size:15px;line-height:1}
-  .mnav button.on{color:var(--pri)}
-  .mnav button:last-child{color:var(--pri)}
+  .mnav button.on{color:var(--tx)}
+  .mnav button:last-child{color:var(--tx)}
 
   /* 追加メニューはシートの中で上に開く */
   .add-menu{bottom:52px;max-height:44vh}
@@ -603,8 +651,8 @@ input,select,textarea{font:inherit}
 /* 見取り図はスマホ専用。パソコンでは左に一覧がずっと出ているので要らない */
 @media(min-width:821px){ .rail{display:none} }
 
-.edit-now{width:100%;margin-bottom:8px;background:#243149;border-color:#3a4f74}
-.edit-now:hover{background:#2b3b58;border-color:var(--pri)}
+.edit-now{width:100%;margin-bottom:8px;background:var(--panel3);border-color:var(--line2)}
+.edit-now:hover{background:#2a2e34;border-color:var(--tx3)}
 
 /* 取り消し / やり直し */
 .tb-btn.ico{padding:6px 11px;font-size:15px;line-height:1.2}
@@ -625,8 +673,8 @@ input,select,textarea{font:inherit}
   background:var(--panel2);border:1px solid var(--line);border-radius:999px;
   padding:6px 15px;font-size:12px;font-weight:700;color:var(--tx2);transition:.15s
 }
-.cat-bar button:hover{color:var(--tx);border-color:#3a4150}
-.cat-bar button.on{background:var(--pri);border-color:var(--pri);color:#fff}
+.cat-bar button:hover{color:var(--tx);border-color:var(--line2)}
+.cat-bar button.on{background:var(--tx);border-color:var(--tx);color:#0b0c0e}
 .gal-wrap{
   /* 高さは枠じたいが持つ。中の iframe は場所取りをしないので
      （縮める都合で浮かせている）、枠が 0 に潰れないようにする。 */
@@ -655,7 +703,7 @@ input,select,textarea{font:inherit}
    ========================================================== */
 .ez-dots{display:flex;gap:6px;margin-bottom:16px}
 .ez-dots i{flex:1;height:3px;border-radius:2px;background:var(--line);transition:background .25s}
-.ez-dots i.on{background:var(--pri)}
+.ez-dots i.on{background:var(--tx)}
 
 .ez-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:9px}
 .ez-grid button{
@@ -664,7 +712,7 @@ input,select,textarea{font:inherit}
   padding:15px 14px;font-size:13px;font-weight:700;color:var(--tx);
   transition:border-color .15s,transform .15s
 }
-.ez-grid button:hover{border-color:var(--pri);transform:translateY(-2px)}
+.ez-grid button:hover{border-color:var(--line2);background:var(--panel3)}
 .ez-grid button b{font-size:21px;font-weight:400;line-height:1}
 
 .ez-input{
@@ -672,14 +720,14 @@ input,select,textarea{font:inherit}
   border:1px solid var(--line);border-radius:12px;color:var(--tx);
   padding:17px 16px;font-size:17px;font-family:inherit
 }
-.ez-input:focus{outline:0;border-color:var(--pri)}
+.ez-input:focus{outline:0;border-color:var(--tx3)}
 
 .ez-drop{
   width:100%;display:block;text-align:center;cursor:pointer;
   background:var(--panel2);border:1.5px dashed var(--line);border-radius:14px;
   padding:30px 18px;color:var(--tx);transition:border-color .15s,background .15s
 }
-.ez-drop:hover{border-color:var(--pri);background:#1b2029}
+.ez-drop:hover{border-color:var(--line2);background:var(--panel3)}
 .ez-drop b{display:block;font-size:15px;margin-bottom:5px}
 .ez-drop small{color:var(--tx2);font-size:11.5px;line-height:1.6}
 
@@ -696,7 +744,7 @@ input,select,textarea{font:inherit}
   text-align:left;background:var(--panel2);border:1px solid var(--line);border-radius:14px;
   padding:20px 18px;color:var(--tx);transition:border-color .15s,transform .15s
 }
-.ez-ways button:hover{border-color:var(--pri);transform:translateY(-2px)}
+.ez-ways button:hover{border-color:var(--line2);background:var(--panel3)}
 .ez-ways b{display:block;font-size:15px;margin-bottom:7px}
 .ez-ways small{display:block;color:var(--tx2);font-size:12px;line-height:1.75}
 @media (max-width:640px){ .ez-ways{grid-template-columns:1fr} }
@@ -718,15 +766,15 @@ input,select,textarea{font:inherit}
   font-size:11px;font-weight:700;color:var(--tx2);
   padding:6px 8px;border-radius:7px;background:var(--panel2);border:1px solid var(--line)
 }
-.bld-steps span.past{color:var(--tx);border-color:#3a4150}
-.bld-steps span.on{color:#fff;background:var(--pri);border-color:var(--pri)}
+.bld-steps span.past{color:var(--tx);border-color:var(--line2)}
+.bld-steps span.on{color:#0b0c0e;background:var(--tx);border-color:var(--tx)}
 
 /* どの段にも出す一言。戻せないと思うと、人は選べなくなって手が止まる */
 .bld-anytime{
   margin:-12px 0 16px;font-size:11.5px;color:var(--tx2);
-  background:#13161d;border:1px dashed var(--line);border-radius:8px;padding:9px 12px
+  background:#131417;border:1px dashed var(--line);border-radius:8px;padding:9px 12px
 }
-.bld-anytime::before{content:"↺ ";color:var(--pri);font-weight:800}
+.bld-anytime::before{content:"↺ ";color:var(--tx3);font-weight:700}
 
 /* ②「何が要るか」のチェック */
 .need-list{
@@ -738,14 +786,14 @@ input,select,textarea{font:inherit}
   background:var(--panel2);border:1px solid var(--line);border-radius:11px;padding:13px 14px;
   transition:border-color .15s,background .15s
 }
-.need:hover{border-color:var(--pri)}
-.need.on{border-color:var(--pri);background:#20293a}
+.need:hover{border-color:var(--line2)}
+.need.on{border-color:var(--tx3);background:var(--panel3)}
 .need input{width:18px;height:18px;margin:1px 0 0;accent-color:var(--pri);flex:none}
 .need b{display:block;font-size:13px;font-weight:700}
 .need small{display:block;font-size:11.5px;color:var(--tx2);line-height:1.6;margin-top:2px}
 
 /* ③でいま見ているものを、積み上がりの帯で光らせる */
-.bld-strip span.on{border-color:var(--pri);background:#20293a;color:var(--tx)}
+.bld-strip span.on{border-color:var(--tx3);background:var(--panel3);color:var(--tx)}
 
 .ez-drop.sm{padding:16px 14px;margin-bottom:2px}
 .ez-drop.sm b{font-size:13.5px;margin-bottom:3px}
@@ -753,7 +801,7 @@ input,select,textarea{font:inherit}
 #bldFinish .ez-grid{grid-template-columns:repeat(auto-fill,minmax(132px,1fr));gap:7px;margin-bottom:16px}
 #bldFinish .ez-grid button{padding:11px 12px;font-size:12px}
 #bldFinish .ez-grid button b{font-size:17px}
-#bldFinish .ez-grid button.on{border-color:var(--pri);background:#20293a}
+#bldFinish .ez-grid button.on{border-color:var(--tx3);background:var(--panel3)}
 #bldFinish{max-height:60vh;overflow-y:auto;padding-right:2px}
 
 /* 仕上げの入口。ここで終わりではなく、次に何ができるかを見せる */
@@ -762,7 +810,7 @@ input,select,textarea{font:inherit}
   text-align:left;background:var(--panel2);border:1px solid var(--line);border-radius:12px;
   padding:16px 15px;color:var(--tx);transition:border-color .15s,transform .15s
 }
-.fin-grid button:hover{border-color:var(--pri);transform:translateY(-2px)}
+.fin-grid button:hover{border-color:var(--line2);background:var(--panel3)}
 .fin-grid b{display:block;font-size:13.5px;margin-bottom:5px}
 .fin-grid small{display:block;color:var(--tx2);font-size:11.5px;line-height:1.7}
 @media (max-width:640px){ .fin-grid{grid-template-columns:1fr} }
@@ -776,7 +824,7 @@ input,select,textarea{font:inherit}
   background:var(--panel2);border:1px solid var(--line);border-radius:12px;
   padding:15px 16px;color:var(--tx);transition:border-color .15s,transform .15s
 }
-.pub-list button:hover{border-color:var(--pri);transform:translateY(-2px)}
+.pub-list button:hover{border-color:var(--line2);background:var(--panel3)}
 .pub-list b{display:block;font-size:14px;margin-bottom:4px}
 .pub-list b em{
   font-style:normal;font-size:10.5px;font-weight:800;color:var(--pri);
@@ -818,10 +866,11 @@ input,select,textarea{font:inherit}
 
 /* アニメーションのサンプル一覧を開くボタン */
 .anim-gal{
-  width:100%;margin-top:7px;background:#243149;border:1px solid #3a4f74;border-radius:6px;
-  padding:8px;font-size:12px;font-weight:700;color:var(--tx)
+  width:100%;margin-top:7px;background:var(--panel2);border:1px solid var(--line);border-radius:6px;
+  padding:9px;font-size:11.5px;font-weight:600;letter-spacing:.06em;color:var(--tx2);
+  transition:background .14s,border-color .14s,color .14s
 }
-.anim-gal:hover{background:#2b3b58;border-color:var(--pri)}
+.anim-gal:hover{background:var(--panel3);border-color:var(--line2);color:var(--tx)}
 
 /* ================= 届いたお問い合わせ ================= */
 .inbox{max-height:56vh;overflow-y:auto;margin-bottom:4px}
