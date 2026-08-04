@@ -1242,6 +1242,63 @@ p:last-child{margin-bottom:0}
 [data-txf="rainbow"]{--txf:linear-gradient(90deg,#ff5f6d,#ffc371,#47e5bc,#4c8dff,#a06bff)}
 [data-txf="brand"]{--txf:linear-gradient(120deg,var(--c-primary),var(--c-accent))}
 
+/* ---------- ガラス ----------
+   ほかの塗りは「絵で塗る」が、これだけは「透かす」。
+   塗りを半透明にすると、下の地がそのまま文字の中に見える。
+
+   ガラスらしさは3つでできている。
+     ① 厚みの中の明暗   上と下のふちが明るく、真ん中がいちばん薄い
+     ② ふちの光         まわりを1本の細い線がぐるりと回る
+     ③ 落ち影           板ではなくかたまりだと分かるだけの距離を置く
+
+   text-shadow は使えない。塗りが透けているので、影が文字の中から
+   透けて見えてしまう。filter の drop-shadow なら、ふちと塗りを
+   合わせた「絵として出来上がったもの」に落ちる。
+
+   長さはすべて em。字の大きさに連れて厚みも変わらないと、
+   小さいと重すぎ、大きいとただの輪郭線になる。 */
+[data-txf="glass"]{
+  /* ① 厚みの中の明暗。上から、光ったふち → 影 → いちばん薄いところ →
+     もう一度うっすら → 下のふちの照り返し */
+  --txf:linear-gradient(172deg,
+    rgba(255,255,255,.82) 0%,
+    rgba(255,255,255,.30) 7%,
+    rgba(0,0,0,.10) 15%,
+    rgba(255,255,255,.05) 42%,
+    rgba(255,255,255,.02) 58%,
+    rgba(255,255,255,.16) 74%,
+    rgba(0,0,0,.06) 86%,
+    rgba(255,255,255,.86) 100%);
+  /* ② ふちの光。下に敷く（paint-order）。上に描くと線のぶん字が
+     内側にやせて、細い書体だと潰れる */
+  -webkit-text-stroke:.028em rgba(255,255,255,.7);
+  paint-order:stroke fill;
+  /* ③ 斜めに光と影を1組ずつ置いて厚みを出し、最後に落ち影 */
+  filter:
+    drop-shadow(-.012em -.014em 0 rgba(255,255,255,.85))
+    drop-shadow(.012em .014em 0 rgba(0,0,0,.34))
+    drop-shadow(0 .006em .016em rgba(255,255,255,.5))
+    drop-shadow(0 .09em .12em rgba(0,0,0,.34));
+}
+/* 明るい地の上では、白いふちだけだと何も見えない。
+   影のほうを強くして、輪郭が残るようにする */
+.sec:not(.bg-dark):not(.bg-primary) [data-txf="glass"],
+.hero:not(.cover):not(.bg-dark):not(.bg-primary) [data-txf="glass"]{
+  -webkit-text-stroke-color:rgba(255,255,255,.95);
+  filter:
+    drop-shadow(-.012em -.014em 0 rgba(255,255,255,1))
+    drop-shadow(.012em .014em 0 rgba(0,0,0,.42))
+    drop-shadow(0 .006em .014em rgba(0,0,0,.16))
+    drop-shadow(0 .08em .11em rgba(0,0,0,.28));
+}
+/* 文字を書き替えているあいだは、透けていると読めない。いったん戻す。
+   color:inherit も一緒に戻すこと。currentColor は color を見るので、
+   color が transparent のままだと、戻したつもりで透明のままになる。 */
+[data-txf="glass"].__editing{
+  color:inherit;-webkit-text-fill-color:currentColor;background-image:none;
+  -webkit-text-stroke:0;filter:none
+}
+
 /* ==========================================================
    ボタンの型
 
