@@ -834,22 +834,3 @@ input,select,textarea{font:inherit}
 .ib-h time{margin-left:auto;color:var(--tx2);font-size:11px}
 .ib p{margin:0;font-size:13px;line-height:1.9;color:var(--tx);white-space:pre-wrap}
 
-/* ================= ついてくる色 =================
-   自動でそろえているあいだも、何色になったかは見えるようにしておく。
-   黙って決められるのが、いちばん分かりにくい。 */
-.tone-list{display:flex;flex-direction:column;gap:6px;margin-bottom:15px}
-.tone{
-  display:grid;grid-template-columns:26px 1fr auto;column-gap:10px;row-gap:1px;
-  grid-template-areas:"sw name hex" "sw where hex";
-  padding:8px 10px;background:var(--panel2);border:1px solid var(--line);border-radius:8px
-}
-.tone i{
-  grid-area:sw;align-self:center;width:26px;height:26px;border-radius:6px;
-  border:1px solid rgba(255,255,255,.16);display:block
-}
-.tone b{grid-area:name;font-size:12px;font-weight:700;line-height:1.4}
-.tone small{grid-area:where;font-size:10.5px;color:var(--tx2);line-height:1.4}
-.tone em{
-  grid-area:hex;align-self:center;font-style:normal;font-size:10.5px;color:var(--tx2);
-  font-family:Menlo,Consolas,monospace;letter-spacing:.02em;white-space:nowrap
-}

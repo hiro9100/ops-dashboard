@@ -97,10 +97,8 @@ function newPageBlocks(kind) {
 }
 
 /* テンプレートの配色を、そのまま state の配色にする。
-   「薄いところを自動でそろえるか」は state だけが持つ設定なので、
-   ここで必ず付ける（付け忘れると、書き出して読み直したときに
-   持ち物が増えて、前後で中身が一致しなくなる）。 */
-const themeOf = (t) => Object.assign({ autoTone: true }, clone(t));
+   薄いところは決めた色から作るだけになったので、ここは写すだけでよい。 */
+const themeOf = (t) => clone(t);
 
 function buildState(tplKey) {
   const t = TEMPLATES[tplKey];
@@ -141,14 +139,6 @@ function buildCustomState() {
   };
 }
 
-/* 動きの初期設定 */
-const MOTION_EASES = [
-  ['cubic-bezier(.2,.7,.3,1)', 'なめらか（標準）'],
-  ['cubic-bezier(.16,1,.3,1)', 'ぬるっと減速'],
-  ['cubic-bezier(.34,1.56,.64,1)', '行き過ぎて戻る'],
-  ['cubic-bezier(.76,0,.24,1)', 'ためて一気に'],
-  ['linear', '等速'],
-];
 
 /* ================================================================
    取り消し / やり直し
@@ -267,9 +257,10 @@ function migrate(s) {
   s.motion = Object.assign(clone(DEFAULT_MOTION), s.motion || {}); // 旧データ対策
   if (s.style === undefined) s.style = (TEMPLATES[s.template] || {}).style || '';
   s.meta = Object.assign({ title: 'My Website', description: '', lang: 'ja' }, s.meta || {});
-  /* 薄いところを自動でそろえるかどうか。前に作ったものは、そのときの色を
-     そのまま残したいので、決めた色を動かすまでは作り直さない（既定は自動）。 */
-  if (s.theme && s.theme.autoTone === undefined) s.theme.autoTone = true;
+  /* 「薄いところを自動でそろえる」の切り替えは無くした（いつもそろえる）。
+     開いた瞬間に色が変わるのは驚くので、ここでは作り直さない。
+     次に決める色を動かしたときに、そろう。 */
+  if (s.theme) delete s.theme.autoTone;
 
   /* ページを持たない時代のデータは、まるごと1枚目のページにする。
      前に作ったページを読み込んでも、そのまま続きから直せる。 */
@@ -2165,7 +2156,7 @@ function fieldHTML(f, props, base) {
    「打つもの」ではなく「選ぶもの」になったので、前に出す。 */
 const ADV_KEYS = new Set([
   'anchor', 'bg', 'cols', 'plate', 'plateShift',
-  'speed', 'dir', 'size', 'ratio', 'scrollLen', 'decoStrength', 'decoLabel', 'meltDepth',
+  'dir', 'size', 'ratio', 'scrollLen', 'decoStrength', 'decoLabel', 'meltDepth',
   'overlay', 'grain', 'sticky', 'height', 'sep', 'outline', 'auto', 'poster',
   'action', 'method',
 ]);
@@ -2246,7 +2237,6 @@ function elementPanel(b) {
   const cfg = (b.props.anims || {})[selectedEl.role] || {};
   const list = isText ? TEXT_ANIMS : IMAGE_ANIMS;
   const cur = cfg.a || 'none';
-  const delay = cfg.d || 0;
   return `<div class="el-panel">
     <div class="eh">
       <span class="badge">${isText ? 'テキスト' : '画像・要素'}</span>
@@ -2259,12 +2249,6 @@ function elementPanel(b) {
       <select data-elk="a">${list.map(([v, l]) =>
         `<option value="${v}"${cur === v ? ' selected' : ''}>${esc(l)}</option>`).join('')}</select>
       <button class="anim-gal" data-animgal="${isText ? 'ta' : 'ia'}">▦ サンプルを見ながら選ぶ</button>
-    </div>
-    <div class="f"><label>開始までの待ち</label>
-      <div class="f-row">
-        <input type="range" data-elk="d" min="0" max="1500" step="50" value="${delay}" data-suffix="ms">
-        <span class="f-val">${delay}ms</span>
-      </div>
     </div>
     ${isText ? textFillField(b) : ''}
   </div>`;
@@ -2909,43 +2893,28 @@ const STYLES = [
   ['edit', '誌面のような（余白・細い線）'],
 ];
 
+/* 速さの数字は出さない。ミリ秒やイージングを見せられても、
+   ほとんどの人は決められないし、決めても良くならない。
+   値そのものは state に残していて（DEFAULT_MOTION）、見た目は前と同じ。 */
 const MOTION_FIELDS = [
   { key: 'anim', label: '見出しの文字アニメ', type: 'select', options: TEXT_ANIMS,
     hint: 'すべての見出しに適用されます（ヒーローは個別に変更できます）' },
-  { key: 'dur', label: 'アニメの長さ', type: 'range', min: 150, max: 2500, suffix: 'ms' },
-  { key: 'stagger', label: '1文字ごとのずらし', type: 'range', min: 0, max: 200, suffix: 'ms' },
-  { key: 'ease', label: 'イージング（速度の変化）', type: 'select', options: MOTION_EASES },
   { key: 'reveal', label: 'ブロックをスクロールで出現させる', type: 'toggle' },
   { key: 'smooth', label: '慣性スクロール（少し滑って止まる）', type: 'toggle',
     hint: 'マウスの環境だけで効きます。指の操作と「動きを減らす」設定では切れます' },
 ];
 
-/* 決めた色から作った4色を、名前とどこに出るかつきで見せる。
-   自動でそろえているあいだも、何色になったかは見えるようにしておく
-   （黙って決められるのがいちばん分かりにくい）。 */
-function toneStrip() {
-  const t = state.theme;
-  return `<div class="tone-list">${TONE_KEYS.map(([k, label, where]) =>
-    `<div class="tone"><i style="background:${esc(t[k])}"></i>
-      <b>${esc(label)}</b><small>${esc(where)}</small><em>${esc(t[k])}</em></div>`).join('')}</div>`;
-}
-
 function renderDesign() {
-  const auto = state.theme.autoTone !== false;
   $('#tab-design').innerHTML =
     `<div class="sec-label">配色</div>
      <button class="anim-gal" id="btnPalGal" style="margin:0 0 14px">▦ 配色を一覧から選ぶ</button>
      <div class="sec-label">決める色</div>`
     + BASE_COLORS.map((f) =>
       `<div class="f"><label>${esc(f.label)}</label>${inputHTML(f, state.theme[f.key], `theme.${f.key}`)}</div>`).join('')
-    + `<div class="f"><label class="sw"><input type="checkbox" data-path="theme.autoTone"${auto ? ' checked' : ''}>薄いところは自動でそろえる</label>
-        <div class="hint">上の色から、薄いエリア・うすい文字・線・濃いエリアを作ります。
-          地に対して読める明るさになるまで戻すので、色を変えても文字が潰れません。</div></div>`
-    + `<div class="sec-label">${auto ? 'ついてくる色' : '薄いところ'}</div>`
-    + (auto ? `<div id="toneStrip">${toneStrip()}</div>`
-            : TONE_KEYS.map(([k, label, where]) =>
-              `<div class="f"><label>${esc(label)}</label>${inputHTML({ key: k, type: 'color' }, state.theme[k], `theme.${k}`)}
-                <div class="hint">${esc(where)}</div></div>`).join(''))
+    /* 薄いエリア・うすい文字・線・濃いエリアは、上の4色から作る。
+       前は作った色を並べて出し、手で決め直すこともできたが、
+       決める色のすぐ下に「決めない色」が4つ並ぶのが分かりにくかった。
+       いまは黙って付いてくる（tone.js が地に対して読める明るさまで戻す）。 */
     + THEME_FIELDS.map(([g, fs]) =>
     `<div class="sec-label">${g}</div>` + fs.map((f) => {
       const path = `theme.${f.key}`;
@@ -3065,12 +3034,10 @@ $('#tab-page').addEventListener('click', (e) => {
   save(`pg:${act}`);
 });
 
-/* 決めた色から、薄いところを作り直す。
-   自動をやめている人の色は触らない。 */
+/* 決めた色から、薄いところを作り直す。手で決め直す道は無くしたので、
+   ここはいつも通る（呼び出し側の if を残さないため、戻り値も返さない） */
 function applyTone() {
-  if (state.theme.autoTone === false) return false;
   Object.assign(state.theme, toneFromBase(state.theme));
-  return true;
 }
 
 function themeInput(e) {
@@ -3081,12 +3048,8 @@ function themeInput(e) {
   setPath(state, path, readEl(el));
 
   /* 決める色を動かしたら、薄いところも一緒に動かす。
-     欄は作り直さない（色を選んでいる途中でピッカーが閉じてしまう）。
-     見えている見本の中身だけ書き替える。 */
-  if (TONE_TRIGGERS.has(path.slice(6)) && applyTone()) {
-    const strip = $('#toneStrip');
-    if (strip) strip.innerHTML = toneStrip();
-  }
+     欄は作り直さない（色を選んでいる途中でピッカーが閉じてしまう） */
+  if (TONE_TRIGGERS.has(path.slice(6))) applyTone();
 
   if (el.type === 'range') {
     el.parentElement.querySelector('.f-val').textContent = el.value + (el.dataset.suffix || '');
@@ -3115,12 +3078,6 @@ $('#tab-design').addEventListener('click', (e) => {
 /* select や toggle を変えたら、すぐ動きを確認できるよう作り直す */
 $('#tab-design').addEventListener('change', (e) => {
   const path = e.target.dataset.path || '';
-  if (path === 'theme.autoTone') {
-    /* 入れた瞬間にそろえる。「自動にしたのに何も起きない」を作らない */
-    applyTone();
-    renderDesign(); renderPreview(true); save('t:tone');
-    return;
-  }
   if (path.startsWith('motion.') || path === 'style' || path === 'rules') renderPreview(true);
 });
 $('#tab-page').addEventListener('input', themeInput);   // サイト全体の欄

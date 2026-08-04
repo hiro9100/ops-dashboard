@@ -1224,7 +1224,6 @@ ${(p.items || []).map((it, i) => `      <div class="ico"${el(p, `ico${i}`, 'ia',
         options: [['s', '小さめ'], ['m', 'ふつう'], ['l', '大きめ']] },
       { key: 'ratio', label: '写真の形（縦横比）', type: 'select',
         options: [['4x3', '横長（4:3）'], ['1x1', '正方形'], ['16x9', '横長（16:9）'], ['3x4', '縦長（3:4）']] },
-      { key: 'speed', label: '流れる速さ', type: 'range', min: 10, max: 90, suffix: '秒/周' },
       { key: 'dir', label: '向き', type: 'select', options: [['l', '右から左へ'], ['r', '左から右へ']] },
       { key: 'items', label: '中身', type: 'list', addLabel: '1つ追加', titleKey: 'title',
         item: [
@@ -1424,7 +1423,6 @@ ${(p.items || []).map((it, i) => `      <div class="flr-i"${el(p, `fl${i}`, 'ia'
     fields: [
       { key: 'text', label: '流す言葉', type: 'text' },
       { key: 'sep', label: '区切り記号', type: 'text', hint: '空にすると言葉だけが並びます' },
-      { key: 'speed', label: '流れる速さ', type: 'range', min: 8, max: 60, suffix: '秒/周' },
       { key: 'dir', label: '向き', type: 'select', options: [['l', '左へ'], ['r', '右へ']] },
       { key: 'size', label: '文字の大きさ', type: 'range', min: 30, max: 180, suffix: 'px' },
       { key: 'outline', label: '中を抜いた文字にする', type: 'toggle' },
