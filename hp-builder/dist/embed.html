@@ -589,14 +589,40 @@ input,select,textarea{font:inherit}
 .bld-steps span.past{color:var(--tx);border-color:#3a4150}
 .bld-steps span.on{color:#fff;background:var(--pri);border-color:var(--pri)}
 
+/* どの段にも出す一言。戻せないと思うと、人は選べなくなって手が止まる */
+.bld-anytime{
+  margin:-12px 0 16px;font-size:11.5px;color:var(--tx2);
+  background:#13161d;border:1px dashed var(--line);border-radius:8px;padding:9px 12px
+}
+.bld-anytime::before{content:"↺ ";color:var(--pri);font-weight:800}
+
+/* ②「何が要るか」のチェック */
+.need-list{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:8px;
+  max-height:52vh;overflow-y:auto;padding-right:2px
+}
+.need{
+  display:flex;align-items:flex-start;gap:10px;cursor:pointer;
+  background:var(--panel2);border:1px solid var(--line);border-radius:11px;padding:13px 14px;
+  transition:border-color .15s,background .15s
+}
+.need:hover{border-color:var(--pri)}
+.need.on{border-color:var(--pri);background:#20293a}
+.need input{width:18px;height:18px;margin:1px 0 0;accent-color:var(--pri);flex:none}
+.need b{display:block;font-size:13px;font-weight:700}
+.need small{display:block;font-size:11.5px;color:var(--tx2);line-height:1.6;margin-top:2px}
+
+/* ③でいま見ているものを、積み上がりの帯で光らせる */
+.bld-strip span.on{border-color:var(--pri);background:#20293a;color:var(--tx)}
+
 .ez-drop.sm{padding:16px 14px;margin-bottom:2px}
 .ez-drop.sm b{font-size:13.5px;margin-bottom:3px}
 #bldPhoto .ez-thumbs img{width:46px;height:46px}
-#bldInfo .ez-grid{grid-template-columns:repeat(auto-fill,minmax(132px,1fr));gap:7px;margin-bottom:16px}
-#bldInfo .ez-grid button{padding:11px 12px;font-size:12px}
-#bldInfo .ez-grid button b{font-size:17px}
-#bldInfo .ez-grid button.on{border-color:var(--pri);background:#20293a}
-#bldInfo{max-height:56vh;overflow-y:auto;padding-right:2px}
+#bldFinish .ez-grid{grid-template-columns:repeat(auto-fill,minmax(132px,1fr));gap:7px;margin-bottom:16px}
+#bldFinish .ez-grid button{padding:11px 12px;font-size:12px}
+#bldFinish .ez-grid button b{font-size:17px}
+#bldFinish .ez-grid button.on{border-color:var(--pri);background:#20293a}
+#bldFinish{max-height:60vh;overflow-y:auto;padding-right:2px}
 
 /* 仕上げの入口。ここで終わりではなく、次に何ができるかを見せる */
 .fin-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}
@@ -826,44 +852,28 @@ ${textFillCSS(usedFills(state))}
 <div class="modal" id="buildModal" hidden>
   <div class="modal-box wide">
     <div class="bld-steps" id="bldSteps"></div>
-    <h2 id="bldTitle">ヒーローを選ぶ</h2>
+    <h2 id="bldTitle">サイトの雰囲気をえらぶ</h2>
     <p class="modal-sub" id="bldSub"></p>
+    <p class="bld-anytime">内容も順番も、あとからいつでも変えられます。まずは形にしましょう。</p>
 
-    <!-- ① ビジネス情報 -->
-    <div id="bldInfo" hidden>
-      <div class="sec-label">どんなお店・会社ですか？</div>
-      <div class="ez-grid" id="bldInds"></div>
-      <div class="f"><label>お店・会社の名前</label>
-        <input type="text" id="bizName" maxlength="40" placeholder="例：カフェ ヴェルデュール" autocomplete="organization"></div>
-      <details class="adv" id="bizMore"><summary>連絡先も入れておく（あとからでも）</summary>
-        <div class="f"><label>電話番号</label><input type="tel" id="bizTel" placeholder="03-0000-0000"></div>
-        <div class="f"><label>メールアドレス</label><input type="email" id="bizMail" placeholder="hello@example.com"></div>
-        <div class="f"><label>住所</label><input type="text" id="bizAddr" placeholder="東京都〇〇区〇〇 1-2-3"></div>
-        <div class="f"><label>営業時間</label><input type="text" id="bizHours" placeholder="平日 10:00 - 18:00"></div>
-        <p class="hint">入れておくと、お問い合わせやフッターを足したときに、そのまま入ります。</p>
-      </details>
-    </div>
-
-    <!-- ② ヒーローのときだけ出る、写真の欄 -->
+    <!-- ① 雰囲気（＝いちばん上）のときだけ出る、写真の欄 -->
     <div id="bldPhoto" hidden>
       <button class="ez-drop sm" id="bldPick">
         <b>写真をえらぶ</b>
-        <small id="bldPickSub">入れなくても大丈夫です。業種に合わせた仮の絵が入ります</small>
+        <small id="bldPickSub">入れなくても大丈夫です。仮の絵が入ります</small>
       </button>
       <div class="ez-thumbs" id="bldThumbs"></div>
     </div>
 
-    <!-- ④ ヘッダーとフッターの切り替え -->
-    <div class="cat-bar" id="bldChromeBar" hidden>
-      <button data-chrome="hdr" class="on">ヘッダー</button>
-      <button data-chrome="ftr">フッター</button>
+    <!-- ② 必要なものをチェック -->
+    <div id="bldNeeds" hidden>
+      <div class="need-list" id="needList"></div>
     </div>
 
     <div class="bld-strip" id="bldStrip"></div>
-    <div class="cat-bar" id="bldCatBar"></div>
     <div class="gal-wrap" id="bldGal"><iframe id="bldFrame" title="部分の見本"></iframe></div>
 
-    <!-- ⑤ 仕上げ -->
+    <!-- ④ 仕上げ -->
     <div id="bldFinish" hidden>
       <div class="fin-grid">
         <button data-fin="photo"><b>写真の位置と大きさ</b>
@@ -873,14 +883,25 @@ ${textFillCSS(usedFills(state))}
         <button data-fin="anim"><b>動きを付ける</b>
           <small>文字の出かた、スクロールで現れる速さなど</small></button>
       </div>
-      <p class="hint">どれもあとから何度でも変えられます。まず中身を書いてからでも構いません。</p>
+      <details class="adv" id="bizMore">
+        <summary>お店の名前と連絡先を入れておく（あとからでも）</summary>
+        <div class="sec-label">どんなお店・会社ですか？</div>
+        <div class="ez-grid" id="bldInds"></div>
+        <div class="f"><label>お店・会社の名前</label>
+          <input type="text" id="bizName" maxlength="40" placeholder="例：カフェ ヴェルデュール" autocomplete="organization"></div>
+        <div class="f"><label>電話番号</label><input type="tel" id="bizTel" placeholder="03-0000-0000"></div>
+        <div class="f"><label>メールアドレス</label><input type="email" id="bizMail" placeholder="hello@example.com"></div>
+        <div class="f"><label>住所</label><input type="text" id="bizAddr" placeholder="東京都〇〇区〇〇 1-2-3"></div>
+        <div class="f"><label>営業時間</label><input type="text" id="bizHours" placeholder="平日 10:00 - 18:00"></div>
+        <p class="hint">入れると、いま置いたブロックの文章や連絡先にそのまま入ります。</p>
+      </details>
     </div>
 
     <div class="modal-foot">
       <button class="tb-btn" id="bldCancel">やめる</button>
-      <button class="tb-btn" id="bldSkip" hidden>あとで入力する</button>
-      <button class="tb-btn" id="bldBack">1つ戻す</button>
-      <button class="tb-btn primary" id="bldDone">これで完成</button>
+      <button class="tb-btn" id="bldSkip" hidden>このまま進む</button>
+      <button class="tb-btn" id="bldBack">もどる</button>
+      <button class="tb-btn primary" id="bldDone">つぎへ</button>
     </div>
   </div>
 </div>
@@ -7564,6 +7585,60 @@ const FOOTER_PRESETS = [
     props: { style: 'minimal' } },
 ];
 
+/* ================================================================
+   「何が要るか」で選ぶ一覧
+
+   型の一覧（SECTION_PRESETS）は「かたち」で並べてある。
+   かたちで選べるのは、何を載せるか決まっている人だけ。
+   はじめての人はその前段で止まる——「うちに何が要るのか」が分からない。
+
+   そこで先に、使い道でチェックしてもらう。チェックした時点で
+   ページは組み上がり、そのあと1つずつ「かたち」を選び直してもらう。
+   かたちが1つしかないものは、選ばせずに置くだけにする。
+
+   picks の先頭が、チェックした瞬間に置かれる形。
+   ================================================================ */
+const NEEDS = [
+  { key: 'about', label: 'お店・会社の紹介', about: '写真と文章で、どんなところかを伝える',
+    on: true, picks: ['about-left', 'about-right', 'rich'] },
+
+  { key: 'features', label: '強み・特徴', about: '伝えたいことを3つくらいに分けて並べる',
+    on: true, picks: ['features-icon', 'features-num', 'features-paren', 'features-image'] },
+
+  { key: 'photos', label: '写真を見せる', about: '店内・商品・作品などを並べる',
+    on: true, picks: ['gallery', 'hscroll', 'collage-mid', 'clipreveal'] },
+
+  { key: 'menu', label: 'メニュー・料金', about: '品名と値段、またはプランの比較',
+    on: false, picks: ['menu', 'pricing'] },
+
+  { key: 'equip', label: '設備・こだわり', about: 'Wi-Fi・駐車場・禁煙など、絵と短い言葉で',
+    on: false, picks: ['icons'] },
+
+  { key: 'works', label: '導入実績・取引先', about: '数が多いものを横に流す',
+    on: false, picks: ['strip', 'strip-card'] },
+
+  { key: 'numbers', label: '数字で見せる', about: '実績の数字や、推移のグラフ',
+    on: false, picks: ['slotstats', 'svgdraw', 'svgbar'] },
+
+  { key: 'flow', label: '流れ・沿革・フロア', about: '順番に意味があるものを縦に並べる',
+    on: false, picks: ['timeline', 'floors'] },
+
+  { key: 'news', label: 'お知らせ', about: '日付つきの一覧',
+    on: false, picks: ['news'] },
+
+  { key: 'video', label: '動画', about: 'YouTube・Vimeo・動画ファイルのURLを貼る',
+    on: false, picks: ['video'] },
+
+  { key: 'faq', label: 'よくある質問', about: '押すと答えが開く一覧',
+    on: false, picks: ['faq'] },
+
+  { key: 'cta', label: '最後のひと押し', about: '予約・電話など、してほしいことを1つ',
+    on: true, picks: ['cta', 'marquee', 'shift'] },
+
+  { key: 'contact', label: 'お問い合わせ', about: '連絡先と、入力フォーム',
+    on: true, picks: ['contact'] },
+];
+
 </script>
 <script>
 /* ===== assets/easy.js ===== */
@@ -9103,6 +9178,24 @@ function galGeom(f) {
   return { W, H, gs: Math.min(1, W / GAL_W), cols: W < 520 ? 1 : W < 900 ? 2 : 3 };
 }
 
+/* 見本の数に合わせて枠の高さを決める。
+   1段あたりのカードは cols 枚で、1枚はおよそ 0.72:1。
+   少ないときだけ縮め、多いときは今までどおり（中でスクロールさせる）。 */
+function fitGalHeight(wrap, n) {
+  if (!wrap) return;
+  const W = wrap.clientWidth || Math.min(window.innerWidth - 48, GAL_W);
+  const cols = W < 520 ? 1 : W < 900 ? 2 : 3;
+  const rows = Math.ceil(Math.max(1, n) / cols);
+  const need = Math.round((W / cols) * 0.86 * rows + 28);
+  /* flex:1 は flex-basis:0 なので、height だけ書いても効かない
+     （縦並びの中では flex-basis が高さを決める）。min-height（56vh）も
+     効いていると縮まないので、3つまとめてここで外す。
+     ほかの一覧は今までどおりにしたいので、CSSではなくここで当てる */
+  wrap.style.flex = '0 0 auto';
+  wrap.style.minHeight = '0';
+  wrap.style.height = `${Math.min(need, Math.round(window.innerHeight * 0.56))}px`;
+}
+
 /* iframe を広い幅で描かせて、枠のぶんだけ縮める */
 function sizeGalFrame(f, g) {
   f.style.position = 'absolute';
@@ -9127,6 +9220,8 @@ body{margin:0;background:#0d1016;padding:${u(14)}px;
   transition:border-color .15s,transform .15s;color:#e7ebf0;font:inherit}
 .gc-hit{position:absolute;inset:0;z-index:5}
 .gc:hover{border-color:#4c8dff;transform:translateY(-${u(3)}px)}
+/* いま当たっている形。選び直す画面で「どれが今のか」が要る */
+.gc.on{border-color:#4c8dff;box-shadow:0 0 0 ${u(2)}px rgba(76,141,255,.35)}
 /* 高さと中の縮尺は、下の script が実寸から決める。
    ここに書くのは、その値が入るまでの見た目だけ */
 .gc-prev{height:${u(176)}px;overflow:hidden;position:relative;background:var(--c-bg);
@@ -9567,6 +9662,18 @@ $('#iconClose').addEventListener('click', () => { iconPick = null; closeModal('#
 /* 見本のカードを組む。
    この一覧は「アニメーションを選ぶ」画面と、空白から組むときの
    ヘッダー／フッターの段で、どちらも同じものを使う。 */
+/* フッターの型のうち「ひとこと」や「ボタン」を使うものは、文章が空だと
+   何も出ない。型を選んだ時点で見本の文章を入れておき、あとから書き替え
+   てもらう。すでに何か書いてあれば、そのまま残す。 */
+function withFtrSample(props, style) {
+  const pr = FOOTER_PRESETS.find((x) => x.props.style === style);
+  const out = Object.assign({}, props, { style });
+  for (const k of ['text', 'cta', 'ctaHref']) {
+    if (!out[k] && pr && pr.props[k]) out[k] = pr.props[k];
+  }
+  return out;
+}
+
 function decoCards(kind, current) {
   const k = GAL_KINDS[kind] || GAL_KINDS.deco;
   const list = k.list();
@@ -9592,7 +9699,7 @@ function decoCards(kind, current) {
   const cards = list.map(([key, label]) => {
     let sample;
     if (kind === 'ftr') {
-      sample = BLOCKS.footer.render(Object.assign({}, fprops, { style: key }));
+      sample = BLOCKS.footer.render(withFtrSample(fprops, key));
     } else if (kind === 'shape') {
       /* いま選んでいるブロックの写真を、その形で抜いて並べる。
          枠は生成サイトと同じ .about-media を使うので、実物どおりに出る。 */
@@ -10034,7 +10141,8 @@ $('#tab-edit').addEventListener('click', (e) => {
     const key = fg.dataset.galpath.split('.').pop();
     const gk = GAL_KINDS[kind] || GAL_KINDS.deco;
     openDecoGallery(kind, bb.props[key] || (kind === 'hdr' ? 'line' : 'none'), (picked) => {
-      bb.props[key] = picked;
+      if (bb.type === 'footer' && key === 'style') Object.assign(bb.props, withFtrSample(bb.props, picked));
+      else bb.props[key] = picked;
       renderEditor(); renderPreview(true); save();
       flash(`${gk.what}を「${(gk.list().find((d) => d[0] === picked) || [, picked])[1]}」にしました`);
     });
@@ -11004,7 +11112,7 @@ $('#ezStep0').addEventListener('click', (e) => {
    途中でやめても元に戻せるよう、開始時の state を控えておく。
    ================================================================ */
 let bldBefore = null;   // 「やめる」で戻すための、開始前の状態
-let bldCat = 'all';
+
 /* 積んだ順に、選んだ型の名前を覚えておく。
    ブロックの種別名（「特徴」「紹介」）ではなく、選んだときに見えていた
    名前（「カード3つ（絵柄つき）」）を上の帯に出すため。
@@ -11021,34 +11129,49 @@ function presetSample(p) {
 /* ================================================================
    順を追って組む
 
-     ① ビジネス情報 → ② ヒーロー → ③ ブロック → ④ ヘッダー／フッター → ⑤ 仕上げ
+     ① 雰囲気をえらぶ（＝いちばん上）
+     ② 必要なものにチェック（使い道で選ぶ）
+     ③ ひとつずつ、かたちをえらぶ
+     ④ できました
 
-   一度に全部を見せない。いま決めることだけを出して、その1つだけを選ばせる。
-   決めたものは上の帯に積まれていくので、どこまで来たかが分かる。
+   ②で「かたち」ではなく「使い道」を聞くのが要。型の一覧はかたちで
+   並んでいるが、かたちで選べるのは何を載せるか決まっている人だけ。
+   はじめての人はその前で止まる——「うちに何が要るのか」が分からない。
 
-   ①は飛ばせる。名前も業種もまだ決まっていない人がいるし、そこで
-   止まってしまうくらいなら、先に形を見せたほうがいい。
+   チェックした時点でページはもう組み上がっている。③はそれを1つずつ
+   見直すだけなので、途中でやめても完成品が手元に残る。
+
+   どの段にも「あとから変えられる」と出しておく。戻せないと思うと、
+   人は選べなくなって手が止まる。
    ================================================================ */
-const BLD_STEPS = ['info', 'hero', 'section', 'chrome', 'done'];
+const BLD_STEPS = ['hero', 'needs', 'shape', 'done'];
 let bldI = 0;
-let bldChrome = 'hdr';   // ④でヘッダーとフッターのどちらを見せているか
-let bldPhotos = [];      // ②で選んだ写真
+let bldPhotos = [];        // ①で選んだ写真
+let bldNeeds = [];         // ②でチェックした使い道のキー
+let bldShapeI = 0;         // ③でいま何個目を見ているか
+const bldNeedBlock = new Map();   // 使い道 → 置いたブロックのID
 
 const bldStep = () => BLD_STEPS[bldI];
 
 const BLD_HEAD = {
-  info: ['① ビジネス情報', '入れておくと、あとで足すブロックにそのまま入ります。飛ばしても構いません。'],
-  hero: ['② ヒーローを選ぶ', 'いちばん上に来る、顔になる部分です。'],
-  section: ['③ ブロックを選ぶ', '選ぶと下に積まれます。順番はあとから変えられます。'],
-  chrome: ['④ ヘッダーとフッター', 'いちばん上のバーと、いちばん下です。'],
+  hero: ['① サイトの雰囲気をえらぶ', 'いちばん上に来る、顔になる部分です。ここでサイトの印象が決まります。'],
+  needs: ['② 必要なものをえらぶ', 'いま要りそうなものにチェックを付けてください。あとから足せます。'],
+  shape: ['③ かたちをえらぶ', '選んだものを、ひとつずつ見ていきます。'],
   done: ['できました', 'ここから細かいところを整えます。'],
 };
+
+/* ③で見ていく順。かたちが1つしかないものは選ばせない（見せるものが無い） */
+const shapeQueue = () => NEEDS.filter((n) => bldNeeds.includes(n.key) && n.picks.length > 1);
+const nowNeed = () => shapeQueue()[bldShapeI] || null;
 
 function bldList() {
   const st = bldStep();
   if (st === 'hero') return HERO_PRESETS;
-  /* 分けかたは「かたち」。使い道（飲食店向けなど）では分けない */
-  if (st === 'section') return SECTION_PRESETS.filter((p) => bldCat === 'all' || p.group === bldCat);
+  if (st === 'shape') {
+    const n = nowNeed();
+    if (!n) return [];
+    return n.picks.map((k) => SECTION_PRESETS.find((p) => p.key === k)).filter(Boolean);
+  }
   return [];
 }
 
@@ -11063,76 +11186,60 @@ function renderBldSteps() {
 function renderBldStrip() {
   /* header と footer は最初から入っていて選ぶものではないので出さない */
   const picked = page().blocks.filter((b) => b.type !== 'header' && b.type !== 'footer');
+  const sel = bldStep() === 'shape' ? bldNeedBlock.get((nowNeed() || {}).key) : null;
   $('#bldStrip').innerHTML = picked
-    .map((b, i) => `<span><i>${i + 1}</i>${esc(bldNames.get(b.id) || BLOCKS[b.type].label)}</span>`)
+    .map((b, i) => `<span class="${b.id === sel ? 'on' : ''}"><i>${i + 1}</i>${esc(bldNames.get(b.id) || BLOCKS[b.type].label)}</span>`)
     .join('');
-  $('#bldStrip').scrollLeft = 99999;
-  $('#bldStrip').hidden = !picked.length;
+  /* 積み上がりの帯は③でだけ出す。②では「1 Cover」だけが宙に浮いて見える */
+  $('#bldStrip').hidden = bldStep() !== 'shape' || !picked.length;
+  const on = $('#bldStrip .on');
+  if (on) on.scrollIntoView({ block: 'nearest', inline: 'center' });
 }
 
 function renderBldHead() {
   const st = bldStep();
-  const [title, sub] = BLD_HEAD[st];
+  let [title, sub] = BLD_HEAD[st];
+  const q = shapeQueue();
+  if (st === 'shape' && q.length) {
+    const n = nowNeed();
+    title = `③ ${n.label}の、かたちをえらぶ`;
+    sub = `${bldShapeI + 1} / ${q.length}　${n.about}`;
+  }
   $('#bldTitle').textContent = title;
   /* スマホでは説明が長いほど見本が見えなくなるので、要点だけにする */
   $('#bldSub').textContent = sub;
 
-  $('#bldInfo').hidden = st !== 'info';
   $('#bldPhoto').hidden = st !== 'hero';
+  $('#bldNeeds').hidden = st !== 'needs';
   $('#bldFinish').hidden = st !== 'done';
-  $('#bldGal').hidden = st === 'info' || st === 'done';
-  $('#bldCatBar').hidden = st !== 'section';
-  $('#bldChromeBar').hidden = st !== 'chrome';
-  $('#bldSkip').hidden = st !== 'info';
+  $('#bldGal').hidden = st !== 'hero' && st !== 'shape';
+  /* ③は選ばなくても先へ行ける。いま置いてある形のままでいい人もいる */
+  $('#bldSkip').hidden = st !== 'shape';
 
   const hasHero = page().blocks.some((b) => b.type === 'hero' || b.type === 'collage');
-  const nSec = page().blocks.filter((b) => b.type !== 'header' && b.type !== 'footer').length;
-  $('#bldBack').hidden = bldI === 0;
-  /* 最後の段で「やめる」を押すと、組み上げたものが全部消える。
-     ここまで来た人が押すボタンではないので、出さない */
   $('#bldCancel').hidden = st === 'done';
-  $('#bldBack').textContent = st === 'section' && nSec > 1 ? '1つ戻す' : 'もどる';
-  $('#bldDone').textContent = st === 'done' ? '編集をはじめる' : 'つぎへ';
-  /* ヒーローを選ばずには進ませない。空のページから始まっているので、
+  $('#bldBack').hidden = bldI === 0;
+  $('#bldDone').textContent = st === 'done' ? '編集をはじめる'
+    : (st === 'shape' && bldShapeI < q.length - 1 ? 'つぎへ' : 'つぎへ');
+  /* 雰囲気を選ばずには進ませない。空のページから始まっているので、
      何も無いまま先へ行っても選ぶものが見えない */
   $('#bldDone').disabled = st === 'hero' && !hasHero;
 }
 
-function renderBldCats() {
-  $('#bldCatBar').innerHTML = SECTION_GROUPS.map(([k, l]) =>
-    `<button data-cat="${k}" class="${bldCat === k ? 'on' : ''}">${l}</button>`).join('');
-}
-
 function renderBldGallery() {
   const st = bldStep();
-  if (st === 'info' || st === 'done') return;
+  if (st !== 'hero' && st !== 'shape') return;
   const f = $('#bldFrame');
-
-  if (st === 'chrome') {
-    /* ヘッダーとフッターの見本は、幅を広げて縮める作りではない
-       （中身が1枚ずつ大きいので、そのままの幅で並べる）。
-       ②③で当てた寸法が残っていると空きが出るので、戻しておく。 */
-    f.style.cssText = '';
-    /* ヘッダーとフッターは「積む」ものではなく「差し替える」もの。
-       見本の作りは編集画面の一覧と同じものを使い回す */
-    const hb = page().blocks.find((b) => b.type === 'header');
-    const fb = page().blocks.find((b) => b.type === 'footer');
-    const cur = bldChrome === 'hdr' ? (hb && hb.props.bar) || '' : (fb && fb.props.style) || 'bar';
-    f.srcdoc = decoDoc(bldChrome, decoCards(bldChrome, cur));
-    f.onload = () => {
-      f.contentDocument.addEventListener('click', (e) => {
-        const k = e.target.closest('.dc')?.dataset.k;
-        if (k != null) pickChrome(k);
-      });
-    };
-    return;
-  }
-
+  const list = bldList();
+  /* 見本が2〜3枚しかない段では、枠を詰める。
+     決め打ちの高さのままだと、下に画面半分ぶんの空きが残る */
+  fitGalHeight(f.parentElement, list.length);
   const g = galGeom(f);
   sizeGalFrame(f, g);
 
+  const cur = st === 'shape' ? bldNames.get(bldNeedBlock.get((nowNeed() || {}).key)) : null;
   /* 説明は絵で足りる。名前だけ出し、言葉での補足はマウスを乗せたときに出す */
-  const cards = bldList().map((p) => `<div class="gc" data-key="${esc(p.key)}" role="button" tabindex="0"
+  const cards = list.map((p) => `<div class="gc${p.label === cur ? ' on' : ''}" data-key="${esc(p.key)}" role="button" tabindex="0"
       title="${esc(p.about || '')}">
       <span class="gc-hit"></span>
       <div class="gc-prev"><div class="gc-scale">${presetSample(p)}</div></div>
@@ -11157,73 +11264,104 @@ function renderBldGallery() {
 function refreshBld() {
   renderBldSteps();
   renderBldHead();
-  renderBldCats();
   renderBldStrip();
   renderBldGallery();
 }
 
-/* ④で選んだヘッダーのバー／フッターの型を当てる */
-function pickChrome(key) {
-  const t = bldChrome === 'hdr' ? 'header' : 'footer';
-  const b = page().blocks.find((x) => x.type === t);
-  if (!b) return;
-  if (bldChrome === 'hdr') b.props.bar = key;
-  else {
-    Object.assign(b.props, clone((FOOTER_PRESETS.find((p) => p.props.style === key) || { props: {} }).props));
-    fillFromBiz(b);   // 型を選ぶと見本の文章が入るので、分かっている情報で上書きする
-  }
-  selected = b.id;
+/* ---------------- ② 必要なものをチェック ---------------- */
+function renderNeeds() {
+  $('#needList').innerHTML = NEEDS.map((n) => `<label class="need${bldNeeds.includes(n.key) ? ' on' : ''}">
+      <input type="checkbox" data-need="${esc(n.key)}"${bldNeeds.includes(n.key) ? ' checked' : ''}>
+      <span><b>${esc(n.label)}</b><small>${esc(n.about)}</small></span>
+    </label>`).join('');
+}
+$('#needList').addEventListener('change', (e) => {
+  const k = e.target.dataset.need;
+  if (!k) return;
+  bldNeeds = e.target.checked ? [...bldNeeds, k] : bldNeeds.filter((x) => x !== k);
+  renderNeeds();
+});
+
+/* チェックしたものを、並び順どおりに置く。
+   ここで一度ページを組み上げてしまうので、③を飛ばしても完成品が残る。
+   すでに置いてあるものは触らない（②に戻って足し引きしても崩れない）。 */
+function applyNeeds() {
+  const want = NEEDS.filter((n) => bldNeeds.includes(n.key));
+  /* 外したものは消す */
+  [...bldNeedBlock.entries()].forEach(([k, id]) => {
+    if (want.some((n) => n.key === k)) return;
+    page().blocks = page().blocks.filter((b) => b.id !== id);
+    bldNames.delete(id);
+    bldNeedBlock.delete(k);
+  });
+  /* 足したものを、フッターの手前に順に積む */
+  want.forEach((n) => {
+    if (bldNeedBlock.has(n.key)) return;
+    const p = SECTION_PRESETS.find((x) => x.key === n.picks[0]);
+    if (!p) return;
+    const nb = makeBlock(p.type, p.props);
+    fillFromBiz(nb);
+    bldNames.set(nb.id, p.label);
+    bldNeedBlock.set(n.key, nb.id);
+    const fi = page().blocks.findIndex((b) => b.type === 'footer');
+    page().blocks.splice(fi < 0 ? page().blocks.length : fi, 0, nb);
+  });
+  spreadPhotos();
+  selected = page().blocks[1]?.id || page().blocks[0]?.id;
   selectedEl = null;
   refresh();
-  refreshBld();
 }
 
 function pickPreset(key) {
   const p = bldList().find((x) => x.key === key)
     || [...HERO_PRESETS, ...SECTION_PRESETS, ...FOOTER_PRESETS].find((x) => x.key === key);
   if (!p) return;
+  const st = bldStep();
 
-  /* フッターは1ページに1つ。積まずに、いまのフッターの見た目だけを変える */
-  if (p.type === 'footer') {
-    const f = page().blocks.find((b) => b.type === 'footer');
-    if (f) {
-      Object.assign(f.props, clone(p.props));
-      selected = f.id;
-      selectedEl = null;
-      refresh();
-      refreshBld();
-    }
-    return;
-  }
-
-  /* ヒーローは1ページに1つ。②で選び直したら、積まずに差し替える */
-  const heroStep = bldStep() === 'hero';
-  if (heroStep) {
+  /* ①：雰囲気は1ページに1つ。選び直したら差し替える */
+  if (st === 'hero') {
     const old = page().blocks.find((b) => b.type === 'hero' || b.type === 'collage');
     if (old) {
       page().blocks = page().blocks.filter((b) => b.id !== old.id);
       bldNames.delete(old.id);
     }
+    const nb = makeBlock(p.type, p.props);
+    fillFromBiz(nb);
+    bldNames.set(nb.id, p.label);
+    const fi = page().blocks.findIndex((b) => b.type === 'footer');
+    page().blocks.splice(fi < 0 ? page().blocks.length : fi, 0, nb);
+    spreadPhotos();
+    selected = nb.id;
+    selectedEl = null;
+    refresh();
+    return refreshBld();
   }
 
-  const nb = makeBlock(p.type, p.props);
-  fillFromBiz(nb);
-  bldNames.set(nb.id, p.label);
-  const fi = page().blocks.findIndex((b) => b.type === 'footer');
-  page().blocks.splice(fi < 0 ? page().blocks.length : fi, 0, nb);
-  spreadPhotos();
-  selected = nb.id;
-  selectedEl = null;
-  refresh();          // 後ろのプレビューも伸ばして、積み上がりが見えるようにする
-  refreshBld();
+  /* ③：いま見ている項目の形だけを、その場で入れ替える（位置は動かさない） */
+  const n = nowNeed();
+  if (st === 'shape' && n) {
+    const oldId = bldNeedBlock.get(n.key);
+    const at = page().blocks.findIndex((b) => b.id === oldId);
+    const nb = makeBlock(p.type, p.props);
+    fillFromBiz(nb);
+    bldNames.set(nb.id, p.label);
+    if (at >= 0) { page().blocks.splice(at, 1, nb); bldNames.delete(oldId); }
+    else page().blocks.splice(Math.max(1, page().blocks.length - 1), 0, nb);
+    bldNeedBlock.set(n.key, nb.id);
+    spreadPhotos();
+    selected = nb.id;
+    selectedEl = null;
+    refresh();
+    refreshBld();
+  }
 }
 
 /* 写真の枠を、上のブロックから順に埋めていく。
-   ②で選んだ写真を先に使い、足りなくなったら業種に合わせた仮の絵にする。
+   ①で選んだ写真を先に使い、足りなくなったら業種に合わせた仮の絵にする。
    空の枠に「IMAGE」と出ているページは作りかけにしか見えず、そこで
    手が止まる。写真が1枚も無くても、形が見えている状態にする。
 
-   すでに人が入れた写真には触らない（仮の絵と、②で選んだ写真だけ入れ替える）。 */
+   すでに人が入れた写真には触らない（仮の絵と、①で選んだ写真だけ入れ替える）。 */
 function spreadPhotos() {
   const ind = (state.biz && state.biz.ind) || 'company';
   const mine = new Set(bldPhotos);
@@ -11239,22 +11377,9 @@ function spreadPhotos() {
 }
 
 function bldUndo() {
-  const st = bldStep();
-  /* ③でブロックを積んでいる途中なら、まず1つ取り消す。
-     取り消すものが無くなったら、前の段へ戻る */
-  if (st === 'section') {
-    const picked = page().blocks.filter((b) => b.type !== 'header' && b.type !== 'footer');
-    if (picked.length > 1) {
-      const last = picked[picked.length - 1];
-      page().blocks = page().blocks.filter((b) => b.id !== last.id);
-      bldNames.delete(last.id);
-      selected = page().blocks[0]?.id || null;
-      selectedEl = null;
-      refresh();
-      return refreshBld();
-    }
-  }
+  if (bldStep() === 'shape' && bldShapeI > 0) { bldShapeI -= 1; return refreshBld(); }
   bldI = Math.max(0, bldI - 1);
+  if (bldStep() === 'shape') bldShapeI = Math.max(0, shapeQueue().length - 1);
   refreshBld();
 }
 
@@ -11279,7 +11404,7 @@ $('#bldInds').addEventListener('click', (e) => {
   spreadPhotos();     // 仮の絵も、その業種のものに描き直す
   applyBiz();
 });
-$('#bldInfo').addEventListener('input', (e) => {
+$('#bldFinish').addEventListener('input', (e) => {
   const f = BIZ_FIELDS.find(([id]) => e.target.id === id);
   if (!f) return;
   state.biz = Object.assign({}, state.biz, { [f[1]]: e.target.value.trim() });
@@ -11360,16 +11485,7 @@ bldPicker.addEventListener('change', async () => {
   flash(`${bldPhotos.length}枚を入れました`);
 });
 
-/* ---------------- ④ ヘッダーとフッター ---------------- */
-$('#bldChromeBar').addEventListener('click', (e) => {
-  const k = e.target.closest('[data-chrome]')?.dataset.chrome;
-  if (!k) return;
-  bldChrome = k;
-  $$('#bldChromeBar button').forEach((b) => b.classList.toggle('on', b.dataset.chrome === k));
-  renderBldGallery();
-});
-
-/* ---------------- ⑤ 仕上げ ---------------- */
+/* ---------------- ④ 仕上げ ---------------- */
 $('#bldFinish').addEventListener('click', (e) => {
   const k = e.target.closest('[data-fin]')?.dataset.fin;
   if (!k) return;
@@ -11393,11 +11509,13 @@ function finishBuild() {
 
 function openBuild(fresh) {
   bldBefore = state ? clone(state) : null;
-  bldCat = 'all';
-  bldChrome = 'hdr';
+
   bldPhotos = [];
   bldI = 0;
+  bldShapeI = 0;
   bldNames.clear();
+  bldNeedBlock.clear();
+  bldNeeds = NEEDS.filter((n) => n.on).map((n) => n.key);   // よく要るものは最初から付けておく
   if (fresh || !state) state = buildCustomState();
   selected = page().blocks[0].id;
   selectedEl = null;
@@ -11407,6 +11525,7 @@ function openBuild(fresh) {
   BIZ_FIELDS.forEach(([id, key]) => { $(`#${id}`).value = (state.biz && state.biz[key]) || ''; });
   $('#bizMore').open = false;
   renderBldInds();
+  renderNeeds();
   closeModal('#tplModal');
   closeModal('#easyModal');
   refresh();
@@ -11418,13 +11537,6 @@ const openBuildFlow = () => openBuild(true);
 $('#tplToBuild').addEventListener('click', openBuildFlow);
 $('#tplToEasy').addEventListener('click', openEasy);
 $('#bldBack').addEventListener('click', bldUndo);
-$('#bldCatBar').addEventListener('click', (e) => {
-  const c = e.target.closest('button')?.dataset.cat;
-  if (!c) return;
-  bldCat = c;
-  renderBldCats();
-  renderBldGallery();
-});
 $('#bldCancel').addEventListener('click', () => {
   if (bldBefore) { state = bldBefore; selected = page().blocks[1]?.id || page().blocks[0]?.id; }
   bldBefore = null;
@@ -11432,13 +11544,30 @@ $('#bldCancel').addEventListener('click', () => {
   closeModal('#buildModal');
   refresh();
 });
-$('#bldSkip').addEventListener('click', () => { bldI = 1; refreshBld(); });
-$('#bldDone').addEventListener('click', () => {
-  if (bldStep() !== 'done') { bldI += 1; refreshBld(); return; }
+/* ③は「いまの形のままでいい」で飛ばせる */
+$('#bldSkip').addEventListener('click', () => bldNext(true));
+$('#bldDone').addEventListener('click', () => bldNext(false));
+
+function bldNext(skipAll) {
+  const st = bldStep();
+  if (st === 'hero') { bldI += 1; return refreshBld(); }
+  if (st === 'needs') {
+    applyNeeds();
+    bldShapeI = 0;
+    /* かたちを選ぶものが1つも無ければ、③は素通りする */
+    bldI += shapeQueue().length ? 1 : 2;
+    return refreshBld();
+  }
+  if (st === 'shape') {
+    const q = shapeQueue();
+    if (!skipAll && bldShapeI < q.length - 1) { bldShapeI += 1; return refreshBld(); }
+    bldI += 1;
+    return refreshBld();
+  }
   finishBuild();
   const n = page().blocks.filter((b) => b.type !== 'header' && b.type !== 'footer').length;
   flash(`${n}段のページを組みました。ここから中身を書き替えられます`);
-});
+}
 
 let askBeforeSwitch = false; // 起動直後の選択では確認しない
 

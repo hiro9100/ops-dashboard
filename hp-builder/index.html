@@ -125,44 +125,28 @@
 <div class="modal" id="buildModal" hidden>
   <div class="modal-box wide">
     <div class="bld-steps" id="bldSteps"></div>
-    <h2 id="bldTitle">ヒーローを選ぶ</h2>
+    <h2 id="bldTitle">サイトの雰囲気をえらぶ</h2>
     <p class="modal-sub" id="bldSub"></p>
+    <p class="bld-anytime">内容も順番も、あとからいつでも変えられます。まずは形にしましょう。</p>
 
-    <!-- ① ビジネス情報 -->
-    <div id="bldInfo" hidden>
-      <div class="sec-label">どんなお店・会社ですか？</div>
-      <div class="ez-grid" id="bldInds"></div>
-      <div class="f"><label>お店・会社の名前</label>
-        <input type="text" id="bizName" maxlength="40" placeholder="例：カフェ ヴェルデュール" autocomplete="organization"></div>
-      <details class="adv" id="bizMore"><summary>連絡先も入れておく（あとからでも）</summary>
-        <div class="f"><label>電話番号</label><input type="tel" id="bizTel" placeholder="03-0000-0000"></div>
-        <div class="f"><label>メールアドレス</label><input type="email" id="bizMail" placeholder="hello@example.com"></div>
-        <div class="f"><label>住所</label><input type="text" id="bizAddr" placeholder="東京都〇〇区〇〇 1-2-3"></div>
-        <div class="f"><label>営業時間</label><input type="text" id="bizHours" placeholder="平日 10:00 - 18:00"></div>
-        <p class="hint">入れておくと、お問い合わせやフッターを足したときに、そのまま入ります。</p>
-      </details>
-    </div>
-
-    <!-- ② ヒーローのときだけ出る、写真の欄 -->
+    <!-- ① 雰囲気（＝いちばん上）のときだけ出る、写真の欄 -->
     <div id="bldPhoto" hidden>
       <button class="ez-drop sm" id="bldPick">
         <b>写真をえらぶ</b>
-        <small id="bldPickSub">入れなくても大丈夫です。業種に合わせた仮の絵が入ります</small>
+        <small id="bldPickSub">入れなくても大丈夫です。仮の絵が入ります</small>
       </button>
       <div class="ez-thumbs" id="bldThumbs"></div>
     </div>
 
-    <!-- ④ ヘッダーとフッターの切り替え -->
-    <div class="cat-bar" id="bldChromeBar" hidden>
-      <button data-chrome="hdr" class="on">ヘッダー</button>
-      <button data-chrome="ftr">フッター</button>
+    <!-- ② 必要なものをチェック -->
+    <div id="bldNeeds" hidden>
+      <div class="need-list" id="needList"></div>
     </div>
 
     <div class="bld-strip" id="bldStrip"></div>
-    <div class="cat-bar" id="bldCatBar"></div>
     <div class="gal-wrap" id="bldGal"><iframe id="bldFrame" title="部分の見本"></iframe></div>
 
-    <!-- ⑤ 仕上げ -->
+    <!-- ④ 仕上げ -->
     <div id="bldFinish" hidden>
       <div class="fin-grid">
         <button data-fin="photo"><b>写真の位置と大きさ</b>
@@ -172,14 +156,25 @@
         <button data-fin="anim"><b>動きを付ける</b>
           <small>文字の出かた、スクロールで現れる速さなど</small></button>
       </div>
-      <p class="hint">どれもあとから何度でも変えられます。まず中身を書いてからでも構いません。</p>
+      <details class="adv" id="bizMore">
+        <summary>お店の名前と連絡先を入れておく（あとからでも）</summary>
+        <div class="sec-label">どんなお店・会社ですか？</div>
+        <div class="ez-grid" id="bldInds"></div>
+        <div class="f"><label>お店・会社の名前</label>
+          <input type="text" id="bizName" maxlength="40" placeholder="例：カフェ ヴェルデュール" autocomplete="organization"></div>
+        <div class="f"><label>電話番号</label><input type="tel" id="bizTel" placeholder="03-0000-0000"></div>
+        <div class="f"><label>メールアドレス</label><input type="email" id="bizMail" placeholder="hello@example.com"></div>
+        <div class="f"><label>住所</label><input type="text" id="bizAddr" placeholder="東京都〇〇区〇〇 1-2-3"></div>
+        <div class="f"><label>営業時間</label><input type="text" id="bizHours" placeholder="平日 10:00 - 18:00"></div>
+        <p class="hint">入れると、いま置いたブロックの文章や連絡先にそのまま入ります。</p>
+      </details>
     </div>
 
     <div class="modal-foot">
       <button class="tb-btn" id="bldCancel">やめる</button>
-      <button class="tb-btn" id="bldSkip" hidden>あとで入力する</button>
-      <button class="tb-btn" id="bldBack">1つ戻す</button>
-      <button class="tb-btn primary" id="bldDone">これで完成</button>
+      <button class="tb-btn" id="bldSkip" hidden>このまま進む</button>
+      <button class="tb-btn" id="bldBack">もどる</button>
+      <button class="tb-btn primary" id="bldDone">つぎへ</button>
     </div>
   </div>
 </div>

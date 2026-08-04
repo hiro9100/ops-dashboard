@@ -235,3 +235,57 @@ const FOOTER_PRESETS = [
     about: '名前と年だけの細い帯。中身で見せたいとき。',
     props: { style: 'minimal' } },
 ];
+
+/* ================================================================
+   「何が要るか」で選ぶ一覧
+
+   型の一覧（SECTION_PRESETS）は「かたち」で並べてある。
+   かたちで選べるのは、何を載せるか決まっている人だけ。
+   はじめての人はその前段で止まる——「うちに何が要るのか」が分からない。
+
+   そこで先に、使い道でチェックしてもらう。チェックした時点で
+   ページは組み上がり、そのあと1つずつ「かたち」を選び直してもらう。
+   かたちが1つしかないものは、選ばせずに置くだけにする。
+
+   picks の先頭が、チェックした瞬間に置かれる形。
+   ================================================================ */
+const NEEDS = [
+  { key: 'about', label: 'お店・会社の紹介', about: '写真と文章で、どんなところかを伝える',
+    on: true, picks: ['about-left', 'about-right', 'rich'] },
+
+  { key: 'features', label: '強み・特徴', about: '伝えたいことを3つくらいに分けて並べる',
+    on: true, picks: ['features-icon', 'features-num', 'features-paren', 'features-image'] },
+
+  { key: 'photos', label: '写真を見せる', about: '店内・商品・作品などを並べる',
+    on: true, picks: ['gallery', 'hscroll', 'collage-mid', 'clipreveal'] },
+
+  { key: 'menu', label: 'メニュー・料金', about: '品名と値段、またはプランの比較',
+    on: false, picks: ['menu', 'pricing'] },
+
+  { key: 'equip', label: '設備・こだわり', about: 'Wi-Fi・駐車場・禁煙など、絵と短い言葉で',
+    on: false, picks: ['icons'] },
+
+  { key: 'works', label: '導入実績・取引先', about: '数が多いものを横に流す',
+    on: false, picks: ['strip', 'strip-card'] },
+
+  { key: 'numbers', label: '数字で見せる', about: '実績の数字や、推移のグラフ',
+    on: false, picks: ['slotstats', 'svgdraw', 'svgbar'] },
+
+  { key: 'flow', label: '流れ・沿革・フロア', about: '順番に意味があるものを縦に並べる',
+    on: false, picks: ['timeline', 'floors'] },
+
+  { key: 'news', label: 'お知らせ', about: '日付つきの一覧',
+    on: false, picks: ['news'] },
+
+  { key: 'video', label: '動画', about: 'YouTube・Vimeo・動画ファイルのURLを貼る',
+    on: false, picks: ['video'] },
+
+  { key: 'faq', label: 'よくある質問', about: '押すと答えが開く一覧',
+    on: false, picks: ['faq'] },
+
+  { key: 'cta', label: '最後のひと押し', about: '予約・電話など、してほしいことを1つ',
+    on: true, picks: ['cta', 'marquee', 'shift'] },
+
+  { key: 'contact', label: 'お問い合わせ', about: '連絡先と、入力フォーム',
+    on: true, picks: ['contact'] },
+];
