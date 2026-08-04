@@ -148,6 +148,9 @@ const TEXT_ANIMS = [
   ['scatter', 'Scatter'],
   ['neon', 'Neon'],
   ['fillgrad', 'Gradient'],
+  ['wipeleft', 'Wipe from Left'],
+  ['wipeup', 'Wipe from Bottom'],
+  ['wipedown', 'Wipe from Top'],
   ['scramble', 'Scramble'],
   ['type', 'Typewriter'],
 ];

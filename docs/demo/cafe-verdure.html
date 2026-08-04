@@ -1313,12 +1313,47 @@ p:last-child{margin-bottom:0}
     drop-shadow(0 .006em .014em rgba(0,0,0,.16))
     drop-shadow(0 .08em .11em rgba(0,0,0,.28));
 }
+/* ---------- きらめき ----------
+   1文字ずつ、白・薄いグレー・濃いグレー・中抜きを混ぜる。
+   規則を隠すために、素数ちがいの周期を重ねてある（4・7・5・11）。
+   乱数は使わない。読み込みのたびに絵が変わると落ち着かないし、
+   書き出したページと編集画面で違う絵になってしまう。
+
+   色は地の文字色から作る。currentColor は「その要素に受け継がれた色」を
+   指すので、親が白でも黒でも、同じ濃さの差が出る。
+
+   1文字ずつの span は文字アニメーションのしくみで作られる。
+   span が無い環境（JSが動かないなど）では、ただの文字色で出る。 */
+[data-txf="glint"]{
+  background-image:none;color:inherit;
+  -webkit-text-fill-color:currentColor
+}
+[data-txf="glint"] .ch{transition:color .25s ease}
+[data-txf="glint"] .ch:nth-child(4n+3){color:color-mix(in srgb,currentColor 58%,transparent)}
+[data-txf="glint"] .ch:nth-child(7n+5){color:color-mix(in srgb,currentColor 34%,transparent)}
+[data-txf="glint"] .ch:nth-child(11n+8){color:color-mix(in srgb,currentColor 76%,transparent)}
+/* 中抜き。いちばん目を引くので、いちばん少なくする（5文字に1つ）。
+   重なったときはこれが勝つように、いちばん後ろに置く */
+[data-txf="glint"] .ch:nth-child(5n+2){
+  -webkit-text-fill-color:transparent;
+  -webkit-text-stroke:.026em currentColor;
+  color:inherit
+}
+@supports not (color:color-mix(in srgb,red,blue)){
+  [data-txf="glint"] .ch:nth-child(4n+3){opacity:.58}
+  [data-txf="glint"] .ch:nth-child(7n+5){opacity:.34}
+  [data-txf="glint"] .ch:nth-child(11n+8){opacity:.76}
+}
+
 /* 文字を書き替えているあいだは、透けていると読めない。いったん戻す。
    color:inherit も一緒に戻すこと。currentColor は color を見るので、
    color が transparent のままだと、戻したつもりで透明のままになる。 */
-[data-txf="glass"].__editing{
+[data-txf="glass"].__editing,[data-txf="glint"].__editing{
   color:inherit;-webkit-text-fill-color:currentColor;background-image:none;
   -webkit-text-stroke:0;filter:none
+}
+[data-txf="glint"].__editing .ch{
+  color:inherit;-webkit-text-fill-color:currentColor;-webkit-text-stroke:0;opacity:1
 }
 
 /* ==========================================================
@@ -1483,6 +1518,51 @@ p:last-child{margin-bottom:0}
   color:transparent;-webkit-text-fill-color:transparent}
 @keyframes ta-fillgrad{from{background-size:0% 100%,100% 100%}to{background-size:100% 100%,100% 100%}}
 [data-ta].ta-fillgrad.in{animation:ta-fillgrad var(--ta-dur) var(--ta-ease) var(--ta-delay,0s) both}
+
+/* ---------- 薄いところから塗られる ----------
+   はじめは全体が薄く出ていて、そこへ濃い色が流れ込む。
+   ta-fillgrad と同じ仕掛け（2枚重ねて、上の1枚の大きさを変える）だが、
+   色を変えず「薄い→濃い」だけにする。何色のページでも同じように効く。
+
+   currentColor を使うので、色を transparent にしてはいけない。
+   -webkit-text-fill-color だけを透明にすれば、字は透けたまま color は
+   生きたままになり、下の2枚が地の文字色から作れる。
+
+   塗りの先は少しぼかす。切り口がまっすぐだと、シャッターが下りたように
+   見えて「塗られている」感じにならない。 */
+[data-ta][class*="ta-wipe"]{
+  --wipe-on:currentColor;
+  --wipe-off:color-mix(in srgb,currentColor 20%,transparent);
+  -webkit-background-clip:text;background-clip:text;
+  -webkit-text-fill-color:transparent;
+  background-repeat:no-repeat
+}
+@supports not (color:color-mix(in srgb,red,blue)){
+  [data-ta][class*="ta-wipe"]{--wipe-off:var(--c-muted)}
+}
+@supports not ((-webkit-background-clip:text) or (background-clip:text)){
+  [data-ta][class*="ta-wipe"]{-webkit-text-fill-color:currentColor;background-image:none}
+}
+[data-ta].ta-wipeleft{
+  background-image:linear-gradient(90deg,var(--wipe-on) 0 86%,transparent 100%),
+                   linear-gradient(var(--wipe-off),var(--wipe-off));
+  background-size:0% 100%,100% 100%;background-position:0 0,0 0}
+@keyframes ta-wipeleft{to{background-size:118% 100%,100% 100%}}
+[data-ta].ta-wipeleft.in{animation:ta-wipeleft var(--ta-dur) var(--ta-ease) var(--ta-delay,0s) both}
+
+[data-ta].ta-wipeup{
+  background-image:linear-gradient(0deg,var(--wipe-on) 0 86%,transparent 100%),
+                   linear-gradient(var(--wipe-off),var(--wipe-off));
+  background-size:100% 0%,100% 100%;background-position:0 100%,0 0}
+@keyframes ta-wipeup{to{background-size:100% 122%,100% 100%}}
+[data-ta].ta-wipeup.in{animation:ta-wipeup var(--ta-dur) var(--ta-ease) var(--ta-delay,0s) both}
+
+[data-ta].ta-wipedown{
+  background-image:linear-gradient(180deg,var(--wipe-on) 0 86%,transparent 100%),
+                   linear-gradient(var(--wipe-off),var(--wipe-off));
+  background-size:100% 0%,100% 100%;background-position:0 0,0 0}
+@keyframes ta-wipedown{to{background-size:100% 122%,100% 100%}}
+[data-ta].ta-wipedown.in{animation:ta-wipedown var(--ta-dur) var(--ta-ease) var(--ta-delay,0s) both}
 
 /* スクランブル・タイプライターはJSで動かす */
 [data-ta].ta-type .ch{visibility:hidden}
@@ -2616,7 +2696,17 @@ a:not(.btn):not(.logo){transition:opacity .5s cubic-bezier(.165,.84,.44,1)}
     var a = el.getAttribute('data-anim') || def;
     el.classList.add('ta-' + a);
     if(a === 'none' || reduce){ el.classList.add('in'); return; }
-    if(a !== 'fillgrad') split(el, a);
+    /* 1文字ずつに分けるのは、1文字ずつ動かすものだけ。
+       面で塗るもの（fillgrad・wipe）は分けない。分けると
+       background-clip:text が子の文字に届かず、何も出なくなる（実測）。 */
+    if(a !== 'fillgrad' && a.indexOf('wipe') !== 0) split(el, a);
+  });
+
+  /* きらめきは1文字ずつ色を変えるので、span が要る。動きを「なし」に
+     していても、動きを減らす設定でも、ここだけは分けておく。
+     分けなければ、ただの文字色で出るだけなので壊れはしない。 */
+  [].slice.call(d.querySelectorAll('[data-txf="glint"]')).forEach(function(el){
+    if(!el.querySelector('.ch')) split(el, 'none');
   });
 
   /* 画像・要素のアニメーション */

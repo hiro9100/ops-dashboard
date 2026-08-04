@@ -1538,6 +1538,7 @@ const TEXT_FILL_LIST = [
   ['rainbow', 'Rainbow'],
   ['brand', 'Brand'],
   ['glass', 'Glass'],
+  ['glint', 'Glint'],
   ['flame', 'Flame Photo'],
   ['polydark', 'Poly Dark'],
   ['polylight', 'Poly Light'],
