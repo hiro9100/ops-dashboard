@@ -151,6 +151,14 @@ const SECTION_PRESETS = [
   { key: 'carousel3d', type: 'carousel3d', group: 'カード', label: 'Carousel',
     about: '奥行きのある並び。写真が多いとき。', props: {} },
 
+  { key: 'listing', type: 'listing', group: 'カード', label: 'Listing ×2',
+    about: '写真・条件・ボタンをひと組で並べる。たくさんの中から1つ選んでもらうものに。',
+    props: { cols: 'c2' } },
+
+  { key: 'listing-3', type: 'listing', group: 'カード', label: 'Listing ×3',
+    about: '同じ形を3列で。1つあたりを小さく、数を多く見せたいとき。',
+    props: { cols: 'c3', btnStyle: 'link' } },
+
   /* ============ 縦に並べる（一覧） ============ */
   { key: 'menu', type: 'menu', group: '一覧', label: 'Price List',
     about: '左に品名、右に値段。お品書き・メニュー表に。', props: {} },
@@ -166,6 +174,22 @@ const SECTION_PRESETS = [
 
   { key: 'timeline', type: 'timeline', group: '一覧', label: 'Timeline',
     about: '線が伸びながら項目が現れる。沿革や流れに。', props: {} },
+
+  { key: 'schedule', type: 'schedule', group: '一覧', label: 'Week Table',
+    about: '縦が時間帯、横が曜日の表。丸と休みで示す。診療時間・営業時間に。',
+    props: {} },
+
+  { key: 'schedule-class', type: 'schedule', group: '一覧', label: 'Week Table (Text)',
+    about: '同じ表の桝目に、文字を入れる形。教室・スタジオのコマ表に。',
+    props: {
+      eyebrow: 'SCHEDULE', title: 'レッスン表', corner: '時間',
+      note: '※初回は開始15分前にお越しください。祝日は休講です。',
+      rows: [
+        { label: '10:00 – 11:00', cells: 'ベーシック | - | ベーシック | - | ベーシック | キッズ | -' },
+        { label: '14:00 – 15:00', cells: '- | ストレッチ | - | ストレッチ | - | 親子 | 体験' },
+        { label: '19:00 – 20:30', cells: 'アドバンス | HIPHOP | アドバンス | HIPHOP | 自由練習 | - | -' },
+      ],
+    } },
 
   { key: 'slotstats', type: 'slotstats', group: '一覧', label: 'Big Numbers',
     about: '画面に入ると数字が回って止まる。実績を出すとき。',
@@ -273,6 +297,14 @@ const NEEDS = [
 
   { key: 'flow', label: '流れ・沿革・フロア', about: '順番に意味があるものを縦に並べる',
     on: false, picks: ['timeline', 'floors'] },
+
+  { key: 'lineup', label: '一覧から選んでもらう',
+    about: '写真と条件を並べて、1つずつ詳しいほうへ送る',
+    on: false, picks: ['listing', 'listing-3'] },
+
+  { key: 'hours', label: '営業時間・スケジュール',
+    about: '曜日ごとの予定を表で見せる',
+    on: false, picks: ['schedule', 'schedule-class'] },
 
   { key: 'news', label: 'お知らせ', about: '日付つきの一覧',
     on: false, picks: ['news'] },

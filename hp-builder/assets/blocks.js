@@ -1258,6 +1258,151 @@ ${p.note ? `    <p class="menu-note"${ed('note', '注記')}>${esc(p.note)}</p>` 
     },
   },
 
+  /* ---------------- 一覧カード（写真・条件・ボタン） ----------------
+     たくさんの中から1つ選んでもらうための形。見る側のすることは、
+     何を扱っていても同じになる——写真を見て、条件を読んで、
+     詳しいほうへ進む。だからカード1枚の並びは動かさず、
+     写真・見出し・大きな数字・条件・補足・ボタンの順で固定する。
+
+     数字（価格や月額）だけ大きく出すのは、いちばん先に見るのがそこだから。
+     見出しに全部を書くと、どれも同じ長さの行になって見分けが付かない。 */
+  listing: {
+    label: 'Listing',
+    icon: '▥',
+    about: '写真・条件・ボタンをひと組にして並べます。たくさんの中から1つ選んでもらうものに。',
+    fields: [
+      FIELD.eyebrow, FIELD.title, FIELD.text,
+      { key: 'cols', label: '横に並べる数', type: 'select',
+        options: [['c2', '2列'], ['c3', '3列'], ['c4', '4列']] },
+      { key: 'items', label: '並べるもの', type: 'list', addLabel: '1つ追加', titleKey: 'title',
+        item: [
+          { key: 'image', label: '写真', type: 'image' },
+          { key: 'badge', label: '写真の上の印', type: 'text',
+            hint: '「NEW」「価格更新」など。空でも構いません' },
+          { key: 'title', label: '見出し', type: 'text' },
+          { key: 'price', label: '大きく出す数字', type: 'text',
+            hint: '価格や月額など。空でも構いません' },
+          { key: 'meta', label: '場所・条件', type: 'text' },
+          { key: 'note', label: '補足', type: 'text' },
+          { key: 'href', label: 'ボタンのリンク先', type: 'link' },
+        ] },
+      { key: 'btn', label: 'ボタン文字（空でボタン無し）', type: 'text' },
+      { key: 'btnStyle', label: 'ボタンの見た目', type: 'select', options: BTN_STYLES },
+      { key: 'more', label: 'もっと見るボタン（空で非表示）', type: 'text' },
+      { key: 'moreHref', label: 'そのリンク先', type: 'link' },
+      FIELD.shape, FIELD.shapeMask,
+      FIELD.bg, FIELD.anchor,
+    ],
+    defaults: {
+      eyebrow: 'LINEUP', title: 'いま出ているもの', text: '', cols: 'c2',
+      btn: '詳細を見る', btnStyle: 'ghost', more: '', moreHref: '#',
+      bg: '', anchor: 'listing',
+      items: [
+        { image: '', badge: 'NEW', title: '68.5m² / 2LDK', price: '9,990万円',
+          meta: '港区赤坂 / 赤坂駅 徒歩6分', note: 'ペット飼育可', href: '#' },
+        { image: '', badge: '', title: '63.3m² / 2LDK', price: '11,990万円',
+          meta: '目黒区東山 / 池尻大橋駅 徒歩9分', note: 'ペット飼育不可', href: '#' },
+        { image: '', badge: '', title: '84.2m² / 3LDK', price: '7,580万円',
+          meta: '川崎市宮前区土橋 / 宮前平駅 徒歩5分', note: '駐車場あり', href: '#' },
+        { image: '', badge: '', title: '41.6m² / 1LDK', price: '5,380万円',
+          meta: '世田谷区下馬 / 三軒茶屋駅 徒歩14分', note: '南向き・角部屋', href: '#' },
+      ],
+    },
+    render: (p) => {
+      const btnCls = ['btn', p.btnStyle && p.btnStyle !== 'primary' ? p.btnStyle : '', 'lst-btn']
+        .filter(Boolean).join(' ');
+      return sec('listing', p,
+        `${head(p)}
+    <div class="lst ${['c2', 'c3', 'c4'].includes(p.cols) ? p.cols : 'c2'}">
+${(p.items || []).map((it, i) => `      <article class="lst-i"${el(p, `it${i}`, 'ia', `${i + 1}つめ`)}>
+        <div class="lst-fig">
+          <div class="lst-pic"${imgSlot(`items.${i}.image`, p)}>${media(it.image, it.title)}</div>
+${it.badge ? `          <span class="lst-badge"${ed(`items.${i}.badge`, '印')}>${esc(it.badge)}</span>\n` : ''}        </div>
+        <div class="lst-b">
+          <b class="lst-t"${ed(`items.${i}.title`, '見出し')}>${esc(it.title)}</b>
+${it.price ? `          <span class="lst-p"${ed(`items.${i}.price`, '数字')}>${esc(it.price)}</span>\n` : ''}${it.meta ? `          <span class="lst-m"${ed(`items.${i}.meta`, '場所・条件')}>${esc(it.meta)}</span>\n` : ''}${it.note ? `          <span class="lst-n"${ed(`items.${i}.note`, '補足')}>${esc(it.note)}</span>\n` : ''}        </div>
+${p.btn ? `        <a class="${btnCls}"${linkAttr(it.href)}>${esc(p.btn)}</a>\n` : ''}      </article>`).join('\n')}
+    </div>
+${p.more ? `    <div class="btn-row lst-more"><a class="btn ghost"${linkAttr(p.moreHref)}>${esc(p.more)}</a></div>` : ''}`);
+    },
+  },
+
+  /* ---------------- 予定の表（曜日 × 時間帯） ----------------
+     歯科の診療時間、飲食店の営業時間、教室のコマ表。どれも
+     「縦が時間帯、横が曜日、交点にその日どうなのか」という同じ形をしている。
+
+     交点に入るものだけが業種で変わる（●、休、クラス名、時刻）。
+     だから桝目の中身は決め打ちにせず、書いたとおりに出す。
+     ただし ● と — だけは記号として描く。文字で打つと大きさが揃わない。 */
+  schedule: {
+    label: 'Schedule',
+    icon: '⊞',
+    about: '曜日ごとの予定を表にします。診療時間、営業時間、教室のコマ表に。',
+    fields: [
+      FIELD.eyebrow, FIELD.title, FIELD.text,
+      { key: 'corner', label: '左上のことば', type: 'text' },
+      { key: 'days', label: '横に並べる見出し', type: 'text',
+        hint: '縦棒で区切ります。例：月 | 火 | 水 | 木 | 金 | 土 | 日祝' },
+      { key: 'rows', label: '行', type: 'list', addLabel: '行を追加', titleKey: 'label',
+        item: [
+          { key: 'label', label: '左端のことば', type: 'text', hint: '時間帯やコマ名' },
+          { key: 'cells', label: '桝目', type: 'text',
+            hint: '縦棒で区切ります。「○」で丸、「-」で線。ほかは書いたとおりに出ます' },
+        ] },
+      { key: 'note', label: '表の下の注記', type: 'textarea' },
+      { key: 'card', label: '白い土台に載せる', type: 'toggle' },
+      FIELD.bg, FIELD.anchor,
+    ],
+    defaults: {
+      eyebrow: 'HOURS', title: '診療時間', text: '', card: true,
+      corner: '診療時間', days: '月 | 火 | 水 | 木 | 金 | 土 | 日祝',
+      note: '※土曜は 9:00 – 17:00 の通し診療です。休診日：日曜・祝日・木曜午後。',
+      /* 白い板を白い地に置くと縁が消える。既定では地を薄く敷いておく */
+      bg: 'surface', anchor: 'schedule',
+      rows: [
+        { label: '9:00 – 13:00', cells: '○ | ○ | ○ | ○ | ○ | ○ | 休' },
+        { label: '14:30 – 19:00', cells: '○ | ○ | ○ | 休 | ○ | - | 休' },
+      ],
+    },
+    /* 桝目1つを描く。○ は丸、- は線、それ以外は書いた文字のまま。
+       全角と半角のどちらで打たれても同じに扱う（打ち分けさせない）。 */
+    render: (p) => {
+      const cut = (s) => String(s || '').split('|').map((x) => x.trim());
+      const days = cut(p.days).filter(Boolean);
+      const cell = (v) => {
+        if (/^[○◯〇●oO]$/.test(v)) return '<i class="sch-o" aria-label="あり"></i>';
+        if (/^[-–—ー]$/.test(v)) return '<i class="sch-x" aria-label="なし"></i>';
+        return esc(v);
+      };
+      const rows = (p.rows || []).map((r, i) => {
+        const cs = cut(r.cells);
+        /* 曜日より桝目が少なくても、表が崩れないように空欄で埋める */
+        const tds = days.map((_, j) => `<td>${cell(cs[j] || '')}</td>`).join('');
+        return `        <tr${el(p, `row${i}`, 'ia', `${i + 1}行目`)}>
+          <th scope="row"${ed(`rows.${i}.label`, '左端のことば')}>${esc(r.label)}</th>
+          ${tds}
+        </tr>`;
+      }).join('\n');
+      return sec('schedule', p,
+        `${head(p)}
+    <div class="sch${p.card ? ' sch-card' : ''}">
+      <div class="sch-scroll">
+        <table class="sch-t">
+          <thead>
+            <tr><th scope="col" class="sch-corner"${ed('corner', '左上のことば')}>${esc(p.corner)}</th>
+${days.map((d) => `              <th scope="col">${esc(d)}</th>`).join('\n')}
+            </tr>
+          </thead>
+          <tbody>
+${rows}
+          </tbody>
+        </table>
+      </div>
+${p.note ? `      <p class="sch-note"${ed('note', '注記')}>${nl2br(p.note)}</p>` : ''}
+    </div>`);
+    },
+  },
+
   /* ---------------- フッター ---------------- */
   footer: {
     label: 'Footer',

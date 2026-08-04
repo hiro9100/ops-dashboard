@@ -523,9 +523,10 @@ const PREVIEW_CSS = `
 [data-bid]:hover{outline-color:rgba(76,141,255,.45);cursor:pointer}
 [data-bid].__sel{outline-color:#4c8dff}
 
-/* クリックできる要素 */
-[data-el]{position:relative;outline:1px dashed transparent;outline-offset:3px;
+/* クリックできる要素。position は下の [data-imgprop] と同じ理由で :where() */
+[data-el]{outline:1px dashed transparent;outline-offset:3px;
   transition:outline-color .12s}
+:where([data-el]){position:relative}
 [data-el]:hover{outline-color:rgba(76,141,255,.85);cursor:pointer}
 [data-el].__elsel{outline:2px solid #4c8dff;outline-style:solid}
 [data-el]:hover::after,[data-el].__elsel::after{
@@ -536,9 +537,12 @@ const PREVIEW_CSS = `
 [data-elkind="ia"]:hover{outline-color:rgba(139,92,246,.85)}
 [data-elkind="ia"].__elsel{outline-color:#8b5cf6}
 
-/* ダブルクリックで直接編集できる場所 */
-[data-prop]{position:relative;outline:1px dashed transparent;outline-offset:3px;
+/* ダブルクリックで直接編集できる場所。
+   position を強く当てると、自分で位置を決めている文字（写真の上に乗せる印など）が
+   編集画面だけ流れに戻って落ちる。ここも :where() で当てる。 */
+[data-prop]{outline:1px dashed transparent;outline-offset:3px;
   transition:outline-color .12s}
+:where([data-prop]){position:relative}
 [data-prop]:hover{outline-color:rgba(76,141,255,.85);cursor:text}
 [data-prop]:hover::after{
   content:attr(data-elname) " ✎";position:absolute;top:2px;left:2px;z-index:20;
