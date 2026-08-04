@@ -1503,11 +1503,12 @@ const DECO_ABOUT = {
 
 const MELT_ABOUT = {
   none: '下の縁はまっすぐ。ふつうの区切りです。',
-  drip: '太さの違うしずくが、ばらばらの長さで垂れます。いちばん動きが出ます。',
-  pour: '大きな塊がひとつ、ゆっくり流れ落ちます。落ち着いた見え方に。',
-  wave: 'やわらかい波。区切りをつけたいだけのときに。',
-  bubble: '垂れの先が切れて、丸い玉だけが下に残ります。',
-  ink: '細かい凹凸。紙にインクが染みたような縁になります。',
+  flow: '長い1本のゆるやかな曲がり。いちばん素直で、どの配色にも合います。',
+  slope: '左が深く、右へ向かって上がります。写真を右に置くときに。',
+  swell: '真ん中が大きくふくらみます。文字を真ん中に置くときに。',
+  drip: 'ゆるい縁から、3つだけ大きく垂れます。',
+  bubble: '浅い縁の下に、切れた玉だけが残ります。',
+  own: '自分で描いた縁の画像を読み込んで、そのとおりに流し込みます。',
 };
 
 const SCROLL_ABOUT = {
@@ -1589,9 +1590,9 @@ const GAL_KINDS = {
   shape: { list: () => FIELD.shape.options, about: SHAPE_ABOUT, what: '写真の形',
     title: '写真の形を選ぶ',
     sub: 'いまの写真で、抜けかたを並べています。' },
-  melt: { list: () => HERO_MELTS, about: MELT_ABOUT, what: '下の縁の溶け方',
-    title: '下の縁の溶け方を選ぶ',
-    sub: 'いまのヒーローの下を、それぞれの形で流し込んでいます。' },
+  melt: { list: () => HERO_MELTS, about: MELT_ABOUT, what: '下の縁の形',
+    title: '下の縁の形を選ぶ',
+    sub: 'いまのヒーローの下を、それぞれの形で流し込んでいます。持ち込みは、読み込んだ画像のとおりに抜きます。' },
   hdr: { list: () => HDR_BARS, about: HDR_ABOUT, what: 'ヘッダーのバー',
     title: 'ヘッダーのバーを選ぶ',
     sub: 'いまのヘッダーを、それぞれの型で出しています。下はヒーローの頭です。' },
@@ -2459,7 +2460,10 @@ async function setMask(blockId, prop, file) {
   try {
     const url = await fileToMask(file);
     setPath(b.props, prop, url);
-    b.props.shape = 'own';
+    /* 「持ち込み」に切り替える先は、欄の名前から決める。
+       shapeMask なら写真の形、meltMask ならヒーローの下の縁。 */
+    const target = prop.replace(/Mask$/, '');
+    if (target !== prop) b.props[target] = 'own';
     renderEditor(); renderPreview(true); save(`mask:${prop}:${blockId}`);
     flash(`この形で抜きます（約${Math.round(url.length / 1400)}KB）`);
   } catch (e) {
@@ -2474,8 +2478,10 @@ document.addEventListener('click', (e) => {
   if (mc) {
     const b = page().blocks.find((x) => x.id === selected);
     if (!b) return;
-    setPath(b.props, mc.dataset.maskclear.replace(/^props\./, ''), '');
-    b.props.shape = '';
+    const mp = mc.dataset.maskclear.replace(/^props\./, '');
+    setPath(b.props, mp, '');
+    const mt = mp.replace(/Mask$/, '');
+    if (mt !== mp) b.props[mt] = '';
     renderEditor(); renderPreview(true); save();
     flash('形を外しました');
   }

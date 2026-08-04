@@ -549,6 +549,122 @@ const TEMPLATES = {
     ],
   },
 
+  /* ============ 商品・パッケージ（淡い色＋曲がった縁） ============
+     売っているのが「1つの商品」のとき。棚に並んだパッケージの表側を、
+     そのままページの頭にする。品名を大きく、まわりに短い言葉を少しだけ。
+     地の色をひと面ぶん敷いて、下の縁をゆるく曲げて白へ渡す。 */
+  goods: {
+    name: '商品・パッケージ',
+    desc: '淡い色の面と曲がった縁。品名を大きく見せる、食品・日用品のページ。',
+    swatch: ['#7fb5dd', '#6b4f3a', '#ffffff'],
+    style: 'soft',
+    theme: {
+      primary: '#4f8fc0', accent: '#6b4f3a', bg: '#ffffff', surface: '#a8cfe8',
+      text: '#1d2a33', muted: '#5f7484', border: '#dbe6ee', dark: '#1d2a33',
+      radius: 18, max: 1180, font: 'round', fontHead: 'round',
+    },
+    blocks: [
+      { type: 'header', props: {
+        bar: 'clear', logo: 'NEW TASTE Cafe', cta: '買えるお店', ctaHref: '#shops',
+        nav: [
+          { label: 'この商品について', href: '#about' },
+          { label: 'おいしさの理由', href: '#features' },
+          { label: 'ラインナップ', href: '#lineup' },
+          { label: 'よくある質問', href: '#faq' },
+        ],
+      } },
+      /* パッケージの表側。品名・よみ・丸い印・帯のラベル、右に商品の写真。
+         下の縁はゆるい曲がりで白へ渡す（メルト）。 */
+      { type: 'hero', props: {
+        layout: 'pack', bg: 'surface', melt: 'flow', anchor: 'top',
+        eyebrow: 'CAFFÈ LATTE',
+        title: 'ミルクのおいしさ、\nそのままに。',
+        text: 'カフェラテ ノンスイート／200ml',
+        badge: '砂糖\n不使用', badgeRing: 'NON SWEET',
+        tag: 'こだわりのオリジナルブレンド使用',
+        buttons: [{ label: '買えるお店をさがす', href: '#shops', style: 'primary' }],
+      } },
+      { type: 'about', props: {
+        eyebrow: 'ABOUT', title: '甘さを足さずに、\nコクだけ残しました。',
+        body: '砂糖を入れないと、コーヒーの苦みだけが立ってしまう。そこでミルクの配合を何度も変えて、甘みを足さずにまろやかさが出る一点を探しました。\n\n毎日飲むものだから、飽きないことをいちばん大事にしています。',
+        reverse: true, bg: '', anchor: 'about',
+      } },
+      { type: 'icons', props: {
+        eyebrow: 'POINT', title: 'この商品のこと', text: '', cols: 'c4', size: 'm',
+        bg: '', anchor: 'point',
+        items: [
+          { icon: 'ban', label: '砂糖不使用' },
+          { icon: 'drink', label: '生乳50%以上' },
+          { icon: 'plant', label: '香料無添加' },
+          { icon: 'check', label: '紙の容器' },
+        ],
+      } },
+      { type: 'features', props: {
+        eyebrow: 'REASON', title: 'おいしさの理由', text: '3つのことだけ、こだわっています。',
+        cols: 'c3', style: 'num', bg: 'surface', anchor: 'features',
+        items: [
+          { icon: '', title: '豆は浅煎りと深煎りを半々', text: '苦みだけが立たないように、2種類をあとから合わせています。香りは浅煎り、コクは深煎りが受け持ちます。' },
+          { icon: '', title: '生乳の配合は50%以上', text: '甘みを足さないぶん、ミルクのまろやかさで飲みやすさを出しました。' },
+          { icon: '', title: '香料も甘味料も入れない', text: '素材の味だけで組み立てています。だから毎日飲んでも飽きません。' },
+        ],
+      } },
+      { type: 'svgdraw', props: {
+        eyebrow: 'TASTE', title: '味わいのバランス', text: '同じシリーズと比べてみました。',
+        kind: 'bar', bg: '', anchor: 'taste',
+        items: [
+          { label: '香り', value: 82, note: '82' },
+          { label: 'コク', value: 74, note: '74' },
+          { label: '苦み', value: 45, note: '45' },
+          { label: '甘さ', value: 12, note: '0' },
+        ],
+      } },
+      { type: 'listing', props: {
+        eyebrow: 'LINEUP', title: 'シリーズのラインナップ', text: '',
+        cols: 'c3', btn: 'くわしく見る', btnStyle: 'ghost',
+        bg: '', anchor: 'lineup',
+        items: [
+          { image: '', badge: 'NEW', title: 'カフェラテ ノンスイート', price: '希望小売価格 168円',
+            meta: '200ml / 乳飲料', note: '砂糖不使用', href: '#' },
+          { image: '', badge: '', title: 'カフェラテ', price: '希望小売価格 168円',
+            meta: '200ml / 乳飲料', note: 'いちばん定番', href: '#' },
+          { image: '', badge: '', title: 'フルーツスムージー', price: '希望小売価格 198円',
+            meta: '180ml / 果汁入り飲料', note: '果肉30g入り', href: '#' },
+        ],
+      } },
+      { type: 'menu', props: {
+        eyebrow: 'NUTRITION', title: '栄養成分表示', text: '1本（200ml）あたり',
+        cols: 'c2', note: '※ 表示値は目安です。', bg: 'surface', anchor: 'nutrition',
+        groups: [
+          { name: '成分', note: '',
+            items: 'エネルギー | | 96kcal\nたんぱく質 | | 6.4g\n脂質 | | 5.2g\n炭水化物 | | 6.1g' },
+          { name: 'そのほか', note: '',
+            items: '食塩相当量 | | 0.2g\nカルシウム | | 210mg\n原材料 | | 生乳、コーヒー\nアレルギー | | 乳成分' },
+        ],
+      } },
+      { type: 'faq', props: {
+        eyebrow: 'FAQ', title: 'よくある質問', text: '', bg: '', anchor: 'faq',
+        items: [
+          { q: '砂糖不使用なのに甘く感じるのはなぜですか', a: '乳に含まれる糖の甘みです。砂糖・甘味料はいっさい加えていません。' },
+          { q: '開けたあとはどのくらい持ちますか', a: '開封後は保存がききません。その日のうちにお飲みください。' },
+          { q: '温めて飲めますか', a: '紙容器のままは温められません。カップに移してからお願いします。' },
+          { q: 'どこで買えますか', a: '全国のコンビニエンスストア・スーパーで取り扱っています。下の欄からお近くの店をさがせます。' },
+        ],
+      } },
+      { type: 'cta', props: {
+        title: 'まず1本、試してみてください。', text: '全国のコンビニ・スーパーで買えます。',
+        bg: 'primary', anchor: 'shops',
+        buttons: [{ label: '買えるお店をさがす', href: '#', style: 'ghost' }],
+      } },
+      { type: 'footer', props: {
+        style: 'big', logo: 'NEW TASTE Cafe',
+        text: 'おいしさを、毎日のものに。\n株式会社ニューテイスト',
+        copy: '© 2026 NEW TASTE Inc.',
+        links: [{ label: '商品一覧', href: '#lineup' }, { label: 'お問い合わせ', href: '#' },
+                { label: 'プライバシーポリシー', href: '#' }],
+      } },
+    ],
+  },
+
   /* ============ エディトリアル ============ */
   editorial: {
     name: 'エディトリアル',

@@ -73,28 +73,39 @@ const HERO_PRESETS = [
     about: '敷き詰めた写真に、斜めの写真と縦書きの帯を重ねる。',
     props: {} },
 
-  /* 溶け落ちる縁。下の縁をまっすぐ切らず、上から流れ落ちた形にする。
-     縁だけが違う型なので、地の色と並べかたはそれぞれ変えてある。
-     同じ絵が5枚ならぶと、どれを選べばいいのか分からなくなる。 */
-  { key: 'melt-drip', type: 'hero', label: 'Melt: Drip',
-    about: '色の帯の下から、太さの違うしずくが垂れる。いちばん動きが出る。',
-    props: { layout: 'center', bg: 'primary', melt: 'drip' } },
+  /* 下の縁を、まっすぐ切らずに流し込む型。縁だけが違うと5枚とも
+     同じ絵に見えるので、地の色と並べかたもそれぞれ変えてある。 */
+  { key: 'melt-flow', type: 'hero', label: 'Curve: Flow',
+    about: '色の面が、ゆるやかな1本の曲がりで下と分かれる。いちばん素直。',
+    props: { layout: 'center', bg: 'primary', melt: 'flow' } },
 
-  { key: 'melt-pour', type: 'hero', label: 'Melt: Pour',
-    about: '写真いっぱいの下を、大きな塊がひとつゆっくり流れ落ちる。',
-    props: { layout: 'cover', melt: 'pour', overlay: 45 } },
+  { key: 'melt-slope', type: 'hero', label: 'Curve: Slope',
+    about: '左が深く、右へ上がっていく縁。写真を右に置くときに。',
+    props: { layout: 'split', bg: 'surface', melt: 'slope' } },
 
-  { key: 'melt-wave', type: 'hero', label: 'Melt: Wave',
-    about: 'やわらかい波で下と分ける。いちばん静か。',
-    props: { layout: 'left', bg: 'surface', melt: 'wave' } },
+  { key: 'melt-swell', type: 'hero', label: 'Curve: Swell',
+    about: '真ん中が大きくふくらむ縁。文字を真ん中に置くときに。',
+    props: { layout: 'center', bg: 'dark', melt: 'swell' } },
 
-  { key: 'melt-bubble', type: 'hero', label: 'Melt: Bubble',
-    about: '垂れの先が切れて、丸い玉だけが下に残る。',
-    props: { layout: 'center', bg: 'dark', melt: 'bubble' } },
+  { key: 'melt-drip', type: 'hero', label: 'Curve: Drip',
+    about: 'ゆるい縁から、3つだけ大きく垂れる。',
+    props: { layout: 'left', bg: 'primary', melt: 'drip' } },
 
-  { key: 'melt-ink', type: 'hero', label: 'Melt: Ink',
-    about: '細かい凹凸。紙にインクが染みたような縁になる。',
-    props: { layout: 'cover', melt: 'ink', overlay: 50, grain: true } },
+  { key: 'melt-photo', type: 'hero', label: 'Curve: Photo',
+    about: '写真いっぱいの下を、曲がった縁で切り取る。',
+    props: { layout: 'cover', melt: 'flow', overlay: 45 } },
+
+  /* パッケージの表側を、そのままページの頭にした型。
+     大きな品名、まわりの短い言葉、丸い印、帯のラベル。 */
+  { key: 'goods-pack', type: 'hero', label: 'Package',
+    about: '商品の顔をそのまま1枚に。品名を大きく、丸い印と帯のラベルを添える。',
+    props: {
+      layout: 'pack', bg: 'surface', melt: 'flow',
+      eyebrow: 'NEW', title: '商品の名前を\n大きく',
+      text: 'よみがな・シリーズ名など',
+      badge: '砂糖\n不使用', badgeRing: 'NON SWEET', tag: 'こだわりの素材',
+      buttons: [{ label: '買えるお店', href: '#shops', style: 'primary' }],
+    } },
 ];
 
 /* ---------------- 2段目から下 ----------------

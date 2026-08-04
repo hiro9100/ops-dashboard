@@ -225,93 +225,94 @@ const HERO_DECOS = [
    深さを変えたいときは、CSS で下を軸に縦へ伸ばす。 */
 const HERO_MELTS = [
   ['none', 'None'],
+  ['flow', 'Flow'],
+  ['slope', 'Slope'],
+  ['swell', 'Swell'],
   ['drip', 'Drip'],
-  ['pour', 'Pour'],
-  ['wave', 'Wave'],
   ['bubble', 'Bubble'],
-  ['ink', 'Ink'],
+  ['own', 'Own Shape'],
 ];
 
-/* 溶け方は「しずくの並び」で持つ。パスを直に書くと、深さや首の太さを
-   あとから直せない（実際、最初に手で書いたものは垂れが浅すぎた）。
+/* 溶け方は「縁の通り道」で持つ。パスを直に書くと、深さも位置も
+   あとから直せない（最初に手で書いたものは垂れが浅すぎた）。
 
-   しずく = [中心x, 首の半幅, 垂れる深さ]。
-   首から下りて、丸い先で止まって、また上がる。しずくとしずくのあいだは
-   ゆるく下に膨らませてつなぐ。まっすぐつなぐと、そこだけ定規の線に見える。 */
+   縁は [x, y] の点の並び。点と点は水平の制御点でつなぐので、
+   角が立たず、ひと続きの流れになる。y が大きいほど下へ食い込む。
+
+   しずくを足したい形だけ drops を持つ。しずく = [中心x, 首の半幅, 深さ]。
+   数を増やすほど「垂れ」ではなく「ぎざぎざ」に見えるので、少なく、
+   間を空けて置く。 */
 const MELT_SHAPES = {
-  /* しずく：長short短がばらばら。いちばん動きが出る */
-  drip: { base: 30, drops: [
-    [64, 20, 58], [148, 13, 26], [232, 26, 84], [330, 15, 40],
-    [408, 22, 66], [500, 12, 20], [566, 28, 92], [668, 16, 46],
-    [752, 20, 30], [838, 25, 74], [936, 13, 24], [1010, 21, 56],
-    [1104, 15, 36], [1170, 18, 68],
-  ] },
+  /* 流れ：長い1本のゆるやかな曲がり。いちばん素直で、どの配色にも合う */
+  flow: { edge: [[0, 66], [300, 84], [620, 52], [900, 70], [1200, 44]] },
 
-  /* とろみ：数は少なく、太くて深い。注いだ塊が落ちきる手前。
-     幅も深さもばらばらにしないと、丸が等間隔に並んだだけに見える */
-  pour: { base: 20, drops: [
-    [132, 54, 46], [372, 106, 94], [640, 62, 24], [900, 88, 72], [1152, 40, 44],
-  ] },
+  /* 片流れ：左が深く、右へ向かって上がっていく。写真を右に置くときに */
+  slope: { edge: [[0, 92], [340, 74], [700, 44], [1200, 20]] },
 
-  /* なみ：しずくを持たない。ゆるい起伏だけで区切る */
-  wave: { base: 52, wave: [[0, 0], [260, 30], [520, -14], [780, 26], [1040, -8], [1200, 14]] },
+  /* うねり：真ん中が大きくふくらむ。文字を真ん中に置くときに */
+  swell: { edge: [[0, 34], [260, 52], [600, 96], [940, 54], [1200, 30]] },
 
-  /* 玉：垂れは浅く、切れた玉が下に残る。[中心x, 中心y, 半径] */
-  bubble: { base: 34, drops: [
-    [76, 18, 34], [188, 22, 20], [300, 16, 44], [402, 24, 26],
-    [520, 19, 38], [628, 15, 22], [742, 25, 48], [858, 17, 28],
-    [962, 21, 36], [1078, 16, 24], [1168, 20, 42],
-  ], balls: [[126, 92, 13], [352, 104, 10], [572, 96, 15], [800, 108, 11], [1024, 94, 12]] },
+  /* しずく：ゆるい縁から、3つだけ大きく垂れる */
+  drip: { edge: [[0, 40], [420, 56], [820, 38], [1200, 50]],
+    drops: [[250, 46, 52], [660, 58, 40], [1010, 40, 62]] },
 
-  /* にじみ：細かく浅い。紙にインクが染みたような縁 */
-  ink: { base: 46, drops: [
-    [40, 14, 16], [96, 10, 8], [148, 16, 22], [206, 11, 10], [258, 14, 18],
-    [312, 9, 7], [360, 17, 24], [420, 12, 12], [472, 14, 17], [528, 10, 8],
-    [578, 16, 21], [636, 11, 11], [688, 15, 19], [744, 9, 7], [792, 17, 23],
-    [852, 12, 13], [906, 14, 16], [960, 10, 9], [1010, 16, 20], [1068, 11, 11],
-    [1120, 15, 18], [1174, 10, 8],
-  ] },
+  /* 玉：浅い縁の下に、切れた玉だけが残る。[中心x, 中心y, 半径] */
+  bubble: { edge: [[0, 44], [380, 62], [760, 46], [1200, 58]],
+    balls: [[210, 92, 15], [520, 104, 10], [880, 96, 13], [1108, 88, 8]] },
 };
 
 const H = 120;                       /* viewBox の高さ。下はここで閉じる */
 const n1 = (v) => Math.round(v * 10) / 10;
-
+/* 点と点を、水平の制御点でつなぐ。角が立たず、ひと続きの流れになる */
+const ease = (x0, y0, x1, y1) => {
+  const m = (x1 - x0) * 0.5;
+  return `C${n1(x0 + m)},${n1(y0)} ${n1(x1 - m)},${n1(y1)} ${n1(x1)},${n1(y1)}`;
+};
 /* しずく1つ。首から下り、少し腹をふくらませて、丸い先で止まり、また上がる。
    先の制御点を外へ開くと底が平らな「タブ」になる。内へ寄せて丸く止める。 */
 const dropArc = (cx, w, base, d) =>
   `C${n1(cx - w * 1.16)},${n1(base + d * 0.44)} ${n1(cx - w * 0.6)},${n1(base + d)} ${n1(cx)},${n1(base + d)}`
   + `C${n1(cx + w * 0.6)},${n1(base + d)} ${n1(cx + w * 1.16)},${n1(base + d * 0.44)} ${n1(cx + w)},${n1(base)}`;
-
-/* しずくとしずくのあいだ。ゆるく下へ膨らませる */
-const gap = (x1, x2, base) => `C${n1(x1 + (x2 - x1) * 0.34)},${n1(base + 7)} `
-  + `${n1(x2 - (x2 - x1) * 0.34)},${n1(base + 7)} ${n1(x2)},${n1(base)}`;
-
 /* 切れて残った玉。円ひとつを、閉じた部分パスとして足す（evenodd で穴になる） */
 const ball = (cx, cy, r) => `M${n1(cx - r)},${n1(cy)}`
   + `a${r},${r} 0 1,0 ${r * 2},0a${r},${r} 0 1,0 ${-r * 2},0Z`;
 
+/* 縁の高さを、その x のところで読む（しずくの首を縁の上に置くため） */
+function edgeAt(edge, x) {
+  for (let i = 1; i < edge.length; i += 1) {
+    if (x <= edge[i][0]) {
+      const [x0, y0] = edge[i - 1], [x1, y1] = edge[i];
+      const t = (x - x0) / (x1 - x0 || 1);
+      return y0 + (y1 - y0) * (t * t * (3 - 2 * t));   // つなぎ方と同じ曲がり
+    }
+  }
+  return edge[edge.length - 1][1];
+}
+
 function meltPath(key) {
   const sp = MELT_SHAPES[key];
   if (!sp) return '';
-  const b = sp.base;
-  if (sp.wave) {
-    /* 起伏だけ。点と点を、水平の制御点でなめらかにつなぐ */
-    const pts = sp.wave;
-    let d = `M0,${H} L0,${n1(b + pts[0][1])}`;
-    for (let i = 1; i < pts.length; i += 1) {
-      const [x0, y0] = pts[i - 1], [x1, y1] = pts[i], m = (x1 - x0) * 0.5;
-      d += `C${n1(x0 + m)},${n1(b + y0)} ${n1(x1 - m)},${n1(b + y1)} ${n1(x1)},${n1(b + y1)}`;
+  const edge = sp.edge;
+  const drops = (sp.drops || []).slice().sort((u, v) => u[0] - v[0]);
+  let d = `M0,${H} L0,${n1(edge[0][1])}`;
+  let x = 0, y = edge[0][1];
+  /* 縁をたどりながら、しずくの首に来たら垂らして、また縁に戻る */
+  const walkTo = (tx) => {
+    for (let i = 1; i < edge.length; i += 1) {
+      if (edge[i][0] <= tx && edge[i][0] > x) {
+        d += ease(x, y, edge[i][0], edge[i][1]);
+        [x, y] = edge[i];
+      }
     }
-    return `${d} L1200,${H} Z`;
-  }
-  let d = `M0,${H} L0,${b}`;
-  let x = 0;
-  sp.drops.forEach(([cx, w, dep]) => {
-    d += gap(x, cx - w, b);
-    d += dropArc(cx, w, b, dep);
+    if (tx > x) { const ty = edgeAt(edge, tx); d += ease(x, y, tx, ty); x = tx; y = ty; }
+  };
+  drops.forEach(([cx, w, dep]) => {
+    walkTo(cx - w);
+    d += dropArc(cx, w, y, dep);
     x = cx + w;
   });
-  d += `${gap(x, 1200, b)} L1200,${H} Z`;
+  walkTo(1200);
+  d += ` L1200,${H} Z`;
   (sp.balls || []).forEach(([cx, cy, r]) => { d += ball(cx, cy, r); });
   return d;
 }
@@ -319,10 +320,46 @@ function meltPath(key) {
 /* 使う形だけ、その場で組み立てる */
 const MELT_PATHS = Object.fromEntries(Object.keys(MELT_SHAPES).map((k) => [k, meltPath(k)]));
 
-/* ヒーローの下に敷く1枚。色は持たず、CSS の currentColor に任せる */
+/* 丸い印と、帯のラベル。パッケージの「砂糖不使用」「送料無料」のような、
+   ひと目で伝わる短い言葉を置く。円のまわりを回る文字は SVG の textPath。
+   id はページの中で重ならないよう、中身から作る（hashId）。 */
+function heroMarks(p) {
+  if (!p.badge && !p.tag) return '';
+  let out = '';
+  if (p.badge) {
+    const lines = String(p.badge).split('\n').filter((x) => x.trim());
+    const ring = p.badgeRing ? String(p.badgeRing) : '';
+    const id = `br${hashId(`${ring}|${lines.join('')}`)}`;
+    /* 行数で字の大きさを変える。1行だけのときに小さいままだと間が抜ける */
+    const size = lines.length > 2 ? 15 : 19;
+    out += `      <span class="hero-badge"${el(p, 'badge', 'ia', '丸い印')}>
+        <svg viewBox="0 0 120 120" aria-hidden="true">
+          <circle class="hb-ring" cx="60" cy="60" r="49"/>
+          ${ring ? /* 上半分の弧。まるごと1周させると、下に回った字が
+                        さかさまになる（実際そうなった）。上だけを通す */
+    `<path id="${id}" fill="none" d="M17,60 A43,43 0 0 1 103,60"/>
+          <text class="hb-arc"><textPath href="#${id}" startOffset="50%">${esc(ring)}</textPath></text>` : ''}
+        </svg>
+        <b${ed('badge', '丸い印')}>${lines.map((l) => `<i style="font-size:${size}px">${esc(l)}</i>`).join('')}</b>
+      </span>\n`;
+  }
+  if (p.tag) {
+    out += `      <span class="hero-tag"${ed('tag', '帯のラベル')}>${esc(p.tag)}</span>\n`;
+  }
+  return `      <div class="hero-marks">\n${out}      </div>\n`;
+}
+
+/* ヒーローの下に敷く1枚。色は持たず、CSS の currentColor に任せる。
+   持ち込んだ形（own）のときは、パスではなく画像で抜く。
+   自分で描いた縁を使いたい人は、ここから入れられる。 */
 function meltLayer(p) {
   const k = p.melt && p.melt !== 'none' ? p.melt : '';
-  if (!k || !MELT_PATHS[k]) return '';
+  if (!k) return '';
+  if (k === 'own') {
+    return p.meltMask
+      ? `  <div class="melt melt-own" aria-hidden="true"></div>\n` : '';
+  }
+  if (!MELT_PATHS[k]) return '';
   return `  <div class="melt melt-${esc(k)}" aria-hidden="true"><svg viewBox="0 0 1200 120"`
     + ' preserveAspectRatio="none" focusable="false">'
     + `<path fill-rule="evenodd" d="${MELT_PATHS[k]}"/></svg></div>\n`;
@@ -606,7 +643,8 @@ const BLOCKS = {
     icon: '★',
     fields: [
       { key: 'layout', label: 'レイアウト', type: 'select',
-        options: [['center', '中央ぞろえ'], ['left', '左ぞろえ'], ['split', '左右に画像'], ['cover', '背景画像いっぱい']] },
+        options: [['center', '中央ぞろえ'], ['left', '左ぞろえ'], ['split', '左右に画像'],
+          ['pack', '商品パッケージ'], ['cover', '背景画像いっぱい']] },
       FIELD.eyebrow,
       { key: 'title', label: 'キャッチコピー', type: 'textarea', rows: 2 },
       { key: 'text', label: '説明文', type: 'textarea' },
@@ -616,24 +654,34 @@ const BLOCKS = {
         hint: '入れると写真のかわりに動画が流れます。音は出ません' },
       { key: 'overlay', label: '背景画像の暗さ', type: 'range', min: 0, max: 90, suffix: '%',
         showIf: (p) => p.layout === 'cover' },
+      /* 丸い印と、帯のラベル。商品の「砂糖不使用」「送料無料」のような、
+         ひと目で伝えたい短い言葉を置く場所。どちらも空なら出ない。 */
+      { key: 'badge', label: '丸い印の文字（空で無し）', type: 'textarea', rows: 2,
+        hint: '改行すると2行になります。「砂糖\n不使用」など' },
+      { key: 'badgeRing', label: '丸のまわりの文字', type: 'text', adv: true,
+        showIf: (p) => !!p.badge, hint: '円にそって回ります。空なら線だけ' },
+      { key: 'tag', label: '帯のラベル（空で無し）', type: 'text',
+        hint: '「こだわりの素材」「送料無料」など、ひとこと' },
+      { key: 'buttons', label: 'ボタン', type: 'list', addLabel: 'ボタンを追加', titleKey: 'label', item: FIELD.btnItem },
+      /* ここから下は「演出」。ヒーローは型から選んでもらうのが本筋なので、
+         型を選んだあとに直したい人だけが開けばいい。前に出すと、
+         決めることが増えて最初の1枚にたどり着けない。 */
       { key: 'scroll', label: 'スクロール連動', type: 'select', options: HERO_SCROLLS, gallery: 'scroll',
-        hint: '選ぶとヒーローが画面に貼り付き、スクロールの進み具合で動きます' },
+        adv: true, hint: '選ぶとヒーローが画面に貼り付き、スクロールの進み具合で動きます' },
       { key: 'scrollLen', label: '動ききるまでの長さ', type: 'range', min: 120, max: 320, suffix: '%',
         showIf: (p) => p.scroll && p.scroll !== 'none' },
       { key: 'deco', label: '装飾の動き', type: 'select', options: HERO_DECOS, gallery: 'deco',
-        hint: 'ポインタ追従は指の環境では自動で止まります' },
+        adv: true, hint: 'ポインタ追従は指の環境では自動で止まります' },
       { key: 'decoStrength', label: '装飾の強さ', type: 'range', min: 10, max: 100, suffix: '%',
         showIf: (p) => p.deco && p.deco !== 'none' },
       { key: 'decoLabel', label: '丸の中の文字', type: 'text', showIf: (p) => p.deco === 'cursor' },
-      { key: 'melt', label: '下の縁の溶け方', type: 'select', options: HERO_MELTS, gallery: 'melt',
-        hint: 'ヒーローに色か写真があるときに見えます（下の段の地の色で流し込みます）' },
-      { key: 'meltDepth', label: '溶けの深さ', type: 'range', min: 50, max: 180, suffix: '%',
+      { key: 'melt', label: '下の縁の形', type: 'select', options: HERO_MELTS, gallery: 'melt',
+        adv: true, hint: 'ヒーローに色か写真があるときに見えます（下の段の地の色で流し込みます）' },
+      { key: 'meltMask', label: '縁の画像', type: 'mask', showIf: (p) => p.melt === 'own',
+        hint: '白地に黒で縁の形を描いた画像を読み込むと、そのとおりに流し込みます' },
+      { key: 'meltDepth', label: '縁の深さ', type: 'range', min: 50, max: 180, suffix: '%',
         showIf: (p) => p.melt && p.melt !== 'none' },
       { key: 'grain', label: 'フィルムの粒状感を足す', type: 'toggle' },
-      { key: 'buttons', label: 'ボタン', type: 'list', addLabel: 'ボタンを追加', titleKey: 'label', item: FIELD.btnItem },
-      /* ヒーローの写真の形は、枠に写真を入れている型でしか効かない。
-         いつでも効く「下の縁の溶け方」を前に出したいので、こちらはたたむ。
-         ほかのブロックでは今までどおり前に出す。 */
       Object.assign({}, FIELD.shape, { adv: true }),
       Object.assign({}, FIELD.shapeMask, { adv: true }),
       FIELD.plate,
@@ -646,7 +694,8 @@ const BLOCKS = {
       text: 'サービスの魅力を1〜2行で。訪れた人が「自分に関係ある」と感じる言葉を置きましょう。',
       image: '', overlay: 55, bg: '', anchor: 'top',
       deco: 'none', decoStrength: 60, grain: false, decoLabel: 'SCROLL',
-      melt: 'none', meltDepth: 100,
+      melt: 'none', meltMask: '', meltDepth: 100,
+      badge: '', badgeRing: '', tag: '',
       scroll: 'none', scrollLen: 200,
       buttons: [
         { label: '無料で相談する', href: '#contact', style: 'primary' },
@@ -661,12 +710,14 @@ const BLOCKS = {
            背景いっぱいの写真を切り抜いても、画面の角が欠けるだけになる。 */
         !cover && p.shape ? `shp-${p.shape}` : '',
         ...(cover ? [] : plateCls(p)),
-        p.melt && p.melt !== 'none' && MELT_PATHS[p.melt] ? 'has-melt' : '',
+        p.melt && p.melt !== 'none' && (MELT_PATHS[p.melt] || (p.melt === 'own' && p.meltMask))
+          ? 'has-melt' : '',
         p.deco && p.deco !== 'none' ? `has-deco dk-${p.deco}` : ''].filter(Boolean).join(' ');
+      const marks = heroMarks(p);
       const body = `      ${p.eyebrow ? `<span class="eyebrow"${el(p, 'eyebrow', 'ta', '小見出し', 'eyebrow')}>${esc(p.eyebrow)}</span>` : ''}
       ${p.title ? `<h1 class="hero-title"${el(p, 'title', 'ta', 'キャッチコピー', 'title')}>${nl2br(p.title)}</h1>` : ''}
       ${p.text ? `<p class="hero-text"${el(p, 'text', 'ta', '説明文', 'text')}>${nl2br(p.text)}</p>` : ''}
-${buttons(p.buttons)}`;
+${marks}${buttons(p.buttons)}`;
       /* 写真いっぱいの型。枠の目印を付けて、押せば選び直せるようにする
          （位置と大きさの調整もここから届く） */
       /* 背景に動画があればそちらを流す。無ければ写真。
@@ -681,11 +732,13 @@ ${buttons(p.buttons)}`;
         : '';
       /* 中央ぞろえ・左ぞろえでも、写真を入れたら文章の下に置く。
          入れても何も起きないと、入れた本人には壊れて見える（実際に指摘された）。 */
-      const wide = !cover && p.layout !== 'split' && p.image
+      const wide = !cover && p.layout !== 'split' && p.layout !== 'pack' && p.image
         ? `\n      <div class="hero-media hero-wide"${el(p, 'image', 'ia', '画像')}`
           + `${imgSlot('image', p)}>${media(p.image, p.title)}</div>`
         : '';
-      const inner = p.layout === 'split'
+      /* 「商品パッケージ」は左右ならびの一種。品名をうんと大きく見せたいので、
+         組みかたは split と同じにして、大きさだけ CSS で変える。 */
+      const inner = (p.layout === 'split' || p.layout === 'pack')
         ? `    <div class="hero-in">
       <div>\n${body}\n      </div>
       <div class="hero-media"${el(p, 'image', 'ia', '画像')}${imgSlot('image', p)}>${media(p.image, p.title)}</div>
@@ -698,17 +751,20 @@ ${buttons(p.buttons)}`;
 ${inner}
   </div>
 ${meltLayer(p)}`;
-      const meltVal = p.melt && p.melt !== 'none' && (p.meltDepth ?? 100) !== 100
+      const meltOn = p.melt && p.melt !== 'none';
+      const meltVal = meltOn && (p.meltDepth ?? 100) !== 100
         ? `--melt-d:${(Math.max(50, Math.min(180, p.meltDepth ?? 100)) / 100).toFixed(2)}` : '';
+      const meltImg = meltOn && p.melt === 'own' && p.meltMask
+        ? `--melt-shape:url('${esc(p.meltMask)}')` : '';
       if (!sc) {
         return `<section class="${cls}"${attr('id', p.anchor)}`
-          + `${styleVars(maskVal(p), meltVal)}${needsPointer ? ' data-hpt' : ''}>
+          + `${styleVars(maskVal(p), meltVal, meltImg)}${needsPointer ? ' data-hpt' : ''}>
 ${guts}
 </section>`;
       }
       const maskLayer = sc === 'maskzoom' ? maskZoomLayer(p) : '';
       return `<section class="${cls} hsc hsc-${esc(sc)}"${attr('id', p.anchor)}${needsPointer ? ' data-hpt' : ''}`
-        + ` data-heroscroll${styleVars(maskVal(p), meltVal,
+        + ` data-heroscroll${styleVars(maskVal(p), meltVal, meltImg,
           `--pin:${Math.max(120, Math.min(320, p.scrollLen ?? 200))}vh`)}>
   <div class="hsc-in">
 ${maskLayer}${guts}

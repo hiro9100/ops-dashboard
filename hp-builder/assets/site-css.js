@@ -116,8 +116,42 @@ p:last-child{margin-bottom:0}
    文章の下に、横いっぱいの一枚を置く。 */
 .hero-media.hero-wide{margin-top:clamp(28px,3.4vw,56px);aspect-ratio:16/7}
 .hero.center .hero-media.hero-wide{margin-inline:auto}
-.hero.split .hero-in{display:grid;grid-template-columns:1.02fr .98fr;gap:clamp(32px,4.4444vw,88.8889px);align-items:center}
+.hero.split .hero-in,.hero.pack .hero-in{display:grid;grid-template-columns:1.02fr .98fr;gap:clamp(32px,4.4444vw,88.8889px);align-items:center}
 .hero.split .hero-title{font-size:clamp(28px,2.9167vw,58.3333px)}
+/* ---------- 商品パッケージ ----------
+   売っているのが1つの商品のとき、いちばん大きいのは品名。
+   左右ならびのまま、品名だけをうんと大きくして、まわりに短い言葉を置く。
+   写真は縦長にする。棚に置いてあるものは、たいてい縦に長い。 */
+.hero.pack .hero-in{grid-template-columns:1.2fr .8fr}
+/* 品名は長くなりがち。目いっぱい大きくすると、改行を入れてある行まで
+   はみ出して折り返す。9文字くらいは1行に入る大きさで止める。 */
+.hero.pack .hero-title{
+  font-size:clamp(31px,4.3vw,86px);line-height:1.14;letter-spacing:-.005em;
+  margin-bottom:clamp(12px,1.8vh,22px)
+}
+.hero.pack .eyebrow{font-size:clamp(12px,1.05vw,19px);letter-spacing:.24em;margin-bottom:clamp(10px,1.6vh,20px)}
+.hero.pack .hero-text{font-size:clamp(14px,1.1vw,20px)}
+/* 枠は「幅を先に決めて、高さを比で出す」。align-items:center の中では
+   高さが中身なりに縮むので、width を書かないと逆算されて細長くなる
+   （実測 48px になった）。 */
+.hero.pack .hero-media{
+  width:100%;aspect-ratio:3/4;background:none;box-shadow:none;border-radius:0;
+  max-width:clamp(200px,26vw,420px);margin-left:auto
+}
+.hero.pack .hero-media img{object-fit:contain}
+/* 写真がまだ無いあいだは、置き場所が分かるように枠を出しておく */
+.hero.pack .hero-media:has(.ph){
+  background:color-mix(in srgb,currentColor 7%,transparent);
+  outline:1px dashed color-mix(in srgb,currentColor 24%,transparent);
+  outline-offset:-1px;border-radius:var(--radius)
+}
+@supports not (color:color-mix(in srgb,red,blue)){
+  .hero.pack .hero-media:has(.ph){background:rgba(128,128,128,.09)}
+}
+@media(max-width:760px){
+  .hero.pack .hero-in{grid-template-columns:1fr}
+  .hero.pack .hero-media{max-width:min(72vw,320px);margin:clamp(20px,3vh,32px) auto 0}
+}
 .hero.cover{color:#fff}
 .hero.cover .hero-text{color:rgba(255,255,255,.92)}
 /* 平らな暗幕だけでは、写真の明るい部分で文字が読めなくなる。
@@ -131,6 +165,46 @@ p:last-child{margin-bottom:0}
 .hero-bg img,.hero-bg video{width:100%;height:100%;object-fit:cover;display:block}
 .hero-bg::after{content:"";position:absolute;inset:0;background:var(--hero-overlay,rgba(15,23,42,.55))}
 .hero.center.cover .hero-in,.hero.left.cover .hero-in{padding:clamp(24px,3.3333vw,66.6667px) 0}
+
+/* ---------- 丸い印と、帯のラベル ----------
+   パッケージに貼ってあるような、ひと目で伝わる短い言葉。
+   文字の色は地に従う（currentColor）ので、濃い地でも薄い地でも読める。 */
+.hero-marks{
+  display:flex;align-items:center;gap:clamp(14px,1.8vw,30px);
+  flex-wrap:wrap;margin-top:clamp(22px,3vh,38px)
+}
+.hero.center .hero-marks{justify-content:center}
+.hero-badge{
+  position:relative;flex:0 0 auto;display:grid;place-items:center;
+  width:clamp(88px,8vw,132px);aspect-ratio:1/1;
+  border-radius:50%;background:var(--c-accent);color:var(--c-on-accent,#fff)
+}
+.hero-badge svg{position:absolute;inset:0;width:100%;height:100%}
+.hb-ring{fill:none;stroke:currentColor;stroke-width:1;opacity:.5}
+.hb-arc{
+  fill:currentColor;font-size:10px;font-weight:700;letter-spacing:.2em;
+  text-anchor:middle;opacity:.85
+}
+/* 弧の上に乗せるので、少し下げないと線から浮いて見える */
+.hb-arc textPath{dominant-baseline:hanging}
+.hero-badge b{
+  position:relative;display:flex;flex-direction:column;align-items:center;
+  line-height:1.25;font-weight:800;letter-spacing:.02em;text-align:center
+}
+.hero-badge b i{font-style:normal}
+.hero-tag{
+  display:inline-block;flex:0 0 auto;
+  background:var(--c-primary);color:var(--c-on-primary,#fff);
+  border-radius:999px;padding:clamp(9px,1.2vh,14px) clamp(18px,2vw,34px);
+  font-size:clamp(13px,1.05vw,17px);font-weight:700;line-height:1.5
+}
+/* 濃い地・写真の上では、地の色をそのまま使うと沈む。文字の色で抜く */
+.hero.cover .hero-tag{background:var(--c-bg);color:var(--c-text)}
+.hero.cover .hero-badge{background:var(--c-bg);color:var(--c-text)}
+@media(max-width:560px){
+  .hero-badge{width:82px}
+  .hero-badge b{font-size:15px}
+}
 
 /* ---------- 溶け落ちる縁（メルト） ----------
    下の段の地の色を、ヒーローの下からすくい上げた形。色は currentColor
@@ -149,6 +223,15 @@ p:last-child{margin-bottom:0}
 }
 .melt svg{display:block;width:100%;height:100%}
 .melt path{fill:currentColor}
+/* 持ち込んだ形。パスの代わりに、読み込んだ画像で色を抜く。
+   下ぞろえにするのは、縁の形が下端に来ているとはかぎらないため。 */
+.melt-own{
+  background:currentColor;
+  -webkit-mask-image:var(--melt-shape);mask-image:var(--melt-shape);
+  -webkit-mask-size:100% 100%;mask-size:100% 100%;
+  -webkit-mask-position:bottom;mask-position:bottom;
+  -webkit-mask-repeat:no-repeat;mask-repeat:no-repeat
+}
 /* 地の色を持つ段が下に来るときは、そちらの色で流し込む。
    ヒーローの次の段が持っている色を、ヒーロー側からは知れないので、
    隣どうしの組み合わせをここで書いておく。 */
