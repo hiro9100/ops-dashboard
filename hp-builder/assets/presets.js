@@ -95,6 +95,46 @@ const HERO_PRESETS = [
     about: '写真いっぱいの下を、曲がった縁で切り取る。',
     props: { layout: 'cover', melt: 'flow', overlay: 45 } },
 
+  /* ---- 動画・色の面・線。ヒーローはページの質を左右するので、
+         組ませるのではなく、出来上がった形から選んでもらう ---- */
+  { key: 'ribbon', type: 'hero', label: 'Ribbon',
+    about: '後ろに動画か写真、薄い色の膜、縦に通る1本の帯。帯は下の段まで続いて見える。',
+    props: {
+      layout: 'ribbon', overlay: 58, scrollLabel: 'Scroll',
+      eyebrow: '', title: 'Making\nGood Taste',
+      text: 'ここに、いちばん伝えたいことを数行で。\n改行したところで行が変わります。',
+      buttons: [{ label: 'About us', href: '#about', style: 'pill', arrow: true }],
+    } },
+
+  { key: 'mark', type: 'hero', label: 'Logo Cut',
+    about: '地の色をロゴの形に抜いて、その中だけ色がゆっくり流れる。自分のロゴを読み込める。',
+    props: {
+      layout: 'mark', bg: '', scrollLabel: '',
+      eyebrow: 'BOUNDLESS EFFORT, TIMELESS RESULTS.',
+      title: 'ここに、\nいちばん強い\nひとこと。',
+      text: '創業から85年。地元に根ざした仕事を、これからも。',
+      buttons: [],
+    } },
+
+  { key: 'lineart', type: 'hero', label: 'Line Art',
+    about: '細い線を何十本も重ねた気配だけの背景。白い地に、大きな文字を静かに置く。',
+    props: {
+      layout: 'lineart', art: 'flow', scrollLabel: 'Scroll Down',
+      eyebrow: 'Nurturing your future\nwith thoughtful solutions.',
+      title: 'あなたの未来を育む、\n一手を考えぬく。',
+      text: 'お客さま、さらには世の中全体の課題と向き合い、\nあたりまえの社会を創造する。',
+      buttons: [],
+    } },
+
+  { key: 'lineart-fan', type: 'hero', label: 'Line Art (Fan)',
+    about: '同じ線の背景で、重なる面のかたち。角のある業種に。',
+    props: {
+      layout: 'lineart', art: 'fan', scrollLabel: 'Scroll Down',
+      eyebrow: '', title: 'ここに、\n静かで強い一文を。',
+      text: '線は地の文字色から作るので、配色を変えても浮きません。',
+      buttons: [],
+    } },
+
   /* パッケージの表側を、そのままページの頭にした型。
      大きな品名、まわりの短い言葉、丸い印、帯のラベル。 */
   { key: 'goods-pack', type: 'hero', label: 'Package',

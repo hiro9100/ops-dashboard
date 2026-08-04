@@ -320,6 +320,93 @@ function meltPath(key) {
 /* 使う形だけ、その場で組み立てる */
 const MELT_PATHS = Object.fromEntries(Object.keys(MELT_SHAPES).map((k) => [k, meltPath(k)]));
 
+/* ================================================================
+   ヒーローの型（3つ）
+
+   ヒーローはページの質をいちばん左右する。だから細かく組ませるのではなく、
+   出来上がった形から選んでもらう。ここはその中身。
+   ================================================================ */
+
+/* ---------- 動画＋色の帯（ribbon） ----------
+   後ろに動画か写真、その上に薄い色の膜、さらに1本の帯を縦に通す。
+   帯は画面の外まで伸ばしてあるので、下の段まで続いて見える。
+
+   帯そのものは「上から下へ、ゆるく身をよじった1本」。
+   まっすぐ下ろすと定規の線になり、曲げすぎるとリボンに見える。 */
+const RIBBON_PATH = 'M330,0 C440,160 210,300 275,470 C340,640 165,770 232,930'
+  + ' C300,1090 150,1190 216,1320 L560,1320 C494,1190 644,1090 576,930'
+  + ' C509,770 684,640 619,470 C554,300 784,160 674,0 Z';
+
+function ribbonLayer(p) {
+  const lab = p.scrollLabel === undefined ? 'Scroll' : p.scrollLabel;
+  return `  <div class="rib" aria-hidden="true"><svg viewBox="0 0 1000 1320"`
+    + ' preserveAspectRatio="none" focusable="false">'
+    + `<path d="${RIBBON_PATH}"/></svg></div>\n`
+    + (lab ? `  <span class="hsign" aria-hidden="true">( ${esc(lab)} )</span>\n` : '');
+}
+
+/* ---------- ロゴ抜き（mark） ----------
+   地の色をひと面ぶん敷き、その上にロゴの形で穴を開ける。
+   穴の下は動くグラデーション。色が形の中だけをゆっくり流れる。
+
+   持ち込みが無いあいだは、この形を使う。丸と柱を組んだだけの、
+   どの業種にも寄らないしるし。 */
+const MARK_FALLBACK = 'M300,44 L332,98 L332,398 L268,398 L268,98 Z'
+  + ' M88.5,329.2A212,212 0 0,1 234.5,142.4L256.7,210.9A140,140 0 0,0 160.3,334.2Z'
+  + ' M511.5,329.2A212,212 0 0,0 365.5,142.4L343.3,210.9A140,140 0 0,1 439.7,334.2Z';
+
+/* 組み込みの形も、持ち込みと同じ「抜き型の画像」に揃える。
+   同じ道具で扱えるほうが、あとで形を増やすのが楽になる。 */
+const MARK_SVG = `data:image/svg+xml,${encodeURIComponent(
+  `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 440">`
+  + `<path fill="#000" d="${MARK_FALLBACK}"/></svg>`)}`;
+
+function markLayer() {
+  return '  <div class="mrk" aria-hidden="true"></div>\n';
+}
+
+/* ---------- 線のかたち（lineart） ----------
+   細い線を何十本もずらして重ねると、面ではなく「気配」になる。
+   白い地に置いても品が落ちない数少ない飾り。
+
+   3種類とも、1本の道を少しずつずらして引くだけ。ずらしかたが違う。 */
+function lineArt(kind) {
+  const n = 44;
+  const line = (i) => {
+    const t = i / (n - 1);
+    if (kind === 'fan') {
+      /* 重なる面：斜めの直線を、端をずらしながら扇のように倒す */
+      const x0 = 120 + t * 520, y0 = 40 + t * 90;
+      const x1 = 640 + t * 420, y1 = 700 - t * 250;
+      return `M${x0.toFixed(1)},${y0.toFixed(1)} L${x1.toFixed(1)},${y1.toFixed(1)}`
+        + ` L${(x1 - 180).toFixed(1)},${(y1 + 150).toFixed(1)}`;
+    }
+    if (kind === 'ring') {
+      /* 同心の輪：中心をわずかにずらしながら、だんだん大きくする */
+      const r = 60 + t * 330, cx = 540 + t * 60, cy = 360 - t * 30;
+      return `M${(cx - r).toFixed(1)},${cy.toFixed(1)}`
+        + ` a${r.toFixed(1)},${(r * 0.86).toFixed(1)} 0 1,0 ${(r * 2).toFixed(1)},0`
+        + ` a${r.toFixed(1)},${(r * 0.86).toFixed(1)} 0 1,0 ${(-r * 2).toFixed(1)},0`;
+    }
+    /* 流れる線：ゆるい波を、上下にずらしながら少しずつ形を変える */
+    const y = 120 + t * 460, a = 60 + t * 26;
+    return `M-40,${(y + a * 0.4).toFixed(1)}`
+      + ` C240,${(y - a).toFixed(1)} 420,${(y + a * 1.2).toFixed(1)} 700,${(y - a * 0.2).toFixed(1)}`
+      + ` C920,${(y - a * 1.1).toFixed(1)} 1000,${(y + a * 0.5).toFixed(1)} 1140,${(y - a * 0.3).toFixed(1)}`;
+  };
+  return Array.from({ length: n }, (_, i) => `<path d="${line(i)}"/>`).join('');
+}
+
+const LINE_ARTS = Object.fromEntries(['flow', 'fan', 'ring'].map((k) => [k, lineArt(k)]));
+
+function lineArtLayer(p) {
+  const k = LINE_ARTS[p.art] ? p.art : 'flow';
+  const lab = p.scrollLabel === undefined ? 'Scroll' : p.scrollLabel;
+  return `  <div class="lart lart-${esc(k)}" aria-hidden="true"><svg viewBox="0 0 1100 720"`
+    + ` preserveAspectRatio="xMidYMid slice" focusable="false">${LINE_ARTS[k]}</svg></div>\n`
+    + (lab ? `  <span class="hsign hsign-low" aria-hidden="true">${esc(lab)}</span>\n` : '');
+}
+
 /* 丸い印と、帯のラベル。パッケージの「砂糖不使用」「送料無料」のような、
    ひと目で伝わる短い言葉を置く。円のまわりを回る文字は SVG の textPath。
    id はページの中で重ならないよう、中身から作る（hashId）。 */
@@ -644,7 +731,8 @@ const BLOCKS = {
     fields: [
       { key: 'layout', label: 'レイアウト', type: 'select',
         options: [['center', '中央ぞろえ'], ['left', '左ぞろえ'], ['split', '左右に画像'],
-          ['pack', '商品パッケージ'], ['cover', '背景画像いっぱい']] },
+          ['pack', '商品パッケージ'], ['cover', '背景画像いっぱい'],
+          ['ribbon', '動画＋色の帯'], ['mark', 'ロゴ抜き'], ['lineart', '線のかたち']] },
       FIELD.eyebrow,
       { key: 'title', label: 'キャッチコピー', type: 'textarea', rows: 2 },
       { key: 'text', label: '説明文', type: 'textarea' },
@@ -662,6 +750,16 @@ const BLOCKS = {
         showIf: (p) => !!p.badge, hint: '円にそって回ります。空なら線だけ' },
       { key: 'tag', label: '帯のラベル（空で無し）', type: 'text',
         hint: '「こだわりの素材」「送料無料」など、ひとこと' },
+      /* 型ごとにしか使わない欄。その型を選んだときだけ出す */
+      { key: 'markMask', label: 'ロゴ・マークの画像', type: 'mask',
+        showIf: (p) => p.layout === 'mark',
+        hint: '白地に黒で描いた形を読み込むと、そこだけ色が透けて動きます' },
+      { key: 'art', label: '線のかたち', type: 'select',
+        options: [['flow', '流れる線'], ['fan', '重なる面'], ['ring', '同心の輪']],
+        showIf: (p) => p.layout === 'lineart' },
+      { key: 'scrollLabel', label: 'いちばん下の合図', type: 'text', adv: true,
+        showIf: (p) => ['ribbon', 'lineart', 'mark'].includes(p.layout),
+        hint: '空にすると出しません' },
       { key: 'buttons', label: 'ボタン', type: 'list', addLabel: 'ボタンを追加', titleKey: 'label', item: FIELD.btnItem },
       /* ここから下は「演出」。ヒーローは型から選んでもらうのが本筋なので、
          型を選んだあとに直したい人だけが開けばいい。前に出すと、
@@ -696,6 +794,7 @@ const BLOCKS = {
       deco: 'none', decoStrength: 60, grain: false, decoLabel: 'SCROLL',
       melt: 'none', meltMask: '', meltDepth: 100,
       badge: '', badgeRing: '', tag: '',
+      markMask: '', art: 'flow', scrollLabel: 'Scroll',
       scroll: 'none', scrollLen: 200,
       buttons: [
         { label: '無料で相談する', href: '#contact', style: 'primary' },
@@ -703,9 +802,13 @@ const BLOCKS = {
       ],
     },
     render: (p) => {
-      const cover = p.layout === 'cover';
+      /* 「動画＋色の帯」は背景いっぱいの型の一種。写真や動画の出しかたは
+         cover とそっくり同じでいいので、そこだけ同じ扱いにする。 */
+      const ribbon = p.layout === 'ribbon';
+      const cover = p.layout === 'cover' || ribbon;
       const needsPointer = ['glass', 'spot', 'depth', 'clouds', 'aurora', 'cursor'].includes(p.deco);
-      const cls = ['hero', cover ? 'cover center' : p.layout, p.bg ? `bg-${p.bg}` : '',
+      const cls = ['hero', ribbon ? 'cover center ribbon' : (cover ? 'cover center' : p.layout),
+        p.bg ? `bg-${p.bg}` : '',
         /* 形は、写真を枠に入れている型（左右ならび）でだけ効かせる。
            背景いっぱいの写真を切り抜いても、画面の角が欠けるだけになる。 */
         !cover && p.shape ? `shp-${p.shape}` : '',
@@ -714,7 +817,7 @@ const BLOCKS = {
           ? 'has-melt' : '',
         p.deco && p.deco !== 'none' ? `has-deco dk-${p.deco}` : ''].filter(Boolean).join(' ');
       const marks = heroMarks(p);
-      const body = `      ${p.eyebrow ? `<span class="eyebrow"${el(p, 'eyebrow', 'ta', '小見出し', 'eyebrow')}>${esc(p.eyebrow)}</span>` : ''}
+      const body = `      ${p.eyebrow ? `<span class="eyebrow"${el(p, 'eyebrow', 'ta', '小見出し', 'eyebrow')}>${nl2br(p.eyebrow)}</span>` : ''}
       ${p.title ? `<h1 class="hero-title"${el(p, 'title', 'ta', 'キャッチコピー', 'title')}>${nl2br(p.title)}</h1>` : ''}
       ${p.text ? `<p class="hero-text"${el(p, 'text', 'ta', '説明文', 'text')}>${nl2br(p.text)}</p>` : ''}
 ${marks}${buttons(p.buttons)}`;
@@ -738,16 +841,32 @@ ${marks}${buttons(p.buttons)}`;
         : '';
       /* 「商品パッケージ」は左右ならびの一種。品名をうんと大きく見せたいので、
          組みかたは split と同じにして、大きさだけ CSS で変える。 */
-      const inner = (p.layout === 'split' || p.layout === 'pack')
+      /* 「動画＋色の帯」だけは2枚組み。上の1画面で見出し、続けて同じ背景の
+         まま文章を置く。下の段まで背景が続いて見えるのが、この型の要。 */
+      const inner = ribbon
         ? `    <div class="hero-in">
+      <div class="rib-1">${p.eyebrow ? `\n        <span class="eyebrow"${el(p, 'eyebrow', 'ta', '小見出し', 'eyebrow')}>${nl2br(p.eyebrow)}</span>` : ''}
+        ${p.title ? `<h1 class="hero-title"${el(p, 'title', 'ta', 'キャッチコピー', 'title')}>${nl2br(p.title)}</h1>` : ''}
+      </div>
+      <div class="rib-2">
+        ${p.text ? `<p class="hero-text"${el(p, 'text', 'ta', '説明文', 'text')}>${nl2br(p.text)}</p>` : ''}
+${heroMarks(p)}${buttons(p.buttons)}
+      </div>
+    </div>`
+        : (p.layout === 'split' || p.layout === 'pack')
+          ? `    <div class="hero-in">
       <div>\n${body}\n      </div>
       <div class="hero-media"${el(p, 'image', 'ia', '画像')}${imgSlot('image', p)}>${media(p.image, p.title)}</div>
     </div>`
-        : `    <div class="hero-in">\n${body}${wide}\n    </div>`;
+          : `    <div class="hero-in">\n${body}${wide}\n    </div>`;
       /* スクロール連動のときは、長い区間の中に中身を貼り付ける（sticky）。
          区間の進み具合を --p（0〜1）としてCSSに渡し、動きはCSS側で書く。 */
       const sc = p.scroll && p.scroll !== 'none' ? p.scroll : '';
-      const guts = `${bg}${decoLayer(p)}  <div class="wrap">
+      /* 型ごとの飾りは、背景と中身のあいだに敷く */
+      const artLayer = ribbon ? ribbonLayer(p)
+        : p.layout === 'mark' ? markLayer(p)
+          : p.layout === 'lineart' ? lineArtLayer(p) : '';
+      const guts = `${bg}${artLayer}${decoLayer(p)}  <div class="wrap">
 ${inner}
   </div>
 ${meltLayer(p)}`;
@@ -756,15 +875,19 @@ ${meltLayer(p)}`;
         ? `--melt-d:${(Math.max(50, Math.min(180, p.meltDepth ?? 100)) / 100).toFixed(2)}` : '';
       const meltImg = meltOn && p.melt === 'own' && p.meltMask
         ? `--melt-shape:url('${esc(p.meltMask)}')` : '';
+      /* style 属性の中なので、囲むのは必ず一重引用符。二重だと属性がそこで
+         切れて、指定ごと落ちる（実際に落ちた） */
+      const markImg = p.layout === 'mark'
+        ? `--mark:url('${p.markMask ? esc(p.markMask) : MARK_SVG}')` : '';
       if (!sc) {
         return `<section class="${cls}"${attr('id', p.anchor)}`
-          + `${styleVars(maskVal(p), meltVal, meltImg)}${needsPointer ? ' data-hpt' : ''}>
+          + `${styleVars(maskVal(p), meltVal, meltImg, markImg)}${needsPointer ? ' data-hpt' : ''}>
 ${guts}
 </section>`;
       }
       const maskLayer = sc === 'maskzoom' ? maskZoomLayer(p) : '';
       return `<section class="${cls} hsc hsc-${esc(sc)}"${attr('id', p.anchor)}${needsPointer ? ' data-hpt' : ''}`
-        + ` data-heroscroll${styleVars(maskVal(p), meltVal, meltImg,
+        + ` data-heroscroll${styleVars(maskVal(p), meltVal, meltImg, markImg,
           `--pin:${Math.max(120, Math.min(320, p.scrollLen ?? 200))}vh`)}>
   <div class="hsc-in">
 ${maskLayer}${guts}
