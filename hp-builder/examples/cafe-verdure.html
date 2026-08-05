@@ -673,6 +673,12 @@ p:last-child{margin-bottom:0}
   .shw-shelf{background:var(--c-bg);border-bottom:2px solid var(--c-border)}
   .shw-shelf::after{background:var(--c-bg)}
 }
+/* 棚を写真にしたとき。描いた面と小口は引っ込め、壁に落ちる影だけ残す
+   （影が無いと、板が壁から浮いて見える） */
+.shw-shelf-img{height:auto;background:none;line-height:0}
+.shw-shelf-img::after{display:none}
+.shw-shelf-img img{width:100%;height:auto;display:block;
+  object-position:calc(var(--ix,50%)) calc(var(--iy,50%));transform:scale(var(--iz,1))}
 @supports not (color:color-mix(in srgb,red,blue)){
   .shw-draw rect:nth-of-type(3){fill:none}
 }
@@ -741,6 +747,11 @@ p:last-child{margin-bottom:0}
    縦に伸びるのを止める（伸びると刷けではなく破れた紙になる）。 */
 .pk{position:absolute;height:auto;aspect-ratio:560/200;transform-origin:50% 50%;
   animation:pk-sway 34s ease-in-out infinite alternate}
+/* 刷けを写真に差し替えたとき。縦横比は写真のものに任せる
+   （描いた刷けの比を押しつけると、本物のインクが引き伸ばされる） */
+.pk-ink{aspect-ratio:auto;line-height:0}
+.pk-ink img{width:100%;height:auto;display:block;
+  object-position:calc(var(--ix,50%)) calc(var(--iy,50%));transform:scale(var(--iz,1))}
 .pk-1{width:86%;left:-18%;top:2%;--rot:-58deg;opacity:.92}
 .pk-2{width:72%;left:36%;top:34%;--rot:-64deg;opacity:.84;animation-duration:41s;animation-delay:-11s}
 .pk-3{width:54%;left:-8%;top:62%;--rot:-48deg;opacity:.78;animation-duration:37s;animation-delay:-23s}

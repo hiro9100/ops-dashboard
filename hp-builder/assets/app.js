@@ -2247,12 +2247,17 @@ function fieldHTML(f, props, base) {
         </div>
       </div>`;
     }).join('');
+    /* 上限のある一覧は、いっぱいになったら「足す」を出さない。
+       押せるのに増えないほうが、分かりにくい */
+    const full = f.max && items.length >= f.max;
     return `<div class="f">
       <label>${esc(f.label)}</label>
       <div class="list" data-list="${path}">
         ${rows}
-        <button class="li-add" data-lact="add">＋ ${esc(f.addLabel || '追加')}</button>
+        ${full ? `<div class="hint">ここまでです（${f.max}まで）</div>`
+    : `<button class="li-add" data-lact="add">＋ ${esc(f.addLabel || '追加')}</button>`}
       </div>
+      ${f.hint ? `<div class="hint">${esc(f.hint)}</div>` : ''}
     </div>`;
   }
 

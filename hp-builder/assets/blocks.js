@@ -530,8 +530,21 @@ const BRUSHES = [[0.7, 52], [2.3, 40], [4.9, 30]]
   .map(([sd, w], i) => brushSVG(`pk-${i + 1}`, sd, w, i + 1));
 const BRUSH_FRONT = brushSVG('pk-f', 3.6, 26, 4);
 
-const paintLayer = () => `  <div class="paint" aria-hidden="true">${BRUSHES.join('')}</div>\n`;
-const paintFront = () => `      <div class="paint-f" aria-hidden="true">${BRUSH_FRONT}</div>`;
+/* 刷けは写真にも差し替えられる。本物のインクを撮ったものを置きたいときのため。
+   背景の付いた写真でも、編集画面の「背景を抜く」で白地を抜ける。
+   4本ぶん。0〜2 が後ろ、3 が写真の手前に来る1本。 */
+const INK_MAX = 4;
+const inkAt = (p, i, cls) => {
+  const src = ((p.inks || [])[i] || {}).src || '';
+  if (!src) return '';
+  return `<div class="pk ${cls} pk-ink"${el(p, `ink${i}`, 'ia', `インク ${i + 1}`)}`
+    + `${imgSlot(`inks.${i}.src`, p)}><img src="${esc(src)}" alt=""></div>`;
+};
+
+const paintLayer = (p) => `  <div class="paint" aria-hidden="true">${
+  BRUSHES.map((svg, i) => inkAt(p, i, `pk-${i + 1}`) || svg).join('')}</div>\n`;
+const paintFront = (p) => `      <div class="paint-f" aria-hidden="true">${
+  inkAt(p, 3, 'pk-f') || BRUSH_FRONT}</div>`;
 
 /* ---------- 写真がくるくる入れ替わる（reel） ----------
    輪の上に写真を置いて、時計回りに送る。前に来た1枚だけがはっきり見え、
@@ -1003,10 +1016,18 @@ const BLOCKS = {
       { key: 'branchImg', label: '上に垂らす枝の写真', type: 'image',
         showIf: (p) => p.layout === 'showcase',
         hint: '背景を抜いた枝や植物の写真。入れなければ、線で描いたものが出ます' },
+      { key: 'shelfImg', label: '棚の写真', type: 'image',
+        showIf: (p) => p.layout === 'showcase',
+        hint: '棚板を正面から撮ったもの。入れなければ、描いた板が出ます' },
       /* くるくる回す写真。5枚まで */
       { key: 'shots', label: '回す写真（5枚まで）', type: 'list', addLabel: '写真を追加',
         showIf: (p) => p.layout === 'reel',
         item: [{ key: 'src', label: '写真', type: 'image' }] },
+      /* 刷けの写真。入れた本数だけ、描いた刷けと置き換わる */
+      { key: 'inks', label: 'インクの写真（4本まで）', type: 'list', addLabel: 'インクを追加',
+        showIf: (p) => p.layout === 'reel', max: INK_MAX,
+        hint: '4本目は写真の手前に来ます。白地の写真は「背景を抜く」で抜けます',
+        item: [{ key: 'src', label: 'インク', type: 'image' }] },
       { key: 'badge', label: '丸い印の文字', type: 'textarea', rows: 2,
         showIf: (p) => !['showcase', 'reel'].includes(p.layout),
         hint: '改行すると2行になります。「砂糖\n不使用」など' },
@@ -1056,7 +1077,8 @@ const BLOCKS = {
       melt: 'none', meltMask: '', meltDepth: 100,
       badge: '', badgeRing: '', tag: '',
       markMask: '', art: 'flow', scrollLabel: 'Scroll', side: 'PORTFOLIO',
-      mid: 'DE', notes: 'LIMITED 300 | ATELIER | EAU DE PARFUM', branchImg: '',
+      mid: 'DE', notes: 'LIMITED 300 | ATELIER | EAU DE PARFUM',
+      branchImg: '', shelfImg: '', inks: [],
       shots: [{ src: '' }, { src: '' }, { src: '' }],
       orbs: [{ src: '' }, { src: '' }, { src: '' }, { src: '' }],
       scroll: 'none', scrollLen: 200,
@@ -1125,7 +1147,7 @@ ${heroMarks(p)}${buttons(p.buttons)}
       <div class="rl-stage" data-reel>
 ${reelCards(p)}
       </div>
-${paintFront()}
+${paintFront(p)}
       <div class="rl-top">
         <div class="rl-meta">
           <span class="rl-count"><b>1</b> / ${(p.shots || []).slice(0, REEL_MAX).length || 1}</span>
@@ -1152,7 +1174,10 @@ ${buttons(p.buttons)}
       <div class="shw-stand">
         <div class="shw-item"${el(p, 'image', 'ia', '商品の写真')}${imgSlot('image', p)}>${
   p.image ? media(p.image, p.title) : SHW_BOTTLE}</div>
-        <i class="shw-shelf"></i>
+        ${p.shelfImg
+    /* 棚も写真に差し替えられる。押せば選べるように、線の台にも枠の印を付ける */
+    ? `<div class="shw-shelf shw-shelf-img"${el(p, 'shelf', 'ia', '棚')}${imgSlot('shelfImg', p)}><img src="${esc(p.shelfImg)}" alt=""></div>`
+    : `<i class="shw-shelf"${el(p, 'shelf', 'ia', '棚')}${imgSlot('shelfImg', p)}></i>`}
       </div>
       ${p.eyebrow ? `<span class="eyebrow"${el(p, 'eyebrow', 'ta', '小見出し', 'eyebrow')}>${nl2br(p.eyebrow)}</span>` : ''}
       ${p.title ? `<h1 class="hero-title shw-name"${el(p, 'title', 'ta', '品名', 'title')}>${lock}</h1>` : ''}
@@ -1189,7 +1214,7 @@ ${heroMarks(p)}${buttons(p.buttons)}
           : p.layout === 'lineart' ? lineArtLayer(p)
             : p.layout === 'orbit' ? orbitLayer(p)
               : p.layout === 'showcase' ? showcaseLayer(p)
-                : p.layout === 'reel' ? paintLayer() : '';
+                : p.layout === 'reel' ? paintLayer(p) : '';
       const guts = `${bg}${artLayer}${decoLayer(p)}  <div class="wrap">
 ${inner}
   </div>
