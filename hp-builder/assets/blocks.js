@@ -995,6 +995,14 @@ const BLOCKS = {
           ['orbit', 'まるい写真が浮かぶ'], ['poster', '大きな名前＋1枚の写真'],
           ['showcase', '1商品を立てる（光と台）'],
           ['reel', '写真がくるくる入れ替わる']] },
+      /* ヒーローだけ、別の書体にできる。ここでサイトの雰囲気が決まるので、
+         全体の設定より強く出したいことがある。空なら全体と同じ */
+      /* FONTS は templates.js にあり、このファイルより後に読み込まれる。
+         ここで直に触ると BLOCKS ごと落ちるので、開いたときに読む */
+      { key: 'font',
+        label: '見出しの書体',
+        type: 'select',
+        get options() { return [['', '全体と同じ']].concat(FONTS.map((f) => [f[0], f[1]])); } },
       FIELD.eyebrow,
       { key: 'title', label: 'キャッチコピー', type: 'textarea', rows: 2 },
       { key: 'text', label: '説明文', type: 'textarea' },
@@ -1074,7 +1082,7 @@ const BLOCKS = {
       FIELD.bg, FIELD.anchor,
     ],
     defaults: {
-      layout: 'center', video: '', eyebrow: 'WELCOME',
+      layout: 'center', video: '', font: '', eyebrow: 'WELCOME',
       title: 'ここにいちばん伝えたい\nキャッチコピーを',
       text: 'サービスの魅力を1〜2行で。訪れた人が「自分に関係ある」と感じる言葉を置きましょう。',
       image: '', overlay: 55, bg: '', anchor: 'top',
@@ -1233,16 +1241,21 @@ ${meltLayer(p)}`;
          切れて、指定ごと落ちる（実際に落ちた） */
       const markImg = p.layout === 'mark'
         ? `--mark:url('${p.markMask ? esc(p.markMask) : MARK_SVG}')` : '';
+      /* ヒーローだけの書体。--font-head はここから下へ受け継がれるので、
+         この1行で見出しも小見出しも切り替わる。
+         書体名の二重引用符は一重に直す。style 属性を二重引用符で囲んで
+         いるので、そのまま入れると属性がそこで切れて、指定ごと落ちる。 */
+      const fontVar = p.font ? `--font-head:${fontStack(p.font).replace(/"/g, "'")}` : '';
       if (!sc) {
         return `<section class="${cls}"${attr('id', p.anchor)}`
-          + `${styleVars(maskVal(p), meltVal, meltImg, markImg)}${needsPointer ? ' data-hpt' : ''}`
+          + `${styleVars(maskVal(p), meltVal, meltImg, markImg, fontVar)}${needsPointer ? ' data-hpt' : ''}`
           + `${mvOn(p)}>
 ${guts}
 </section>`;
       }
       const maskLayer = sc === 'maskzoom' ? maskZoomLayer(p) : '';
       return `<section class="${cls} hsc hsc-${esc(sc)}"${attr('id', p.anchor)}${needsPointer ? ' data-hpt' : ''}`
-        + `${mvOn(p)} data-heroscroll${styleVars(maskVal(p), meltVal, meltImg, markImg,
+        + `${mvOn(p)} data-heroscroll${styleVars(maskVal(p), meltVal, meltImg, markImg, fontVar,
           `--pin:${Math.max(120, Math.min(320, p.scrollLen ?? 200))}vh`)}>
   <div class="hsc-in">
 ${maskLayer}${guts}
@@ -2704,9 +2717,12 @@ ${slides}
   },
 };
 
-/* 追加メニューに出す順番（ヘッダー・フッターは常設なので除く） */
+/* 追加メニューに出す順番（ヘッダー・フッターは常設なので除く）。
+   hero と collage はここに出さない。どちらも「ページの顔」で、
+   組み立ての ①顔をえらぶ で選ぶもの。あとから足す部品ではない
+   （collage は中ほどに置く帯としてなら Collage Band がある）。 */
 const ADDABLE = [
-  'hero', 'collage', 'features', 'icons', 'about', 'gallery', 'video', 'strip', 'menu', 'floors', 'news', 'marquee', 'pricing', 'faq', 'cta', 'contact', 'rich',
+  'features', 'icons', 'about', 'gallery', 'video', 'strip', 'menu', 'floors', 'news', 'marquee', 'pricing', 'faq', 'cta', 'contact', 'rich',
   'slides', 'product3d', 'exploded', 'hscroll', 'stackcards', 'timeline', 'clipreveal',
   'carousel3d', 'slotstats', 'svgdraw', 'shift',
 ];

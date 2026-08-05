@@ -3519,29 +3519,6 @@ const GAL_FIT = `<script>(function(){
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(fit);
 })();<\/script>`;
 
-const TPL_GAL_CSS = `
-body{margin:0;background:#0d1016;padding:14px;
-  font-family:"Helvetica Neue",Arial,"Hiragino Sans",Meiryo,sans-serif}
-.tg{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px}
-.tc{display:block;width:100%;padding:0;cursor:pointer;color:#e7ebf0;font:inherit;position:relative;
-  background:#171a21;border:1px solid #2a2f3a;border-radius:12px;overflow:hidden;
-  transition:border-color .15s,transform .15s}
-.tc:hover{border-color:#8b9099}
-.tc-hit{position:absolute;inset:0;z-index:5}
-.tc-prev{aspect-ratio:16/10;overflow:hidden;border-bottom:1px solid #2a2f3a}
-.tc-scale{width:1300px;transform:scale(.246);transform-origin:top left;pointer-events:none;
-  color:var(--c-text);background:var(--c-bg)}
-.tc-meta{padding:12px 14px 15px}
-.tc-meta b{font-size:14px;display:block;margin-bottom:4px}
-.tc-meta small{color:#98a2b3;font-size:11.5px;line-height:1.65;display:block}
-.tc-sw{display:flex;gap:4px;margin-top:9px}
-.tc-sw i{width:16px;height:16px;border-radius:4px;border:1px solid rgba(255,255,255,.18)}
-/* 見出しの出現アニメは止めて、完成形で見せる */
-.tc-scale [data-ta] .ch,.tc-scale .rv{opacity:1!important;transform:none!important}
-.tc-scale .pinsec{height:auto!important}
-.tc-scale .pin-in{position:static;height:520px}
-`;
-
 /* ================================================================
    配色の一覧
    いまのページの上から2〜3ブロックを、各パレットの色で描いて見比べる。
@@ -3619,36 +3596,6 @@ function applyPalette(i) {
 
 $('#palClose').addEventListener('click', () => closeModal('#palModal'));
 
-function renderTplGrid() {
-  const cards = Object.entries(TEMPLATES).map(([k, t]) => {
-    /* 上から4ブロックだけ描いて、そのテンプレートの顔を見せる。
-       3つだと、短いテンプレートで見本の下が余る */
-    const sample = t.blocks.slice(0, 4).map((b) => {
-      const props = Object.assign(clone(BLOCKS[b.type].defaults), clone(b.props || {}));
-      return BLOCKS[b.type].render(props);
-    }).join('');
-    return `<div class="tc" data-tpl="${k}" role="button" tabindex="0">
-      <span class="tc-hit"></span>
-      <div class="tc-prev" data-galfit style="background:${t.theme.bg}">
-        <div class="tc-scale tpl-${k}${t.style ? ` sty-${t.style}` : ''}${t.rules ? ' has-rules' : ''}" style="${themeVars(t.theme)}">${sample}</div>
-      </div>
-      <div class="tc-meta"><b>${esc(t.name)}</b><small>${esc(t.desc)}</small>
-        <span class="tc-sw">${t.swatch.map((c) => `<i style="background:${c}"></i>`).join('')}</span>
-      </div>
-    </div>`;
-  }).join('');
-
-  const f = $('#tplFrame');
-  f.srcdoc = `<!DOCTYPE html><html lang="ja"><head><meta charset="utf-8">
-<style>${SITE_CSS}\n${TPL_GAL_CSS}</style></head>
-<body><div class="tg">${cards}</div>${GAL_FIT}</body></html>`;
-  f.addEventListener('load', () => {
-    f.contentDocument.addEventListener('click', (e) => {
-      const k = e.target.closest('.tc')?.dataset.tpl;
-      if (k) pickTemplate(k);
-    });
-  }, { once: true });
-}
 const openModal = (id) => { $(id).hidden = false; };
 const closeModal = (id) => { $(id).hidden = true; };
 
@@ -3662,12 +3609,10 @@ const closeModal = (id) => { $(id).hidden = true; };
    はじめる
 
    起動して最初に出る画面。ここでの分かれ道は2つだけにする。
-     ・テンプレートから選ぶ … 出来上がったページを選んで差し替える
-     ・空白からカスタマイズ … 順に選んで組み上げる
-   どちらを選んでも、あとから全部変えられる。
+   入口は1つ。いちばん上の一枚（顔）から決めて、そこから積み上げる。
+   顔でサイトの雰囲気が決まるので、そこを先に決めないと後がぶれる。
    ================================================================ */
 function openEasy() {
-  closeModal('#tplModal');
   closeModal('#buildModal');
   openModal('#easyModal');
 }
@@ -3676,8 +3621,7 @@ $('#ezStep0').addEventListener('click', (e) => {
   const way = e.target.closest('[data-way]')?.dataset.way;
   if (!way) return;
   closeModal('#easyModal');
-  if (way === 'tpl') { renderTplGrid(); openModal('#tplModal'); }
-  else openBuild(true);
+  openBuild(true);
 });
 
 /* ================================================================
@@ -4104,17 +4048,13 @@ function openBuild(fresh) {
   $('#bizMore').open = false;
   renderBldInds();
   renderNeeds();
-  closeModal('#tplModal');
   closeModal('#easyModal');
   exitFocus();     // 組み立て中はページ全体が見えていないと選べない
   refresh();
   openModal('#buildModal');
   refreshBld();
 }
-const openBuildFlow = () => openBuild(true);
 
-$('#tplToBuild').addEventListener('click', openBuildFlow);
-$('#tplToEasy').addEventListener('click', openEasy);
 $('#bldBack').addEventListener('click', bldUndo);
 $('#bldCancel').addEventListener('click', () => {
   if (bldBefore) { state = bldBefore; selected = page().blocks[1]?.id || page().blocks[0]?.id; }
@@ -4148,20 +4088,13 @@ function bldNext(skipAll) {
   flash(`${n}段のページを組みました。ここから中身を書き替えられます`);
 }
 
-let askBeforeSwitch = false; // 起動直後の選択では確認しない
-
-$('#btnTemplates').addEventListener('click', () => {
-  askBeforeSwitch = true;
-  renderTplGrid(); openModal('#tplModal');
-});
-$('#tplClose').addEventListener('click', () => closeModal('#tplModal'));
+/* 業種ぶんの配色・書体・見本の文章は、ここから受け取る。
+   選ぶ画面は無くしたが、組み立ての「業種をえらぶ」がこれを使う。 */
 function pickTemplate(k) {
-  if (askBeforeSwitch && !confirm('型を替えると、いまの中身は入れ替わります。よろしいですか？')) return;
   state = buildState(k);
   selected = page().blocks[1]?.id || page().blocks[0]?.id;
   selectedEl = null;
   closed.clear();
-  closeModal('#tplModal');
   exitFocus();     // 中身が丸ごと変わるので、まずページ全体を見せる
   refresh();
   resetHistory();     // テンプレートを選び直したらそこを起点にする
@@ -4467,7 +4400,6 @@ async function openSiteFile(file) {
   selectedEl = null;
   closed.clear();
   closeModal('#easyModal');
-  closeModal('#tplModal');
   closeModal('#buildModal');
   if (isMobile()) closeSheets();
   exitFocus();     // 中身が丸ごと変わるので、まずページ全体を見せる

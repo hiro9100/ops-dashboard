@@ -50,13 +50,11 @@ const note = (ok, msg) => { console.log(`${ok ? '  ok ' : '  NG '} ${msg}`); if 
     page.on('console', (m) => { if (m.type() === 'error') errs.push(m.text()); });
     const resp = await page.goto(base + p, { waitUntil: 'load' });
     await page.waitForTimeout(1200);
-    /* ビルダーは起動直後に「どうやって作りますか？」が開く。
-       ここでは編集画面そのものを見たいので、テンプレートを1つ選んで抜ける */
+    /* ビルダーは起動直後に「はじめかた」が開く。
+       ここでは編集画面そのものを見たいので、業種を1つ当てて抜ける */
     if (p === '/app/') {
-      await page.click('[data-way="tpl"]');
-      await page.waitForTimeout(1000);
-      await page.frameLocator('#tplFrame').locator('.tc').first().click();
-      await page.waitForTimeout(1800);
+      await page.evaluate(() => { closeModal('#easyModal'); pickTemplate('bistro'); });
+      await page.waitForTimeout(2000);
     }
     note(resp.status() === 200, `${p} → ${resp.status()}`);
     note(errs.length === 0, `${p} JSエラー ${errs.length}件 ${errs.slice(0, 2).join(' / ')}`);
