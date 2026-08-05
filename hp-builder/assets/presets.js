@@ -213,6 +213,26 @@ const HERO_PRESETS = [
       buttons: [{ label: 'エントリー', href: '#entry', style: 'primary' }],
     } },
 
+  { key: 'duo', type: 'hero', label: 'Duo',
+    about: '写真2枚を左右に並べ、その境目に文字を置く。二人・二面・前と後を並べて見せたいときに。',
+    props: {
+      layout: 'duo', bg: '', eyebrow: '',
+      title: '自分を信じて\n成果を出す',
+      text: '答えだけを教える塾ではありません。挑戦を続ける自信を育てる。\n迷いも不安も力に変え、次の一歩を自分の意志で踏み出すために。',
+      image: '', image2: '',
+      buttons: [],
+    } },
+
+  { key: 'duo-cta', type: 'hero', label: 'Duo + Button',
+    about: '同じ組みかたに、押してほしいボタンを1つ。二人で受ける店、二部門ある会社に。',
+    props: {
+      layout: 'duo', bg: '', eyebrow: 'SINCE 1998',
+      title: 'ふたりで、\nつくっています。',
+      text: 'ひとつずつ手をかけて、同じ味を、同じ手ざわりで。',
+      image: '', image2: '',
+      buttons: [{ label: 'ご予約はこちら', href: '#contact', style: 'primary' }],
+    } },
+
   { key: 'reel-5', type: 'hero', label: 'Reel (5)',
     about: '同じ組みかたで5枚。人が多い会社、作品が多い工房に。',
     props: {

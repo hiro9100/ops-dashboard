@@ -541,6 +541,17 @@ const inkAt = (p, i, cls) => {
     + `${imgSlot(`inks.${i}.src`, p)}><img src="${esc(src)}" alt=""></div>`;
 };
 
+/* ---------- 写真2枚のあいだに文字（duo） ----------
+   2枚を左右に並べ、その境目に文字を置く。写真は枠いっぱいに出したいので、
+   中身の箱（幅の決まった .wrap）ではなく、ヒーロー直下に敷く。
+   どんな写真が来ても字が読めるように、まん中だけ暗くする膜を1枚かける。 */
+const duoLayer = (p) => `  <div class="duo-pics">
+    <div class="duo-a"${el(p, 'image', 'ia', '左の写真')}${imgSlot('image', p)}>${
+  media(p.image, '')}</div>
+    <div class="duo-b"${el(p, 'image2', 'ia', '右の写真')}${imgSlot('image2', p)}>${
+  media(p.image2, '')}</div>
+  </div>\n`;
+
 const paintLayer = (p) => `  <div class="paint" aria-hidden="true">${
   BRUSHES.map((svg, i) => inkAt(p, i, `pk-${i + 1}`) || svg).join('')}</div>\n`;
 const paintFront = (p) => `      <div class="paint-f" aria-hidden="true">${
@@ -994,7 +1005,8 @@ const BLOCKS = {
           ['ribbon', '動画＋色の帯'], ['mark', 'ロゴ抜き'], ['lineart', '線のかたち'],
           ['orbit', 'まるい写真が浮かぶ'], ['poster', '大きな名前＋1枚の写真'],
           ['showcase', '1商品を立てる（光と台）'],
-          ['reel', '写真がくるくる入れ替わる']] },
+          ['reel', '写真がくるくる入れ替わる'],
+          ['duo', '写真2枚のあいだに文字']] },
       /* ヒーローだけ、別の書体にできる。ここでサイトの雰囲気が決まるので、
          全体の設定より強く出したいことがある。空なら全体と同じ */
       /* FONTS は templates.js にあり、このファイルより後に読み込まれる。
@@ -1029,6 +1041,9 @@ const BLOCKS = {
       { key: 'branchImg', label: '上に垂らす枝の写真', type: 'image',
         showIf: (p) => p.layout === 'showcase',
         hint: '背景を抜いた枝や植物の写真。入れなければ、線で描いたものが出ます' },
+      { key: 'image2', label: '右の写真', type: 'image',
+        showIf: (p) => p.layout === 'duo',
+        hint: '左の写真は、ひとつ上の「写真」の欄です' },
       { key: 'shelfImg', label: '棚の写真', type: 'image',
         showIf: (p) => p.layout === 'showcase',
         hint: '棚板を正面から撮ったもの。入れなければ、描いた板が出ます' },
@@ -1042,12 +1057,12 @@ const BLOCKS = {
         hint: '4本目は写真の手前に来ます。白地の写真は「背景を抜く」で抜けます',
         item: [{ key: 'src', label: 'インク', type: 'image' }] },
       { key: 'badge', label: '丸い印の文字', type: 'textarea', rows: 2,
-        showIf: (p) => !['showcase', 'reel'].includes(p.layout),
+        showIf: (p) => !['showcase', 'reel', 'duo'].includes(p.layout),
         hint: '改行すると2行になります。「砂糖\n不使用」など' },
       { key: 'badgeRing', label: '丸のまわりの文字', type: 'text', adv: true,
         showIf: (p) => !!p.badge, hint: '円にそって回ります。空なら線だけ' },
       { key: 'tag', label: '帯のラベル', type: 'text',
-        showIf: (p) => !['showcase', 'reel'].includes(p.layout),
+        showIf: (p) => !['showcase', 'reel', 'duo'].includes(p.layout),
         hint: '「こだわりの素材」「送料無料」など、ひとこと' },
       /* 型ごとにしか使わない欄。その型を選んだときだけ出す */
       { key: 'markMask', label: 'ロゴ・マークの画像', type: 'mask',
@@ -1091,7 +1106,7 @@ const BLOCKS = {
       badge: '', badgeRing: '', tag: '',
       markMask: '', art: 'flow', scrollLabel: 'Scroll', side: 'PORTFOLIO',
       mid: 'DE', notes: 'LIMITED 300 | ATELIER | EAU DE PARFUM',
-      branchImg: '', shelfImg: '', inks: [],
+      branchImg: '', shelfImg: '', inks: [], image2: '',
       shots: [{ src: '' }, { src: '' }, { src: '' }],
       orbs: [{ src: '' }, { src: '' }, { src: '' }, { src: '' }],
       scroll: 'none', scrollLen: 200,
@@ -1151,6 +1166,16 @@ ${marks}${buttons(p.buttons)}`;
       <div class="rib-2">
         ${p.text ? `<p class="hero-text"${el(p, 'text', 'ta', '説明文', 'text')}>${nl2br(p.text)}</p>` : ''}
 ${heroMarks(p)}${buttons(p.buttons)}
+      </div>
+    </div>`
+        : p.layout === 'duo'
+          /* 写真は下に敷いてある。ここはまん中に置く文字だけ */
+          ? `    <div class="hero-in">
+      <div class="duo-mid">
+        ${p.eyebrow ? `<span class="eyebrow"${el(p, 'eyebrow', 'ta', '小見出し', 'eyebrow')}>${nl2br(p.eyebrow)}</span>` : ''}
+        ${p.title ? `<h1 class="hero-title"${el(p, 'title', 'ta', 'キャッチコピー', 'title')}>${nl2br(p.title)}</h1>` : ''}
+        ${p.text ? `<p class="hero-text"${el(p, 'text', 'ta', '説明文', 'text')}>${nl2br(p.text)}</p>` : ''}
+${buttons(p.buttons)}
       </div>
     </div>`
         : p.layout === 'reel'
@@ -1227,7 +1252,8 @@ ${heroMarks(p)}${buttons(p.buttons)}
           : p.layout === 'lineart' ? lineArtLayer(p)
             : p.layout === 'orbit' ? orbitLayer(p)
               : p.layout === 'showcase' ? showcaseLayer(p)
-                : p.layout === 'reel' ? paintLayer(p) : '';
+                : p.layout === 'reel' ? paintLayer(p)
+                  : p.layout === 'duo' ? duoLayer(p) : '';
       const guts = `${bg}${artLayer}${decoLayer(p)}  <div class="wrap">
 ${inner}
   </div>
