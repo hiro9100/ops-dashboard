@@ -441,6 +441,94 @@ function orbitLayer(p) {
   return `  <div class="orbs">\n${ORB_LINES}\n${orbs}\n  </div>\n`;
 }
 
+/* ---------- ペンキのひと刷け ----------
+   きれいな楕円だと「絵の具」に見えない。縁を荒らして、穂先を細らせて、
+   まわりに毛の筋を数本飛ばす。ぶれの数は種から作るので、読み込み直しても
+   同じ形になる（毎回変わると、編集画面と書き出したページで別物になる）。 */
+const jitter = (seed) => {
+  const x = Math.sin(seed * 127.1 + 311.7) * 43758.5453;
+  return x - Math.floor(x);
+};
+
+/* 枠は 1000×120 に決め打ち。刷けの中心線もこの中に収める。
+   枠が余ると SVG の伸縮に負けて形が崩れるので、余白を作らない。 */
+const PK_W = 560, PK_H = 120, PK_MID = PK_H / 2;
+const pkCenter = (t, seed) => PK_MID + Math.sin(t * 2.2 + seed) * 7;
+
+function brushPath(seed, w) {
+  const N = 30, top = [], bot = [];
+  for (let i = 0; i <= N; i += 1) {
+    const t = i / N;
+    /* 穂先は細く、腹はふくらみ、終わりぎわでまた細る */
+    const prof = Math.pow(Math.sin(Math.PI * Math.pow(t, 0.82)), 0.62);
+    const x = t * PK_W;
+    const yc = pkCenter(t, seed);
+    const half = w * prof;
+    /* ぶれは控えめに。大きくすると、刷けではなく破れた紙に見える */
+    top.push([x, yc - half * (0.88 + 0.16 * jitter(seed + i * 3.7))]);
+    bot.push([x, yc + half * (0.88 + 0.16 * jitter(seed + i * 5.3 + 40))]);
+  }
+  return `M${top.map(([x, y]) => `${n1(x)},${n1(y)}`).join(' L')}`
+    + ` L${bot.reverse().map(([x, y]) => `${n1(x)},${n1(y)}`).join(' L')} Z`;
+}
+
+/* 毛の筋。本体から離れて飛ぶ細い線。これが無いと、ただの帯に見える。
+   線として引く（塗りにすると、閉じていない形が三角に潰れる）。 */
+function bristles(seed, w) {
+  return [0, 1, 2, 3].map((k) => {
+    const off = (jitter(seed + k * 9.1) - 0.5) * 2 * w * 1.2;
+    const a = 0.08 + jitter(seed + k * 4.3) * 0.28;
+    const b = a + 0.24 + jitter(seed + k * 7.7) * 0.4;
+    const pts = [];
+    for (let i = 0; i <= 8; i += 1) {
+      const t = a + (b - a) * (i / 8);
+      const prof = Math.pow(Math.sin(Math.PI * Math.pow(t, 0.82)), 0.62);
+      pts.push(`${n1(t * PK_W)},${n1(pkCenter(t, seed) + off * prof)}`);
+    }
+    return `<path class="pk-h" d="M${pts.join(' L')}" stroke-width="${n1(1.6 + jitter(seed + k) * 2.4)}"/>`;
+  }).join('');
+}
+
+/* 刷けは1本ずつ、別の枠に入れて置く。1枚の枠に押し込んで引き伸ばすと、
+   縦横の比が崩れて、刷けではなく破れた紙になる（実際そうなった）。
+   width/height を属性でも書く。CSS の height:auto だけに任せると、
+   親の高さに引っぱられて縦に伸びる。 */
+const BRUSHES = [0.7, 2.3, 4.9].map((sd, i) =>
+  `<svg class="pk pk-${i + 1}" width="${PK_W}" height="${PK_H}"`
+  + ` viewBox="0 0 ${PK_W} ${PK_H}" focusable="false">`
+  + `<path class="pk-b" d="${brushPath(sd, 34 - i * 8)}"/>${bristles(sd, 34 - i * 8)}</svg>`);
+
+const paintLayer = () => `  <div class="paint" aria-hidden="true">${BRUSHES.join('')}</div>\n`;
+
+/* ---------- 写真がくるくる入れ替わる（reel） ----------
+   輪の上に写真を置いて、時計回りに送る。前に来た1枚だけがはっきり見え、
+   ほかは奥で小さく・ぼやけて・薄くなる。
+
+   輪に沿って動かすのは rotate → translate → rotate の3段。
+   位置を直接ずらすと直線で移動してしまい、「回った」ように見えない。
+   角度を足していくので、一周しても戻らない（戻すと逆回りが見える）。 */
+const REEL_MAX = 5;
+const reelDepth = (a) => {
+  const t = (1 - Math.cos((a * Math.PI) / 180)) / 2;   /* 0=手前 1=奥 */
+  return { t, k: n1(1 - 0.46 * t), b: n1(6 * t), o: n1(1 - 0.58 * t), z: Math.round(100 - t * 90) };
+};
+
+function reelCards(p) {
+  const list = (p.shots || []).slice(0, REEL_MAX);
+  const n = Math.max(list.length, 1);
+  return list.map((o, i) => {
+    const a = i * (360 / n);
+    const d = reelDepth(a);
+    const tilt = [-3.2, 2.6, -2.2, 3.4, -1.6][i % 5];
+    return `      <div class="rl-slot" data-i="${i}"`
+      + ` style="--a:${n1(a)}deg;--k:${d.k};--b:${d.b}px;--o:${d.o};--z:${d.z}">
+        <div class="rl-card" style="--tilt:${tilt}deg"`
+      + `${el(p, `shot${i}`, 'ia', `写真 ${i + 1}`)}${imgSlot(`shots.${i}.src`, p)}>${
+  media((o && o.src) || '', '')}</div>
+      </div>`;
+  }).join('\n');
+}
+
 /* ---------- 1商品を立てる（showcase） ----------
    写真を合成せず、線と色だけで「商品ポスター」を組む。
    要るのは4つだけ——斜めに差す光、枝の影、載せる台、まんなかの品名。
@@ -477,13 +565,16 @@ const SHW_BOTTLE = `<svg class="shw-draw" viewBox="0 0 200 300" aria-hidden="tru
   <line x1="78" y1="176" x2="122" y2="176"/>
 </svg>`;
 
-const showcaseLayer = () => `  <div class="shw-set" aria-hidden="true">
+const showcaseLayer = (p) => `  <div class="shw-set" aria-hidden="true">
     <i class="shw-wall"></i>
     <i class="shw-beam"></i>
-    <svg class="shw-branch" viewBox="0 0 700 268" preserveAspectRatio="xMinYMin slice" focusable="false">
+${p.branchImg
+    /* 写真があればそちらを使う。同じ絵をもう1枚ずらして暗く敷き、壁の影にする */
+    ? `    <div class="shw-photo"><img src="${esc(p.branchImg)}" alt=""></div>`
+    : `    <svg class="shw-branch" viewBox="0 0 700 268" preserveAspectRatio="xMinYMin slice" focusable="false">
       <g class="shw-cast" transform="translate(26,34)">${branchArt()}</g>
       <g>${branchArt()}</g>
-    </svg>
+    </svg>`}
   </div>\n`;
 
 /* 丸い印と、帯のラベル。パッケージの「砂糖不使用」「送料無料」のような、
@@ -828,11 +919,13 @@ const BLOCKS = {
           ['pack', '商品パッケージ'], ['cover', '背景画像いっぱい'],
           ['ribbon', '動画＋色の帯'], ['mark', 'ロゴ抜き'], ['lineart', '線のかたち'],
           ['orbit', 'まるい写真が浮かぶ'], ['poster', '大きな名前＋1枚の写真'],
-          ['showcase', '1商品を立てる（光と台）']] },
+          ['showcase', '1商品を立てる（光と台）'],
+          ['reel', '写真がくるくる入れ替わる']] },
       FIELD.eyebrow,
       { key: 'title', label: 'キャッチコピー', type: 'textarea', rows: 2 },
       { key: 'text', label: '説明文', type: 'textarea' },
-      { key: 'image', label: '写真', type: 'image', showIf: (p) => p.layout !== 'orbit' },
+      { key: 'image', label: '写真', type: 'image',
+        showIf: (p) => !['orbit', 'reel'].includes(p.layout) },
       /* 「まるい写真が浮かぶ」は写真が主役なので、1枚ではなく並びで持つ。
          置き場所が5つしかないので、6枚目からは出ない */
       { key: 'orbs', label: 'まるい写真（5枚まで）', type: 'list', addLabel: '写真を追加',
@@ -850,13 +943,21 @@ const BLOCKS = {
       { key: 'notes', label: 'いちばん下の3つ', type: 'text',
         showIf: (p) => p.layout === 'showcase',
         hint: '縦棒で区切ります。例：LIMITED 300 | ATELIER | EAU DE PARFUM' },
+      /* 枝は線でも描けるが、写真を入れたほうが速いし、そのほうが強い */
+      { key: 'branchImg', label: '上に垂らす枝の写真', type: 'image',
+        showIf: (p) => p.layout === 'showcase',
+        hint: '背景を抜いた枝や植物の写真。入れなければ、線で描いたものが出ます' },
+      /* くるくる回す写真。5枚まで */
+      { key: 'shots', label: '回す写真（5枚まで）', type: 'list', addLabel: '写真を追加',
+        showIf: (p) => p.layout === 'reel',
+        item: [{ key: 'src', label: '写真', type: 'image' }] },
       { key: 'badge', label: '丸い印の文字', type: 'textarea', rows: 2,
-        showIf: (p) => p.layout !== 'showcase',
+        showIf: (p) => !['showcase', 'reel'].includes(p.layout),
         hint: '改行すると2行になります。「砂糖\n不使用」など' },
       { key: 'badgeRing', label: '丸のまわりの文字', type: 'text', adv: true,
         showIf: (p) => !!p.badge, hint: '円にそって回ります。空なら線だけ' },
       { key: 'tag', label: '帯のラベル', type: 'text',
-        showIf: (p) => p.layout !== 'showcase',
+        showIf: (p) => !['showcase', 'reel'].includes(p.layout),
         hint: '「こだわりの素材」「送料無料」など、ひとこと' },
       /* 型ごとにしか使わない欄。その型を選んだときだけ出す */
       { key: 'markMask', label: 'ロゴ・マークの画像', type: 'mask',
@@ -899,7 +1000,8 @@ const BLOCKS = {
       melt: 'none', meltMask: '', meltDepth: 100,
       badge: '', badgeRing: '', tag: '',
       markMask: '', art: 'flow', scrollLabel: 'Scroll', side: 'PORTFOLIO',
-      mid: 'DE', notes: 'LIMITED 300 | ATELIER | EAU DE PARFUM',
+      mid: 'DE', notes: 'LIMITED 300 | ATELIER | EAU DE PARFUM', branchImg: '',
+      shots: [{ src: '' }, { src: '' }, { src: '' }],
       orbs: [{ src: '' }, { src: '' }, { src: '' }, { src: '' }],
       scroll: 'none', scrollLen: 200,
       buttons: [
@@ -942,7 +1044,7 @@ ${marks}${buttons(p.buttons)}`;
       /* 中央ぞろえ・左ぞろえでも、写真を入れたら文章の下に置く。
          入れても何も起きないと、入れた本人には壊れて見える（実際に指摘された）。 */
       const wide = !cover
-        && !['split', 'pack', 'orbit', 'poster', 'showcase'].includes(p.layout) && p.image
+        && !['split', 'pack', 'orbit', 'poster', 'showcase', 'reel'].includes(p.layout) && p.image
         ? `\n      <div class="hero-media hero-wide"${el(p, 'image', 'ia', '画像')}`
           + `${imgSlot('image', p)}>${media(p.image, p.title)}</div>`
         : '';
@@ -958,6 +1060,19 @@ ${marks}${buttons(p.buttons)}`;
       <div class="rib-2">
         ${p.text ? `<p class="hero-text"${el(p, 'text', 'ta', '説明文', 'text')}>${nl2br(p.text)}</p>` : ''}
 ${heroMarks(p)}${buttons(p.buttons)}
+      </div>
+    </div>`
+        : p.layout === 'reel'
+          ? `    <div class="hero-in">
+      <div class="rl-stage" data-reel>
+${reelCards(p)}
+      </div>
+      <div class="rl-side">
+        <span class="rl-count"><b>1</b> / ${(p.shots || []).slice(0, REEL_MAX).length || 1}</span>
+        ${p.eyebrow ? `<span class="eyebrow"${el(p, 'eyebrow', 'ta', '小見出し', 'eyebrow')}>${nl2br(p.eyebrow)}</span>` : ''}
+        ${p.title ? `<h1 class="hero-title"${el(p, 'title', 'ta', 'キャッチコピー', 'title')}>${nl2br(p.title)}</h1>` : ''}
+        ${p.text ? `<p class="hero-text"${el(p, 'text', 'ta', '説明文', 'text')}>${nl2br(p.text)}</p>` : ''}
+${buttons(p.buttons)}
       </div>
     </div>`
         : p.layout === 'showcase'
@@ -1010,7 +1125,8 @@ ${heroMarks(p)}${buttons(p.buttons)}
         : p.layout === 'mark' ? markLayer(p)
           : p.layout === 'lineart' ? lineArtLayer(p)
             : p.layout === 'orbit' ? orbitLayer(p)
-              : p.layout === 'showcase' ? showcaseLayer() : '';
+              : p.layout === 'showcase' ? showcaseLayer(p)
+                : p.layout === 'reel' ? paintLayer() : '';
       const guts = `${bg}${artLayer}${decoLayer(p)}  <div class="wrap">
 ${inner}
   </div>

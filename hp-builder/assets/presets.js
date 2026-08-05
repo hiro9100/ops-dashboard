@@ -201,6 +201,28 @@ const HERO_PRESETS = [
       buttons: [{ label: '買う', href: '#buy', style: 'primary' }],
     } },
 
+  /* 輪の上に写真を置いて、時計回りに送る型。手前の1枚だけがはっきり見え、
+     ほかは奥で小さく・ぼやけて・薄くなる。後ろにペンキのひと刷け。 */
+  { key: 'reel', type: 'hero', label: 'Reel',
+    about: '写真が時計回りに入れ替わる。手前の1枚だけがはっきり、ほかは奥でぼやける。後ろにペンキのひと刷け。',
+    props: {
+      layout: 'reel', bg: '', eyebrow: 'RECRUIT | NEW GRADUATE',
+      title: '感動に、\n挑め。',
+      text: '正解のない仕事ばかりです。だからこそ、\nはじめての人にも同じだけ出番があります。',
+      shots: [{ src: '' }, { src: '' }, { src: '' }],
+      buttons: [{ label: 'エントリー', href: '#entry', style: 'primary' }],
+    } },
+
+  { key: 'reel-5', type: 'hero', label: 'Reel (5)',
+    about: '同じ組みかたで5枚。人が多い会社、作品が多い工房に。',
+    props: {
+      layout: 'reel', bg: '', eyebrow: 'OUR WORK',
+      title: '手が、\nぜんぶ憶えている。',
+      text: '同じものを、同じ手で、何度でも。',
+      shots: [{ src: '' }, { src: '' }, { src: '' }, { src: '' }, { src: '' }],
+      buttons: [],
+    } },
+
   /* パッケージの表側を、そのままページの頭にした型。
      大きな品名、まわりの短い言葉、丸い印、帯のラベル。 */
   { key: 'goods-pack', type: 'hero', label: 'Package',
