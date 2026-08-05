@@ -450,55 +450,88 @@ const jitter = (seed) => {
   return x - Math.floor(x);
 };
 
-/* 枠は 1000×120 に決め打ち。刷けの中心線もこの中に収める。
+/* 枠は 560×200 に決め打ち。刷けの中心線もこの中に収める。
    枠が余ると SVG の伸縮に負けて形が崩れるので、余白を作らない。 */
-const PK_W = 560, PK_H = 120, PK_MID = PK_H / 2;
-const pkCenter = (t, seed) => PK_MID + Math.sin(t * 2.2 + seed) * 7;
+const PK_W = 560, PK_H = 200, PK_MID = PK_H / 2;
+const pkCenter = (t, seed) => PK_MID + Math.sin(t * 2.2 + seed) * 12;
+/* 穂先は細く、腹はふくらみ、終わりぎわでまた細る */
+const pkProf = (t) => Math.pow(Math.sin(Math.PI * Math.pow(t, 0.82)), 0.62);
 
 function brushPath(seed, w) {
-  const N = 30, top = [], bot = [];
+  const N = 34, top = [], bot = [];
   for (let i = 0; i <= N; i += 1) {
     const t = i / N;
-    /* 穂先は細く、腹はふくらみ、終わりぎわでまた細る */
-    const prof = Math.pow(Math.sin(Math.PI * Math.pow(t, 0.82)), 0.62);
+    const prof = pkProf(t);
     const x = t * PK_W;
     const yc = pkCenter(t, seed);
     const half = w * prof;
-    /* ぶれは控えめに。大きくすると、刷けではなく破れた紙に見える */
-    top.push([x, yc - half * (0.88 + 0.16 * jitter(seed + i * 3.7))]);
-    bot.push([x, yc + half * (0.88 + 0.16 * jitter(seed + i * 5.3 + 40))]);
+    /* ぶれは控えめに。縁の荒れは、このあとフィルタでまとめて付ける */
+    top.push([x, yc - half * (0.9 + 0.14 * jitter(seed + i * 3.7))]);
+    bot.push([x, yc + half * (0.9 + 0.14 * jitter(seed + i * 5.3 + 40))]);
   }
   return `M${top.map(([x, y]) => `${n1(x)},${n1(y)}`).join(' L')}`
     + ` L${bot.reverse().map(([x, y]) => `${n1(x)},${n1(y)}`).join(' L')} Z`;
 }
 
-/* 毛の筋。本体から離れて飛ぶ細い線。これが無いと、ただの帯に見える。
-   線として引く（塗りにすると、閉じていない形が三角に潰れる）。 */
+/* 毛の筋。刷けの中を通る「絵の具の乗っていない筋」と、
+   穂先から飛び出す細い線。線として引く（塗ると閉じていない形が三角に潰れる）。 */
 function bristles(seed, w) {
-  return [0, 1, 2, 3].map((k) => {
-    const off = (jitter(seed + k * 9.1) - 0.5) * 2 * w * 1.2;
-    const a = 0.08 + jitter(seed + k * 4.3) * 0.28;
-    const b = a + 0.24 + jitter(seed + k * 7.7) * 0.4;
+  const line = (cls, a, b, off, sw) => {
     const pts = [];
-    for (let i = 0; i <= 8; i += 1) {
-      const t = a + (b - a) * (i / 8);
-      const prof = Math.pow(Math.sin(Math.PI * Math.pow(t, 0.82)), 0.62);
-      pts.push(`${n1(t * PK_W)},${n1(pkCenter(t, seed) + off * prof)}`);
+    for (let i = 0; i <= 10; i += 1) {
+      const t = a + (b - a) * (i / 10);
+      pts.push(`${n1(t * PK_W)},${n1(pkCenter(t, seed) + off * pkProf(t))}`);
     }
-    return `<path class="pk-h" d="M${pts.join(' L')}" stroke-width="${n1(1.6 + jitter(seed + k) * 2.4)}"/>`;
+    return `<path class="${cls}" d="M${pts.join(' L')}" stroke-width="${n1(sw)}"/>`;
+  };
+  /* 中を通る筋（＝かすれ）。地の色で描いて、絵の具を抜く */
+  const gaps = [0, 1, 2, 3, 4].map((k) => {
+    const off = (jitter(seed + k * 9.1) - 0.5) * 1.7 * w;
+    const a = 0.06 + jitter(seed + k * 4.3) * 0.22;
+    return line('pk-gap', a, a + 0.3 + jitter(seed + k * 7.7) * 0.5, off,
+      1.4 + jitter(seed + k * 2.7) * 3.6);
   }).join('');
+  /* 外へ飛ぶ筋。これが無いと、ただの帯に見える */
+  const hairs = [0, 1, 2].map((k) => {
+    const off = (jitter(seed + k * 5.5 + 11) - 0.5) * 2.8 * w;
+    const a = 0.12 + jitter(seed + k * 3.1) * 0.3;
+    return line('pk-h', a, a + 0.2 + jitter(seed + k * 6.1) * 0.34, off,
+      1.2 + jitter(seed + k * 8.3) * 1.8);
+  }).join('');
+  return gaps + hairs;
 }
+
+/* 縁の荒れは、形を描き足すのではなく、描いたものをノイズでずらして作る。
+   点を増やして荒らそうとすると「破れた紙」になり、刷けにならない。
+   横に低く・縦に高い周波数のノイズが、いちばん毛先らしくずれる。 */
+const pkFilter = (id, seed) => `<filter id="${id}" x="-14%" y="-34%" width="128%" height="168%"`
+  + ` color-interpolation-filters="sRGB">`
+  + `<feTurbulence type="fractalNoise" baseFrequency="0.011 0.085" numOctaves="3"`
+  + ` seed="${seed}" result="n"/>`
+  + `<feDisplacementMap in="SourceGraphic" in2="n" scale="26"`
+  + ` xChannelSelector="R" yChannelSelector="G"/></filter>`;
 
 /* 刷けは1本ずつ、別の枠に入れて置く。1枚の枠に押し込んで引き伸ばすと、
    縦横の比が崩れて、刷けではなく破れた紙になる（実際そうなった）。
    width/height を属性でも書く。CSS の height:auto だけに任せると、
    親の高さに引っぱられて縦に伸びる。 */
-const BRUSHES = [0.7, 2.3, 4.9].map((sd, i) =>
-  `<svg class="pk pk-${i + 1}" width="${PK_W}" height="${PK_H}"`
-  + ` viewBox="0 0 ${PK_W} ${PK_H}" focusable="false">`
-  + `<path class="pk-b" d="${brushPath(sd, 34 - i * 8)}"/>${bristles(sd, 34 - i * 8)}</svg>`);
+const brushSVG = (cls, sd, w, seed) => {
+  const id = `pkr${seed}`;
+  return `<svg class="pk ${cls}" width="${PK_W}" height="${PK_H}"`
+    + ` viewBox="0 0 ${PK_W} ${PK_H}" focusable="false">`
+    + `<defs>${pkFilter(id, seed)}</defs>`
+    + `<g filter="url(#${id})"><path class="pk-b" d="${brushPath(sd, w)}"/>`
+    + `${bristles(sd, w)}</g></svg>`;
+};
+
+/* 後ろに敷く3本と、写真の手前に1本。手前の1本があると、
+   写真が「背景の上に置いた四角」ではなく、絵の中の1枚になる。 */
+const BRUSHES = [[0.7, 52], [2.3, 40], [4.9, 30]]
+  .map(([sd, w], i) => brushSVG(`pk-${i + 1}`, sd, w, i + 1));
+const BRUSH_FRONT = brushSVG('pk-f', 3.6, 26, 4);
 
 const paintLayer = () => `  <div class="paint" aria-hidden="true">${BRUSHES.join('')}</div>\n`;
+const paintFront = () => `      <div class="paint-f" aria-hidden="true">${BRUSH_FRONT}</div>`;
 
 /* ---------- 写真がくるくる入れ替わる（reel） ----------
    輪の上に写真を置いて、時計回りに送る。前に来た1枚だけがはっきり見え、
@@ -516,17 +549,20 @@ const reelDepth = (a) => {
 function reelCards(p) {
   const list = (p.shots || []).slice(0, REEL_MAX);
   const n = Math.max(list.length, 1);
-  return list.map((o, i) => {
+  const slots = list.map((o, i) => {
     const a = i * (360 / n);
     const d = reelDepth(a);
     const tilt = [-3.2, 2.6, -2.2, 3.4, -1.6][i % 5];
-    return `      <div class="rl-slot" data-i="${i}"`
+    return `        <div class="rl-slot" data-i="${i}"`
       + ` style="--a:${n1(a)}deg;--k:${d.k};--b:${d.b}px;--o:${d.o};--z:${d.z}">
-        <div class="rl-card" style="--tilt:${tilt}deg"`
+          <div class="rl-card" style="--tilt:${tilt}deg"`
       + `${el(p, `shot${i}`, 'ia', `写真 ${i + 1}`)}${imgSlot(`shots.${i}.src`, p)}>${
   media((o && o.src) || '', '')}</div>
-      </div>`;
+        </div>`;
   }).join('\n');
+  /* 輪をひと回り小さくつぶす箱。円のままだと、奥の2枚が手前の写真の
+     真上に来てしまい、左右へ逃げない。つぶす向きは縦だけ。 */
+  return `      <div class="rl-ring">\n${slots}\n      </div>`;
 }
 
 /* ---------- 1商品を立てる（showcase） ----------
@@ -1063,14 +1099,21 @@ ${heroMarks(p)}${buttons(p.buttons)}
       </div>
     </div>`
         : p.layout === 'reel'
+          /* 写真を主役にして、文字はその上に置く。左上に枚数、右上に見出し、
+             左下に説明とボタン。写真の四隅を空けるのではなく、重ねる。 */
           ? `    <div class="hero-in">
       <div class="rl-stage" data-reel>
 ${reelCards(p)}
       </div>
-      <div class="rl-side">
-        <span class="rl-count"><b>1</b> / ${(p.shots || []).slice(0, REEL_MAX).length || 1}</span>
-        ${p.eyebrow ? `<span class="eyebrow"${el(p, 'eyebrow', 'ta', '小見出し', 'eyebrow')}>${nl2br(p.eyebrow)}</span>` : ''}
+${paintFront()}
+      <div class="rl-top">
+        <div class="rl-meta">
+          <span class="rl-count"><b>1</b> / ${(p.shots || []).slice(0, REEL_MAX).length || 1}</span>
+          ${p.eyebrow ? `<span class="eyebrow"${el(p, 'eyebrow', 'ta', '小見出し', 'eyebrow')}>${nl2br(p.eyebrow)}</span>` : ''}
+        </div>
         ${p.title ? `<h1 class="hero-title"${el(p, 'title', 'ta', 'キャッチコピー', 'title')}>${nl2br(p.title)}</h1>` : ''}
+      </div>
+      <div class="rl-foot">
         ${p.text ? `<p class="hero-text"${el(p, 'text', 'ta', '説明文', 'text')}>${nl2br(p.text)}</p>` : ''}
 ${buttons(p.buttons)}
       </div>

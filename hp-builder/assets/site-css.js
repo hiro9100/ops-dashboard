@@ -689,18 +689,26 @@ p:last-child{margin-bottom:0}
 
 /* ---------- ペンキのひと刷け（paint） ----------
    地の色の上に、アクセント色の刷けを何本か。ゆっくり息をするくらいに動かす。
-   速く動かすと、絵の具ではなく「動く図形」に見える。 */
+   速く動かすと、絵の具ではなく「動く図形」に見える。
+   薄くすると地の色に沈んで「汚れ」に見えるので、濃いまま置く。 */
 .paint{position:absolute;inset:0;z-index:0;pointer-events:none;overflow:hidden}
 .pk-b{fill:var(--c-accent)}
-/* 毛の筋は線で引く。塗りにすると、閉じていない形が三角に潰れる */
-.pk-h{fill:none;stroke:var(--c-accent);stroke-linecap:round;opacity:.7}
+/* 刷けの中を通る、絵の具の乗っていない筋。地の色で描いて抜く */
+.pk-gap{fill:none;stroke:var(--c-primary);stroke-linecap:round;opacity:.5}
+/* 外へ飛ぶ筋。塗りにすると、閉じていない形が三角に潰れる */
+.pk-h{fill:none;stroke:var(--c-accent);stroke-linecap:round;opacity:.8}
 /* 1本ずつ、自分の枠で持つ。aspect-ratio を書いて、親の高さに引っぱられて
    縦に伸びるのを止める（伸びると刷けではなく破れた紙になる）。 */
-.pk{position:absolute;height:auto;aspect-ratio:560/120;transform-origin:50% 50%;
-  animation:pk-sway 30s ease-in-out infinite alternate}
-.pk-1{width:52%;left:-6%;top:14%;--rot:-19deg;opacity:.5}
-.pk-2{width:34%;left:52%;top:62%;--rot:13deg;opacity:.34;animation-duration:38s;animation-delay:-9s}
-.pk-3{width:26%;left:14%;top:80%;--rot:-31deg;opacity:.26;animation-duration:34s;animation-delay:-19s}
+.pk{position:absolute;height:auto;aspect-ratio:560/200;transform-origin:50% 50%;
+  animation:pk-sway 34s ease-in-out infinite alternate}
+.pk-1{width:86%;left:-18%;top:2%;--rot:-58deg;opacity:.92}
+.pk-2{width:72%;left:36%;top:34%;--rot:-64deg;opacity:.84;animation-duration:41s;animation-delay:-11s}
+.pk-3{width:54%;left:-8%;top:62%;--rot:-48deg;opacity:.78;animation-duration:37s;animation-delay:-23s}
+/* 写真の手前に来る1本。これがあると、写真が「背景に置いた四角」ではなく
+   絵の中の1枚になる。太さは控えめに——顔を隠すと台なしになる。 */
+.paint-f{position:absolute;inset:0;z-index:2;pointer-events:none;overflow:hidden}
+.pk-f{width:66%;left:41%;top:22%;--rot:-66deg;opacity:.9;
+  animation-duration:44s;animation-delay:-31s}
 @keyframes pk-sway{
   from{transform:rotate(var(--rot)) translate(-1.6%,-1.2%) scale(1)}
   to{transform:rotate(var(--rot)) translate(1.8%,1.6%) scale(1.05)}
@@ -709,60 +717,86 @@ p:last-child{margin-bottom:0}
   .pk{animation:none;transform:rotate(var(--rot))}
 }
 
-/* ---------- 写真がくるくる入れ替わる（reel） ---------- */
+/* ---------- 写真がくるくる入れ替わる（reel） ----------
+   写真が主役。文字は写真の上に置く（四隅を空けて逃がすと、
+   写真が小さくなって、ただのカルーセルに見える）。 */
 .hero.reel{
   position:relative;overflow:hidden;background:var(--c-primary);color:#fff;
-  padding:clamp(48px,6vw,110px) 0 clamp(56px,7vw,120px)
+  padding:0
 }
 .hero.reel .hero-in{
-  position:relative;z-index:2;display:grid;gap:clamp(24px,3vw,54px);
-  grid-template-columns:1.05fr .95fr;align-items:center;
-  min-height:min(76svh,820px)
+  position:relative;z-index:1;display:grid;grid-template-rows:auto 1fr auto;
+  min-height:min(92svh,940px);
+  padding:clamp(40px,5vw,96px) 0 clamp(36px,4.5vw,88px)
 }
 .hero.reel .hero-title{
-  font-size:clamp(30px,4.4vw,88px);line-height:1.24;letter-spacing:.02em;
-  font-weight:700;margin:0
+  font-size:clamp(34px,6vw,104px);line-height:1.26;letter-spacing:.02em;
+  font-weight:700;margin:clamp(10px,1.2vw,20px) 0 0;text-align:right
 }
 .hero.reel .eyebrow,.hero.reel .hero-text,.hero.reel .rl-count{color:#fff}
-.hero.reel .eyebrow{display:block;letter-spacing:.2em;opacity:.82;margin-bottom:14px}
-.hero.reel .hero-text{max-width:36ch;margin-top:clamp(14px,1.6vw,26px);opacity:.86}
-/* 文字の側は、刷けの上でも読めるように少しだけ地を敷く */
-.rl-side{position:relative;z-index:3}
+.hero.reel .eyebrow{display:block;letter-spacing:.2em;opacity:.82}
+.hero.reel .hero-text{max-width:46ch;opacity:.88;margin:0 0 clamp(14px,1.6vw,26px)}
+/* 左上に枚数と小見出し、右上に見出し */
+.rl-top{
+  position:relative;z-index:3;grid-row:1;
+  display:grid;grid-template-columns:auto 1fr;column-gap:clamp(16px,2vw,40px);
+  align-items:start
+}
+/* 枚数と小見出しはひとかたまり。ばらして置くと、見出しの高さに
+   引っぱられて、あいだが間延びする */
+.rl-meta{display:grid;gap:clamp(10px,1.2vw,20px);align-content:start}
 .rl-count{
   display:block;font-family:var(--font-head);font-size:clamp(12px,1vw,17px);
-  letter-spacing:.14em;opacity:.7;margin-bottom:clamp(12px,1.4vw,22px)
+  letter-spacing:.14em;opacity:.75
 }
 .rl-count b{font-size:1.5em;font-weight:400}
-
-/* 輪の置き場。中心はこの箱のまん中で、そこから半径ぶん下が「手前」 */
-.rl-stage{
-  position:relative;z-index:1;
-  height:min(64svh,660px);
-  --R:clamp(92px,10vw,200px);
-  --cw:clamp(170px,22vw,400px)
+.rl-foot{position:relative;z-index:3;grid-row:3;align-self:end;max-width:min(100%,560px)}
+/* 下の文字は写真に重なる。写真の明るさは選べないので、地の色を下から
+   立ち上げて足場を作る。黒い膜だと配色から浮くので、地の色そのままで。
+   文字より後ろ・写真より前に置きたいので、文字の箱の中に敷く
+   （ヒーロー直下に置くと、文字ごと覆ってしまう）。 */
+.rl-foot::before{
+  content:"";position:absolute;left:50%;width:100vw;transform:translateX(-50%);
+  bottom:calc(-1 * clamp(36px,4.5vw,88px));
+  height:calc(100% + clamp(150px,20vh,300px));
+  z-index:-1;pointer-events:none;
+  background:linear-gradient(to top,var(--c-primary) 26%,transparent)
 }
+
+/* 輪の置き場。枠いっぱいに広げて、両わきの写真が画面の外まで続くようにする */
+.rl-stage{
+  position:absolute;z-index:1;top:0;bottom:0;left:50%;width:100vw;
+  transform:translateX(-50%);
+  --R:clamp(150px,26vw,470px);
+  --sq:.30;
+  --cw:clamp(230px,36vw,560px)
+}
+/* 輪を縦につぶす箱。円のままだと、奥の2枚が手前の写真の真上に来て、
+   左右へ逃げない。つぶした量は写真側で戻すので、写真は歪まない。 */
+.rl-ring{position:absolute;inset:0;transform:scaleY(var(--sq))}
 /* 回すのは rotate → translate → rotate の3段。位置を直接ずらすと直線で
    移動してしまい、「回った」ようには見えない。
    角度は足していくだけで戻さない（戻すと逆回りが1回見える）。 */
 /* 手前（--a:0deg）に来た1枚が、置き場のまん中にぴたりと収まるように、
-   輪の半径ぶんだけ先に上げておく。上げないと、手前の写真だけ下にずれる。
-   写真は 4:5 なので、高さの半分は幅 × .625。 */
+   輪の半径ぶんだけ先に上げておく。上げないと、手前の写真だけ下にずれる。 */
 .rl-slot{
   position:absolute;left:50%;top:calc(50% - var(--R));width:var(--cw);
   margin:calc(var(--cw) * -0.625) 0 0 calc(var(--cw) * -0.5);
   z-index:var(--z,1);
   transform:rotate(var(--a,0deg)) translate(0,var(--R)) rotate(calc(var(--a,0deg) * -1))
     scale(var(--k,1));
-  filter:blur(var(--b,0px));
-  opacity:var(--o,1);
-  transition:transform 1.05s cubic-bezier(.5,.02,.2,1),
-    filter 1.05s ease, opacity 1.05s ease, z-index 0s linear .5s
+  transition:transform 1.15s cubic-bezier(.5,.02,.2,1), z-index 0s linear .55s
 }
+/* つぶしたぶんを、ここで戻す。前後の縮尺は打ち消し合って 1 になるので、
+   写真そのものは丸ごと歪まない（ぼかしもここに置いて、つぶれを避ける）。 */
 .rl-card{
   position:relative;aspect-ratio:4/5;overflow:hidden;
-  transform:rotate(var(--tilt,0deg));
-  box-shadow:0 30px 60px -20px rgba(0,0,0,.55);
-  background:color-mix(in srgb,var(--c-primary) 70%,black)
+  transform:scaleY(calc(1 / var(--sq))) rotate(var(--tilt,0deg));
+  filter:blur(var(--b,0px));
+  opacity:var(--o,1);
+  box-shadow:0 30px 60px -24px rgba(0,0,0,.45);
+  background:color-mix(in srgb,var(--c-primary) 70%,black);
+  transition:filter 1.15s ease, opacity 1.15s ease
 }
 .rl-card img,.rl-card video{width:100%;height:100%;object-fit:cover;display:block;
   object-position:calc(var(--ix,50%)) calc(var(--iy,50%));transform:scale(var(--iz,1))}
@@ -772,17 +806,18 @@ p:last-child{margin-bottom:0}
 }
 @supports not (color:color-mix(in srgb,red,blue)){ .rl-card{background:rgba(0,0,0,.35)} }
 @media (prefers-reduced-motion:reduce){
-  .rl-slot{transition:none}
+  .rl-slot,.rl-card{transition:none}
 }
 
 @media(max-width:820px){
-  .hero.reel .hero-in{grid-template-columns:1fr;gap:clamp(18px,4vw,34px)}
-  /* 奥の2枚は輪の上のほうに来る。輪も写真も小さくしないと、上の端で切れる */
-  .rl-stage{height:min(52svh,430px);--R:clamp(62px,14vw,120px);--cw:min(50vw,250px);order:-1}
+  .hero.reel .hero-in{min-height:min(88svh,760px)}
+  .hero.reel .hero-title{font-size:clamp(30px,8.4vw,54px)}
+  .rl-stage{--R:clamp(120px,34vw,260px);--sq:.26;--cw:min(76vw,340px)}
   .hero.reel .hero-text{max-width:none}
-  .pk-1{width:96%;left:-16%}
-  .pk-2{width:64%;left:38%}
-  .pk-3{width:52%;left:4%}
+  .pk-1{width:150%;left:-40%;top:-4%}
+  .pk-2{width:120%;left:16%;top:30%}
+  .pk-3{width:96%;left:-24%;top:64%}
+  .pk-f{width:110%;left:6%;top:22%}
 }
 
 @media(max-width:640px){
