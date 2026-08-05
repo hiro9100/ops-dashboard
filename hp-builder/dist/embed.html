@@ -13708,6 +13708,13 @@ async function askForImage(blockId, prop, prompt, shape) {
       body: JSON.stringify({ prompt, shape }),
     });
     const out = await r.json().catch(() => ({}));
+    /* 窓口そのものが出ていないと、Function ではなく Hosting が答える。
+       「作れませんでした」だけだと、鍵の問題なのか出していないだけなのか
+       分からない。ここは分けて言う（出す手順は functions/.env に書いてある） */
+    if (r.status === 404 || r.status === 405) {
+      flash('絵を作る窓口がまだ出ていません（/api/image）');
+      return;
+    }
     if (!r.ok || !out.images || !out.images.length) {
       flash(out.error || '絵を作れませんでした');
       return;

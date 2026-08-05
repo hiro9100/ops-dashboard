@@ -287,9 +287,26 @@ exports.listMessages = onRequest({ region: REGION, maxInstances: 10, cors: false
 
    費用は「ヒーローの数」ではなく「使う人の数 × 作り直した回数」で
    効いてくる。だから回線ごとの上限を必ず通す。
+
+   ここは既定で出さない（.env の HP_IMAGE で切り替える）。
+
+   defineSecret は deploy のたびに Secret Manager を必ず見に行く。
+   その API を有効にしていないプロジェクトでは 403 が返り、この窓口
+   ひとつのために deploy 全体が止まる——サイトも写真も出せなくなる。
+   実際にそれが起き、8回続けて出せていなかった（起動画面の作り替えも
+   業種の写真も、出ていないことに気づけないまま止まっていた）。
+
+   使えるようにする手順（3つとも要る）:
+     1. Secret Manager API を有効にする
+        https://console.cloud.google.com/apis/library/secretmanager.googleapis.com?project=bildy-4e45e
+     2. firebase functions:secrets:set OPENAI_API_KEY
+        （鍵はここでだけ渡す。リポジトリにも会話にも貼らない）
+     3. functions/.env の HP_IMAGE を 1 にして push
+
+   .env は deploy のときにも動くときにも読まれるので、この1か所で
+   両方そろう。合言葉ではないので、そのまま置いてよい。
    ================================================================ */
-const { defineSecret } = require('firebase-functions/params');
-const OPENAI_API_KEY = defineSecret('OPENAI_API_KEY');
+const IMAGE_ON = process.env.HP_IMAGE === '1';
 
 const IMG_MODEL = 'gpt-image-1';
 const MAX_IMG_PER_DAY = 12;          // 同じ回線から1日に作れる枚数
@@ -297,7 +314,13 @@ const MAX_PROMPT = 900;
 /* 枠の形。ヒーローは横長、まるい写真や商品は正方形、縦組みは縦長 */
 const IMG_SHAPES = { wide: '1536x1024', square: '1024x1024', tall: '1024x1536' };
 
-exports.generateImage = onRequest({
+/* 鍵の置き場所を触るのは、ここだけ。HP_IMAGE が 1 のときしか通らない。
+   0 のままなら Secret Manager を一度も見に行かないので、deploy は通る。 */
+const OPENAI_API_KEY = IMAGE_ON
+  ? require('firebase-functions/params').defineSecret('OPENAI_API_KEY')
+  : null;
+
+if (IMAGE_ON) exports.generateImage = onRequest({
   region: REGION, maxInstances: 5, cors: false, memory: '512MiB',
   timeoutSeconds: 120,               // 絵ができるまで10〜30秒かかる。60秒では足りない
   secrets: [OPENAI_API_KEY],
