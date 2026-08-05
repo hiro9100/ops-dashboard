@@ -2411,16 +2411,24 @@ function elementPanel(b) {
    そのぶん費用が出る。まずは顔の1枚だけ。 */
 function aiField(b) {
   if (!aiReady() || !b || b.type !== 'hero' || !selectedEl) return '';
-  const key = `ai:${b.id}:${selectedEl.prop}`;
-  const text = aiPrompts[key] != null ? aiPrompts[key] : draftPrompt(b);
+  const pick = pickOf(b);
+  const rows = IMG_PICKS.map((g) => `<div class="pk-row"><span class="pk-l">${esc(g.label)}</span>
+    <div class="picks">${g.opts.map(([v, label]) =>
+    `<button class="pk-c${pick[g.key] === v ? ' on' : ''}" data-pick="${g.key}:${v}">${esc(label)}</button>`).join('')}</div>
+  </div>`).join('');
   return `<details class="ai-f"${aiOpen ? ' open' : ''}><summary>絵を作ってもらう</summary>
-    <textarea data-aiprompt rows="4">${esc(text)}</textarea>
-    <div class="hint">下書きを直してから押してください。人の顔や、実在のロゴは避けます。</div>
-    <button class="tb-btn primary" data-aigo>この文で作る</button>
+    ${rows}
+    <input type="text" data-aiextra placeholder="足したいことがあれば（例：木のカウンター）"
+      value="${esc(pick.extra || '')}">
+    <details class="ai-see"><summary>送る文を見る・直す</summary>
+      <textarea data-aiprompt rows="6">${esc(buildPrompt(b, pick))}</textarea>
+      <div class="hint">文字を入れさせないのは、あとから直せなくするためです。<br>
+        文字は写真の上に、この編集画面から重ねます。</div>
+    </details>
+    <button class="tb-btn primary" data-aigo>この内容で作る</button>
   </details>`;
 }
 let aiOpen = false;
-const aiPrompts = {};
 
 /* 置き場所の欄。ヒーローだけに出す。
    数字を打たせない——つまむか、矢印で寄せるほうが速いし、迷わない。 */
@@ -2493,13 +2501,22 @@ $('#tab-edit').addEventListener('click', (e) => {
   const sb = e.target.closest('[data-scale]');
   if (sb) { scaleEl(Number(sb.dataset.scale)); return; }
 
-  /* 絵を作ってもらう */
+  /* 絵を作ってもらう。選ぶ → 文が組み上がる → 送る */
+  const pk = e.target.closest('[data-pick]');
+  if (pk) {
+    const b0 = page().blocks.find((x) => x.id === selected);
+    if (!b0) return;
+    const [k, v] = pk.dataset.pick.split(':');
+    b0.props.aiPick = Object.assign(pickOf(b0), { [k]: v });
+    aiOpen = true;
+    renderEditor(); save(`aipick:${b0.id}`);
+    return;
+  }
   if (e.target.closest('[data-aigo]') && selectedEl) {
     const b0 = page().blocks.find((x) => x.id === selected);
     const ta = $('[data-aiprompt]');
     if (!b0 || !ta) return;
     const el0 = pdoc && pdoc.querySelector(`[data-imgprop="${selectedEl.prop}"]`);
-    aiPrompts[`ai:${b0.id}:${selectedEl.prop}`] = ta.value;
     aiOpen = true;
     askForImage(b0.id, selectedEl.prop, ta.value.trim(), shapeOf(el0));
     return;
@@ -2600,6 +2617,18 @@ $('#tab-edit').addEventListener('click', (e) => {
   }
 });
 $('#tab-edit').addEventListener('input', (e) => {
+  /* 足したいひとこと。打つたびに作り直すと打ちにくいので、
+     送る文だけをその場で組み直す（欄は作り直さない） */
+  if (e.target.hasAttribute('data-aiextra')) {
+    const b0 = page().blocks.find((x) => x.id === selected);
+    if (!b0) return;
+    b0.props.aiPick = Object.assign(pickOf(b0), { extra: e.target.value });
+    const ta = $('[data-aiprompt]');
+    if (ta) ta.value = buildPrompt(b0, pickOf(b0));
+    save(`aiextra:${b0.id}`);
+    return;
+  }
+
   /* 写真の位置・大きさ。作り直しは軽いので、動かしながら見られる */
   const fk = e.target.dataset.fit;
   if (fk && selectedEl && selectedEl.kind === 'img') {
@@ -2795,17 +2824,60 @@ async function shrinkDataURL(url) {
   return cv.toDataURL('image/jpeg', IMG_QUALITY);
 }
 
-/* 頼む文の下書き。店の名前・業種・配色から組む。
-   白紙から書かせると、たいていの人はここで止まる。 */
-function draftPrompt(b) {
+/* 頼む文は、白紙から書かせない。3つ選ぶだけで組み上がるようにする。
+   白紙にすると、たいていの人はそこで止まる。 */
+const IMG_PICKS = [
+  { key: 'subject', label: '何を写す', opts: [
+    ['exterior', 'お店の外観', '店舗の外観。建物と入口が分かる引きの構図'],
+    ['interior', '店内の様子', '店内の様子。奥行きのある引きの構図'],
+    ['goods', '商品・料理', '商品を主役にした静物。背景は整理する'],
+    ['work', '働く様子', '人が手を動かしている様子。顔ははっきり写さない'],
+    ['texture', '素材・質感', '素材の質感に寄った、抽象的な絵'],
+  ] },
+  { key: 'mood', label: '雰囲気', opts: [
+    ['clean', '明るく清潔', '明るく清潔感のある'],
+    ['calm', '落ち着いた', '落ち着いた、静かな'],
+    ['warm', '温かみのある', '温かみのある、やわらかな'],
+    ['lux', '洗練・上質', '洗練された、上質な'],
+    ['bold', '力強い', '力強く、陰影のはっきりした'],
+  ] },
+  { key: 'light', label: '光', opts: [
+    ['morning', '朝の光', '朝のやわらかい自然光'],
+    ['day', '昼の光', '昼の明るい自然光'],
+    ['evening', '夕方の光', '夕方の低い日ざし'],
+    ['night', '夜', '夜の灯り'],
+    ['studio', '均一な室内光', '均一で影の少ない室内光'],
+  ] },
+];
+const PICK0 = { subject: 'exterior', mood: 'clean', light: 'day' };
+
+const pickWord = (key, val) => {
+  const g = IMG_PICKS.find((x) => x.key === key);
+  const o = g && g.opts.find((x) => x[0] === val);
+  return o ? o[2] : '';
+};
+
+/* 頼む文。選んだ3つ ＋ 店の名前と業種 ＋ 配色 ＋ 守ってほしい約束。
+   約束のところが要。文字を焼き込まれると、あとから直せなくなる。 */
+function buildPrompt(b, pick) {
   const m = (state && state.meta) || {};
-  const p = (b && b.props) || {};
-  const words = [m.title, p.eyebrow, String(p.title || '').replace(/\n/g, ' ')]
-    .map((x) => String(x || '').trim()).filter(Boolean);
-  const look = (state.theme && state.theme.primary) ? `${state.theme.primary} が映える色みで、` : '';
-  return `${words.join('、') || 'お店'}のホームページの、いちばん上に置く写真。`
-    + `${look}人の顔は写さず、余白を広めに。文字は入れないでください。`;
+  const tpl = (typeof TEMPLATES === 'object' && TEMPLATES[state.template]) || {};
+  const who = [m.title, tpl.name].map((x) => String(x || '').trim()).filter(Boolean).join('・');
+  const mood = pickWord('mood', pick.mood);
+  const light = pickWord('light', pick.light);
+  const color = (state.theme && state.theme.primary)
+    ? `${state.theme.primary} が映える色みで。` : '';
+  const extra = String(pick.extra || '').trim();
+  return [
+    `${who || 'お店'}のホームページの、いちばん上に置く写真。`,
+    `${pickWord('subject', pick.subject)}。${mood}雰囲気で、光は${light}。${color}`,
+    extra,
+    '見出しを上に重ねるので、片側に余白を広く取ってください。',
+    '文字・ロゴ・透かしは入れないでください。実在の人物や商標も写さないでください。',
+  ].filter(Boolean).join('\n');
 }
+
+const pickOf = (b) => Object.assign({}, PICK0, (b && b.props && b.props.aiPick) || {});
 
 /* 枠の形。横長・正方形・縦長のどれで頼むかを、いまの枠の形から決める */
 function shapeOf(el) {

@@ -212,11 +212,27 @@ input,select,textarea{font:inherit}
 .ai-f > summary::before{content:"▸ "}
 .ai-f[open] > summary{margin-bottom:8px}
 .ai-f[open] > summary::before{content:"▾ "}
-.ai-f textarea{
+.ai-f textarea,.ai-f input[type=text]{
   width:100%;background:var(--panel2);color:var(--tx);border:1px solid var(--line2);
   border-radius:var(--r);padding:8px 9px;font:inherit;font-size:12px;line-height:1.75;resize:vertical
 }
 .ai-f .hint{margin:6px 0 8px}
+/* 選ぶだけで文が組み上がる。白紙の欄を出すと、そこで止まる人が多い */
+.pk-row{display:grid;gap:5px;margin-bottom:9px}
+.pk-l{font-size:10.5px;font-weight:700;color:var(--tx2);letter-spacing:.06em}
+.picks{display:flex;flex-wrap:wrap;gap:5px}
+.pk-c{
+  background:var(--panel2);color:var(--tx2);border:1px solid var(--line2);
+  border-radius:999px;padding:4px 11px;font-size:11.5px;line-height:1.6;white-space:nowrap
+}
+.pk-c:hover{border-color:var(--tx2);color:var(--tx)}
+.pk-c.on{background:var(--tx);border-color:var(--tx);color:#0b0c0e;font-weight:700}
+.ai-see{margin:4px 0 10px;font-size:11px}
+.ai-see > summary{cursor:pointer;list-style:none;color:var(--tx2)}
+.ai-see > summary::-webkit-details-marker{display:none}
+.ai-see > summary::before{content:"▸ "}
+.ai-see[open] > summary{margin-bottom:6px}
+.ai-see[open] > summary::before{content:"▾ "}
 
 .el-hint{
   font-size:11.5px;color:var(--tx2);background:#131417;border:1px dashed var(--line);
