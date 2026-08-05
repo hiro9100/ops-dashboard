@@ -534,6 +534,12 @@ body.__solo > .__sel{outline-color:transparent}
 [data-elkind="ia"]:hover{outline-color:rgba(139,92,246,.85)}
 [data-elkind="ia"].__elsel{outline-color:#8b5cf6}
 
+/* ヒーローの中だけ、選んだ要素をつまんで動かせる。
+   選ぶ前から掴めるようにすると、押すつもりが動いてしまう。 */
+.hero [data-el].__elsel{cursor:grab;touch-action:none}
+.hero [data-el].__mvon{cursor:grabbing}
+.hero [data-el].__mvon::after{background:#4c8dff !important}
+
 /* ダブルクリックで直接編集できる場所。
    position を強く当てると、自分で位置を決めている文字（写真の上に乗せる印など）が
    編集画面だけ流れに戻って落ちる。ここも :where() で当てる。 */
@@ -614,6 +620,8 @@ function initPreview() {
         }
       });
 
+      initElDrag(pdoc);
+
       /* ---- 画像ファイルのドラッグ&ドロップ（PC） ---- */
       let dropSlot = null;
       const clearDropSlot = () => {
@@ -655,6 +663,7 @@ function initPreview() {
         if (e.key === 'Escape') { e.preventDefault(); commitEdit(true); }
         else if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); commitEdit(); }
       });
+      pdoc.addEventListener('keydown', arrowNudge);
       pdoc.addEventListener('focusout', (e) => {
         if (editing && e.target === editing.el) setTimeout(() => { if (editing) commitEdit(); }, 0);
       });
@@ -953,6 +962,117 @@ function selectImgSlot(blockId, prop, name) {
   selectedEl = { kind: 'img', prop, name: name || '写真', role: `img:${prop}` };
   renderList(); renderEditor(); highlight();
   if (isMobile()) openSheetForEdit();
+}
+
+/* ================================================================
+   ヒーローの要素を、つまんで動かす
+   ----------------------------------------------------------------
+   要素そのものは型（テンプレート）が決めたものを使う。ここで直せるのは
+   「枠の中のどこに置くか」だけ。ずらす量はヒーローの幅に対する％で持つので、
+   画面の大きさが変わっても同じ割合で付いてくる。
+   ================================================================ */
+const placeOf = (b, role) => {
+  const v = ((b.props || {}).place || {})[role] || {};
+  return { x: Number(v.x) || 0, y: Number(v.y) || 0 };
+};
+
+function setPlace(b, role, x, y) {
+  b.props.place = b.props.place || {};
+  if (!x && !y) delete b.props.place[role];
+  else b.props.place[role] = { x: Math.round(x * 10) / 10, y: Math.round(y * 10) / 10 };
+  if (!Object.keys(b.props.place).length) delete b.props.place;
+}
+
+/* 動かせるのはヒーローの中の要素だけ。ほかのブロックは並びが組みかたの要なので、
+   ここをいじれるようにすると、たいてい崩れる。 */
+const canMove = (b) => !!b && b.type === 'hero';
+
+function initElDrag(doc) {
+  let drag = null;
+  doc.addEventListener('pointerdown', (e) => {
+    if (e.button !== undefined && e.button !== 0) return;
+    if (editing) return;
+    const elt = e.target.closest('[data-el].__elsel');
+    const blk = e.target.closest('[data-bid]');
+    if (!elt || !blk) return;
+    const b = page().blocks.find((x) => x.id === blk.dataset.bid);
+    if (!canMove(b) || b.id !== selected) return;
+    const hero = elt.closest('.hero');
+    if (!hero) return;
+    const w = hero.getBoundingClientRect().width;
+    if (!w) return;
+    const p0 = placeOf(b, elt.dataset.el);
+    drag = { elt, b, role: elt.dataset.el, w, sx: e.clientX, sy: e.clientY, p0, moved: false };
+    elt.setPointerCapture(e.pointerId);
+  });
+
+  doc.addEventListener('pointermove', (e) => {
+    if (!drag) return;
+    const dx = e.clientX - drag.sx, dy = e.clientY - drag.sy;
+    /* 4px 動くまでは「押した」として扱う。すぐ動かすと、選ぶつもりがずれる */
+    if (!drag.moved && Math.abs(dx) < 4 && Math.abs(dy) < 4) return;
+    if (!drag.moved) { drag.moved = true; drag.elt.classList.add('__mvon'); }
+    e.preventDefault();
+    const x = drag.p0.x + (dx / drag.w) * 100;
+    const y = drag.p0.y + (dy / drag.w) * 100;
+    /* 描き直さずにその場で動かす。1コマごとに組み直すと、つまんだ手から離れる */
+    drag.elt.style.setProperty('--ox', (Math.round(x * 10) / 10));
+    drag.elt.style.setProperty('--oy', (Math.round(y * 10) / 10));
+    drag.elt.setAttribute('data-mv', '');
+    drag.hero = drag.hero || drag.elt.closest('.hero');
+    if (drag.hero) drag.hero.setAttribute('data-mvon', '');
+    drag.last = { x, y };
+  });
+
+  const finish = (e) => {
+    if (!drag) return;
+    const d = drag; drag = null;
+    d.elt.classList.remove('__mvon');
+    try { d.elt.releasePointerCapture(e.pointerId); } catch (_) { /* すでに外れている */ }
+    if (!d.moved || !d.last) return;
+    setPlace(d.b, d.role, d.last.x, d.last.y);
+    renderEditor();
+    save(`place:${d.role}:${d.b.id}`);
+  };
+  doc.addEventListener('pointerup', finish);
+  doc.addEventListener('pointercancel', finish);
+}
+
+const ARROWS = { ArrowUp: [0, -1], ArrowDown: [0, 1], ArrowLeft: [-1, 0], ArrowRight: [1, 0] };
+function arrowNudge(e) {
+  if (editing || !ARROWS[e.key]) return;
+  const t = e.target;
+  /* 文字を打っている欄の中では、矢印はカーソル移動のまま */
+  if (t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return;
+  const [dx, dy] = ARROWS[e.key];
+  const step = e.shiftKey ? 2 : 0.4;
+  if (nudgeEl(dx * step, dy * step)) e.preventDefault();
+}
+document.addEventListener('keydown', arrowNudge);
+
+/* 矢印キーでも動かせるように。細かく合わせたいときは、つまむより速い */
+function nudgeEl(dx, dy) {
+  const b = page().blocks.find((x) => x.id === selected);
+  if (!b || !canMove(b) || !selectedEl || selectedEl.kind === 'img') return false;
+  const p = placeOf(b, selectedEl.role);
+  setPlace(b, selectedEl.role, p.x + dx, p.y + dy);
+  renderEditor(); renderPreview(true);
+  save(`place:${selectedEl.role}:${b.id}`);
+  return true;
+}
+
+/* 要素を消す・戻す。中身は消さないので、戻せばそのまま出る */
+function setElOff(b, role, off) {
+  b.props.off = b.props.off || {};
+  if (off) b.props.off[role] = 1; else delete b.props.off[role];
+  if (!Object.keys(b.props.off).length) delete b.props.off;
+}
+
+/* 消した要素の名前を覚えておく。消すと画面から居なくなるので、
+   名前が無いと「何を消したのか」が分からなくなる */
+function rememberElName(b, role, name) {
+  b.props.offName = b.props.offName || {};
+  b.props.offName[role] = name || role;
 }
 
 const FIT0 = { x: 50, y: 50, z: 100 };
@@ -2178,6 +2298,7 @@ function renderEditor() {
   const advHTML = adv.map((f) => fieldHTML(f, b.props, 'props')).join('').trim();
   box.innerHTML = `<div class="edit-head"><span class="bl-ic">${def.icon}</span>${esc(def.label)}</div>`
     + elementPanel(b)
+    + offList(b)
     + basic.map((f) => fieldHTML(f, b.props, 'props')).join('')
     + (advHTML ? `<details class="adv"${open}><summary>詳細</summary>${advHTML}</details>` : '');
   box.scrollTop = keep;
@@ -2246,12 +2367,46 @@ function elementPanel(b) {
     </div>
     ${selectedEl.prop ? `<button class="tb-btn edit-now" data-editnow>文字を打ち替える</button>
       <div class="el-tip">プレビューを続けて2回押しても直せます</div>` : ''}
+    ${placeField(b)}
     <div class="f"><label>動き</label>
       <select data-elk="a">${list.map(([v, l]) =>
         `<option value="${v}"${cur === v ? ' selected' : ''}>${esc(l)}</option>`).join('')}</select>
       <button class="anim-gal" data-animgal="${isText ? 'ta' : 'ia'}">見本から選ぶ</button>
     </div>
     ${isText ? textFillField(b) : ''}
+  </div>`;
+}
+
+/* 置き場所の欄。ヒーローだけに出す。
+   数字を打たせない——つまむか、矢印で寄せるほうが速いし、迷わない。 */
+function placeField(b) {
+  if (!canMove(b) || !selectedEl) return '';
+  const p = placeOf(b, selectedEl.role);
+  const moved = !!(p.x || p.y);
+  return `<div class="f place-f"><label>置き場所</label>
+    <div class="el-tip">プレビューでつまんで動かせます。細かく寄せるときは矢印キー。</div>
+    <div class="nudge">
+      <button class="nb" data-nudge="0,-1" title="上へ">↑</button>
+      <button class="nb" data-nudge="-1,0" title="左へ">←</button>
+      <button class="nb" data-nudge="1,0" title="右へ">→</button>
+      <button class="nb" data-nudge="0,1" title="下へ">↓</button>
+      <span class="nv">${moved ? `${p.x > 0 ? '右' : '左'}${Math.abs(p.x)} / ${p.y > 0 ? '下' : '上'}${Math.abs(p.y)}` : '元の位置'}</span>
+    </div>
+    ${moved ? `<button class="tb-btn" data-placereset>元の位置に戻す</button>` : ''}
+    <button class="tb-btn warn" data-eloff>この要素を消す</button>
+  </div>`;
+}
+
+/* 消した要素を戻す欄。消すと画面から居なくなるので、
+   ここに出しておかないと、戻す道が無くなる */
+function offList(b) {
+  const off = (b.props || {}).off || {};
+  const keys = Object.keys(off);
+  if (!keys.length) return '';
+  const names = (b.props || {}).offName || {};
+  return `<div class="f"><label>消した要素</label>
+    <div class="offs">${keys.map((k) =>
+    `<button class="tb-btn" data-elon="${esc(k)}">${esc(names[k] || k)} を戻す</button>`).join('')}</div>
   </div>`;
 }
 
@@ -2280,6 +2435,35 @@ function setTextFill(val) {
 /* 要素パネルの操作 */
 $('#tab-edit').addEventListener('click', (e) => {
   if (e.target.closest('[data-elclose]')) { selectedEl = null; renderEditor(); highlight(); return; }
+
+  /* 置き場所 */
+  const nb = e.target.closest('[data-nudge]');
+  if (nb) { const [x, y] = nb.dataset.nudge.split(',').map(Number); nudgeEl(x, y); return; }
+  if (e.target.closest('[data-placereset]') && selectedEl) {
+    const b0 = page().blocks.find((x) => x.id === selected);
+    if (b0) { setPlace(b0, selectedEl.role, 0, 0); renderEditor(); renderPreview(true);
+      save(`place:${selectedEl.role}:${b0.id}`); }
+    return;
+  }
+  if (e.target.closest('[data-eloff]') && selectedEl) {
+    const b0 = page().blocks.find((x) => x.id === selected);
+    if (b0) {
+      rememberElName(b0, selectedEl.role, selectedEl.name);
+      setElOff(b0, selectedEl.role, true);
+      selectedEl = null;
+      renderEditor(); renderPreview(true); highlight();
+      save(`eloff:${b0.id}`);
+      flash('消しました。「消した要素」から戻せます');
+    }
+    return;
+  }
+  const on = e.target.closest('[data-elon]');
+  if (on) {
+    const b0 = page().blocks.find((x) => x.id === selected);
+    if (b0) { setElOff(b0, on.dataset.elon, false); renderEditor(); renderPreview(true);
+      save(`elon:${b0.id}`); }
+    return;
+  }
 
   /* 絵を選ぶ */
   const ip = e.target.closest('[data-iconpick]');

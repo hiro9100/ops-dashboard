@@ -102,6 +102,17 @@ p:last-child{margin-bottom:0}
 /* ---------- ヒーロー ---------- */
 .hero{position:relative;overflow:hidden;padding:clamp(64px,8.3333vw,166.6667px) 0}
 .hero.center{text-align:center}
+/* ---------- ヒーローの中で、要素をすこし動かす ----------
+   ずらす量は「ヒーローの幅の何％」で持つ。px で持つと、画面が小さいときに
+   ずれ方だけが大きく残る。ものさしはヒーロー自身（1cqw ＝ 幅の1％）。
+   動かしたヒーローにだけ付けるので、ほかの組みかたには影響しない。 */
+.hero[data-mvon]{container-type:inline-size}
+[data-mv]{translate:calc(var(--ox,0) * 1cqw) calc(var(--oy,0) * 1cqw)}
+/* 消した要素。組みかたごと詰めたいので、場所も空けない */
+[data-off]{display:none}
+.ta-l{text-align:left}
+.ta-c{text-align:center}
+.ta-flush{margin:0}
 .hero-in{position:relative;z-index:2}
 .hero-title{margin:0 0 20px;font-size:clamp(30px,3.8889vw,77.7778px);line-height:1.28;letter-spacing:.01em;font-weight:800}
 .hero-text{margin:0;font-size:clamp(15px,1.25vw,25px);color:var(--c-muted);max-width:620px}

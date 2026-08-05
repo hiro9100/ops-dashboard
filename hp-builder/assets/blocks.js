@@ -749,17 +749,37 @@ function el(p, role, kind, label, prop) {
   if (prop) out += ` data-prop="${esc(prop)}"`;   // ダブルクリックで直接編集できる
   if (cfg.a) out += ` data-anim="${esc(cfg.a)}"`;
   if (cfg.d) out += ` data-delay="${parseInt(cfg.d, 10) || 0}"`;
+  /* style は1つにまとめる。2つ書くと、あとの1つは丸ごと捨てられる */
+  const st = [];
   /* 文字の塗り。data-txf は書き出しでも残す（見た目そのものなので） */
   const fill = (p.fills || {})[role];
   if (fill) {
     out += ` data-txf="${esc(fill)}"`;
     if (fill === 'own') {
       const im = (p.fillImgs || {})[role];
-      if (im) out += ` style="--txf:url('${esc(im)}')"`;
+      if (im) st.push(`--txf:url('${esc(im)}')`);
     }
   }
+  /* 置き場所の微調整。ずらす量は「ヒーローの幅の何％」で持つので、
+     画面が小さくなっても同じ割合で付いてくる。
+     transform ではなく translate に書く——transform は動きの演出が
+     使っているので、ここで書くと消し合う。 */
+  const mv = (p.place || {})[role];
+  if (mv && (Number(mv.x) || Number(mv.y))) {
+    out += ' data-mv';
+    st.push(`--ox:${n1(Number(mv.x) || 0)}`, `--oy:${n1(Number(mv.y) || 0)}`);
+  }
+  if ((p.off || {})[role]) out += ' data-off';
+  if (st.length) out += ` style="${st.join(';')}"`;
   return out;
 }
+
+/* ヒーローの中で1つでも動かしていたら、ヒーローを「ものさし」にする。
+   ずらす量の 1cqw が、ヒーローの幅の1％になる。 */
+const mvOn = (p) => (Object.keys((p && p.place) || {}).some((k) => {
+  const v = p.place[k];
+  return v && (Number(v.x) || Number(v.y));
+}) ? ' data-mvon' : '');
 
 /* 画像を差し替えられる枠であることを示す（タップで選択、ドロップで投入） */
 /* 画像の枠。編集画面がどのプロパティの枠かを知るための目印と、
@@ -1185,13 +1205,14 @@ ${meltLayer(p)}`;
         ? `--mark:url('${p.markMask ? esc(p.markMask) : MARK_SVG}')` : '';
       if (!sc) {
         return `<section class="${cls}"${attr('id', p.anchor)}`
-          + `${styleVars(maskVal(p), meltVal, meltImg, markImg)}${needsPointer ? ' data-hpt' : ''}>
+          + `${styleVars(maskVal(p), meltVal, meltImg, markImg)}${needsPointer ? ' data-hpt' : ''}`
+          + `${mvOn(p)}>
 ${guts}
 </section>`;
       }
       const maskLayer = sc === 'maskzoom' ? maskZoomLayer(p) : '';
       return `<section class="${cls} hsc hsc-${esc(sc)}"${attr('id', p.anchor)}${needsPointer ? ' data-hpt' : ''}`
-        + ` data-heroscroll${styleVars(maskVal(p), meltVal, meltImg, markImg,
+        + `${mvOn(p)} data-heroscroll${styleVars(maskVal(p), meltVal, meltImg, markImg,
           `--pin:${Math.max(120, Math.min(320, p.scrollLen ?? 200))}vh`)}>
   <div class="hsc-in">
 ${maskLayer}${guts}
@@ -1624,7 +1645,7 @@ ${videoTag(p)}
     },
     render: (p) => sec('rich', p,
       `    <div class="rich${p.align === 'left' ? ' left' : ''}">
-      ${p.title ? `<h2 class="sec-title" style="text-align:${p.align === 'left' ? 'left' : 'center'}"${el(p, 'title', 'ta', '見出し', 'title')}>${nl2br(p.title)}</h2>` : ''}
+      ${p.title ? `<h2 class="sec-title ${p.align === 'left' ? 'ta-l' : 'ta-c'}"${el(p, 'title', 'ta', '見出し', 'title')}>${nl2br(p.title)}</h2>` : ''}
       <div${ed('body', '本文')}>${(p.body || '').split(/\n{2,}/).filter(Boolean).map((t) => `<p>${nl2br(t)}</p>`).join('\n        ')}</div>
     </div>`),
   },
@@ -2225,7 +2246,7 @@ ${(p.items || []).map((it, i) => `      <div class="exp-l" style="background:${e
   <div class="pin-in">
     <div class="hs-head"><div class="wrap">
       ${p.eyebrow ? `<span class="eyebrow"${el(p, 'eyebrow', 'ta', '小見出し', 'eyebrow')}>${esc(p.eyebrow)}</span>` : ''}
-      ${p.title ? `<h2 class="sec-title" style="margin:0"${el(p, 'title', 'ta', '見出し', 'title')}>${nl2br(p.title)}</h2>` : ''}
+      ${p.title ? `<h2 class="sec-title ta-flush"${el(p, 'title', 'ta', '見出し', 'title')}>${nl2br(p.title)}</h2>` : ''}
     </div></div>
     <div class="hs-track">
 ${(p.items || []).map((it, i) => `      <div class="hs-card"${imgSlot(`items.${i}.image`, p)} data-elname="カード${i + 1}">${it.image ? img(it.image, it.title) : ''}<em>${esc(it.no)}</em><b${ed(`items.${i}.title`, 'カード名')}>${esc(it.title)}</b></div>`).join('\n')}
