@@ -49,6 +49,22 @@ const made = [
   put('examples/hero-collage.html', 'demo/hero-collage.html'),
 ];
 
+/* 業種ごとの見本写真。ツール本体には焼き込まず、ここから配る。
+   元は art/。docs/ は上でまるごと作り直しているので、ここで写す。 */
+const ART = path.join(ROOT, 'art');
+if (fs.existsSync(ART)) {
+  const pics = fs.readdirSync(ART).filter((f) => /\.(jpe?g|png|webp)$/i.test(f));
+  if (pics.length) {
+    fs.mkdirSync(path.join(OUT, 'art'), { recursive: true });
+    let bytes = 0;
+    for (const f of pics) {
+      fs.copyFileSync(path.join(ART, f), path.join(OUT, 'art', f));
+      bytes += fs.statSync(path.join(ART, f)).size;
+    }
+    made.push(`art/  (${pics.length}枚 ${Math.round(bytes / 1024)} KB｜業種の見本写真)`);
+  }
+}
+
 for (const name of KEEP) {
   const from = path.join(ROOT, '..', name);
   if (fs.existsSync(from)) {

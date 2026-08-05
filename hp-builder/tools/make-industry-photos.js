@@ -4,8 +4,11 @@
    顔（ヒーロー）を選ぶとき、写真枠が空だと、その型が自分の店に
    合うのかが掴めない。そこに置く実写を、ここで一度だけ作る。
 
-   出来た写真は docs/art/ に置かれ、公開の入れ物と一緒に配られる。
-   ツール本体（dist/index.html）には焼き込まない。
+   出来た写真は art/ に置かれ、`node build-site.js` で docs/art/ に写って
+   公開の入れ物と一緒に配られる（docs/ は毎回作り直されるので、そちらに
+   直接置くと消える）。ツール本体（dist/index.html）には焼き込まない。
+
+   すでにある写真は飛ばす。人が撮った写真を置いた業種は、そのまま残る。
 
      node tools/make-industry-photos.js
 
@@ -20,7 +23,7 @@ const fs = require('fs');
 const path = require('path');
 
 const ROOT = path.join(__dirname, '..');
-const OUT = path.join(ROOT, '..', 'docs', 'art');
+const OUT = path.join(ROOT, 'art');
 const ENDPOINT = process.env.HP_IMAGE_API
   || 'https://bildy-4e45e.web.app/api/image';
 
@@ -135,6 +138,8 @@ async function one(prompt, shape) {
   console.log(`\n作った ${made}枚 / すでにあった ${skipped}枚`);
   if (made) {
     console.log('置き場所:', path.relative(process.cwd(), OUT));
-    console.log('このあと `firebase deploy` で配られます。');
+    console.log('assets/industry-photos.js の INDUSTRY_PHOTOS に、');
+    console.log('その業種の行があるか確かめてください（無いと出ません）。');
+    console.log('このあと `node build-site.js` → `firebase deploy` で配られます。');
   }
 })();

@@ -28,23 +28,24 @@ const photoBase = () => ((typeof PUBLISH === 'object' && PUBLISH.siteBase)
   : '');
 
 /* 業種 → 置いてある写真。順番に使う。
-   1業種に何枚あってもよい（足りなければ先頭から繰り返す）。 */
+   1業種に何枚あってもよい（足りなければ先頭から繰り返す）。
+
+   ここには「art/ に実物が在る業種」だけを書く。
+   無い業種の名前を書いてしまうと、取りに行って空振りし、そのあと
+   在る業種まで描いた絵に落ちる（1度の失敗で以降あきらめる作りなので）。
+   在る業種だけ書いておけば、無い業種は最初から取りに行かない。
+
+   写真を足したら、ここに1行足す。art/README.md にも書いてある。
+   在るものとの食い違いは verify-indart.js が見ている。 */
 const INDUSTRY_PHOTOS = {
-  restaurant: ['restaurant-1.jpg', 'restaurant-2.jpg', 'restaurant-3.jpg'],
   cafe: ['cafe-1.jpg', 'cafe-2.jpg', 'cafe-3.jpg'],
-  salon: ['salon-1.jpg', 'salon-2.jpg', 'salon-3.jpg'],
-  clinic: ['clinic-1.jpg', 'clinic-2.jpg', 'clinic-3.jpg'],
-  builder: ['builder-1.jpg', 'builder-2.jpg', 'builder-3.jpg'],
-  school: ['school-1.jpg', 'school-2.jpg', 'school-3.jpg'],
-  shop: ['shop-1.jpg', 'shop-2.jpg', 'shop-3.jpg'],
-  gym: ['gym-1.jpg', 'gym-2.jpg', 'gym-3.jpg'],
-  office: ['office-1.jpg', 'office-2.jpg', 'office-3.jpg'],
-  company: ['company-1.jpg', 'company-2.jpg', 'company-3.jpg'],
 };
 
-/* その業種の i 枚目の URL。置き場所が決まっていなければ空 */
+/* その業種の i 枚目の URL。
+   写真の無い業種、置き場所が決まっていないときは空（＝描いた絵のまま）。
+   他の業種の写真は借りない。カフェの写真がジムに出たら、かえって困る。 */
 function industryPhoto(key, i = 0) {
-  const list = INDUSTRY_PHOTOS[key] || INDUSTRY_PHOTOS.company;
+  const list = INDUSTRY_PHOTOS[key];
   const base = photoBase();
   if (!base || !list || !list.length) return '';
   return base + list[i % list.length];
