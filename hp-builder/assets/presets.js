@@ -179,6 +179,28 @@ const HERO_PRESETS = [
       buttons: [{ label: 'お品書き', href: '#menu', style: 'primary' }],
     } },
 
+  /* 1つの商品だけを立てる型。写真を合成せず、線と色だけで
+     光・枝・台を組む。香水・ボトル・器・道具など、形のあるもの向け。 */
+  { key: 'showcase', type: 'hero', label: 'Showcase',
+    about: '斜めに差す光、枝の影、載せる台。1つの商品だけを、静かに立てる。',
+    props: {
+      layout: 'showcase', bg: '', eyebrow: '',
+      title: 'BLEU\nATELIER', mid: 'DE',
+      text: '香りを決めるのは、最後のひと匙です。\n配合を変えず、同じ手で、同じ量を。',
+      notes: 'LIMITED 300 | ATELIER | EAU DE PARFUM',
+      buttons: [],
+    } },
+
+  { key: 'showcase-buy', type: 'hero', label: 'Showcase (Buy)',
+    about: '同じ組みかたで、買うボタンを1つだけ添える。単品の通販ページに。',
+    props: {
+      layout: 'showcase', bg: '', eyebrow: 'NEW ARRIVAL',
+      title: '結（ゆい）', mid: '',
+      text: '一日ひとつだけ、窯から出します。',
+      notes: '数量限定 | 灯り工房 | 手吹きガラス',
+      buttons: [{ label: '買う', href: '#buy', style: 'primary' }],
+    } },
+
   /* パッケージの表側を、そのままページの頭にした型。
      大きな品名、まわりの短い言葉、丸い印、帯のラベル。 */
   { key: 'goods-pack', type: 'hero', label: 'Package',

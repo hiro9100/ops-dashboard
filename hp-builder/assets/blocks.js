@@ -441,6 +441,51 @@ function orbitLayer(p) {
   return `  <div class="orbs">\n${ORB_LINES}\n${orbs}\n  </div>\n`;
 }
 
+/* ---------- 1商品を立てる（showcase） ----------
+   写真を合成せず、線と色だけで「商品ポスター」を組む。
+   要るのは4つだけ——斜めに差す光、枝の影、載せる台、まんなかの品名。
+
+   枝は線で描く。写真だと差し替えのたびに雰囲気が変わるが、線なら
+   配色に付いてくるし、どの端末でも同じ形で出る。 */
+const BRANCH = [
+  /* [パス, 太さ] 元は太く、先へ行くほど細くする。
+     この差が枝らしさのほとんどなので、CSS 側で stroke-width を書かない */
+  ['M0,176 C88,158 152,146 216,136 C302,123 384,110 456,98 C524,87 586,78 646,72', 7],
+  ['M96,161 C122,126 140,102 134,62', 4.4],
+  ['M134,62 C130,44 126,34 118,22', 2.4],
+  ['M96,161 C128,150 156,144 190,140', 3.2],
+  ['M216,136 C246,110 266,90 304,70', 4.2],
+  ['M304,70 C318,60 330,54 346,50', 2.2],
+  ['M216,136 C232,164 246,186 238,214', 3.4],
+  ['M238,214 C234,228 228,238 218,248', 1.8],
+  ['M330,118 C360,100 384,90 420,84', 3],
+  ['M420,84 C436,80 448,78 462,78', 1.7],
+  ['M456,98 C476,120 490,136 486,160', 2.8],
+  ['M540,84 C566,68 588,60 616,56', 2.2],
+  ['M616,56 C628,50 636,48 648,47', 1.5],
+];
+const branchArt = () => BRANCH.map(([d, w]) =>
+  `<path d="${d}" stroke-width="${w}"/>`).join('');
+
+/* 写真を入れる前に置いておく、線で描いた瓶。
+   空の枠を出すと「入れ忘れ」に見えて、組みかたが伝わらない。 */
+const SHW_BOTTLE = `<svg class="shw-draw" viewBox="0 0 200 300" aria-hidden="true" focusable="false">
+  <rect x="82" y="10" width="36" height="34" rx="3"/>
+  <rect x="88" y="44" width="24" height="16"/>
+  <rect x="46" y="60" width="108" height="222" rx="6"/>
+  <line x1="70" y1="150" x2="130" y2="150"/>
+  <line x1="78" y1="176" x2="122" y2="176"/>
+</svg>`;
+
+const showcaseLayer = () => `  <div class="shw-set" aria-hidden="true">
+    <i class="shw-wall"></i>
+    <i class="shw-beam"></i>
+    <svg class="shw-branch" viewBox="0 0 700 268" preserveAspectRatio="xMinYMin slice" focusable="false">
+      <g class="shw-cast" transform="translate(26,34)">${branchArt()}</g>
+      <g>${branchArt()}</g>
+    </svg>
+  </div>\n`;
+
 /* 丸い印と、帯のラベル。パッケージの「砂糖不使用」「送料無料」のような、
    ひと目で伝わる短い言葉を置く。円のまわりを回る文字は SVG の textPath。
    id はページの中で重ならないよう、中身から作る（hashId）。 */
@@ -782,7 +827,8 @@ const BLOCKS = {
         options: [['center', '中央ぞろえ'], ['left', '左ぞろえ'], ['split', '左右に画像'],
           ['pack', '商品パッケージ'], ['cover', '背景画像いっぱい'],
           ['ribbon', '動画＋色の帯'], ['mark', 'ロゴ抜き'], ['lineart', '線のかたち'],
-          ['orbit', 'まるい写真が浮かぶ'], ['poster', '大きな名前＋1枚の写真']] },
+          ['orbit', 'まるい写真が浮かぶ'], ['poster', '大きな名前＋1枚の写真'],
+          ['showcase', '1商品を立てる（光と台）']] },
       FIELD.eyebrow,
       { key: 'title', label: 'キャッチコピー', type: 'textarea', rows: 2 },
       { key: 'text', label: '説明文', type: 'textarea' },
@@ -797,11 +843,20 @@ const BLOCKS = {
         hint: '入れると写真のかわりに動画が流れます。音は出ません' },
       /* 丸い印と、帯のラベル。商品の「砂糖不使用」「送料無料」のような、
          ひと目で伝えたい短い言葉を置く場所。どちらも空なら出ない。 */
+      /* 品名のまん中に挟む小さな語。「BLEU / DE / CHANEL」の DE にあたる */
+      { key: 'mid', label: '品名のあいだの語', type: 'text',
+        showIf: (p) => p.layout === 'showcase',
+        hint: '「BLEU / DE / CHANEL」の DE にあたるところ。空なら出しません' },
+      { key: 'notes', label: 'いちばん下の3つ', type: 'text',
+        showIf: (p) => p.layout === 'showcase',
+        hint: '縦棒で区切ります。例：LIMITED 300 | ATELIER | EAU DE PARFUM' },
       { key: 'badge', label: '丸い印の文字', type: 'textarea', rows: 2,
+        showIf: (p) => p.layout !== 'showcase',
         hint: '改行すると2行になります。「砂糖\n不使用」など' },
       { key: 'badgeRing', label: '丸のまわりの文字', type: 'text', adv: true,
         showIf: (p) => !!p.badge, hint: '円にそって回ります。空なら線だけ' },
       { key: 'tag', label: '帯のラベル', type: 'text',
+        showIf: (p) => p.layout !== 'showcase',
         hint: '「こだわりの素材」「送料無料」など、ひとこと' },
       /* 型ごとにしか使わない欄。その型を選んだときだけ出す */
       { key: 'markMask', label: 'ロゴ・マークの画像', type: 'mask',
@@ -844,6 +899,7 @@ const BLOCKS = {
       melt: 'none', meltMask: '', meltDepth: 100,
       badge: '', badgeRing: '', tag: '',
       markMask: '', art: 'flow', scrollLabel: 'Scroll', side: 'PORTFOLIO',
+      mid: 'DE', notes: 'LIMITED 300 | ATELIER | EAU DE PARFUM',
       orbs: [{ src: '' }, { src: '' }, { src: '' }, { src: '' }],
       scroll: 'none', scrollLen: 200,
       buttons: [
@@ -885,7 +941,8 @@ ${marks}${buttons(p.buttons)}`;
         : '';
       /* 中央ぞろえ・左ぞろえでも、写真を入れたら文章の下に置く。
          入れても何も起きないと、入れた本人には壊れて見える（実際に指摘された）。 */
-      const wide = !cover && !['split', 'pack', 'orbit', 'poster'].includes(p.layout) && p.image
+      const wide = !cover
+        && !['split', 'pack', 'orbit', 'poster', 'showcase'].includes(p.layout) && p.image
         ? `\n      <div class="hero-media hero-wide"${el(p, 'image', 'ia', '画像')}`
           + `${imgSlot('image', p)}>${media(p.image, p.title)}</div>`
         : '';
@@ -903,6 +960,30 @@ ${marks}${buttons(p.buttons)}`;
 ${heroMarks(p)}${buttons(p.buttons)}
       </div>
     </div>`
+        : p.layout === 'showcase'
+          /* 品名は3段。大きな2語のあいだに、小さな語をはさむ。
+             行が1つしかないときは、小さな語を上に置く。 */
+          ? (() => {
+            const lines = String(p.title || '').split('\n').filter((x) => x.trim());
+            const mid = p.mid ? `<span class="shw-mid">${esc(p.mid)}</span>` : '';
+            const lock = lines.length > 1
+              ? `<span>${esc(lines[0])}</span>${mid}<span>${esc(lines.slice(1).join(' '))}</span>`
+              : `${mid}<span>${esc(lines[0] || '')}</span>`;
+            const notes = String(p.notes || '').split('|').map((x) => x.trim()).filter(Boolean);
+            return `    <div class="hero-in">
+      <div class="shw-stand">
+        <div class="shw-item"${el(p, 'image', 'ia', '商品の写真')}${imgSlot('image', p)}>${
+  p.image ? media(p.image, p.title) : SHW_BOTTLE}</div>
+        <i class="shw-shelf"></i>
+      </div>
+      ${p.eyebrow ? `<span class="eyebrow"${el(p, 'eyebrow', 'ta', '小見出し', 'eyebrow')}>${nl2br(p.eyebrow)}</span>` : ''}
+      ${p.title ? `<h1 class="hero-title shw-name"${el(p, 'title', 'ta', '品名', 'title')}>${lock}</h1>` : ''}
+      ${p.text ? `<p class="hero-text"${el(p, 'text', 'ta', '説明文', 'text')}>${nl2br(p.text)}</p>` : ''}
+${buttons(p.buttons)}
+      ${notes.length ? `<div class="shw-notes"${el(p, 'notes', 'ta', 'いちばん下の3つ', 'notes')}>${
+  notes.slice(0, 3).map((x) => `<span>${esc(x)}</span>`).join('')}</div>` : ''}
+    </div>`;
+          })()
         : p.layout === 'poster'
           /* 大きな名前を先に置き、写真をその下へ食い込ませる。
              名前は写真より外へはみ出したままにする（＝紙の上に残す）。 */
@@ -928,7 +1009,8 @@ ${heroMarks(p)}${buttons(p.buttons)}
       const artLayer = ribbon ? ribbonLayer(p)
         : p.layout === 'mark' ? markLayer(p)
           : p.layout === 'lineart' ? lineArtLayer(p)
-            : p.layout === 'orbit' ? orbitLayer(p) : '';
+            : p.layout === 'orbit' ? orbitLayer(p)
+              : p.layout === 'showcase' ? showcaseLayer() : '';
       const guts = `${bg}${artLayer}${decoLayer(p)}  <div class="wrap">
 ${inner}
   </div>

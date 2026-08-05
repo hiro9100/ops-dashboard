@@ -1743,6 +1743,131 @@ p:last-child{margin-bottom:0}
   }
 }
 
+
+/* ---------- 1商品を立てる（showcase） ----------
+   写真を合成せず、線と色だけで商品ポスターを組む。
+   要るのは4つ——斜めに差す光、枝とその影、載せる台、まんなかの品名。 */
+.hero.showcase{
+  position:relative;overflow:hidden;background:var(--c-surface);
+  padding:clamp(52px,7vw,120px) 0 clamp(40px,5vw,84px)
+}
+.hero.showcase .hero-in{
+  position:relative;z-index:2;display:grid;justify-items:center;text-align:center;
+  min-height:min(74svh,780px);align-content:center;gap:0;
+  /* いちばん下の3つを枠の下端に置くので、そのぶん場所をあける */
+  padding-bottom:clamp(26px,3.4vw,56px)
+}
+.shw-set{position:absolute;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+/* 壁。真上から回り込む光を、地の色の濃淡だけで作る */
+.shw-wall{
+  position:absolute;inset:0;
+  background:
+    radial-gradient(120% 70% at 26% -8%,rgba(255,255,255,.55),transparent 62%),
+    linear-gradient(160deg,
+      color-mix(in srgb,var(--c-surface) 88%,white) 0%,
+      var(--c-surface) 46%,
+      color-mix(in srgb,var(--c-surface) 84%,var(--c-text)) 100%)
+}
+/* 斜めに差し込む光の帯。1本だけ。2本入れると、どちらが光源か分からなくなる */
+.shw-beam{
+  position:absolute;inset:-30% -20%;
+  /* 明るい帯を1本と、その外側に落ちる影。
+     soft-light で重ねると、白い壁ではほとんど何も起きなかった。
+     白と黒をそのまま薄く重ねるほうが、確実に「光が差している」に見える。 */
+  background:linear-gradient(106deg,
+    rgba(0,0,0,.055) 0%,
+    rgba(0,0,0,.055) 27%,
+    rgba(255,255,255,.5) 31%,
+    rgba(255,255,255,.72) 42%,
+    rgba(255,255,255,.5) 51%,
+    rgba(0,0,0,.05) 55%,
+    rgba(0,0,0,.085) 100%)
+}
+@supports not (color:color-mix(in srgb,red,blue)){
+  .shw-wall{background:linear-gradient(160deg,var(--c-bg),var(--c-surface))}
+}
+/* 枝。左上から差し込ませて、右へ細くする */
+.shw-branch{
+  position:absolute;left:0;top:0;width:min(78%,940px);height:auto;
+  color:var(--c-text);opacity:.82
+}
+/* 太さは path ごとに持たせてある（元は太く、先へ行くほど細く）。
+   ここで stroke-width を書くと、その差がぜんぶ消えて走り書きの線になる。
+   いちど inherit と書いて、枝が一様な1本線になった。 */
+.shw-branch path{fill:none;stroke:currentColor;stroke-linecap:round}
+/* 壁に落ちる影。光は左上から差すので、影は右下へ。
+   離しすぎると2本の枝に見えるので、少しだけずらす。 */
+.shw-cast{opacity:.2;filter:blur(4px)}
+
+/* 台。天板と、その手前の小口。厚みは2枚で作る */
+/* 幅を書かないと、この箱は中身なりの幅になる。すると台の % が
+   「商品の幅の何割」になって、台が商品より狭くなる（実際そうなった）。 */
+.shw-stand{
+  position:relative;z-index:2;width:100%;display:grid;justify-items:center;
+  margin-bottom:clamp(30px,4vw,68px)
+}
+.shw-item{
+  position:relative;z-index:2;width:clamp(120px,15vw,230px);
+  filter:drop-shadow(0 18px 26px rgba(0,0,0,.28))
+}
+.shw-item img,.shw-item video{
+  width:100%;height:auto;display:block;object-fit:contain;
+  transform:scale(var(--iz,1))
+}
+.shw-draw{width:100%;height:auto;display:block;color:var(--c-text)}
+.shw-draw rect,.shw-draw line{
+  fill:none;stroke:currentColor;stroke-width:3;stroke-linecap:round;opacity:.8
+}
+.shw-draw rect:nth-of-type(3){fill:color-mix(in srgb,var(--c-text) 8%,transparent)}
+.shw-shelf{
+  position:relative;z-index:1;display:block;
+  width:min(56%,540px);height:clamp(10px,1.1vw,20px);margin-top:-6px;
+  background:linear-gradient(180deg,
+    color-mix(in srgb,var(--c-surface) 40%,white) 0 46%,
+    color-mix(in srgb,var(--c-surface) 82%,var(--c-text)) 46% 100%);
+  box-shadow:0 22px 34px -18px rgba(0,0,0,.45)
+}
+@supports not (color:color-mix(in srgb,red,blue)){
+  .shw-shelf{background:var(--c-bg);border-bottom:2px solid var(--c-border)}
+  .shw-draw rect:nth-of-type(3){fill:none}
+}
+
+/* 品名は3段。大きな2語のあいだに、小さな語をはさむ */
+.hero.showcase .shw-name{
+  display:grid;justify-items:center;gap:clamp(4px,.5vw,10px);margin:0;
+  font-family:var(--font-head);font-weight:400;
+  font-size:clamp(26px,3.6vw,66px);line-height:1.08;letter-spacing:.13em;
+  text-transform:uppercase
+}
+.shw-mid{
+  font-size:.42em;letter-spacing:.26em;color:var(--c-muted);font-weight:400
+}
+.hero.showcase .eyebrow{letter-spacing:.28em;color:var(--c-muted);margin-bottom:10px}
+.hero.showcase .hero-text{
+  max-width:36ch;margin-top:clamp(14px,1.6vw,26px);
+  font-size:clamp(12px,.88vw,16px);line-height:1.95;color:var(--c-muted)
+}
+.hero.showcase .btn-row{justify-content:center;margin-top:clamp(18px,2.2vw,34px)}
+
+/* いちばん下の3つ。左・中央・右にひとつずつ置く */
+.shw-notes{
+  position:absolute;z-index:2;left:0;right:0;bottom:0;
+  display:grid;grid-template-columns:1fr auto 1fr;align-items:center;
+  font-family:var(--font-head);font-size:clamp(9.5px,.72vw,13px);
+  font-weight:700;font-style:italic;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--c-text)
+}
+.shw-notes span:nth-child(1){justify-self:start}
+.shw-notes span:nth-child(3){justify-self:end}
+
+@media(max-width:640px){
+  .hero.showcase .hero-in{min-height:min(74svh,640px)}
+  .shw-branch{width:112%}
+  .shw-item{width:clamp(104px,34vw,168px)}
+  .shw-shelf{width:74%}
+  .shw-notes{font-size:9px;letter-spacing:.06em;margin-top:clamp(24px,7vw,44px)}
+}
+
 @media(max-width:640px){
   .rib-1{min-height:min(66svh,560px)}
   .hero.mark .hero-in,.hero.lineart .hero-in{min-height:min(62svh,560px)}
@@ -3841,6 +3966,17 @@ const SITE_JS = `
     var a = el.getAttribute('data-anim') || def;
     el.classList.add('ta-' + a);
     if(a === 'none' || reduce){ el.classList.add('in'); return; }
+    /* 中に組みかたを持っている見出しは、分けない。分けると textContent を
+       書き直すので、中の span がまるごと消える。商品ポスターの
+       「大きな語 / 小さな語 / 大きな語」の3段が、いちど1行に潰れた。
+
+       ただし <br> は数えない。改行は「組みかた」ではなく、ただの行送りで、
+       分割のほうがそれを読んで行を作る。数えてしまうと、2行以上の見出しが
+       まるごと分割されなくなり、文字の動きがほぼ全部止まった。 */
+    for(var ci = 0, kids = 0; ci < el.children.length; ci++){
+      if(el.children[ci].tagName !== 'BR') kids++;
+      if(kids){ el.classList.add('in'); return; }
+    }
     /* 1文字ずつに分けるのは、1文字ずつ動かすものだけ。
        面で塗るもの（fillgrad・wipe）は分けない。分けると
        background-clip:text が子の文字に届かず、何も出なくなる（実測）。 */
@@ -3851,7 +3987,7 @@ const SITE_JS = `
      していても、動きを減らす設定でも、ここだけは分けておく。
      分けなければ、ただの文字色で出るだけなので壊れはしない。 */
   [].slice.call(d.querySelectorAll('[data-txf="glint"]')).forEach(function(el){
-    if(!el.querySelector('.ch')) split(el, 'none');
+    if(!el.children.length && !el.querySelector('.ch')) split(el, 'none');
   });
 
   /* 画像・要素のアニメーション */
@@ -5610,6 +5746,51 @@ function orbitLayer(p) {
   return `  <div class="orbs">\n${ORB_LINES}\n${orbs}\n  </div>\n`;
 }
 
+/* ---------- 1商品を立てる（showcase） ----------
+   写真を合成せず、線と色だけで「商品ポスター」を組む。
+   要るのは4つだけ——斜めに差す光、枝の影、載せる台、まんなかの品名。
+
+   枝は線で描く。写真だと差し替えのたびに雰囲気が変わるが、線なら
+   配色に付いてくるし、どの端末でも同じ形で出る。 */
+const BRANCH = [
+  /* [パス, 太さ] 元は太く、先へ行くほど細くする。
+     この差が枝らしさのほとんどなので、CSS 側で stroke-width を書かない */
+  ['M0,176 C88,158 152,146 216,136 C302,123 384,110 456,98 C524,87 586,78 646,72', 7],
+  ['M96,161 C122,126 140,102 134,62', 4.4],
+  ['M134,62 C130,44 126,34 118,22', 2.4],
+  ['M96,161 C128,150 156,144 190,140', 3.2],
+  ['M216,136 C246,110 266,90 304,70', 4.2],
+  ['M304,70 C318,60 330,54 346,50', 2.2],
+  ['M216,136 C232,164 246,186 238,214', 3.4],
+  ['M238,214 C234,228 228,238 218,248', 1.8],
+  ['M330,118 C360,100 384,90 420,84', 3],
+  ['M420,84 C436,80 448,78 462,78', 1.7],
+  ['M456,98 C476,120 490,136 486,160', 2.8],
+  ['M540,84 C566,68 588,60 616,56', 2.2],
+  ['M616,56 C628,50 636,48 648,47', 1.5],
+];
+const branchArt = () => BRANCH.map(([d, w]) =>
+  `<path d="${d}" stroke-width="${w}"/>`).join('');
+
+/* 写真を入れる前に置いておく、線で描いた瓶。
+   空の枠を出すと「入れ忘れ」に見えて、組みかたが伝わらない。 */
+const SHW_BOTTLE = `<svg class="shw-draw" viewBox="0 0 200 300" aria-hidden="true" focusable="false">
+  <rect x="82" y="10" width="36" height="34" rx="3"/>
+  <rect x="88" y="44" width="24" height="16"/>
+  <rect x="46" y="60" width="108" height="222" rx="6"/>
+  <line x1="70" y1="150" x2="130" y2="150"/>
+  <line x1="78" y1="176" x2="122" y2="176"/>
+</svg>`;
+
+const showcaseLayer = () => `  <div class="shw-set" aria-hidden="true">
+    <i class="shw-wall"></i>
+    <i class="shw-beam"></i>
+    <svg class="shw-branch" viewBox="0 0 700 268" preserveAspectRatio="xMinYMin slice" focusable="false">
+      <g class="shw-cast" transform="translate(26,34)">${branchArt()}</g>
+      <g>${branchArt()}</g>
+    </svg>
+  </div>\n`;
+
 /* 丸い印と、帯のラベル。パッケージの「砂糖不使用」「送料無料」のような、
    ひと目で伝わる短い言葉を置く。円のまわりを回る文字は SVG の textPath。
    id はページの中で重ならないよう、中身から作る（hashId）。 */
@@ -5951,7 +6132,8 @@ const BLOCKS = {
         options: [['center', '中央ぞろえ'], ['left', '左ぞろえ'], ['split', '左右に画像'],
           ['pack', '商品パッケージ'], ['cover', '背景画像いっぱい'],
           ['ribbon', '動画＋色の帯'], ['mark', 'ロゴ抜き'], ['lineart', '線のかたち'],
-          ['orbit', 'まるい写真が浮かぶ'], ['poster', '大きな名前＋1枚の写真']] },
+          ['orbit', 'まるい写真が浮かぶ'], ['poster', '大きな名前＋1枚の写真'],
+          ['showcase', '1商品を立てる（光と台）']] },
       FIELD.eyebrow,
       { key: 'title', label: 'キャッチコピー', type: 'textarea', rows: 2 },
       { key: 'text', label: '説明文', type: 'textarea' },
@@ -5966,11 +6148,20 @@ const BLOCKS = {
         hint: '入れると写真のかわりに動画が流れます。音は出ません' },
       /* 丸い印と、帯のラベル。商品の「砂糖不使用」「送料無料」のような、
          ひと目で伝えたい短い言葉を置く場所。どちらも空なら出ない。 */
+      /* 品名のまん中に挟む小さな語。「BLEU / DE / CHANEL」の DE にあたる */
+      { key: 'mid', label: '品名のあいだの語', type: 'text',
+        showIf: (p) => p.layout === 'showcase',
+        hint: '「BLEU / DE / CHANEL」の DE にあたるところ。空なら出しません' },
+      { key: 'notes', label: 'いちばん下の3つ', type: 'text',
+        showIf: (p) => p.layout === 'showcase',
+        hint: '縦棒で区切ります。例：LIMITED 300 | ATELIER | EAU DE PARFUM' },
       { key: 'badge', label: '丸い印の文字', type: 'textarea', rows: 2,
+        showIf: (p) => p.layout !== 'showcase',
         hint: '改行すると2行になります。「砂糖\n不使用」など' },
       { key: 'badgeRing', label: '丸のまわりの文字', type: 'text', adv: true,
         showIf: (p) => !!p.badge, hint: '円にそって回ります。空なら線だけ' },
       { key: 'tag', label: '帯のラベル', type: 'text',
+        showIf: (p) => p.layout !== 'showcase',
         hint: '「こだわりの素材」「送料無料」など、ひとこと' },
       /* 型ごとにしか使わない欄。その型を選んだときだけ出す */
       { key: 'markMask', label: 'ロゴ・マークの画像', type: 'mask',
@@ -6013,6 +6204,7 @@ const BLOCKS = {
       melt: 'none', meltMask: '', meltDepth: 100,
       badge: '', badgeRing: '', tag: '',
       markMask: '', art: 'flow', scrollLabel: 'Scroll', side: 'PORTFOLIO',
+      mid: 'DE', notes: 'LIMITED 300 | ATELIER | EAU DE PARFUM',
       orbs: [{ src: '' }, { src: '' }, { src: '' }, { src: '' }],
       scroll: 'none', scrollLen: 200,
       buttons: [
@@ -6054,7 +6246,8 @@ ${marks}${buttons(p.buttons)}`;
         : '';
       /* 中央ぞろえ・左ぞろえでも、写真を入れたら文章の下に置く。
          入れても何も起きないと、入れた本人には壊れて見える（実際に指摘された）。 */
-      const wide = !cover && !['split', 'pack', 'orbit', 'poster'].includes(p.layout) && p.image
+      const wide = !cover
+        && !['split', 'pack', 'orbit', 'poster', 'showcase'].includes(p.layout) && p.image
         ? `\n      <div class="hero-media hero-wide"${el(p, 'image', 'ia', '画像')}`
           + `${imgSlot('image', p)}>${media(p.image, p.title)}</div>`
         : '';
@@ -6072,6 +6265,30 @@ ${marks}${buttons(p.buttons)}`;
 ${heroMarks(p)}${buttons(p.buttons)}
       </div>
     </div>`
+        : p.layout === 'showcase'
+          /* 品名は3段。大きな2語のあいだに、小さな語をはさむ。
+             行が1つしかないときは、小さな語を上に置く。 */
+          ? (() => {
+            const lines = String(p.title || '').split('\n').filter((x) => x.trim());
+            const mid = p.mid ? `<span class="shw-mid">${esc(p.mid)}</span>` : '';
+            const lock = lines.length > 1
+              ? `<span>${esc(lines[0])}</span>${mid}<span>${esc(lines.slice(1).join(' '))}</span>`
+              : `${mid}<span>${esc(lines[0] || '')}</span>`;
+            const notes = String(p.notes || '').split('|').map((x) => x.trim()).filter(Boolean);
+            return `    <div class="hero-in">
+      <div class="shw-stand">
+        <div class="shw-item"${el(p, 'image', 'ia', '商品の写真')}${imgSlot('image', p)}>${
+  p.image ? media(p.image, p.title) : SHW_BOTTLE}</div>
+        <i class="shw-shelf"></i>
+      </div>
+      ${p.eyebrow ? `<span class="eyebrow"${el(p, 'eyebrow', 'ta', '小見出し', 'eyebrow')}>${nl2br(p.eyebrow)}</span>` : ''}
+      ${p.title ? `<h1 class="hero-title shw-name"${el(p, 'title', 'ta', '品名', 'title')}>${lock}</h1>` : ''}
+      ${p.text ? `<p class="hero-text"${el(p, 'text', 'ta', '説明文', 'text')}>${nl2br(p.text)}</p>` : ''}
+${buttons(p.buttons)}
+      ${notes.length ? `<div class="shw-notes"${el(p, 'notes', 'ta', 'いちばん下の3つ', 'notes')}>${
+  notes.slice(0, 3).map((x) => `<span>${esc(x)}</span>`).join('')}</div>` : ''}
+    </div>`;
+          })()
         : p.layout === 'poster'
           /* 大きな名前を先に置き、写真をその下へ食い込ませる。
              名前は写真より外へはみ出したままにする（＝紙の上に残す）。 */
@@ -6097,7 +6314,8 @@ ${heroMarks(p)}${buttons(p.buttons)}
       const artLayer = ribbon ? ribbonLayer(p)
         : p.layout === 'mark' ? markLayer(p)
           : p.layout === 'lineart' ? lineArtLayer(p)
-            : p.layout === 'orbit' ? orbitLayer(p) : '';
+            : p.layout === 'orbit' ? orbitLayer(p)
+              : p.layout === 'showcase' ? showcaseLayer() : '';
       const guts = `${bg}${artLayer}${decoLayer(p)}  <div class="wrap">
 ${inner}
   </div>
@@ -9108,6 +9326,28 @@ const HERO_PRESETS = [
       side: 'Since 1994',
       text: '毎朝5時に窯を入れます。焼き上がりから並べるので、\n昼すぎには棚が空になることもあります。',
       buttons: [{ label: 'お品書き', href: '#menu', style: 'primary' }],
+    } },
+
+  /* 1つの商品だけを立てる型。写真を合成せず、線と色だけで
+     光・枝・台を組む。香水・ボトル・器・道具など、形のあるもの向け。 */
+  { key: 'showcase', type: 'hero', label: 'Showcase',
+    about: '斜めに差す光、枝の影、載せる台。1つの商品だけを、静かに立てる。',
+    props: {
+      layout: 'showcase', bg: '', eyebrow: '',
+      title: 'BLEU\nATELIER', mid: 'DE',
+      text: '香りを決めるのは、最後のひと匙です。\n配合を変えず、同じ手で、同じ量を。',
+      notes: 'LIMITED 300 | ATELIER | EAU DE PARFUM',
+      buttons: [],
+    } },
+
+  { key: 'showcase-buy', type: 'hero', label: 'Showcase (Buy)',
+    about: '同じ組みかたで、買うボタンを1つだけ添える。単品の通販ページに。',
+    props: {
+      layout: 'showcase', bg: '', eyebrow: 'NEW ARRIVAL',
+      title: '結（ゆい）', mid: '',
+      text: '一日ひとつだけ、窯から出します。',
+      notes: '数量限定 | 灯り工房 | 手吹きガラス',
+      buttons: [{ label: '買う', href: '#buy', style: 'primary' }],
     } },
 
   /* パッケージの表側を、そのままページの頭にした型。

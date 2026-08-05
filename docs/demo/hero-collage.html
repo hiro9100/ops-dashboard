@@ -527,6 +527,131 @@ p:last-child{margin-bottom:0}
   }
 }
 
+
+/* ---------- 1商品を立てる（showcase） ----------
+   写真を合成せず、線と色だけで商品ポスターを組む。
+   要るのは4つ——斜めに差す光、枝とその影、載せる台、まんなかの品名。 */
+.hero.showcase{
+  position:relative;overflow:hidden;background:var(--c-surface);
+  padding:clamp(52px,7vw,120px) 0 clamp(40px,5vw,84px)
+}
+.hero.showcase .hero-in{
+  position:relative;z-index:2;display:grid;justify-items:center;text-align:center;
+  min-height:min(74svh,780px);align-content:center;gap:0;
+  /* いちばん下の3つを枠の下端に置くので、そのぶん場所をあける */
+  padding-bottom:clamp(26px,3.4vw,56px)
+}
+.shw-set{position:absolute;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+/* 壁。真上から回り込む光を、地の色の濃淡だけで作る */
+.shw-wall{
+  position:absolute;inset:0;
+  background:
+    radial-gradient(120% 70% at 26% -8%,rgba(255,255,255,.55),transparent 62%),
+    linear-gradient(160deg,
+      color-mix(in srgb,var(--c-surface) 88%,white) 0%,
+      var(--c-surface) 46%,
+      color-mix(in srgb,var(--c-surface) 84%,var(--c-text)) 100%)
+}
+/* 斜めに差し込む光の帯。1本だけ。2本入れると、どちらが光源か分からなくなる */
+.shw-beam{
+  position:absolute;inset:-30% -20%;
+  /* 明るい帯を1本と、その外側に落ちる影。
+     soft-light で重ねると、白い壁ではほとんど何も起きなかった。
+     白と黒をそのまま薄く重ねるほうが、確実に「光が差している」に見える。 */
+  background:linear-gradient(106deg,
+    rgba(0,0,0,.055) 0%,
+    rgba(0,0,0,.055) 27%,
+    rgba(255,255,255,.5) 31%,
+    rgba(255,255,255,.72) 42%,
+    rgba(255,255,255,.5) 51%,
+    rgba(0,0,0,.05) 55%,
+    rgba(0,0,0,.085) 100%)
+}
+@supports not (color:color-mix(in srgb,red,blue)){
+  .shw-wall{background:linear-gradient(160deg,var(--c-bg),var(--c-surface))}
+}
+/* 枝。左上から差し込ませて、右へ細くする */
+.shw-branch{
+  position:absolute;left:0;top:0;width:min(78%,940px);height:auto;
+  color:var(--c-text);opacity:.82
+}
+/* 太さは path ごとに持たせてある（元は太く、先へ行くほど細く）。
+   ここで stroke-width を書くと、その差がぜんぶ消えて走り書きの線になる。
+   いちど inherit と書いて、枝が一様な1本線になった。 */
+.shw-branch path{fill:none;stroke:currentColor;stroke-linecap:round}
+/* 壁に落ちる影。光は左上から差すので、影は右下へ。
+   離しすぎると2本の枝に見えるので、少しだけずらす。 */
+.shw-cast{opacity:.2;filter:blur(4px)}
+
+/* 台。天板と、その手前の小口。厚みは2枚で作る */
+/* 幅を書かないと、この箱は中身なりの幅になる。すると台の % が
+   「商品の幅の何割」になって、台が商品より狭くなる（実際そうなった）。 */
+.shw-stand{
+  position:relative;z-index:2;width:100%;display:grid;justify-items:center;
+  margin-bottom:clamp(30px,4vw,68px)
+}
+.shw-item{
+  position:relative;z-index:2;width:clamp(120px,15vw,230px);
+  filter:drop-shadow(0 18px 26px rgba(0,0,0,.28))
+}
+.shw-item img,.shw-item video{
+  width:100%;height:auto;display:block;object-fit:contain;
+  transform:scale(var(--iz,1))
+}
+.shw-draw{width:100%;height:auto;display:block;color:var(--c-text)}
+.shw-draw rect,.shw-draw line{
+  fill:none;stroke:currentColor;stroke-width:3;stroke-linecap:round;opacity:.8
+}
+.shw-draw rect:nth-of-type(3){fill:color-mix(in srgb,var(--c-text) 8%,transparent)}
+.shw-shelf{
+  position:relative;z-index:1;display:block;
+  width:min(56%,540px);height:clamp(10px,1.1vw,20px);margin-top:-6px;
+  background:linear-gradient(180deg,
+    color-mix(in srgb,var(--c-surface) 40%,white) 0 46%,
+    color-mix(in srgb,var(--c-surface) 82%,var(--c-text)) 46% 100%);
+  box-shadow:0 22px 34px -18px rgba(0,0,0,.45)
+}
+@supports not (color:color-mix(in srgb,red,blue)){
+  .shw-shelf{background:var(--c-bg);border-bottom:2px solid var(--c-border)}
+  .shw-draw rect:nth-of-type(3){fill:none}
+}
+
+/* 品名は3段。大きな2語のあいだに、小さな語をはさむ */
+.hero.showcase .shw-name{
+  display:grid;justify-items:center;gap:clamp(4px,.5vw,10px);margin:0;
+  font-family:var(--font-head);font-weight:400;
+  font-size:clamp(26px,3.6vw,66px);line-height:1.08;letter-spacing:.13em;
+  text-transform:uppercase
+}
+.shw-mid{
+  font-size:.42em;letter-spacing:.26em;color:var(--c-muted);font-weight:400
+}
+.hero.showcase .eyebrow{letter-spacing:.28em;color:var(--c-muted);margin-bottom:10px}
+.hero.showcase .hero-text{
+  max-width:36ch;margin-top:clamp(14px,1.6vw,26px);
+  font-size:clamp(12px,.88vw,16px);line-height:1.95;color:var(--c-muted)
+}
+.hero.showcase .btn-row{justify-content:center;margin-top:clamp(18px,2.2vw,34px)}
+
+/* いちばん下の3つ。左・中央・右にひとつずつ置く */
+.shw-notes{
+  position:absolute;z-index:2;left:0;right:0;bottom:0;
+  display:grid;grid-template-columns:1fr auto 1fr;align-items:center;
+  font-family:var(--font-head);font-size:clamp(9.5px,.72vw,13px);
+  font-weight:700;font-style:italic;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--c-text)
+}
+.shw-notes span:nth-child(1){justify-self:start}
+.shw-notes span:nth-child(3){justify-self:end}
+
+@media(max-width:640px){
+  .hero.showcase .hero-in{min-height:min(74svh,640px)}
+  .shw-branch{width:112%}
+  .shw-item{width:clamp(104px,34vw,168px)}
+  .shw-shelf{width:74%}
+  .shw-notes{font-size:9px;letter-spacing:.06em;margin-top:clamp(24px,7vw,44px)}
+}
+
 @media(max-width:640px){
   .rib-1{min-height:min(66svh,560px)}
   .hero.mark .hero-in,.hero.lineart .hero-in{min-height:min(62svh,560px)}
@@ -2748,6 +2873,17 @@ a:not(.btn):not(.logo){transition:opacity .5s cubic-bezier(.165,.84,.44,1)}
     var a = el.getAttribute('data-anim') || def;
     el.classList.add('ta-' + a);
     if(a === 'none' || reduce){ el.classList.add('in'); return; }
+    /* 中に組みかたを持っている見出しは、分けない。分けると textContent を
+       書き直すので、中の span がまるごと消える。商品ポスターの
+       「大きな語 / 小さな語 / 大きな語」の3段が、いちど1行に潰れた。
+
+       ただし <br> は数えない。改行は「組みかた」ではなく、ただの行送りで、
+       分割のほうがそれを読んで行を作る。数えてしまうと、2行以上の見出しが
+       まるごと分割されなくなり、文字の動きがほぼ全部止まった。 */
+    for(var ci = 0, kids = 0; ci < el.children.length; ci++){
+      if(el.children[ci].tagName !== 'BR') kids++;
+      if(kids){ el.classList.add('in'); return; }
+    }
     /* 1文字ずつに分けるのは、1文字ずつ動かすものだけ。
        面で塗るもの（fillgrad・wipe）は分けない。分けると
        background-clip:text が子の文字に届かず、何も出なくなる（実測）。 */
@@ -2758,7 +2894,7 @@ a:not(.btn):not(.logo){transition:opacity .5s cubic-bezier(.165,.84,.44,1)}
      していても、動きを減らす設定でも、ここだけは分けておく。
      分けなければ、ただの文字色で出るだけなので壊れはしない。 */
   [].slice.call(d.querySelectorAll('[data-txf="glint"]')).forEach(function(el){
-    if(!el.querySelector('.ch')) split(el, 'none');
+    if(!el.children.length && !el.querySelector('.ch')) split(el, 'none');
   });
 
   /* 画像・要素のアニメーション */
