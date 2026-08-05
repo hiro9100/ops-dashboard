@@ -1727,6 +1727,16 @@ node verify-site.js    # 公開後と同じHTTP越しに確認（要 playwright�
 | `docs/index.html` | サービスLP（入口） |
 | `docs/app/index.html` | 編集ツール本体（1ファイル） |
 | `docs/demo/` | 作例4種と、その入口ページ |
+| `docs/art/` | 業種ごとの見本写真（元は `art/`） |
+
+`docs/art/` は `art/` から写されます。**元は `art/`。** `build-site.js` は
+`docs/` をまるごと作り直すので、`docs/art/` に直接置いた写真は次の組み立てで
+消えます。写真の足し方は `art/README.md`。
+
+道具は、この写真を**自分のすぐ隣から**読みます（`art/` → `../art/` →
+公開の入れ物、の順に試して、読めたところを覚える）。だから GitHub Pages に
+上げても、手元の `dist/index.html` を開いても、同じように出ます。
+特定の配信先に紐づけていません。
 
 **GitHub Pages で出す** — Settings → Pages → Source を「Deploy from a branch」、
 ブランチを選び、フォルダに **`/docs`** を指定。数分で

@@ -20,12 +20,36 @@
    外のサーバーに頼るページにはしない。
    ================================================================ */
 
-/* 置き場所。公開の入れ物と同じところに置く。
-   file:// から開いた場合もここを見に行く（通信できなければ描いた絵に戻る）。
-   読み込み順に左右されないよう、その場で調べる（PUBLISH はこのあとに来る）。 */
-const photoBase = () => ((typeof PUBLISH === 'object' && PUBLISH.siteBase)
-  ? PUBLISH.siteBase.replace(/\/s\/$/, '/art/')
-  : '');
+/* 置き場所。写真は、道具のすぐ隣に置いてある。
+
+     ・作っているとき   hp-builder/index.html  → ./art/
+     ・組み上げた1枚     dist/index.html        → ../art/
+     ・公開の一式        docs/app/index.html    → ../art/
+     ・よそに置いた1枚   どこでも               → 公開の入れ物から借りる
+
+   どれになるかは、どこから開いたかで変わる。決め打ちにすると外れる。
+   公開の入れ物（PUBLISH.siteBase）だけを見ていたころは、GitHub Pages から
+   開いても、手元の dist/index.html から開いても、隣に写真が在るのに
+   見つけられなかった。順に試して、最初に読めたところを覚える。 */
+const photoBases = () => {
+  const out = [];
+  const add = (u) => { if (u && out.indexOf(u) < 0) out.push(u); };
+  try {
+    const here = document.baseURI || location.href;
+    /* file:// は fetch できない（読みに行くと必ず断られる）。試さない */
+    if (/^https?:/.test(here)) {
+      add(new URL('art/', here).href);        // 隣
+      add(new URL('../art/', here).href);     // 1つ上（dist/ や app/ の中）
+    }
+  } catch (e) { /* 開いた場所が読めない。下の公開の入れ物に頼る */ }
+  add((typeof PUBLISH === 'object' && PUBLISH.siteBase)
+    ? PUBLISH.siteBase.replace(/\/s\/$/, '/art/') : '');
+  return out;
+};
+
+/* 読めたところ。突き止めるまでは空（＝まだ URL を組み立てない） */
+let photoBaseFound = '';
+const photoBase = () => photoBaseFound;
 
 /* 業種 → 置いてある写真。順番に使う。
    1業種に何枚あってもよい（足りなければ先頭から繰り返す）。
@@ -52,14 +76,17 @@ function industryPhoto(key, i = 0) {
 }
 
 /* 取りに行けるかどうかは、実際に読んでみるまで分からない。
-   1度でも失敗したら、そのあとは試さない（毎回待たされるほうが困る）。 */
+   置き場所が1つでも見つかれば true。全部だめなら false。
+   1度 false になったら、そのあとは試さない（毎回待たされるほうが困る）。 */
 let photoReach = null;      // null=まだ / true=読める / false=読めない
 const photoCache = new Map();
 
 /* 写真1枚を、アップロードした写真とまったく同じ形（data URL）にして返す。
-   ここを通しておけば、書き出したページは1枚で完結したままになる。 */
-async function fetchIndustryPhoto(url) {
-  if (!url || photoReach === false) return '';
+   ここを通しておけば、書き出したページは1枚で完結したままになる。
+   取りに行けなければ空。ここでは「もう諦める」の判断をしない
+   （1か所だめでも、次の置き場所に在ることがある）。 */
+async function loadPhoto(url) {
+  if (!url) return '';
   if (photoCache.has(url)) return photoCache.get(url);
   try {
     const r = await fetch(url, { mode: 'cors', cache: 'force-cache' });
@@ -72,13 +99,49 @@ async function fetchIndustryPhoto(url) {
       fr.onerror = rej;
       fr.readAsDataURL(blob);
     });
-    photoReach = true;
     photoCache.set(url, out);
     return out;
   } catch (e) {
-    photoReach = false;    // 以降は描いた絵で通す
     return '';
   }
+}
+
+/* この業種の写真が用意されているか（通信しないで分かる） */
+const hasIndustryPhotos = (key) => !!(INDUSTRY_PHOTOS[key] || []).length;
+
+/* 置き場所を突き止める。顔の一覧を出す前に呼ぶ。
+
+     true  … 読めた。photoBase() が決まった
+     false … どこにも無い。以降は描いた絵で通す
+     null  … まだ分からない（この業種の写真が無いだけ。よその業種では在る）
+
+   写真の無い業種で false にしてしまうと、そのあとカフェに移っても
+   描いた絵のままになる。そこは分けて返す。 */
+let photoProbe = null;
+async function probeIndustryPhotos(key) {
+  if (photoReach !== null) return photoReach;
+  if (!hasIndustryPhotos(key)) return null;
+  if (photoProbe) return photoProbe;           // 走っている途中。二重に行かない
+  photoProbe = (async () => {
+    const first = INDUSTRY_PHOTOS[key][0];
+    for (const base of photoBases()) {
+      const got = await loadPhoto(base + first);
+      if (got) { photoBaseFound = base; photoReach = true; return true; }
+    }
+    photoReach = false;
+    return false;
+  })();
+  const out = await photoProbe;
+  photoProbe = null;
+  return out;
+}
+
+/* 業種の写真1枚を取り込む。置き場所が決まってから呼ぶ */
+async function fetchIndustryPhoto(url) {
+  if (!url || photoReach === false) return '';
+  const out = await loadPhoto(url);
+  if (!out) photoReach = false;    // 置き場所は在るのに読めない。以降は絵で通す
+  return out;
 }
 
 /* この写真が「まだ自分のものに替えていない」ものかどうか。

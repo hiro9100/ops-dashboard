@@ -3770,12 +3770,11 @@ function renderBldHead() {
 function renderBldGallery() {
   const st = bldStep();
   if (st !== 'hero' && st !== 'shape') return;
-  /* 実写が読めるかどうかを、1度だけ確かめる。
-     読めたらもう一度描き直す（1回目は描いた絵で出るので、待たせない） */
+  /* 実写がどこに置いてあるかを、1度だけ突き止める。
+     見つかったらもう一度描き直す（1回目は描いた絵で出るので、待たせない） */
   if (photoReach === null) {
     const ind0 = (state && state.biz && state.biz.ind) || 'company';
-    const probe = industryPhoto(ind0, 0);
-    if (probe) fetchIndustryPhoto(probe).then((ok) => { if (ok) renderBldGallery(); });
+    probeIndustryPhotos(ind0).then((ok) => { if (ok) renderBldGallery(); });
   }
   const f = $('#bldFrame');
   const list = bldList();
@@ -3930,7 +3929,11 @@ function spreadPhotos() {
    絵のまま——どちらでも、書き出したページは1枚で完結する。 */
 let upgradeRun = 0;
 async function upgradePhotos(ind) {
-  if (photoReach === false || !industryPhoto(ind, 0)) return;
+  if (photoReach === false || !hasIndustryPhotos(ind)) return;
+  /* 一覧を見ずに（顔をすぐ選んで）ここに来ることがある。
+     置き場所がまだ決まっていなければ、ここで突き止める。
+     これを待たないと、URL が組み立てられず絵のままで終わる。 */
+  if (photoReach === null && !(await probeIndustryPhotos(ind))) return;
   const run = ++upgradeRun;
   const jobs = [];
   let k = 0;

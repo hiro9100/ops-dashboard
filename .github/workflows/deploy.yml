@@ -121,6 +121,9 @@ jobs:
           check "$B/s/nothing-here"   404 "公開ページの配信（serveSite）"
           # 受け口は POST 専用。GET で 405 が返れば、Function が生きている
           check "$B/api/publish"      405 "公開の受け口（publishSite）"
+          # 業種の見本写真。ここが404だと、顔をえらぶ画面が描いた絵のままになる
+          # （出ていないことに気づけないので、名指しで確かめる）
+          check "$B/art/cafe-1.jpg"   200 "業種の見本写真（art/）"
           if [ "$ng" -gt 0 ]; then
             echo "出したはずのものが $ng 件、応答していません。" >&2
             exit 1
