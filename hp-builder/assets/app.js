@@ -1061,6 +1061,27 @@ function nudgeEl(dx, dy) {
   return true;
 }
 
+/* 大きさ。1 が型どおり。並びは動かさず、その場で拡大・縮小する
+   （並びを動かすと、隣が押されて型そのものが崩れる） */
+const SIZE_MIN = 0.5, SIZE_MAX = 2.2;
+const sizeOf = (b, role) => Number(((b.props || {}).size || {})[role]) || 1;
+
+function setSize(b, role, v) {
+  const s = Math.min(SIZE_MAX, Math.max(SIZE_MIN, Math.round(v * 100) / 100));
+  b.props.size = b.props.size || {};
+  if (s === 1) delete b.props.size[role]; else b.props.size[role] = s;
+  if (!Object.keys(b.props.size).length) delete b.props.size;
+}
+
+function scaleEl(mul) {
+  const b = page().blocks.find((x) => x.id === selected);
+  if (!b || !canMove(b) || !selectedEl || selectedEl.kind === 'img') return false;
+  setSize(b, selectedEl.role, sizeOf(b, selectedEl.role) * mul);
+  renderEditor(); renderPreview(true);
+  save(`size:${selectedEl.role}:${b.id}`);
+  return true;
+}
+
 /* 要素を消す・戻す。中身は消さないので、戻せばそのまま出る */
 function setElOff(b, role, off) {
   b.props.off = b.props.off || {};
@@ -2312,7 +2333,9 @@ function renderEditor() {
 /* たたんだ状態は覚えておく（開いて直して、また別のブロックへ、が続くので） */
 let advOpen = false;
 $('#tab-edit').addEventListener('toggle', (e) => {
-  if (e.target.classList && e.target.classList.contains('adv')) advOpen = e.target.open;
+  if (!e.target.classList) return;
+  if (e.target.classList.contains('adv')) advOpen = e.target.open;
+  if (e.target.classList.contains('ai-f')) aiOpen = e.target.open;
 }, true);
 
 /* 選択中の要素にアニメーションを付けるパネル */
@@ -2357,6 +2380,7 @@ function elementPanel(b) {
       <button class="tb-btn" data-fitreset>まん中に戻す</button>
       <button class="tb-btn" data-repick="${esc(selectedEl.prop)}">写真を替える</button>
       <button class="tb-btn" data-cut="props.${esc(selectedEl.prop)}">背景を抜く</button>
+      ${aiField(b)}
     </div>`;
   }
 
@@ -2382,13 +2406,30 @@ function elementPanel(b) {
   </div>`;
 }
 
+/* 絵を作ってもらう欄。ヒーローの写真枠にだけ出す。
+   どこにでも出すと、写真を選ぶより先にこちらを押す人が出て、
+   そのぶん費用が出る。まずは顔の1枚だけ。 */
+function aiField(b) {
+  if (!aiReady() || !b || b.type !== 'hero' || !selectedEl) return '';
+  const key = `ai:${b.id}:${selectedEl.prop}`;
+  const text = aiPrompts[key] != null ? aiPrompts[key] : draftPrompt(b);
+  return `<details class="ai-f"${aiOpen ? ' open' : ''}><summary>絵を作ってもらう</summary>
+    <textarea data-aiprompt rows="4">${esc(text)}</textarea>
+    <div class="hint">下書きを直してから押してください。人の顔や、実在のロゴは避けます。</div>
+    <button class="tb-btn primary" data-aigo>この文で作る</button>
+  </details>`;
+}
+let aiOpen = false;
+const aiPrompts = {};
+
 /* 置き場所の欄。ヒーローだけに出す。
    数字を打たせない——つまむか、矢印で寄せるほうが速いし、迷わない。 */
 function placeField(b) {
   if (!canMove(b) || !selectedEl) return '';
   const p = placeOf(b, selectedEl.role);
-  const moved = !!(p.x || p.y);
-  return `<div class="f place-f"><label>置き場所</label>
+  const s = sizeOf(b, selectedEl.role);
+  const moved = !!(p.x || p.y), sized = s !== 1;
+  return `<div class="f place-f"><label>位置と大きさ</label>
     <div class="el-tip">プレビューでつまんで動かせます。細かく寄せるときは矢印キー。</div>
     <div class="nudge">
       <button class="nb" data-nudge="0,-1" title="上へ">↑</button>
@@ -2397,7 +2438,12 @@ function placeField(b) {
       <button class="nb" data-nudge="0,1" title="下へ">↓</button>
       <span class="nv">${moved ? `${p.x > 0 ? '右' : '左'}${Math.abs(p.x)} / ${p.y > 0 ? '下' : '上'}${Math.abs(p.y)}` : '元の位置'}</span>
     </div>
-    ${moved ? `<button class="tb-btn" data-placereset>元の位置に戻す</button>` : ''}
+    <div class="nudge">
+      <button class="nb" data-scale="0.92" title="小さく">−</button>
+      <button class="nb" data-scale="1.08" title="大きく">＋</button>
+      <span class="nv">${sized ? `${Math.round(s * 100)}%` : '元の大きさ'}</span>
+    </div>
+    ${moved || sized ? `<button class="tb-btn" data-placereset>元に戻す</button>` : ''}
     <button class="tb-btn warn" data-eloff>この要素を消す</button>
   </div>`;
 }
@@ -2444,10 +2490,24 @@ $('#tab-edit').addEventListener('click', (e) => {
   /* 置き場所 */
   const nb = e.target.closest('[data-nudge]');
   if (nb) { const [x, y] = nb.dataset.nudge.split(',').map(Number); nudgeEl(x, y); return; }
+  const sb = e.target.closest('[data-scale]');
+  if (sb) { scaleEl(Number(sb.dataset.scale)); return; }
+
+  /* 絵を作ってもらう */
+  if (e.target.closest('[data-aigo]') && selectedEl) {
+    const b0 = page().blocks.find((x) => x.id === selected);
+    const ta = $('[data-aiprompt]');
+    if (!b0 || !ta) return;
+    const el0 = pdoc && pdoc.querySelector(`[data-imgprop="${selectedEl.prop}"]`);
+    aiPrompts[`ai:${b0.id}:${selectedEl.prop}`] = ta.value;
+    aiOpen = true;
+    askForImage(b0.id, selectedEl.prop, ta.value.trim(), shapeOf(el0));
+    return;
+  }
   if (e.target.closest('[data-placereset]') && selectedEl) {
     const b0 = page().blocks.find((x) => x.id === selected);
-    if (b0) { setPlace(b0, selectedEl.role, 0, 0); renderEditor(); renderPreview(true);
-      save(`place:${selectedEl.role}:${b0.id}`); }
+    if (b0) { setPlace(b0, selectedEl.role, 0, 0); setSize(b0, selectedEl.role, 1);
+      renderEditor(); renderPreview(true); save(`place:${selectedEl.role}:${b0.id}`); }
     return;
   }
   if (e.target.closest('[data-eloff]') && selectedEl) {
@@ -2710,6 +2770,76 @@ async function toDataURL(file) {
   cv.getContext('2d').drawImage(src, 0, 0, cv.width, cv.height);
   if (src.close) src.close();
   return cv.toDataURL('image/jpeg', IMG_QUALITY);
+}
+
+/* ================================================================
+   絵を作ってもらう
+   ----------------------------------------------------------------
+   鍵はこちらには無い。作るのはサーバー側で、ここは頼んで受け取るだけ。
+   受け取った絵は、写真を選んだときとまったく同じ道を通す
+   （1600px・JPEG に落とす）。通さないと、公開の上限に引っかかる。
+   ================================================================ */
+const imageEndpoint = () => (typeof PUBLISH === 'object' && PUBLISH.endpoint
+  ? PUBLISH.endpoint.replace(/\/publish$/, '/image') : '');
+const aiReady = () => !!imageEndpoint();
+
+/* data URI を、写真と同じ縮小の道に通す */
+async function shrinkDataURL(url) {
+  const im = new Image();
+  await new Promise((res, rej) => { im.onload = res; im.onerror = rej; im.src = url; });
+  const scale = Math.min(1, IMG_MAX / Math.max(im.width, im.height));
+  const cv = document.createElement('canvas');
+  cv.width = Math.round(im.width * scale);
+  cv.height = Math.round(im.height * scale);
+  cv.getContext('2d').drawImage(im, 0, 0, cv.width, cv.height);
+  return cv.toDataURL('image/jpeg', IMG_QUALITY);
+}
+
+/* 頼む文の下書き。店の名前・業種・配色から組む。
+   白紙から書かせると、たいていの人はここで止まる。 */
+function draftPrompt(b) {
+  const m = (state && state.meta) || {};
+  const p = (b && b.props) || {};
+  const words = [m.title, p.eyebrow, String(p.title || '').replace(/\n/g, ' ')]
+    .map((x) => String(x || '').trim()).filter(Boolean);
+  const look = (state.theme && state.theme.primary) ? `${state.theme.primary} が映える色みで、` : '';
+  return `${words.join('、') || 'お店'}のホームページの、いちばん上に置く写真。`
+    + `${look}人の顔は写さず、余白を広めに。文字は入れないでください。`;
+}
+
+/* 枠の形。横長・正方形・縦長のどれで頼むかを、いまの枠の形から決める */
+function shapeOf(el) {
+  if (!el) return 'wide';
+  const r = el.getBoundingClientRect();
+  if (!r.width || !r.height) return 'wide';
+  const k = r.width / r.height;
+  return k > 1.25 ? 'wide' : (k < 0.85 ? 'tall' : 'square');
+}
+
+async function askForImage(blockId, prop, prompt, shape) {
+  const ep = imageEndpoint();
+  if (!ep) { flash('絵を作る先が設定されていません'); return; }
+  const b = page().blocks.find((x) => x.id === blockId);
+  if (!b) return;
+  flash('絵を作っています…（20秒ほどかかります）');
+  try {
+    const r = await fetch(ep, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt, shape }),
+    });
+    const out = await r.json().catch(() => ({}));
+    if (!r.ok || !out.images || !out.images.length) {
+      flash(out.error || '絵を作れませんでした');
+      return;
+    }
+    const url = await shrinkDataURL(out.images[0]);
+    setPath(b.props, prop, url);
+    renderEditor(); renderPreview(true); save(`ai:${prop}:${blockId}`);
+    flash(`絵を入れました（約${Math.round(url.length / 1400)}KB）`);
+  } catch (e) {
+    flash('絵を作れませんでした。通信を確かめてもう一度お試しください');
+  }
 }
 
 async function setImage(blockId, prop, file) {

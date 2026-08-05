@@ -782,6 +782,11 @@ function el(p, role, kind, label, prop) {
     out += ' data-mv';
     st.push(`--ox:${n1(Number(mv.x) || 0)}`, `--oy:${n1(Number(mv.y) || 0)}`);
   }
+  /* 大きさも同じく、transform とは別のプロパティ（scale）に書く。
+     translate → rotate → scale の順で組み合わさるので、
+     大きさを変えても、ずらした量は道連れにならない。 */
+  const sc = Number((p.size || {})[role]);
+  if (sc && sc !== 1) { out += ' data-sc'; st.push(`--sc:${Math.round(sc * 1000) / 1000}`); }
   if ((p.off || {})[role]) out += ' data-off';
   if (st.length) out += ` style="${st.join(';')}"`;
   return out;

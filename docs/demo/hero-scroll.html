@@ -117,6 +117,10 @@ p:last-child{margin-bottom:0}
    動かしたヒーローにだけ付けるので、ほかの組みかたには影響しない。 */
 .hero[data-mvon]{container-type:inline-size}
 [data-mv]{translate:calc(var(--ox,0) * 1cqw) calc(var(--oy,0) * 1cqw)}
+/* 大きさ。translate → rotate → scale の順で組み合わさるので、
+   大きくしても、ずらした量は道連れにならない。
+   並びは動かさない（動かすと、隣が押されて型が崩れる）。 */
+[data-sc]{scale:var(--sc,1)}
 /* 消した要素。組みかたごと詰めたいので、場所も空けない */
 [data-off]{display:none}
 .ta-l{text-align:left}

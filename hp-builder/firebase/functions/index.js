@@ -274,6 +274,83 @@ exports.listMessages = onRequest({ region: REGION, maxInstances: 10, cors: false
   }
 });
 
+/* ================================================================
+   ヒーローの絵を作る
+
+     POST /api/image   { prompt, shape }  →  { images: ["data:image/..."] }
+
+   鍵はここにしか置かない。編集画面に埋めると、ツールを手にした人
+   全員がその鍵を読めて、持ち主の請求で他人が絵を作れてしまう。
+   鍵は Secret Manager に入れ、リポジトリにも書き出したHTMLにも出さない。
+
+     firebase functions:secrets:set OPENAI_API_KEY
+
+   費用は「ヒーローの数」ではなく「使う人の数 × 作り直した回数」で
+   効いてくる。だから回線ごとの上限を必ず通す。
+   ================================================================ */
+const { defineSecret } = require('firebase-functions/params');
+const OPENAI_API_KEY = defineSecret('OPENAI_API_KEY');
+
+const IMG_MODEL = 'gpt-image-1';
+const MAX_IMG_PER_DAY = 12;          // 同じ回線から1日に作れる枚数
+const MAX_PROMPT = 900;
+/* 枠の形。ヒーローは横長、まるい写真や商品は正方形、縦組みは縦長 */
+const IMG_SHAPES = { wide: '1536x1024', square: '1024x1024', tall: '1024x1536' };
+
+exports.generateImage = onRequest({
+  region: REGION, maxInstances: 5, cors: false, memory: '512MiB',
+  timeoutSeconds: 120,               // 絵ができるまで10〜30秒かかる。60秒では足りない
+  secrets: [OPENAI_API_KEY],
+}, async (req, res) => {
+  cors(res, req.headers.origin);
+  if (req.method === 'OPTIONS') return res.status(204).end();
+  if (req.method !== 'POST') return res.status(405).json({ error: 'POST でお願いします' });
+
+  try {
+    const key = OPENAI_API_KEY.value();
+    if (!key) return res.status(503).json({ error: 'いまは絵を作れません（鍵が設定されていません）' });
+
+    const prompt = String((req.body || {}).prompt || '').trim().slice(0, MAX_PROMPT);
+    if (prompt.length < 4) return res.status(400).json({ error: 'どんな絵にしたいか、もう少し書いてください' });
+    const size = IMG_SHAPES[(req.body || {}).shape] || IMG_SHAPES.wide;
+
+    /* 上限。作りすぎを止める */
+    const day = new Date().toISOString().slice(0, 10);
+    const qref = db.collection('quota').doc(`img_${day}_${sha(clientIp(req)).slice(0, 32)}`);
+    const okQuota = await db.runTransaction(async (tx) => {
+      const snap = await tx.get(qref);
+      const n = snap.exists ? (snap.data().n || 0) : 0;
+      if (n >= MAX_IMG_PER_DAY) return false;
+      tx.set(qref, { n: n + 1, day, at: FieldValue.serverTimestamp() });
+      return true;
+    });
+    if (!okQuota) {
+      return res.status(429).json({ error: `今日はここまでです（1日${MAX_IMG_PER_DAY}枚まで）。写真を選ぶこともできます` });
+    }
+
+    const r = await fetch('https://api.openai.com/v1/images/generations', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${key}` },
+      body: JSON.stringify({ model: IMG_MODEL, prompt, size, n: 1 }),
+    });
+    if (!r.ok) {
+      /* 相手の言い分をそのまま出さない。鍵や組織の名前が混ざることがある */
+      console.error('image api failed', r.status, (await r.text()).slice(0, 500));
+      return res.status(502).json({ error: '絵を作れませんでした。少し待ってもう一度お試しください' });
+    }
+    const out = await r.json();
+    const images = (out.data || [])
+      .map((d) => (d.b64_json ? `data:image/png;base64,${d.b64_json}` : ''))
+      .filter(Boolean);
+    if (!images.length) return res.status(502).json({ error: '絵を受け取れませんでした' });
+
+    return res.json({ images });
+  } catch (e) {
+    console.error('image failed', e);
+    return res.status(500).json({ error: '絵を作れませんでした。少し待ってもう一度お試しください' });
+  }
+});
+
 /* ---------------- 返す ---------------- */
 exports.serveSite = onRequest({ region: REGION, maxInstances: 10, cors: false, memory: '256MiB' }, async (req, res) => {
   try {

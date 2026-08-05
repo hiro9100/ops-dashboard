@@ -201,6 +201,23 @@ input,select,textarea{font:inherit}
 .el-panel .tb-btn.warn:hover{border-color:var(--danger);color:var(--danger)}
 .offs{display:grid;gap:6px}
 
+/* 絵を作ってもらう欄。たたんでおく——写真を選ぶより先に押されると、
+   そのぶん費用が出る */
+.ai-f{
+  margin-top:10px;border:1px dashed var(--line2);border-radius:var(--r);
+  padding:9px 10px;font-size:11.5px;color:var(--tx2)
+}
+.ai-f > summary{cursor:pointer;list-style:none;font-weight:700;color:var(--tx)}
+.ai-f > summary::-webkit-details-marker{display:none}
+.ai-f > summary::before{content:"▸ "}
+.ai-f[open] > summary{margin-bottom:8px}
+.ai-f[open] > summary::before{content:"▾ "}
+.ai-f textarea{
+  width:100%;background:var(--panel2);color:var(--tx);border:1px solid var(--line2);
+  border-radius:var(--r);padding:8px 9px;font:inherit;font-size:12px;line-height:1.75;resize:vertical
+}
+.ai-f .hint{margin:6px 0 8px}
+
 .el-hint{
   font-size:11.5px;color:var(--tx2);background:#131417;border:1px dashed var(--line);
   border-radius:var(--r);padding:11px 12px;margin:-2px 0 16px;line-height:1.75
