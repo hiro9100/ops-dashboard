@@ -3500,6 +3500,25 @@ function themeVars(t, override) {
   ].join(';');
 }
 
+/* 見本の縮尺は、カードの幅から出す。
+   固定の倍率にすると、カードが広い画面のときに見本だけ小さく残り、
+   右側に死んだ帯ができる。そこへ装飾がはみ出して、汚れて見える
+   （実際そうなった。幅428pxのカードに、見本は320pxしか無かった）。 */
+const GAL_FIT = `<script>(function(){
+  var W = 1300;
+  function fit(){
+    var list = document.querySelectorAll('[data-galfit]');
+    for (var i = 0; i < list.length; i++) {
+      var box = list[i], sc = box.firstElementChild;
+      if (!sc) continue;
+      sc.style.transform = 'scale(' + (box.clientWidth / W).toFixed(4) + ')';
+    }
+  }
+  fit();
+  addEventListener('resize', fit);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(fit);
+})();<\/script>`;
+
 const TPL_GAL_CSS = `
 body{margin:0;background:#0d1016;padding:14px;
   font-family:"Helvetica Neue",Arial,"Hiragino Sans",Meiryo,sans-serif}
@@ -3509,7 +3528,7 @@ body{margin:0;background:#0d1016;padding:14px;
   transition:border-color .15s,transform .15s}
 .tc:hover{border-color:#8b9099}
 .tc-hit{position:absolute;inset:0;z-index:5}
-.tc-prev{height:250px;overflow:hidden;border-bottom:1px solid #2a2f3a}
+.tc-prev{aspect-ratio:16/10;overflow:hidden;border-bottom:1px solid #2a2f3a}
 .tc-scale{width:1300px;transform:scale(.246);transform-origin:top left;pointer-events:none;
   color:var(--c-text);background:var(--c-bg)}
 .tc-meta{padding:12px 14px 15px}
@@ -3537,7 +3556,7 @@ body{margin:0;background:#0d1016;padding:14px;
 .pc:hover{border-color:#8b9099}
 .pc.on{border-color:#fff;box-shadow:0 0 0 1px #fff inset}
 .pc-hit{position:absolute;inset:0;z-index:5}
-.pc-prev{height:208px;overflow:hidden;border-bottom:1px solid #2a2f3a}
+.pc-prev{aspect-ratio:16/10;overflow:hidden;border-bottom:1px solid #2a2f3a}
 .pc-scale{width:1300px;transform:scale(.206);transform-origin:top left;pointer-events:none;
   color:var(--c-text);background:var(--c-bg)}
 .pc-meta{padding:11px 13px 14px}
@@ -3560,14 +3579,15 @@ function currentPaletteKey() {
 }
 
 function renderPalGrid() {
-  /* いまのページの上のほうを、そのまま色だけ変えて見せる */
-  const sample = page().blocks.slice(0, 3)
+  /* いまのページの上のほうを、そのまま色だけ変えて見せる。
+     3つだと、ブロックの短いページで見本の下が余る */
+  const sample = page().blocks.slice(0, 4)
     .map((b) => BLOCKS[b.type].render(b.props)).join('');
   const cur = currentPaletteKey();
 
   const cards = PALETTES.map((pal, i) => `<div class="pc${pal.name === cur ? ' on' : ''}" data-pal="${i}" role="button" tabindex="0">
       <span class="pc-hit"></span>
-      <div class="pc-prev" style="background:${pal.c.bg}">
+      <div class="pc-prev" data-galfit style="background:${pal.c.bg}">
         <div class="pc-scale ${esc(bodyClass())}" style="${themeVars(state.theme, pal.c)}">${sample}</div>
       </div>
       <div class="pc-meta"><b>${esc(pal.name)}</b><small>${esc(pal.desc)}</small>
@@ -3579,7 +3599,7 @@ function renderPalGrid() {
   const f = $('#palFrame');
   f.srcdoc = `<!DOCTYPE html><html lang="ja"><head><meta charset="utf-8">
 <style>${SITE_CSS}\n${PAL_GAL_CSS}</style></head>
-<body><div class="pg">${cards}</div></body></html>`;
+<body><div class="pg">${cards}</div>${GAL_FIT}</body></html>`;
   f.addEventListener('load', () => {
     f.contentDocument.addEventListener('click', (e) => {
       const i = e.target.closest('.pc')?.dataset.pal;
@@ -3601,14 +3621,15 @@ $('#palClose').addEventListener('click', () => closeModal('#palModal'));
 
 function renderTplGrid() {
   const cards = Object.entries(TEMPLATES).map(([k, t]) => {
-    /* 上から3ブロックだけ描いて、そのテンプレートの顔を見せる */
-    const sample = t.blocks.slice(0, 3).map((b) => {
+    /* 上から4ブロックだけ描いて、そのテンプレートの顔を見せる。
+       3つだと、短いテンプレートで見本の下が余る */
+    const sample = t.blocks.slice(0, 4).map((b) => {
       const props = Object.assign(clone(BLOCKS[b.type].defaults), clone(b.props || {}));
       return BLOCKS[b.type].render(props);
     }).join('');
     return `<div class="tc" data-tpl="${k}" role="button" tabindex="0">
       <span class="tc-hit"></span>
-      <div class="tc-prev" style="background:${t.theme.bg}">
+      <div class="tc-prev" data-galfit style="background:${t.theme.bg}">
         <div class="tc-scale tpl-${k}${t.style ? ` sty-${t.style}` : ''}${t.rules ? ' has-rules' : ''}" style="${themeVars(t.theme)}">${sample}</div>
       </div>
       <div class="tc-meta"><b>${esc(t.name)}</b><small>${esc(t.desc)}</small>
@@ -3620,7 +3641,7 @@ function renderTplGrid() {
   const f = $('#tplFrame');
   f.srcdoc = `<!DOCTYPE html><html lang="ja"><head><meta charset="utf-8">
 <style>${SITE_CSS}\n${TPL_GAL_CSS}</style></head>
-<body><div class="tg">${cards}</div></body></html>`;
+<body><div class="tg">${cards}</div>${GAL_FIT}</body></html>`;
   f.addEventListener('load', () => {
     f.contentDocument.addEventListener('click', (e) => {
       const k = e.target.closest('.tc')?.dataset.tpl;
