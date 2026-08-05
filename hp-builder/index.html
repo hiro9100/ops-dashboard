@@ -130,6 +130,10 @@
     <p class="bld-anytime">中身も順番も、あとから。いまは形だけ決めます。</p>
 
     <!-- ① 雰囲気（＝いちばん上）のときだけ出る、写真の欄 -->
+    <div id="bldIndStep" hidden>
+      <div class="ez-grid" id="bldInds"></div>
+    </div>
+
     <div id="bldPhoto" hidden>
       <button class="ez-drop sm" id="bldPick">
         <b>写真</b>
@@ -158,8 +162,6 @@
       </div>
       <details class="adv" id="bizMore">
         <summary>店名と連絡先（あとからでも）</summary>
-        <div class="sec-label">業種</div>
-        <div class="ez-grid" id="bldInds"></div>
         <div class="f"><label>店名・社名</label>
           <input type="text" id="bizName" maxlength="40" placeholder="例：カフェ ヴェルデュール" autocomplete="organization"></div>
         <div class="f"><label>電話番号</label><input type="tel" id="bizTel" placeholder="03-0000-0000"></div>
@@ -322,6 +324,7 @@
 <script src="assets/blocks.js"></script>
 <script src="assets/templates.js"></script>
 <script src="assets/publish-config.js"></script>
+<script src="assets/industry-photos.js"></script>
 <script src="assets/presets.js"></script>
 <script src="assets/easy.js"></script>
 <script src="assets/tone.js"></script>

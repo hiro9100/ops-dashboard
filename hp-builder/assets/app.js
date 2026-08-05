@@ -3643,9 +3643,23 @@ const bldNames = new Map();
 
 /* 型の見本は実物を描く。中身は BLOCKS の初期値そのままなので、
    ここで組んだ差分だけが型ごとの違いになる。 */
+/* 見本を1枚描く。写真の枠が空のままだと、その型が自分の店に合うのかが
+   掴めないので、いま選んでいる業種の仮の絵を入れて見せる。
+   入れるのは見本の中だけ。ページの中身はここでは触らない。 */
 function presetSample(p) {
   const def = BLOCKS[p.type];
-  return def.render(Object.assign(clone(def.defaults), clone(p.props)));
+  const props = Object.assign(clone(def.defaults), clone(p.props));
+  const ind = (state && state.biz && state.biz.ind) || 'company';
+  const b0 = { type: p.type, props };
+  imageSlots(b0).forEach((slot, i) => {
+    if (getPath(props, slot)) return;
+    /* この画面は書き出されないので、URL のまま出してよい。
+       ただし読めると分かるまでは絵を出す。読めないURLを先に出すと、
+       割れた画像の記号が並ぶ（それがいちばん見苦しい）。 */
+    const url = photoReach === true ? industryPhoto(ind, i) : '';
+    setPath(props, slot, url || sampleArt(ind, i));
+  });
+  return def.render(props);
 }
 
 /* ================================================================
@@ -3666,7 +3680,10 @@ function presetSample(p) {
    どの段にも「あとから変えられる」と出しておく。戻せないと思うと、
    人は選べなくなって手が止まる。
    ================================================================ */
-const BLD_STEPS = ['hero', 'needs', 'shape', 'done'];
+/* 業種を先に聞く。ここで配色と仮の写真が決まるので、次の「顔をえらぶ」で
+   自分の店の色と絵が入った見本を見ながら選べる。
+   空の枠を並べても、その型が自分に合うのかは掴めない。 */
+const BLD_STEPS = ['ind', 'hero', 'needs', 'shape', 'done'];
 let bldI = 0;
 let bldPhotos = [];        // ①で選んだ写真
 let bldNeeds = [];         // ②でチェックした使い道のキー
@@ -3676,9 +3693,10 @@ const bldNeedBlock = new Map();   // 使い道 → 置いたブロックのID
 const bldStep = () => BLD_STEPS[bldI];
 
 const BLD_HEAD = {
-  hero: ['① 顔をえらぶ', 'いちばん上に来る一枚。ここでサイトの印象が決まります。'],
-  needs: ['② 中身をえらぶ', 'いま要りそうなものに印を。あとから足せます。'],
-  shape: ['③ かたちをえらぶ', '選んだものを、ひとつずつ。'],
+  ind: ['① 業種をえらぶ', '色と、仮の写真がこれで決まります。あとから変えられます。'],
+  hero: ['② 顔をえらぶ', 'いちばん上に来る一枚。ここでサイトの印象が決まります。'],
+  needs: ['③ 中身をえらぶ', 'いま要りそうなものに印を。あとから足せます。'],
+  shape: ['④ かたちをえらぶ', '選んだものを、ひとつずつ。'],
   done: ['出来ました', 'ここから細部を詰めます。'],
 };
 
@@ -3724,13 +3742,14 @@ function renderBldHead() {
   const q = shapeQueue();
   if (st === 'shape' && q.length) {
     const n = nowNeed();
-    title = `③ ${n.label}の、かたちをえらぶ`;
+    title = `④ ${n.label}の、かたちをえらぶ`;
     sub = `${bldShapeI + 1} / ${q.length}　${n.about}`;
   }
   $('#bldTitle').textContent = title;
   /* スマホでは説明が長いほど見本が見えなくなるので、要点だけにする */
   $('#bldSub').textContent = sub;
 
+  $('#bldIndStep').hidden = st !== 'ind';
   $('#bldPhoto').hidden = st !== 'hero';
   $('#bldNeeds').hidden = st !== 'needs';
   $('#bldFinish').hidden = st !== 'done';
@@ -3751,6 +3770,13 @@ function renderBldHead() {
 function renderBldGallery() {
   const st = bldStep();
   if (st !== 'hero' && st !== 'shape') return;
+  /* 実写が読めるかどうかを、1度だけ確かめる。
+     読めたらもう一度描き直す（1回目は描いた絵で出るので、待たせない） */
+  if (photoReach === null) {
+    const ind0 = (state && state.biz && state.biz.ind) || 'company';
+    const probe = industryPhoto(ind0, 0);
+    if (probe) fetchIndustryPhoto(probe).then((ok) => { if (ok) renderBldGallery(); });
+  }
   const f = $('#bldFrame');
   const list = bldList();
   /* 見本が2〜3枚しかない段では、枠を詰める。
@@ -3896,6 +3922,39 @@ function spreadPhotos() {
       else setPath(b.props, slot, sampleArt(ind, k++));
     });
   });
+  upgradePhotos(ind);
+}
+
+/* 描いた絵を、置いてある実写に差し替える。
+   取り込みは通信なので、待たせずに裏で進める。取りに行けなければ
+   絵のまま——どちらでも、書き出したページは1枚で完結する。 */
+let upgradeRun = 0;
+async function upgradePhotos(ind) {
+  if (photoReach === false || !industryPhoto(ind, 0)) return;
+  const run = ++upgradeRun;
+  const jobs = [];
+  let k = 0;
+  page().blocks.forEach((b) => {
+    imageSlots(b).forEach((slot) => {
+      const cur = getPath(b.props, slot);
+      if (!isSampleArt(cur)) return;          // 人が入れたものは触らない
+      jobs.push({ id: b.id, slot, url: industryPhoto(ind, k++) });
+    });
+  });
+  if (!jobs.length) return;
+
+  let changed = 0;
+  for (const j of jobs) {
+    const data = await fetchIndustryPhoto(j.url);
+    if (run !== upgradeRun) return;           // 業種を選び直された。この回は捨てる
+    if (!data) break;                          // 取りに行けない。以降もあきらめる
+    const b = page().blocks.find((x) => x.id === j.id);
+    if (!b || !isSampleArt(getPath(b.props, j.slot))) continue;
+    borrowedPhotos.add(data);
+    setPath(b.props, j.slot, data);
+    changed += 1;
+  }
+  if (changed) { renderPreview(true); renderBldGallery(); }
 }
 
 function bldUndo() {
@@ -4069,7 +4128,7 @@ $('#bldDone').addEventListener('click', () => bldNext(false));
 
 function bldNext(skipAll) {
   const st = bldStep();
-  if (st === 'hero') { bldI += 1; return refreshBld(); }
+  if (st === 'ind' || st === 'hero') { bldI += 1; return refreshBld(); }
   if (st === 'needs') {
     applyNeeds();
     bldShapeI = 0;

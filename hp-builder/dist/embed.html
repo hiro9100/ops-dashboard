@@ -1064,6 +1064,10 @@ ${textFillCSS(usedFills(state))}
     <p class="bld-anytime">中身も順番も、あとから。いまは形だけ決めます。</p>
 
     <!-- ① 雰囲気（＝いちばん上）のときだけ出る、写真の欄 -->
+    <div id="bldIndStep" hidden>
+      <div class="ez-grid" id="bldInds"></div>
+    </div>
+
     <div id="bldPhoto" hidden>
       <button class="ez-drop sm" id="bldPick">
         <b>写真</b>
@@ -1092,8 +1096,6 @@ ${textFillCSS(usedFills(state))}
       </div>
       <details class="adv" id="bizMore">
         <summary>店名と連絡先（あとからでも）</summary>
-        <div class="sec-label">業種</div>
-        <div class="ez-grid" id="bldInds"></div>
         <div class="f"><label>店名・社名</label>
           <input type="text" id="bizName" maxlength="40" placeholder="例：カフェ ヴェルデュール" autocomplete="organization"></div>
         <div class="f"><label>電話番号</label><input type="tel" id="bizTel" placeholder="03-0000-0000"></div>
@@ -5517,89 +5519,121 @@ function makeZip(files) {
    そこで手が止まる。だから写真を入れなくても、はじめから
    それらしい絵が入っている状態にする。
 
+   顔（ヒーロー）を選ぶときも、枠が空のままだと、その型が自分の店に
+   合うのかが掴めない。
+
    本物の写真は持たない。1枚でもファイルに焼き込むと重くなるうえ、
-   どこかで見た写真が並ぶことになる。代わりに、業種ごとの色と形で
-   その場で描く。1枚1KB前後で、拡大しても崩れない。
+   どこかで見た写真が並ぶことになる。
+
+   代わりに「ピントを外した写真」を描く。
+   輪郭のある絵（カウンター、椅子、皿……）を線で描こうとすると、
+   縮めたときに必ず絵記号に見える。ぼかしてしまえば、残るのは
+   色・明るさ・光の位置だけになり、それは実写と見分けがつかない。
+   小さく置いても、ヒーローいっぱいに敷いても成立する。
+
+   1枚1〜2KB。読み込むものは増えない（file:// でも同じ絵が出る）。
 
    あくまで仮なので、編集画面では「あとで自分の写真に差し替える」と
    分かるようにしておく（sampleArt で作った絵かどうかは、
    データURLの中の目印 hp-sample で見分けられる）。
    ================================================================ */
 
-/* 業種ごとの色と形。
-   色は3つ（地・中間・締め）。どれも彩度を抑えて、上に文字を置いても
-   読める明るさにしてある。motif は絵の「らしさ」を作る形。 */
+/* 業種ごとの光の設計。
+     bg    地の色（上／下）。時間帯と、その場所の明るさ
+     glow  灯りの色。ここが「その店らしさ」のほとんどを決める
+     lamps 灯りの位置と大きさ [x, y, 半径, 濃さ]（1200×800 の中で）
+     tint  奥ゆきを作る、空気の色
+     dark  まわりの落ち込み。暗い店ほど強く
+     c     配色を寄せるときに使う3色（地・中間・締め） */
 const ART = {
-  cafe:       { c: ['#efe4d6', '#d6bfa4', '#6b4f3a'], motif: 'circles' },
-  restaurant: { c: ['#e8e6dd', '#b9bda6', '#3f4a3a'], motif: 'arcs' },
-  salon:      { c: ['#f2e7e6', '#dcc3c4', '#7a5b60'], motif: 'waves' },
-  clinic:     { c: ['#e6eef2', '#bcd3de', '#3f5f70'], motif: 'grid' },
-  builder:    { c: ['#e7e5e2', '#c0b8ae', '#4a453f'], motif: 'beams' },
-  school:     { c: ['#eeeade', '#cfd3bb', '#4f5a44'], motif: 'dots' },
-  shop:       { c: ['#eeecea', '#cfc9c2', '#4b463f'], motif: 'blocks' },
-  gym:        { c: ['#dfe3e6', '#a8b2ba', '#2f3940'], motif: 'beams' },
-  office:     { c: ['#e7eaee', '#b9c1cd', '#39424f'], motif: 'grid' },
-  company:    { c: ['#e9ecef', '#c2cad3', '#3d4753'], motif: 'waves' },
+  /* 暗い店内に、カウンターの上だけ温かい灯り */
+  restaurant: { bg: ['#2a1c12', '#0d0908'], glow: '#ffb765', tint: '#3a2415', dark: .62,
+    lamps: [[250, 300, 300, .5], [560, 250, 210, .38], [880, 340, 260, .3], [420, 640, 420, .22]],
+    c: ['#f0e7dc', '#c9a06a', '#3a2415'] },
+  /* 窓から入る昼の光。木と紙の色 */
+  cafe: { bg: ['#f3e7d6', '#c8ab8b'], glow: '#fff4de', tint: '#e5cba8', dark: .3,
+    lamps: [[880, 200, 420, .75], [300, 420, 300, .3], [620, 700, 380, .18]],
+    c: ['#efe4d6', '#d6bfa4', '#6b4f3a'] },
+  /* やわらかい白。鏡と照明の反射 */
+  salon: { bg: ['#f6ecea', '#d3b9ba'], glow: '#ffffff', tint: '#e9d3d2', dark: .26,
+    lamps: [[300, 240, 340, .6], [820, 380, 300, .45], [560, 720, 420, .2]],
+    c: ['#f2e7e6', '#dcc3c4', '#7a5b60'] },
+  /* 明るく均一。窓の白 */
+  clinic: { bg: ['#f2f7fa', '#c4d8e2'], glow: '#ffffff', tint: '#dceaf1', dark: .2,
+    lamps: [[760, 220, 460, .7], [260, 520, 340, .3]],
+    c: ['#e6eef2', '#bcd3de', '#3f5f70'] },
+  /* 現場の光。粉じんの中に差す、強い側光 */
+  builder: { bg: ['#4a443d', '#161311'], glow: '#ffd9a0', tint: '#57493a', dark: .58,
+    lamps: [[940, 180, 380, .55], [420, 420, 300, .26], [180, 700, 340, .2]],
+    c: ['#e7e5e2', '#c0b8ae', '#4a453f'] },
+  /* 教室の窓。午後の白い光 */
+  school: { bg: ['#f0ead9', '#bdbfa2'], glow: '#fffdf2', tint: '#ded8bd', dark: .26,
+    lamps: [[840, 240, 420, .62], [320, 500, 320, .28]],
+    c: ['#eeeade', '#cfd3bb', '#4f5a44'] },
+  /* 什器のスポット。落ち着いた地に、点の灯り */
+  shop: { bg: ['#e8e4de', '#a09788'], glow: '#fff1d8', tint: '#d6cec0', dark: .34,
+    lamps: [[300, 220, 260, .55], [640, 300, 220, .45], [960, 240, 240, .4], [520, 680, 400, .2]],
+    c: ['#eeecea', '#cfc9c2', '#4b463f'] },
+  /* 暗い床に、冷たいふちの光 */
+  gym: { bg: ['#2b3238', '#0c0f12'], glow: '#bfe3ff', tint: '#1e2a33', dark: .6,
+    lamps: [[220, 260, 320, .4], [900, 420, 360, .34], [560, 760, 460, .2]],
+    c: ['#dfe3e6', '#a8b2ba', '#2f3940'] },
+  /* ブラインドごしの朝。冷たい灰 */
+  office: { bg: ['#eef1f5', '#aab3c0'], glow: '#ffffff', tint: '#d5dbe4', dark: .28,
+    lamps: [[880, 200, 420, .6], [280, 460, 300, .26]],
+    c: ['#e7eaee', '#b9c1cd', '#39424f'] },
+  /* 曇りの日のガラス。いちばん無難な地 */
+  company: { bg: ['#eef0f3', '#b0b8c3'], glow: '#ffffff', tint: '#d3d9e1', dark: .28,
+    lamps: [[760, 240, 420, .55], [320, 520, 340, .26]],
+    c: ['#e9ecef', '#c2cad3', '#3d4753'] },
 };
 
-/* 形ごとの中身。i を変えると少しずつ違う絵になるので、
-   同じページに並べても同じ絵の繰り返しにならない。 */
-function artMotif(kind, c, i) {
-  const o = (n) => (i * 37 + n * 53) % 100;   // 並びをずらすための、決まった数
-  const M = {
-    circles: () => `
-      <circle cx="${240 + o(1) * 3}" cy="${300 + o(2)}" r="${150 + o(3)}" fill="${c[1]}" opacity=".55"/>
-      <circle cx="${820 - o(4) * 2}" cy="${520 - o(5)}" r="${190 + o(6)}" fill="${c[2]}" opacity=".18"/>
-      <circle cx="${560 + o(7)}" cy="${230 + o(8)}" r="90" fill="${c[2]}" opacity=".12"/>`,
-    arcs: () => `
-      <path d="M0 ${560 + o(1)} Q 300 ${340 + o(2)} 600 ${520 + o(3)} T 1200 ${420 + o(4)} V800 H0Z" fill="${c[1]}" opacity=".6"/>
-      <path d="M0 ${680 + o(5)} Q 360 ${500 + o(6)} 720 ${660 + o(7)} T 1200 ${600}V800 H0Z" fill="${c[2]}" opacity=".22"/>`,
-    waves: () => `
-      <path d="M0 ${420 + o(1)} C 250 ${300 + o(2)} 420 ${560 + o(3)} 700 ${430 + o(4)} S 1050 ${300 + o(5)} 1200 ${380}V800 H0Z" fill="${c[1]}" opacity=".55"/>
-      <path d="M0 ${600 + o(6)} C 300 ${500 + o(7)} 500 ${700} 800 ${590 + o(8)} S 1100 ${520} 1200 ${560}V800 H0Z" fill="${c[2]}" opacity=".2"/>`,
-    grid: () => `
-      <g stroke="${c[2]}" stroke-width="1.5" opacity=".22">
-        ${[0, 1, 2, 3, 4, 5].map((n) => `<path d="M${140 + n * 180 + o(n) * 0.4} 0V800"/>`).join('')}
-        ${[0, 1, 2, 3].map((n) => `<path d="M0 ${150 + n * 180}H1200"/>`).join('')}
-      </g>
-      <rect x="${120 + o(1) * 4}" y="${180 + o(2) * 2}" width="360" height="360" fill="${c[1]}" opacity=".6"/>`,
-    beams: () => `
-      <g fill="${c[1]}" opacity=".6">
-        ${[0, 1, 2, 3].map((n) => {
-    const x = -200 + n * 320 + o(n) * 2;
-    return `<path d="M${x} 800 L${x + 210} 0 h140 L${x + 350} 800Z"/>`;
-  }).join('')}
-      </g>
-      <path d="M0 ${600 + o(3)}H1200V800H0Z" fill="${c[2]}" opacity=".18"/>`,
-    dots: () => `<g fill="${c[2]}" opacity=".22">
-      ${[0, 1, 2, 3, 4, 5, 6, 7].map((n) => {
-    const x = 110 + (n % 4) * 300 + o(n);
-    const y = 220 + Math.floor(n / 4) * 300 + o(n + 3);
-    return `<circle cx="${x}" cy="${y}" r="${46 + (n % 3) * 22}"/>`;
-  }).join('')}</g>
-      <circle cx="${900 - o(2) * 2}" cy="${260 + o(1)}" r="${170}" fill="${c[1]}" opacity=".6"/>`,
-    blocks: () => `
-      <rect x="${90 + o(1) * 3}" y="${140 + o(2)}" width="420" height="300" fill="${c[1]}" opacity=".65"/>
-      <rect x="${560 + o(3) * 2}" y="${330 + o(4)}" width="520" height="360" fill="${c[2]}" opacity=".18"/>
-      <rect x="${230 + o(5)}" y="${500 + o(6)}" width="260" height="220" fill="${c[2]}" opacity=".14"/>`,
-  };
-  return (M[kind] || M.waves)();
-}
+/* 同じ業種でも、並べたときに同じ絵にならないように少しずらす。
+   出す数は決まっているので、乱数ではなく番号から作る
+   （毎回変わると、編集画面と書き出したページで別物になる）。 */
+const artShift = (i, n) => ((i * 47 + n * 71) % 100) - 50;
+
+/* 灯り1つ。ふちへ向けてすっと消さないと、ただの円に見える */
+const artLamp = (id, c, o) =>
+  `<radialGradient id="${id}"><stop offset="0" stop-color="${c}" stop-opacity="${o}"/>`
+  + `<stop offset=".45" stop-color="${c}" stop-opacity="${(o * 0.42).toFixed(2)}"/>`
+  + `<stop offset="1" stop-color="${c}" stop-opacity="0"/></radialGradient>`;
 
 /* 業種キー（と、同じ業種の中での通し番号）から仮の絵を1枚作る。
    返すのは data URL なので、そのまま img の src に入る。 */
 function sampleArt(key, i = 0) {
   const a = ART[key] || ART.company;
-  const c = a.c;
-  const g = `sa${i}`;
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" width="1200" height="800">
-<title>hp-sample</title>
-<defs><linearGradient id="${g}" x1="0" y1="0" x2="1" y2="1">
-<stop offset="0" stop-color="${c[0]}"/><stop offset="1" stop-color="${c[1]}"/></linearGradient></defs>
-<rect width="1200" height="800" fill="url(#${g})"/>
-${artMotif(a.motif, c, i)}
-</svg>`;
-  return `data:image/svg+xml,${encodeURIComponent(svg.replace(/\n\s*/g, ''))}`;
+  const p = `s${i}`;
+  const lamps = a.lamps.map((l, n) => ({
+    x: Math.round(l[0] + artShift(i, n) * 1.6),
+    y: Math.round(l[1] + artShift(i, n + 3)),
+    r: Math.round(l[2] + artShift(i, n + 5) * 0.8),
+    o: l[3],
+  }));
+
+  const svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" width="1200" height="800">'
+    + '<title>hp-sample</title><defs>'
+    + `<linearGradient id="${p}b" x1="0" y1="0" x2=".3" y2="1">`
+    + `<stop offset="0" stop-color="${a.bg[0]}"/><stop offset="1" stop-color="${a.bg[1]}"/></linearGradient>`
+    + lamps.map((l, n) => artLamp(`${p}l${n}`, a.glow, l.o)).join('')
+    + `<radialGradient id="${p}v" cx=".5" cy=".46" r=".78">`
+    + '<stop offset=".45" stop-color="#000" stop-opacity="0"/>'
+    + `<stop offset="1" stop-color="#000" stop-opacity="${a.dark}"/></radialGradient>`
+    /* ぼかしはここでまとめてかける。1つ1つを柔らかく描くより、
+       描いてから一度に外したほうが、写真の被写界深度に近くなる */
+    + `<filter id="${p}f" x="-14%" y="-14%" width="128%" height="128%">`
+    + '<feGaussianBlur stdDeviation="34"/></filter>'
+    + '</defs>'
+    + `<rect width="1200" height="800" fill="url(#${p}b)"/>`
+    + `<g filter="url(#${p}f)">`
+    + `<ellipse cx="${600 + artShift(i, 1)}" cy="${520 + artShift(i, 2)}" rx="760" ry="300"`
+    + ` fill="${a.tint}" opacity=".55"/>`
+    + lamps.map((l, n) => `<ellipse cx="${l.x}" cy="${l.y}" rx="${l.r}"`
+      + ` ry="${Math.round(l.r * 0.82)}" fill="url(#${p}l${n})"/>`).join('')
+    + '</g>'
+    + `<rect width="1200" height="800" fill="url(#${p}v)"/>`
+    + '</svg>';
+  return `data:image/svg+xml,${encodeURIComponent(svg)}`;
 }
 
 /* この絵が仮のものかどうか。
@@ -9718,6 +9752,97 @@ const PUBLISH = {
   /* 公開されたページのアドレスの頭。独自ドメインを足したら、ここも足す */
   siteBase: 'https://bildy-4e45e.web.app/s/',
 };
+
+</script>
+<script>
+/* ===== assets/industry-photos.js ===== */
+/* ================================================================
+   業種ごとの、実際の写真
+
+   顔（ヒーロー）を選ぶとき、写真枠が空だと、その型が自分の店に
+   合うのかが掴めない。かといって描いた絵では、写真の型の良し悪しは
+   判断できない。だから実写を出す。
+
+   ただし本体には焼き込まない。
+   1枚 200KB として10業種ぶんで2MB。ツールは1枚のHTMLで、開く前に
+   全部読み込むので、そのぶんまるまる起動が遅くなる。
+
+   代わりに、置いてある場所から必要になったときだけ読む。
+
+     ・顔の一覧      … URL のまま出す（この画面は書き出されない）
+     ・選んだあと    … 裏で1枚ずつ取り込んで、写真と同じように埋め込む
+     ・取りに行けない … 描いた絵（sampleArt）のまま。file:// でも壊れない
+
+   書き出したページに URL は残らない。取り込みが終わっていれば実写が、
+   終わっていなければ描いた絵が、どちらも中に入った状態で出る。
+   外のサーバーに頼るページにはしない。
+   ================================================================ */
+
+/* 置き場所。公開の入れ物と同じところに置く。
+   file:// から開いた場合もここを見に行く（通信できなければ描いた絵に戻る）。
+   読み込み順に左右されないよう、その場で調べる（PUBLISH はこのあとに来る）。 */
+const photoBase = () => ((typeof PUBLISH === 'object' && PUBLISH.siteBase)
+  ? PUBLISH.siteBase.replace(/\/s\/$/, '/art/')
+  : '');
+
+/* 業種 → 置いてある写真。順番に使う。
+   1業種に何枚あってもよい（足りなければ先頭から繰り返す）。 */
+const INDUSTRY_PHOTOS = {
+  restaurant: ['restaurant-1.jpg', 'restaurant-2.jpg', 'restaurant-3.jpg'],
+  cafe: ['cafe-1.jpg', 'cafe-2.jpg', 'cafe-3.jpg'],
+  salon: ['salon-1.jpg', 'salon-2.jpg', 'salon-3.jpg'],
+  clinic: ['clinic-1.jpg', 'clinic-2.jpg', 'clinic-3.jpg'],
+  builder: ['builder-1.jpg', 'builder-2.jpg', 'builder-3.jpg'],
+  school: ['school-1.jpg', 'school-2.jpg', 'school-3.jpg'],
+  shop: ['shop-1.jpg', 'shop-2.jpg', 'shop-3.jpg'],
+  gym: ['gym-1.jpg', 'gym-2.jpg', 'gym-3.jpg'],
+  office: ['office-1.jpg', 'office-2.jpg', 'office-3.jpg'],
+  company: ['company-1.jpg', 'company-2.jpg', 'company-3.jpg'],
+};
+
+/* その業種の i 枚目の URL。置き場所が決まっていなければ空 */
+function industryPhoto(key, i = 0) {
+  const list = INDUSTRY_PHOTOS[key] || INDUSTRY_PHOTOS.company;
+  const base = photoBase();
+  if (!base || !list || !list.length) return '';
+  return base + list[i % list.length];
+}
+
+/* 取りに行けるかどうかは、実際に読んでみるまで分からない。
+   1度でも失敗したら、そのあとは試さない（毎回待たされるほうが困る）。 */
+let photoReach = null;      // null=まだ / true=読める / false=読めない
+const photoCache = new Map();
+
+/* 写真1枚を、アップロードした写真とまったく同じ形（data URL）にして返す。
+   ここを通しておけば、書き出したページは1枚で完結したままになる。 */
+async function fetchIndustryPhoto(url) {
+  if (!url || photoReach === false) return '';
+  if (photoCache.has(url)) return photoCache.get(url);
+  try {
+    const r = await fetch(url, { mode: 'cors', cache: 'force-cache' });
+    if (!r.ok) throw new Error(String(r.status));
+    const blob = await r.blob();
+    if (!/^image\//.test(blob.type)) throw new Error('not an image');
+    const out = await new Promise((res, rej) => {
+      const fr = new FileReader();
+      fr.onload = () => res(String(fr.result));
+      fr.onerror = rej;
+      fr.readAsDataURL(blob);
+    });
+    photoReach = true;
+    photoCache.set(url, out);
+    return out;
+  } catch (e) {
+    photoReach = false;    // 以降は描いた絵で通す
+    return '';
+  }
+}
+
+/* この写真が「まだ自分のものに替えていない」ものかどうか。
+   描いた絵（hp-sample）と同じ扱いにしたいので、取り込んだものにも印を持たせる。
+   data URL そのものには印を書けないので、入れた場所を覚えておく。 */
+const borrowedPhotos = new Set();
+const isBorrowedPhoto = (v) => typeof v === 'string' && borrowedPhotos.has(v);
 
 </script>
 <script>
@@ -14261,9 +14386,23 @@ const bldNames = new Map();
 
 /* 型の見本は実物を描く。中身は BLOCKS の初期値そのままなので、
    ここで組んだ差分だけが型ごとの違いになる。 */
+/* 見本を1枚描く。写真の枠が空のままだと、その型が自分の店に合うのかが
+   掴めないので、いま選んでいる業種の仮の絵を入れて見せる。
+   入れるのは見本の中だけ。ページの中身はここでは触らない。 */
 function presetSample(p) {
   const def = BLOCKS[p.type];
-  return def.render(Object.assign(clone(def.defaults), clone(p.props)));
+  const props = Object.assign(clone(def.defaults), clone(p.props));
+  const ind = (state && state.biz && state.biz.ind) || 'company';
+  const b0 = { type: p.type, props };
+  imageSlots(b0).forEach((slot, i) => {
+    if (getPath(props, slot)) return;
+    /* この画面は書き出されないので、URL のまま出してよい。
+       ただし読めると分かるまでは絵を出す。読めないURLを先に出すと、
+       割れた画像の記号が並ぶ（それがいちばん見苦しい）。 */
+    const url = photoReach === true ? industryPhoto(ind, i) : '';
+    setPath(props, slot, url || sampleArt(ind, i));
+  });
+  return def.render(props);
 }
 
 /* ================================================================
@@ -14284,7 +14423,10 @@ function presetSample(p) {
    どの段にも「あとから変えられる」と出しておく。戻せないと思うと、
    人は選べなくなって手が止まる。
    ================================================================ */
-const BLD_STEPS = ['hero', 'needs', 'shape', 'done'];
+/* 業種を先に聞く。ここで配色と仮の写真が決まるので、次の「顔をえらぶ」で
+   自分の店の色と絵が入った見本を見ながら選べる。
+   空の枠を並べても、その型が自分に合うのかは掴めない。 */
+const BLD_STEPS = ['ind', 'hero', 'needs', 'shape', 'done'];
 let bldI = 0;
 let bldPhotos = [];        // ①で選んだ写真
 let bldNeeds = [];         // ②でチェックした使い道のキー
@@ -14294,9 +14436,10 @@ const bldNeedBlock = new Map();   // 使い道 → 置いたブロックのID
 const bldStep = () => BLD_STEPS[bldI];
 
 const BLD_HEAD = {
-  hero: ['① 顔をえらぶ', 'いちばん上に来る一枚。ここでサイトの印象が決まります。'],
-  needs: ['② 中身をえらぶ', 'いま要りそうなものに印を。あとから足せます。'],
-  shape: ['③ かたちをえらぶ', '選んだものを、ひとつずつ。'],
+  ind: ['① 業種をえらぶ', '色と、仮の写真がこれで決まります。あとから変えられます。'],
+  hero: ['② 顔をえらぶ', 'いちばん上に来る一枚。ここでサイトの印象が決まります。'],
+  needs: ['③ 中身をえらぶ', 'いま要りそうなものに印を。あとから足せます。'],
+  shape: ['④ かたちをえらぶ', '選んだものを、ひとつずつ。'],
   done: ['出来ました', 'ここから細部を詰めます。'],
 };
 
@@ -14342,13 +14485,14 @@ function renderBldHead() {
   const q = shapeQueue();
   if (st === 'shape' && q.length) {
     const n = nowNeed();
-    title = `③ ${n.label}の、かたちをえらぶ`;
+    title = `④ ${n.label}の、かたちをえらぶ`;
     sub = `${bldShapeI + 1} / ${q.length}　${n.about}`;
   }
   $('#bldTitle').textContent = title;
   /* スマホでは説明が長いほど見本が見えなくなるので、要点だけにする */
   $('#bldSub').textContent = sub;
 
+  $('#bldIndStep').hidden = st !== 'ind';
   $('#bldPhoto').hidden = st !== 'hero';
   $('#bldNeeds').hidden = st !== 'needs';
   $('#bldFinish').hidden = st !== 'done';
@@ -14369,6 +14513,13 @@ function renderBldHead() {
 function renderBldGallery() {
   const st = bldStep();
   if (st !== 'hero' && st !== 'shape') return;
+  /* 実写が読めるかどうかを、1度だけ確かめる。
+     読めたらもう一度描き直す（1回目は描いた絵で出るので、待たせない） */
+  if (photoReach === null) {
+    const ind0 = (state && state.biz && state.biz.ind) || 'company';
+    const probe = industryPhoto(ind0, 0);
+    if (probe) fetchIndustryPhoto(probe).then((ok) => { if (ok) renderBldGallery(); });
+  }
   const f = $('#bldFrame');
   const list = bldList();
   /* 見本が2〜3枚しかない段では、枠を詰める。
@@ -14514,6 +14665,39 @@ function spreadPhotos() {
       else setPath(b.props, slot, sampleArt(ind, k++));
     });
   });
+  upgradePhotos(ind);
+}
+
+/* 描いた絵を、置いてある実写に差し替える。
+   取り込みは通信なので、待たせずに裏で進める。取りに行けなければ
+   絵のまま——どちらでも、書き出したページは1枚で完結する。 */
+let upgradeRun = 0;
+async function upgradePhotos(ind) {
+  if (photoReach === false || !industryPhoto(ind, 0)) return;
+  const run = ++upgradeRun;
+  const jobs = [];
+  let k = 0;
+  page().blocks.forEach((b) => {
+    imageSlots(b).forEach((slot) => {
+      const cur = getPath(b.props, slot);
+      if (!isSampleArt(cur)) return;          // 人が入れたものは触らない
+      jobs.push({ id: b.id, slot, url: industryPhoto(ind, k++) });
+    });
+  });
+  if (!jobs.length) return;
+
+  let changed = 0;
+  for (const j of jobs) {
+    const data = await fetchIndustryPhoto(j.url);
+    if (run !== upgradeRun) return;           // 業種を選び直された。この回は捨てる
+    if (!data) break;                          // 取りに行けない。以降もあきらめる
+    const b = page().blocks.find((x) => x.id === j.id);
+    if (!b || !isSampleArt(getPath(b.props, j.slot))) continue;
+    borrowedPhotos.add(data);
+    setPath(b.props, j.slot, data);
+    changed += 1;
+  }
+  if (changed) { renderPreview(true); renderBldGallery(); }
 }
 
 function bldUndo() {
@@ -14687,7 +14871,7 @@ $('#bldDone').addEventListener('click', () => bldNext(false));
 
 function bldNext(skipAll) {
   const st = bldStep();
-  if (st === 'hero') { bldI += 1; return refreshBld(); }
+  if (st === 'ind' || st === 'hero') { bldI += 1; return refreshBld(); }
   if (st === 'needs') {
     applyNeeds();
     bldShapeI = 0;

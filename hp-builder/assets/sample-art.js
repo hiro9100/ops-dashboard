@@ -6,89 +6,121 @@
    そこで手が止まる。だから写真を入れなくても、はじめから
    それらしい絵が入っている状態にする。
 
+   顔（ヒーロー）を選ぶときも、枠が空のままだと、その型が自分の店に
+   合うのかが掴めない。
+
    本物の写真は持たない。1枚でもファイルに焼き込むと重くなるうえ、
-   どこかで見た写真が並ぶことになる。代わりに、業種ごとの色と形で
-   その場で描く。1枚1KB前後で、拡大しても崩れない。
+   どこかで見た写真が並ぶことになる。
+
+   代わりに「ピントを外した写真」を描く。
+   輪郭のある絵（カウンター、椅子、皿……）を線で描こうとすると、
+   縮めたときに必ず絵記号に見える。ぼかしてしまえば、残るのは
+   色・明るさ・光の位置だけになり、それは実写と見分けがつかない。
+   小さく置いても、ヒーローいっぱいに敷いても成立する。
+
+   1枚1〜2KB。読み込むものは増えない（file:// でも同じ絵が出る）。
 
    あくまで仮なので、編集画面では「あとで自分の写真に差し替える」と
    分かるようにしておく（sampleArt で作った絵かどうかは、
    データURLの中の目印 hp-sample で見分けられる）。
    ================================================================ */
 
-/* 業種ごとの色と形。
-   色は3つ（地・中間・締め）。どれも彩度を抑えて、上に文字を置いても
-   読める明るさにしてある。motif は絵の「らしさ」を作る形。 */
+/* 業種ごとの光の設計。
+     bg    地の色（上／下）。時間帯と、その場所の明るさ
+     glow  灯りの色。ここが「その店らしさ」のほとんどを決める
+     lamps 灯りの位置と大きさ [x, y, 半径, 濃さ]（1200×800 の中で）
+     tint  奥ゆきを作る、空気の色
+     dark  まわりの落ち込み。暗い店ほど強く
+     c     配色を寄せるときに使う3色（地・中間・締め） */
 const ART = {
-  cafe:       { c: ['#efe4d6', '#d6bfa4', '#6b4f3a'], motif: 'circles' },
-  restaurant: { c: ['#e8e6dd', '#b9bda6', '#3f4a3a'], motif: 'arcs' },
-  salon:      { c: ['#f2e7e6', '#dcc3c4', '#7a5b60'], motif: 'waves' },
-  clinic:     { c: ['#e6eef2', '#bcd3de', '#3f5f70'], motif: 'grid' },
-  builder:    { c: ['#e7e5e2', '#c0b8ae', '#4a453f'], motif: 'beams' },
-  school:     { c: ['#eeeade', '#cfd3bb', '#4f5a44'], motif: 'dots' },
-  shop:       { c: ['#eeecea', '#cfc9c2', '#4b463f'], motif: 'blocks' },
-  gym:        { c: ['#dfe3e6', '#a8b2ba', '#2f3940'], motif: 'beams' },
-  office:     { c: ['#e7eaee', '#b9c1cd', '#39424f'], motif: 'grid' },
-  company:    { c: ['#e9ecef', '#c2cad3', '#3d4753'], motif: 'waves' },
+  /* 暗い店内に、カウンターの上だけ温かい灯り */
+  restaurant: { bg: ['#2a1c12', '#0d0908'], glow: '#ffb765', tint: '#3a2415', dark: .62,
+    lamps: [[250, 300, 300, .5], [560, 250, 210, .38], [880, 340, 260, .3], [420, 640, 420, .22]],
+    c: ['#f0e7dc', '#c9a06a', '#3a2415'] },
+  /* 窓から入る昼の光。木と紙の色 */
+  cafe: { bg: ['#f3e7d6', '#c8ab8b'], glow: '#fff4de', tint: '#e5cba8', dark: .3,
+    lamps: [[880, 200, 420, .75], [300, 420, 300, .3], [620, 700, 380, .18]],
+    c: ['#efe4d6', '#d6bfa4', '#6b4f3a'] },
+  /* やわらかい白。鏡と照明の反射 */
+  salon: { bg: ['#f6ecea', '#d3b9ba'], glow: '#ffffff', tint: '#e9d3d2', dark: .26,
+    lamps: [[300, 240, 340, .6], [820, 380, 300, .45], [560, 720, 420, .2]],
+    c: ['#f2e7e6', '#dcc3c4', '#7a5b60'] },
+  /* 明るく均一。窓の白 */
+  clinic: { bg: ['#f2f7fa', '#c4d8e2'], glow: '#ffffff', tint: '#dceaf1', dark: .2,
+    lamps: [[760, 220, 460, .7], [260, 520, 340, .3]],
+    c: ['#e6eef2', '#bcd3de', '#3f5f70'] },
+  /* 現場の光。粉じんの中に差す、強い側光 */
+  builder: { bg: ['#4a443d', '#161311'], glow: '#ffd9a0', tint: '#57493a', dark: .58,
+    lamps: [[940, 180, 380, .55], [420, 420, 300, .26], [180, 700, 340, .2]],
+    c: ['#e7e5e2', '#c0b8ae', '#4a453f'] },
+  /* 教室の窓。午後の白い光 */
+  school: { bg: ['#f0ead9', '#bdbfa2'], glow: '#fffdf2', tint: '#ded8bd', dark: .26,
+    lamps: [[840, 240, 420, .62], [320, 500, 320, .28]],
+    c: ['#eeeade', '#cfd3bb', '#4f5a44'] },
+  /* 什器のスポット。落ち着いた地に、点の灯り */
+  shop: { bg: ['#e8e4de', '#a09788'], glow: '#fff1d8', tint: '#d6cec0', dark: .34,
+    lamps: [[300, 220, 260, .55], [640, 300, 220, .45], [960, 240, 240, .4], [520, 680, 400, .2]],
+    c: ['#eeecea', '#cfc9c2', '#4b463f'] },
+  /* 暗い床に、冷たいふちの光 */
+  gym: { bg: ['#2b3238', '#0c0f12'], glow: '#bfe3ff', tint: '#1e2a33', dark: .6,
+    lamps: [[220, 260, 320, .4], [900, 420, 360, .34], [560, 760, 460, .2]],
+    c: ['#dfe3e6', '#a8b2ba', '#2f3940'] },
+  /* ブラインドごしの朝。冷たい灰 */
+  office: { bg: ['#eef1f5', '#aab3c0'], glow: '#ffffff', tint: '#d5dbe4', dark: .28,
+    lamps: [[880, 200, 420, .6], [280, 460, 300, .26]],
+    c: ['#e7eaee', '#b9c1cd', '#39424f'] },
+  /* 曇りの日のガラス。いちばん無難な地 */
+  company: { bg: ['#eef0f3', '#b0b8c3'], glow: '#ffffff', tint: '#d3d9e1', dark: .28,
+    lamps: [[760, 240, 420, .55], [320, 520, 340, .26]],
+    c: ['#e9ecef', '#c2cad3', '#3d4753'] },
 };
 
-/* 形ごとの中身。i を変えると少しずつ違う絵になるので、
-   同じページに並べても同じ絵の繰り返しにならない。 */
-function artMotif(kind, c, i) {
-  const o = (n) => (i * 37 + n * 53) % 100;   // 並びをずらすための、決まった数
-  const M = {
-    circles: () => `
-      <circle cx="${240 + o(1) * 3}" cy="${300 + o(2)}" r="${150 + o(3)}" fill="${c[1]}" opacity=".55"/>
-      <circle cx="${820 - o(4) * 2}" cy="${520 - o(5)}" r="${190 + o(6)}" fill="${c[2]}" opacity=".18"/>
-      <circle cx="${560 + o(7)}" cy="${230 + o(8)}" r="90" fill="${c[2]}" opacity=".12"/>`,
-    arcs: () => `
-      <path d="M0 ${560 + o(1)} Q 300 ${340 + o(2)} 600 ${520 + o(3)} T 1200 ${420 + o(4)} V800 H0Z" fill="${c[1]}" opacity=".6"/>
-      <path d="M0 ${680 + o(5)} Q 360 ${500 + o(6)} 720 ${660 + o(7)} T 1200 ${600}V800 H0Z" fill="${c[2]}" opacity=".22"/>`,
-    waves: () => `
-      <path d="M0 ${420 + o(1)} C 250 ${300 + o(2)} 420 ${560 + o(3)} 700 ${430 + o(4)} S 1050 ${300 + o(5)} 1200 ${380}V800 H0Z" fill="${c[1]}" opacity=".55"/>
-      <path d="M0 ${600 + o(6)} C 300 ${500 + o(7)} 500 ${700} 800 ${590 + o(8)} S 1100 ${520} 1200 ${560}V800 H0Z" fill="${c[2]}" opacity=".2"/>`,
-    grid: () => `
-      <g stroke="${c[2]}" stroke-width="1.5" opacity=".22">
-        ${[0, 1, 2, 3, 4, 5].map((n) => `<path d="M${140 + n * 180 + o(n) * 0.4} 0V800"/>`).join('')}
-        ${[0, 1, 2, 3].map((n) => `<path d="M0 ${150 + n * 180}H1200"/>`).join('')}
-      </g>
-      <rect x="${120 + o(1) * 4}" y="${180 + o(2) * 2}" width="360" height="360" fill="${c[1]}" opacity=".6"/>`,
-    beams: () => `
-      <g fill="${c[1]}" opacity=".6">
-        ${[0, 1, 2, 3].map((n) => {
-    const x = -200 + n * 320 + o(n) * 2;
-    return `<path d="M${x} 800 L${x + 210} 0 h140 L${x + 350} 800Z"/>`;
-  }).join('')}
-      </g>
-      <path d="M0 ${600 + o(3)}H1200V800H0Z" fill="${c[2]}" opacity=".18"/>`,
-    dots: () => `<g fill="${c[2]}" opacity=".22">
-      ${[0, 1, 2, 3, 4, 5, 6, 7].map((n) => {
-    const x = 110 + (n % 4) * 300 + o(n);
-    const y = 220 + Math.floor(n / 4) * 300 + o(n + 3);
-    return `<circle cx="${x}" cy="${y}" r="${46 + (n % 3) * 22}"/>`;
-  }).join('')}</g>
-      <circle cx="${900 - o(2) * 2}" cy="${260 + o(1)}" r="${170}" fill="${c[1]}" opacity=".6"/>`,
-    blocks: () => `
-      <rect x="${90 + o(1) * 3}" y="${140 + o(2)}" width="420" height="300" fill="${c[1]}" opacity=".65"/>
-      <rect x="${560 + o(3) * 2}" y="${330 + o(4)}" width="520" height="360" fill="${c[2]}" opacity=".18"/>
-      <rect x="${230 + o(5)}" y="${500 + o(6)}" width="260" height="220" fill="${c[2]}" opacity=".14"/>`,
-  };
-  return (M[kind] || M.waves)();
-}
+/* 同じ業種でも、並べたときに同じ絵にならないように少しずらす。
+   出す数は決まっているので、乱数ではなく番号から作る
+   （毎回変わると、編集画面と書き出したページで別物になる）。 */
+const artShift = (i, n) => ((i * 47 + n * 71) % 100) - 50;
+
+/* 灯り1つ。ふちへ向けてすっと消さないと、ただの円に見える */
+const artLamp = (id, c, o) =>
+  `<radialGradient id="${id}"><stop offset="0" stop-color="${c}" stop-opacity="${o}"/>`
+  + `<stop offset=".45" stop-color="${c}" stop-opacity="${(o * 0.42).toFixed(2)}"/>`
+  + `<stop offset="1" stop-color="${c}" stop-opacity="0"/></radialGradient>`;
 
 /* 業種キー（と、同じ業種の中での通し番号）から仮の絵を1枚作る。
    返すのは data URL なので、そのまま img の src に入る。 */
 function sampleArt(key, i = 0) {
   const a = ART[key] || ART.company;
-  const c = a.c;
-  const g = `sa${i}`;
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" width="1200" height="800">
-<title>hp-sample</title>
-<defs><linearGradient id="${g}" x1="0" y1="0" x2="1" y2="1">
-<stop offset="0" stop-color="${c[0]}"/><stop offset="1" stop-color="${c[1]}"/></linearGradient></defs>
-<rect width="1200" height="800" fill="url(#${g})"/>
-${artMotif(a.motif, c, i)}
-</svg>`;
-  return `data:image/svg+xml,${encodeURIComponent(svg.replace(/\n\s*/g, ''))}`;
+  const p = `s${i}`;
+  const lamps = a.lamps.map((l, n) => ({
+    x: Math.round(l[0] + artShift(i, n) * 1.6),
+    y: Math.round(l[1] + artShift(i, n + 3)),
+    r: Math.round(l[2] + artShift(i, n + 5) * 0.8),
+    o: l[3],
+  }));
+
+  const svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" width="1200" height="800">'
+    + '<title>hp-sample</title><defs>'
+    + `<linearGradient id="${p}b" x1="0" y1="0" x2=".3" y2="1">`
+    + `<stop offset="0" stop-color="${a.bg[0]}"/><stop offset="1" stop-color="${a.bg[1]}"/></linearGradient>`
+    + lamps.map((l, n) => artLamp(`${p}l${n}`, a.glow, l.o)).join('')
+    + `<radialGradient id="${p}v" cx=".5" cy=".46" r=".78">`
+    + '<stop offset=".45" stop-color="#000" stop-opacity="0"/>'
+    + `<stop offset="1" stop-color="#000" stop-opacity="${a.dark}"/></radialGradient>`
+    /* ぼかしはここでまとめてかける。1つ1つを柔らかく描くより、
+       描いてから一度に外したほうが、写真の被写界深度に近くなる */
+    + `<filter id="${p}f" x="-14%" y="-14%" width="128%" height="128%">`
+    + '<feGaussianBlur stdDeviation="34"/></filter>'
+    + '</defs>'
+    + `<rect width="1200" height="800" fill="url(#${p}b)"/>`
+    + `<g filter="url(#${p}f)">`
+    + `<ellipse cx="${600 + artShift(i, 1)}" cy="${520 + artShift(i, 2)}" rx="760" ry="300"`
+    + ` fill="${a.tint}" opacity=".55"/>`
+    + lamps.map((l, n) => `<ellipse cx="${l.x}" cy="${l.y}" rx="${l.r}"`
+      + ` ry="${Math.round(l.r * 0.82)}" fill="url(#${p}l${n})"/>`).join('')
+    + '</g>'
+    + `<rect width="1200" height="800" fill="url(#${p}v)"/>`
+    + '</svg>';
+  return `data:image/svg+xml,${encodeURIComponent(svg)}`;
 }
 
 /* この絵が仮のものかどうか。
