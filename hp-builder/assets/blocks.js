@@ -1092,6 +1092,14 @@ const BLOCKS = {
         hint: '白地に黒で縁の形を描いた画像を読み込むと、そのとおりに流し込みます' },
       Object.assign({}, FIELD.shape, { adv: true }),
       Object.assign({}, FIELD.shapeMask, { adv: true }),
+      /* 抜いた形は、そのまま置くと地から浮く。同じ写真をぼかして
+         後ろに敷くと落ち着く。形を選んだときだけ聞く。 */
+      { key: 'shapeBg', label: '形のうしろ', type: 'select', adv: true,
+        showIf: (p) => p.shape && p.layout !== 'cover' && p.layout !== 'ribbon',
+        options: [['', '地の色だけ'], ['blur', '同じ写真をぼかして敷く']] },
+      { key: 'bgBlur', label: 'ぼかしの強さ', type: 'select', adv: true, num: true,
+        showIf: (p) => p.shape && p.shapeBg === 'blur',
+        options: [[36, '弱め'], [56, '標準'], [80, '強い'], [110, 'とても強い']] },
       FIELD.plate,
       FIELD.plateShift,
       FIELD.bg, FIELD.anchor,
@@ -1143,10 +1151,18 @@ ${marks}${buttons(p.buttons)}`;
         ? `<video src="${esc(p.video)}" autoplay muted loop playsinline preload="metadata"${
           p.image ? ` poster="${esc(p.image)}"` : ''}></video>`
         : img(p.image, '');
+      /* 抜いた形だけを置くと、地から切り離されて宙に浮いて見える。
+         同じ写真を強くぼかして後ろに敷くと、形と地が同じ色になって落ち着く。
+         文字はこの上に乗るので、地の色の膜をかけて読めるようにする。 */
+      const blurBg = !cover && p.shape && p.shapeBg === 'blur' && p.image;
       const bg = cover
         ? `  <div class="hero-bg" style="--hero-overlay:rgba(15,23,42,${(p.overlay ?? 55) / 100})"`
           + `${imgSlot('image', p)} data-elname="背景の写真">${bgMedia}</div>\n`
-        : '';
+        : blurBg
+          ? `  <div class="hero-bg blurbg" aria-hidden="true"`
+            + `${p.bgBlur ? ` style="--bgblur:${Math.round(Number(p.bgBlur))}px"` : ''}`
+            + `>${img(p.image, '')}</div>\n`
+          : '';
       /* 中央ぞろえ・左ぞろえでも、写真を入れたら文章の下に置く。
          入れても何も起きないと、入れた本人には壊れて見える（実際に指摘された）。 */
       const wide = !cover

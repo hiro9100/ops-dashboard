@@ -1437,6 +1437,36 @@ p:last-child{margin-bottom:0}
 .hero-bg{position:absolute;inset:0;z-index:0;background:linear-gradient(135deg,var(--c-primary),var(--c-accent))}
 .hero-bg img,.hero-bg video{width:100%;height:100%;object-fit:cover;display:block}
 .hero-bg::after{content:"";position:absolute;inset:0;background:var(--hero-overlay,rgba(15,23,42,.55))}
+/* ---------- 抜いた形のうしろに敷く、ぼかした同じ写真 ----------
+   形だけを置くと、地から切り離されて宙に浮いて見える。同じ写真を
+   強くぼかして敷くと、形と地が同じ色になって、切り抜きが地に座る。
+
+   ぼかすと縁が薄まって枠の内側に隙間が出るので、少し大きくしてから敷く。
+   文字はこの上に乗るので、地の色の膜をかけて読めるようにする
+   （写真は明るいものも暗いものも来るので、膜が無いと読めなくなる）。 */
+.hero-bg.blurbg img{filter:blur(var(--bgblur,56px));transform:scale(1.3)}
+/* 膜は一様にしない。
+
+   一様にかけると、読めなくなるか、効かないかのどちらかにしかならない。
+   薄くすれば形は地に座るが、説明文と小見出しが背景に負ける
+   （実測 4.76 → 2.89。濃くしても 2.89 のままで、そのうえ写真が消える）。
+
+   だから、形のあるところを中心にして丸く抜く。
+   まん中（形の後ろ）は膜なしの写真そのまま。外へ行くほど地の色でふさぐ。
+   文字は外側に居るので、地の色の上に乗ったままになる。
+
+   形の後ろが写真そのままだと、切り抜きの外と中が地続きの色になる。
+   ここが薄まっていると、明るい輪に囲まれて、かえって浮いて見える。 */
+.hero-bg.blurbg::after{
+  background:radial-gradient(var(--bgspread,46% 118%) at var(--bgfocus,76% 50%),
+    transparent 0 20%,
+    color-mix(in srgb,var(--c-bg) 46%,transparent) 44%,
+    color-mix(in srgb,var(--c-bg) 86%,transparent) 66%,
+    var(--c-bg) 82%)
+}
+@supports not (color:color-mix(in srgb,red,blue)){
+  .hero-bg.blurbg::after{background:var(--c-bg);opacity:.76}
+}
 .hero.center.cover .hero-in,.hero.left.cover .hero-in{padding:clamp(24px,3.3333vw,66.6667px) 0}
 
 /* ==========================================================
@@ -3752,6 +3782,8 @@ p:last-child{margin-bottom:0}
 @media(max-width:900px){
   .grid.c3,.grid.c4{grid-template-columns:repeat(2,1fr)}
   .hero.split .hero-in,.about-in,.contact-in{grid-template-columns:1fr}
+  /* 上下に積まれると写真は下。抜くところも下へ移す */
+  .hero-bg.blurbg{--bgfocus:50% 74%;--bgspread:118% 42%}
   .about-in.rev .about-media{order:0}
   .gal{grid-template-columns:repeat(2,1fr)}
 }
@@ -6759,6 +6791,14 @@ const BLOCKS = {
         hint: '白地に黒で縁の形を描いた画像を読み込むと、そのとおりに流し込みます' },
       Object.assign({}, FIELD.shape, { adv: true }),
       Object.assign({}, FIELD.shapeMask, { adv: true }),
+      /* 抜いた形は、そのまま置くと地から浮く。同じ写真をぼかして
+         後ろに敷くと落ち着く。形を選んだときだけ聞く。 */
+      { key: 'shapeBg', label: '形のうしろ', type: 'select', adv: true,
+        showIf: (p) => p.shape && p.layout !== 'cover' && p.layout !== 'ribbon',
+        options: [['', '地の色だけ'], ['blur', '同じ写真をぼかして敷く']] },
+      { key: 'bgBlur', label: 'ぼかしの強さ', type: 'select', adv: true, num: true,
+        showIf: (p) => p.shape && p.shapeBg === 'blur',
+        options: [[36, '弱め'], [56, '標準'], [80, '強い'], [110, 'とても強い']] },
       FIELD.plate,
       FIELD.plateShift,
       FIELD.bg, FIELD.anchor,
@@ -6810,10 +6850,18 @@ ${marks}${buttons(p.buttons)}`;
         ? `<video src="${esc(p.video)}" autoplay muted loop playsinline preload="metadata"${
           p.image ? ` poster="${esc(p.image)}"` : ''}></video>`
         : img(p.image, '');
+      /* 抜いた形だけを置くと、地から切り離されて宙に浮いて見える。
+         同じ写真を強くぼかして後ろに敷くと、形と地が同じ色になって落ち着く。
+         文字はこの上に乗るので、地の色の膜をかけて読めるようにする。 */
+      const blurBg = !cover && p.shape && p.shapeBg === 'blur' && p.image;
       const bg = cover
         ? `  <div class="hero-bg" style="--hero-overlay:rgba(15,23,42,${(p.overlay ?? 55) / 100})"`
           + `${imgSlot('image', p)} data-elname="背景の写真">${bgMedia}</div>\n`
-        : '';
+        : blurBg
+          ? `  <div class="hero-bg blurbg" aria-hidden="true"`
+            + `${p.bgBlur ? ` style="--bgblur:${Math.round(Number(p.bgBlur))}px"` : ''}`
+            + `>${img(p.image, '')}</div>\n`
+          : '';
       /* 中央ぞろえ・左ぞろえでも、写真を入れたら文章の下に置く。
          入れても何も起きないと、入れた本人には壊れて見える（実際に指摘された）。 */
       const wide = !cover
@@ -10003,15 +10051,15 @@ const HERO_PRESETS = [
          形が効くのは写真を枠に入れる並び（cover では効かない）。 ---- */
   { key: 'shape-dots', type: 'hero', label: 'Shape: Dots',
     about: '丸がつながった格子で写真を抜く。やわらかい印象。カフェや教室に。',
-    props: { layout: 'split', shape: 'dots' } },
+    props: { layout: 'split', shape: 'dots', shapeBg: 'blur', bgBlur: 80 } },
 
   { key: 'shape-bars', type: 'hero', label: 'Shape: Bars',
     about: '斜めの帯で写真を抜く。勢いが出る。ジムや工務店に。',
-    props: { layout: 'split', shape: 'bars' } },
+    props: { layout: 'split', shape: 'bars', shapeBg: 'blur', bgBlur: 80 } },
 
   { key: 'shape-wavebar', type: 'hero', label: 'Shape: Wave Bars',
     about: '縦の棒が波打つ形で写真を抜く。音や律動を思わせる。',
-    props: { layout: 'split', shape: 'wavebar' } },
+    props: { layout: 'split', shape: 'wavebar', shapeBg: 'blur', bgBlur: 80 } },
 
   { key: 'collage', type: 'collage', label: 'Collage',
     about: '敷き詰めた写真に、斜めの写真と縦書きの帯を重ねる。',

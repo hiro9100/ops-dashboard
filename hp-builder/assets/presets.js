@@ -75,15 +75,15 @@ const HERO_PRESETS = [
          形が効くのは写真を枠に入れる並び（cover では効かない）。 ---- */
   { key: 'shape-dots', type: 'hero', label: 'Shape: Dots',
     about: '丸がつながった格子で写真を抜く。やわらかい印象。カフェや教室に。',
-    props: { layout: 'split', shape: 'dots' } },
+    props: { layout: 'split', shape: 'dots', shapeBg: 'blur', bgBlur: 80 } },
 
   { key: 'shape-bars', type: 'hero', label: 'Shape: Bars',
     about: '斜めの帯で写真を抜く。勢いが出る。ジムや工務店に。',
-    props: { layout: 'split', shape: 'bars' } },
+    props: { layout: 'split', shape: 'bars', shapeBg: 'blur', bgBlur: 80 } },
 
   { key: 'shape-wavebar', type: 'hero', label: 'Shape: Wave Bars',
     about: '縦の棒が波打つ形で写真を抜く。音や律動を思わせる。',
-    props: { layout: 'split', shape: 'wavebar' } },
+    props: { layout: 'split', shape: 'wavebar', shapeBg: 'blur', bgBlur: 80 } },
 
   { key: 'collage', type: 'collage', label: 'Collage',
     about: '敷き詰めた写真に、斜めの写真と縦書きの帯を重ねる。',

@@ -186,6 +186,36 @@ p:last-child{margin-bottom:0}
 .hero-bg{position:absolute;inset:0;z-index:0;background:linear-gradient(135deg,var(--c-primary),var(--c-accent))}
 .hero-bg img,.hero-bg video{width:100%;height:100%;object-fit:cover;display:block}
 .hero-bg::after{content:"";position:absolute;inset:0;background:var(--hero-overlay,rgba(15,23,42,.55))}
+/* ---------- 抜いた形のうしろに敷く、ぼかした同じ写真 ----------
+   形だけを置くと、地から切り離されて宙に浮いて見える。同じ写真を
+   強くぼかして敷くと、形と地が同じ色になって、切り抜きが地に座る。
+
+   ぼかすと縁が薄まって枠の内側に隙間が出るので、少し大きくしてから敷く。
+   文字はこの上に乗るので、地の色の膜をかけて読めるようにする
+   （写真は明るいものも暗いものも来るので、膜が無いと読めなくなる）。 */
+.hero-bg.blurbg img{filter:blur(var(--bgblur,56px));transform:scale(1.3)}
+/* 膜は一様にしない。
+
+   一様にかけると、読めなくなるか、効かないかのどちらかにしかならない。
+   薄くすれば形は地に座るが、説明文と小見出しが背景に負ける
+   （実測 4.76 → 2.89。濃くしても 2.89 のままで、そのうえ写真が消える）。
+
+   だから、形のあるところを中心にして丸く抜く。
+   まん中（形の後ろ）は膜なしの写真そのまま。外へ行くほど地の色でふさぐ。
+   文字は外側に居るので、地の色の上に乗ったままになる。
+
+   形の後ろが写真そのままだと、切り抜きの外と中が地続きの色になる。
+   ここが薄まっていると、明るい輪に囲まれて、かえって浮いて見える。 */
+.hero-bg.blurbg::after{
+  background:radial-gradient(var(--bgspread,46% 118%) at var(--bgfocus,76% 50%),
+    transparent 0 20%,
+    color-mix(in srgb,var(--c-bg) 46%,transparent) 44%,
+    color-mix(in srgb,var(--c-bg) 86%,transparent) 66%,
+    var(--c-bg) 82%)
+}
+@supports not (color:color-mix(in srgb,red,blue)){
+  .hero-bg.blurbg::after{background:var(--c-bg);opacity:.76}
+}
 .hero.center.cover .hero-in,.hero.left.cover .hero-in{padding:clamp(24px,3.3333vw,66.6667px) 0}
 
 /* ==========================================================
@@ -2501,6 +2531,8 @@ p:last-child{margin-bottom:0}
 @media(max-width:900px){
   .grid.c3,.grid.c4{grid-template-columns:repeat(2,1fr)}
   .hero.split .hero-in,.about-in,.contact-in{grid-template-columns:1fr}
+  /* 上下に積まれると写真は下。抜くところも下へ移す */
+  .hero-bg.blurbg{--bgfocus:50% 74%;--bgspread:118% 42%}
   .about-in.rev .about-media{order:0}
   .gal{grid-template-columns:repeat(2,1fr)}
 }
