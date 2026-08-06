@@ -91,8 +91,11 @@ jobs:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/sa.json
         run: |
           SITE=bildy-4e45e-pages
+          # 一覧の中では projects/…/sites/<名前> の形で出てくる。
+          # 引用符で囲まれた形では出ないので、名前そのものを探す
+          # （この名前は他と紛れない）。
           if npx --yes firebase-tools@14 hosting:sites:list --project bildy-4e45e --json \
-               | grep -q "\"$SITE\""; then
+               | grep -q -- "$SITE"; then
             echo "  ok   $SITE はすでにあります"
             exit 0
           fi
