@@ -350,6 +350,25 @@ input,select,textarea{font:inherit}
 .f input:focus,.f textarea:focus,.f select:focus{outline:none;border-color:var(--tx3);background:var(--panel3)}
 .f .hint{font-size:10.5px;color:var(--tx3);margin-top:5px;line-height:1.65}
 
+/* 見本のある項目。選択ボックスと「見本から選ぶ」を上下に並べていたが、
+   同じことをする入口が2つあることになり、どちらを押すのか分からない。
+   1つにまとめて、押すと見本が開く。
+   見た目は選択ボックスに寄せる（いまの中身が左、入口の印が右）。 */
+.f .gal-pick{
+  width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;
+  background:var(--panel2);border:1px solid var(--line);border-radius:6px;
+  padding:9px 11px;color:var(--tx);font-size:12.5px;text-align:left;cursor:pointer;
+  transition:border-color .14s,background .14s
+}
+.f .gal-pick:hover{border-color:var(--line2);background:var(--panel3)}
+.f .gal-pick:focus-visible{outline:2px solid var(--tx3);outline-offset:2px}
+.f .gal-pick b{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.f .gal-pick i{
+  flex:none;font-style:normal;font-size:10.5px;font-weight:700;letter-spacing:.04em;
+  color:var(--tx3)
+}
+.f .gal-pick:hover i{color:var(--tx2)}
+
 .f-row{display:flex;align-items:center;gap:9px}
 .f-row input[type=color]{
   width:34px;height:30px;padding:0;background:none;border:1px solid var(--line);border-radius:6px;cursor:pointer

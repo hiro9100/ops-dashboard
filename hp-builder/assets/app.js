@@ -2318,14 +2318,38 @@ function fieldHTML(f, props, base) {
   if (f.type === 'toggle') {
     return `<div class="f">${inputHTML(f, val, path)}${f.hint ? `<div class="hint">${esc(f.hint)}</div>` : ''}</div>`;
   }
+  /* 見本のある項目は、選ぶ入口を1つにする。
+
+     選択ボックスと「サンプルを見ながら選ぶ」を並べていたが、同じことを
+     する入口が上下に2つあることになり、どちらを押せばいいのか分からない。
+     名前だけ並んだ一覧から選ぶより、絵を見て選ぶほうが速いので、
+     押すと見本が開く1つのボタンにまとめる。 */
+  if (f.gallery) {
+    return `<div class="f">
+    <label>${esc(f.label)}</label>
+    ${galPick(galLabel(f, val), ` data-gal="${esc(f.gallery)}" data-galpath="${path}"`)}
+    ${f.hint ? `<div class="hint">${esc(f.hint)}</div>` : ''}
+  </div>`;
+  }
   return `<div class="f">
     <label>${esc(f.label)}</label>
     ${inputHTML(f, val, path)}
-    ${f.gallery ? `<button class="anim-gal" data-gal="${esc(f.gallery)}" data-galpath="${path}"
-      style="margin-top:8px">▦ サンプルを見ながら選ぶ</button>` : ''}
     ${f.hint ? `<div class="hint">${esc(f.hint)}</div>` : ''}
   </div>`;
 }
+
+/* いま何が選ばれているかを、見本と同じ言い方で出す。
+   見本に並ぶものと同じ一覧から引くので、名前が食い違わない。 */
+function galLabel(f, val) {
+  const gk = GAL_KINDS[f.gallery];
+  const list = (gk && gk.list()) || f.options || [];
+  const hit = list.find((o) => String(o[0]) === String(val == null ? '' : val));
+  return (hit || list[0] || ['', '—'])[1];
+}
+
+/* 押すと見本が開くボタン。いまの中身を左に、入口だと分かる印を右に。 */
+const galPick = (cur, attrs) =>
+  `<button class="gal-pick"${attrs}><b>${esc(cur)}</b><i>▦ 見本から選ぶ</i></button>`;
 
 /* 「あとで直せばいい」つまみ。
    最初に見せるのは中身（文字・写真・リンク）だけにして、
@@ -2431,9 +2455,8 @@ function elementPanel(b) {
       <div class="el-tip">プレビューを続けて2回押しても直せます</div>` : ''}
     ${placeField(b)}
     <div class="f"><label>動き</label>
-      <select data-elk="a">${list.map(([v, l]) =>
-        `<option value="${v}"${cur === v ? ' selected' : ''}>${esc(l)}</option>`).join('')}</select>
-      <button class="anim-gal" data-animgal="${isText ? 'ta' : 'ia'}">見本から選ぶ</button>
+      ${galPick((list.find(([v]) => v === cur) || [, '—'])[1],
+    ` data-animgal="${isText ? 'ta' : 'ia'}"`)}
     </div>
     ${isText ? textFillField(b) : ''}
   </div>`;

@@ -357,6 +357,25 @@ input,select,textarea{font:inherit}
 .f input:focus,.f textarea:focus,.f select:focus{outline:none;border-color:var(--tx3);background:var(--panel3)}
 .f .hint{font-size:10.5px;color:var(--tx3);margin-top:5px;line-height:1.65}
 
+/* 見本のある項目。選択ボックスと「見本から選ぶ」を上下に並べていたが、
+   同じことをする入口が2つあることになり、どちらを押すのか分からない。
+   1つにまとめて、押すと見本が開く。
+   見た目は選択ボックスに寄せる（いまの中身が左、入口の印が右）。 */
+.f .gal-pick{
+  width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;
+  background:var(--panel2);border:1px solid var(--line);border-radius:6px;
+  padding:9px 11px;color:var(--tx);font-size:12.5px;text-align:left;cursor:pointer;
+  transition:border-color .14s,background .14s
+}
+.f .gal-pick:hover{border-color:var(--line2);background:var(--panel3)}
+.f .gal-pick:focus-visible{outline:2px solid var(--tx3);outline-offset:2px}
+.f .gal-pick b{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.f .gal-pick i{
+  flex:none;font-style:normal;font-size:10.5px;font-weight:700;letter-spacing:.04em;
+  color:var(--tx3)
+}
+.f .gal-pick:hover i{color:var(--tx2)}
+
 .f-row{display:flex;align-items:center;gap:9px}
 .f-row input[type=color]{
   width:34px;height:30px;padding:0;background:none;border:1px solid var(--line);border-radius:6px;cursor:pointer
@@ -13158,14 +13177,38 @@ function fieldHTML(f, props, base) {
   if (f.type === 'toggle') {
     return `<div class="f">${inputHTML(f, val, path)}${f.hint ? `<div class="hint">${esc(f.hint)}</div>` : ''}</div>`;
   }
+  /* 見本のある項目は、選ぶ入口を1つにする。
+
+     選択ボックスと「サンプルを見ながら選ぶ」を並べていたが、同じことを
+     する入口が上下に2つあることになり、どちらを押せばいいのか分からない。
+     名前だけ並んだ一覧から選ぶより、絵を見て選ぶほうが速いので、
+     押すと見本が開く1つのボタンにまとめる。 */
+  if (f.gallery) {
+    return `<div class="f">
+    <label>${esc(f.label)}</label>
+    ${galPick(galLabel(f, val), ` data-gal="${esc(f.gallery)}" data-galpath="${path}"`)}
+    ${f.hint ? `<div class="hint">${esc(f.hint)}</div>` : ''}
+  </div>`;
+  }
   return `<div class="f">
     <label>${esc(f.label)}</label>
     ${inputHTML(f, val, path)}
-    ${f.gallery ? `<button class="anim-gal" data-gal="${esc(f.gallery)}" data-galpath="${path}"
-      style="margin-top:8px">▦ サンプルを見ながら選ぶ</button>` : ''}
     ${f.hint ? `<div class="hint">${esc(f.hint)}</div>` : ''}
   </div>`;
 }
+
+/* いま何が選ばれているかを、見本と同じ言い方で出す。
+   見本に並ぶものと同じ一覧から引くので、名前が食い違わない。 */
+function galLabel(f, val) {
+  const gk = GAL_KINDS[f.gallery];
+  const list = (gk && gk.list()) || f.options || [];
+  const hit = list.find((o) => String(o[0]) === String(val == null ? '' : val));
+  return (hit || list[0] || ['', '—'])[1];
+}
+
+/* 押すと見本が開くボタン。いまの中身を左に、入口だと分かる印を右に。 */
+const galPick = (cur, attrs) =>
+  `<button class="gal-pick"${attrs}><b>${esc(cur)}</b><i>▦ 見本から選ぶ</i></button>`;
 
 /* 「あとで直せばいい」つまみ。
    最初に見せるのは中身（文字・写真・リンク）だけにして、
@@ -13271,9 +13314,8 @@ function elementPanel(b) {
       <div class="el-tip">プレビューを続けて2回押しても直せます</div>` : ''}
     ${placeField(b)}
     <div class="f"><label>動き</label>
-      <select data-elk="a">${list.map(([v, l]) =>
-        `<option value="${v}"${cur === v ? ' selected' : ''}>${esc(l)}</option>`).join('')}</select>
-      <button class="anim-gal" data-animgal="${isText ? 'ta' : 'ia'}">見本から選ぶ</button>
+      ${galPick((list.find(([v]) => v === cur) || [, '—'])[1],
+    ` data-animgal="${isText ? 'ta' : 'ia'}"`)}
     </div>
     ${isText ? textFillField(b) : ''}
   </div>`;
