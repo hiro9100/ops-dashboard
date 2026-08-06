@@ -12407,9 +12407,33 @@ body{margin:0;background:#0d1016;padding:${u(14)}px;
   background:#171a21;border:${u(1)}px solid #2a2f3a;border-radius:${u(12)}px;overflow:hidden;
   transition:border-color .15s,transform .15s;color:#e7ebf0;font:inherit}
 .gc-hit{position:absolute;inset:0;z-index:5}
-.gc:hover{border-color:#8b9099}
-/* いま当たっている形。選び直す画面で「どれが今のか」が要る */
-.gc.on{border-color:#fff;box-shadow:0 0 0 ${u(2)}px rgba(255,255,255,.22)}
+.gc:hover{border-color:#8b9099;transform:translateY(${u(-2)}px)}
+.gc:focus-visible{outline:${u(3)}px solid #7aa5ff;outline-offset:${u(2)}px}
+
+/* いま当たっている型。
+
+   線1本と薄い光（22%）だけだったので、並んだカードの中で埋もれていた。
+   選んでも変わったように見えず、選べたのかどうか分からない。
+   ・太い枠を、周りと違う色で回す
+   ・「選択中」と字で出す（色だけだと、色の見分けが付かない人に届かない）
+   ・少し持ち上げて、影を落とす（前に出ているように見せる）
+   ・名前の欄も同じ色で塗って、下まで選ばれているように見せる */
+.gc.on{
+  border-color:#5b8cff;
+  box-shadow:0 0 0 ${u(3)}px #5b8cff, 0 ${u(10)}px ${u(22)}px rgba(0,0,0,.5);
+  transform:translateY(${u(-3)}px)
+}
+.gc.on::after{
+  content:"✓ 選択中";position:absolute;z-index:6;pointer-events:none;
+  top:${u(9)}px;right:${u(9)}px;
+  background:#5b8cff;color:#fff;font-size:${u(10)}px;font-weight:800;
+  letter-spacing:.06em;padding:${u(4)}px ${u(9)}px;border-radius:${u(999)}px;
+  box-shadow:0 ${u(2)}px ${u(6)}px rgba(0,0,0,.35)
+}
+.gc.on .gc-meta{background:#5b8cff}
+.gc.on .gc-meta b{color:#fff}
+.gc.on .gc-meta small{color:rgba(255,255,255,.86)}
+.gc.on .gc-meta i{color:#fff;border-color:rgba(255,255,255,.55)}
 /* 高さと中の縮尺は、下の script が実寸から決める。
    ここに書くのは、その値が入るまでの見た目だけ */
 .gc-prev{height:${u(176)}px;overflow:hidden;position:relative;background:var(--c-bg);
@@ -14695,7 +14719,13 @@ function renderBldGallery() {
   const g = galGeom(f);
   sizeGalFrame(f, g);
 
-  const cur = st === 'shape' ? bldNames.get(bldNeedBlock.get((nowNeed() || {}).key)) : null;
+  /* いま当たっている型。顔をえらぶ段では、どれを選んだのか印が付いて
+     いなかった（選んでも一覧の見た目が変わらないので、選べたのかどうか
+     分からない）。いま入っている顔の名前と突き合わせる。 */
+  const heroB = page().blocks.find((x) => x.type === 'hero' || x.type === 'collage');
+  const cur = st === 'shape'
+    ? bldNames.get(bldNeedBlock.get((nowNeed() || {}).key))
+    : (heroB ? bldNames.get(heroB.id) : null);
   /* 説明は絵で足りる。名前だけ出し、言葉での補足はマウスを乗せたときに出す */
   const cards = list.map((p) => `<div class="gc${p.label === cur ? ' on' : ''}" data-key="${esc(p.key)}" role="button" tabindex="0"
       title="${esc(p.about || '')}">
