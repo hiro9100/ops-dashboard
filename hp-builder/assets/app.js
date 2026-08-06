@@ -530,9 +530,6 @@ body.__solo > .__sel{outline-color:transparent}
   content:attr(data-elname);position:absolute;top:2px;left:2px;z-index:20;
   background:#4c8dff;color:#fff;border-radius:4px;padding:1px 7px;pointer-events:none;
   font:700 10px/1.7 -apple-system,"Hiragino Sans",sans-serif;letter-spacing:.04em;white-space:nowrap}
-[data-elkind="ia"]:hover::after,[data-elkind="ia"].__elsel::after{background:#8b5cf6}
-[data-elkind="ia"]:hover{outline-color:rgba(139,92,246,.85)}
-[data-elkind="ia"].__elsel{outline-color:#8b5cf6}
 
 /* ヒーローの中だけ、選んだ要素をつまんで動かせる。
    選ぶ前から掴めるようにすると、押すつもりが動いてしまう。 */
@@ -562,13 +559,13 @@ body.__solo > .__sel{outline-color:transparent}
 [data-imgprop]{cursor:pointer}
 :where([data-imgprop]){position:relative}
 [data-imgprop]:hover::after{
-  content:"画像を選ぶ";background:#8b5cf6;color:#fff;position:absolute;top:2px;left:2px;z-index:21;
+  content:"画像を選ぶ";background:#4c8dff;color:#fff;position:absolute;top:2px;left:2px;z-index:21;
   border-radius:4px;padding:1px 7px;pointer-events:none;white-space:nowrap;
   font:700 10px/1.7 -apple-system,"Hiragino Sans",sans-serif;letter-spacing:.04em}
 [data-imgprop].__imgdrop{
-  outline:3px dashed #8b5cf6!important;outline-offset:-3px;
-  background:rgba(139,92,246,.22)!important}
-[data-imgprop].__imgdrop::after{content:"ここに放す";background:#8b5cf6;opacity:1}
+  outline:3px dashed #4c8dff!important;outline-offset:-3px;
+  background:rgba(76,141,255,.18)!important}
+[data-imgprop].__imgdrop::after{content:"ここに放す";background:#4c8dff;opacity:1}
 
 /* 編集中 */
 [data-prop].__editing{
@@ -1870,6 +1867,19 @@ const SCROLL_ABOUT = {
   maskzoom: '見出しの形に開いた穴が広がり、画面いっぱいの写真になります。',
 };
 
+/* ボタンの見た目。押したときの気配まで型ごとに違うので、一言そえる */
+const BTN_ABOUT = {
+  primary: 'いちばん強い。押してほしいものが1つのときに。',
+  accent: 'アクセントの色で。主役の隣に置く2つめに。',
+  ghost: '線だけ。地の色を邪魔しない。',
+  pill: '端をまるく。やわらかい業種に。',
+  square: '角のまま。かっちり見せたいときに。',
+  dark: '濃い地に白文字。明るい配色の上で目立つ。',
+  solidlight: '白地に文字。写真の上でも読める。',
+  link: '文字と下線だけ。控えめに置く。',
+  hard: '影を落として浮かせる。ひとつだけ効かせたいときに。',
+};
+
 const HDR_ABOUT = {
   line: '地の色に細い線。いちばん素直で、どんなページにも合います。',
   solid: 'メインカラーで塗ります。色をはっきり出したいとき。文字は白になります。',
@@ -1946,6 +1956,9 @@ const GAL_KINDS = {
   melt: { list: () => HERO_MELTS, about: MELT_ABOUT, what: '下の縁の形',
     title: '下の縁の形を選ぶ',
     sub: 'いまのヒーローの下を、それぞれの形で流し込んでいます。持ち込みは、読み込んだ画像のとおりに抜きます。' },
+  btn: { list: () => BTN_STYLES, about: BTN_ABOUT, what: 'ボタンの見た目',
+    title: 'ボタンの見た目を選ぶ',
+    sub: 'いまの配色で出しています。押したときの動きも、それぞれ違います。' },
   hdr: { list: () => HDR_BARS, about: HDR_ABOUT, what: 'ヘッダーのバー',
     title: 'ヘッダーのバーを選ぶ',
     sub: 'いまのヘッダーを、それぞれの型で出しています。下はヒーローの頭です。' },
@@ -2054,6 +2067,10 @@ function decoCards(kind, current) {
         key === 'own' && b0.props.shapeMask ? `;--shape:url('${esc(b0.props.shapeMask)}')` : ''}">
         <div class="about-media" style="aspect-ratio:16/10">${
           im ? `<img src="${esc(im)}" alt="">` : '<span class="ph"></span>'}</div></div>`;
+    } else if (kind === 'btn') {
+      /* ボタンは小さいので、1つだけ真ん中に置いて大きく見せる */
+      sample = `<div style="width:1100px;padding:78px 0;display:grid;place-items:center">${
+        buttons([{ label: 'ボタン', href: '#', style: key }])}</div>`;
     } else if (kind === 'melt') {
       /* 溶け方は「ヒーローの下の縁」なので、下まで入る高さで見せる。
          色も写真も無いヒーローだと白に白を流すことになって何も見えない。
@@ -2347,9 +2364,11 @@ function galLabel(f, val) {
   return (hit || list[0] || ['', '—'])[1];
 }
 
-/* 押すと見本が開くボタン。いまの中身を左に、入口だと分かる印を右に。 */
+/* 押すと見本が開くボタン。いまの中身を出すだけにする。
+   「見本から選ぶ」と添えていたが、欄がいくつも並ぶと同じ字が縦に続いて
+   うるさい。押せることは、右の印と押したときの反応で分かる。 */
 const galPick = (cur, attrs) =>
-  `<button class="gal-pick"${attrs}><b>${esc(cur)}</b><i>▦ 見本から選ぶ</i></button>`;
+  `<button class="gal-pick"${attrs}><b>${esc(cur)}</b><i aria-hidden="true">▦</i></button>`;
 
 /* 「あとで直せばいい」つまみ。
    最初に見せるのは中身（文字・写真・リンク）だけにして、
@@ -2635,10 +2654,16 @@ $('#tab-edit').addEventListener('click', (e) => {
     const bb = page().blocks.find((x) => x.id === selected);
     if (!bb) return;
     const kind = fg.dataset.gal;
-    const key = fg.dataset.galpath.split('.').pop();
+    /* 道順は props.buttons.0.style のように深いことがある（一覧の中の項目）。
+       末尾だけ見て bb.props[key] に書くと、ブロックの直下に別物ができる。 */
+    const path = fg.dataset.galpath;
+    const key = path.split('.').pop();
+    const deep = path.split('.').length > 2;
     const gk = GAL_KINDS[kind] || GAL_KINDS.deco;
-    openDecoGallery(kind, bb.props[key] || (kind === 'hdr' ? 'line' : 'none'), (picked) => {
-      if (bb.type === 'footer' && key === 'style') Object.assign(bb.props, withFtrSample(bb.props, picked));
+    const now = deep ? getPath(bb, path) : bb.props[key];
+    openDecoGallery(kind, now || (kind === 'hdr' ? 'line' : 'none'), (picked) => {
+      if (deep) setPath(bb, path, picked);
+      else if (bb.type === 'footer' && key === 'style') Object.assign(bb.props, withFtrSample(bb.props, picked));
       else bb.props[key] = picked;
       renderEditor(); renderPreview(true); save();
       flash(`${gk.what}を「${(gk.list().find((d) => d[0] === picked) || [, picked])[1]}」にしました`);
@@ -3370,9 +3395,13 @@ const MOTION_FIELDS = [
     hint: 'マウスの環境だけ。指の操作では切れます' },
 ];
 
+/* 内容にもどる帯。タブを外したので、戻り道をここに出す */
+const backBar = (what) => `<button class="pan-back" data-panback>← ${esc(what)}をとじる</button>`;
+
 function renderDesign() {
   $('#tab-design').innerHTML =
-    `<div class="sec-label">配色</div>
+    backBar('色と動き')
+    + `<div class="sec-label">配色</div>
      <button class="anim-gal" id="btnPalGal" style="margin:0 0 14px">見本から選ぶ</button>
      <div class="sec-label">色</div>`
     + BASE_COLORS.map((f) =>
@@ -3433,7 +3462,7 @@ function renderPage() {
       <button class="tb-btn" data-pgact="del"${i === 0 ? ' disabled' : ''}>削除</button>
     </div>` : '';
 
-  $('#tab-page').innerHTML = perPage + `
+  $('#tab-page').innerHTML = backBar('ページの設定') + perPage + `
     <div class="sec-label">サイト</div>
     <div class="f"><label>${many ? 'サイトの名前' : 'ページタイトル'}</label><input type="text" data-path="meta.title" value="${esc(state.meta.title)}"></div>
     <div class="f"><label>${many ? 'サイトの説明' : 'ページの説明'}</label><textarea data-path="meta.description" rows="4">${esc(state.meta.description)}</textarea></div>
@@ -4607,6 +4636,14 @@ addEventListener('drop', (e) => {
 
 /* 入口へ戻る。ここでは何も消さない。
    顔を選び直したときに、はじめて中身が入れ替わる（取り消しも効く）。 */
+/* 色と動き・ページの設定は「…」から。開くと右のパネルがその中身になり、
+   「とじる」でブロックの内容へ戻る。 */
+$('#btnDesign').addEventListener('click', () => openSheet('right', 'design'));
+$('#btnPageSet').addEventListener('click', () => openSheet('right', 'page'));
+document.addEventListener('click', (e) => {
+  if (e.target.closest('[data-panback]')) switchTab('edit');
+});
+
 $('#btnStart').addEventListener('click', () => { closeSheets(); openEasy(); });
 
 $('#btnReset').addEventListener('click', () => {

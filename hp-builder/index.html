@@ -31,6 +31,8 @@
     <div class="more-wrap">
       <button class="tb-btn ico" id="btnMore" aria-label="そのほか" aria-expanded="false">…</button>
       <div class="more-menu" id="moreMenu" hidden>
+        <button id="btnDesign">色と動き</button>
+        <button id="btnPageSet">ページの設定</button>
         <button id="btnStart">はじめかたに戻る</button>
         <button id="btnInbox">届いた問い合わせ</button>
         <button id="btnOpen">保存したファイルを開く</button>
@@ -80,11 +82,9 @@
   <!-- ================= 右：編集 ================= -->
   <aside class="panel right" id="panelRight">
     <button class="sheet-close" data-closesheet aria-label="閉じる"></button>
-    <div class="tabs">
-      <button class="on" data-tab="edit">内容</button>
-      <button data-tab="design">デザイン</button>
-      <button data-tab="page">ページ</button>
-    </div>
+    <!-- 右のパネルは、ブロックの内容だけにする。
+         色と動き・ページの設定は、たまにしか触らないので上の「…」へ。
+         同じものへの入口が2つ（タブと下のバー）あるのもやめる。 -->
     <div class="panel-body" id="tab-edit"></div>
     <div class="panel-body" id="tab-design" hidden></div>
     <div class="panel-body" id="tab-page" hidden></div>

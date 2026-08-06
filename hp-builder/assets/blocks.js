@@ -109,15 +109,15 @@ ${p.eyebrow ? `      <span class="eyebrow"${el(p, 'eyebrow', 'ta', '小見出し
 /* ボタン群 */
 /* ボタンの型。見た目・大きさ・矢印を、それぞれ別に選べる */
 const BTN_STYLES = [
-  ['primary', 'Solid'],
-  ['accent', 'Accent'],
-  ['ghost', 'Outline'],
-  ['pill', 'Pill'],
-  ['square', 'Square'],
-  ['dark', 'Dark'],
-  ['solidlight', 'Light'],
-  ['link', 'Underline'],
-  ['hard', 'Hard Shadow'],
+  ['primary', 'ベタ塗り'],
+  ['accent', 'アクセント'],
+  ['ghost', '線だけ'],
+  ['pill', 'まる型'],
+  ['square', '角ばり'],
+  ['dark', '濃い地'],
+  ['solidlight', '白地'],
+  ['link', '下線だけ'],
+  ['hard', '影つき'],
 ];
 
 function buttons(list, extraClass = '') {
@@ -843,23 +843,21 @@ const FIELD = {
      いつでも「四角のまま」に戻せる。 */
   shape: {
     key: 'shape', label: '写真の形', type: 'select', gallery: 'shape',
+    /* 名前はカタカナで。英語のままだと、どれがどれだか読めない人がいる。
+       「持ち込み（Custom）」は外した。形の画像を用意できる人はまず居ないし、
+       見本に並べても何も出ないので、選べても迷うだけだった
+       （すでに持ち込みを使っているページは、そのまま抜けたままになる）。 */
     options: [
-      ['', 'Square'], ['round', 'Rounded'], ['circle', 'Circle'],
-      ['egg', 'Egg'], ['diamond', 'Diamond'], ['arch', 'Arch'],
-      ['leaf', 'Leaf'], ['hex', 'Hexagon'], ['slant', 'Slant'],
-      ['notch', 'Notch'], ['step', 'Step'], ['ticket', 'Ticket'],
-      ['cross', 'Cross'], ['sparkle', 'Sparkle'],
-      ['slats', 'Slats'], ['arches', 'Arches'],
-      ['wave', 'Wave'], ['blob', 'Blob'],
-      ['dots', 'Dots'], ['bars', 'Bars'], ['wavebar', 'Wave Bars'],
-      ['own', 'Custom'],
+      ['', 'スクエア'], ['round', '角まる'], ['circle', 'まる'],
+      ['egg', 'たまご'], ['diamond', 'ひし形'], ['arch', 'アーチ'],
+      ['leaf', '木の葉'], ['hex', '六角形'], ['slant', 'ななめ'],
+      ['notch', '角欠き'], ['step', '段ちがい'], ['ticket', 'チケット'],
+      ['cross', '十字'], ['sparkle', 'きらめき'],
+      ['slats', '4本の柱'], ['arches', '3連アーチ'],
+      ['wave', '波'], ['blob', 'かたまり'],
+      ['dots', '丸つなぎ'], ['bars', 'ななめ帯'], ['wavebar', '波の棒'],
     ],
-    hint: 'Custom は、形の画像を読み込むとその形どおりに抜きます',
   },
-  /* 自分で用意した形。持っているのはマスクの画像そのもの（データURL）。
-     選び方は「型」ではなく「持ち込み」なので、選択肢とは別に持つ。 */
-  shapeMask: { key: 'shapeMask', label: '形の画像', type: 'mask',
-    showIf: (p) => p.shape === 'own' },
 
   /* 土台。写真の下に色の面を敷き、写真をひと回り小さく載せる。
      面のかたちは「写真の形」と同じものを使うので、22種そのまま選べる。 */
@@ -892,9 +890,10 @@ const FIELD = {
   btnItem: [
     { key: 'label', label: 'ボタン文字', type: 'text' },
     { key: 'href', label: 'リンク先', type: 'link' },
-    { key: 'style', label: '見た目', type: 'select', options: BTN_STYLES },
-    { key: 'size', label: '大きさ', type: 'select',
-      options: [['', 'ふつう'], ['lg', '大きい'], ['sm', '小さい'], ['full', '横いっぱい']] },
+    /* 見た目は、名前で選ぶより見本で選ぶほうが速い。
+       大きさは外した。型ごとに釣り合う大きさで組んであるので、
+       ここを動かすと崩れるほうが多い（既に入っている値はそのまま効く）。 */
+    { key: 'style', label: '見た目', type: 'select', options: BTN_STYLES, gallery: 'btn' },
     { key: 'arrow', label: '矢印をつける', type: 'toggle' },
   ],
 };
@@ -1091,7 +1090,6 @@ const BLOCKS = {
       { key: 'meltMask', label: '縁の画像', type: 'mask', showIf: (p) => p.melt === 'own',
         hint: '白地に黒で縁の形を描いた画像を読み込むと、そのとおりに流し込みます' },
       Object.assign({}, FIELD.shape, { adv: true }),
-      Object.assign({}, FIELD.shapeMask, { adv: true }),
       /* 抜いた形は、そのまま置くと地から浮く。同じ写真をぼかして
          後ろに敷くと落ち着く。形を選んだときだけ聞く。 */
       { key: 'shapeBg', label: '形のうしろ', type: 'select', adv: true,
@@ -1322,7 +1320,6 @@ ${maskLayer}${guts}
           { key: 'text', label: '説明', type: 'textarea' },
         ] },
       FIELD.shape,
-      FIELD.shapeMask,
       FIELD.plate,
       FIELD.plateShift,
       FIELD.bg, FIELD.anchor,
@@ -1362,7 +1359,6 @@ ${(p.items || []).map((it, i) => `      <div class="card"${el(p, `card${i}`, 'ia
       { key: 'reverse', label: '画像を右側にする', type: 'toggle' },
       { key: 'buttons', label: 'ボタン', type: 'list', addLabel: 'ボタンを追加', titleKey: 'label', item: FIELD.btnItem },
       FIELD.shape,
-      FIELD.shapeMask,
       FIELD.plate,
       FIELD.plateShift,
       FIELD.bg, FIELD.anchor,
@@ -1397,7 +1393,6 @@ ${buttons(p.buttons)}
           { key: 'alt', label: '写真の説明', type: 'text' },
         ] },
       FIELD.shape,
-      FIELD.shapeMask,
       FIELD.plate,
       FIELD.plateShift,
       FIELD.bg, FIELD.anchor,
@@ -1639,7 +1634,7 @@ ${(p.items || []).map((it, i) => `      <div class="ico"${el(p, `ico${i}`, 'ia',
           { key: 'text', label: '説明', type: 'text' },
           { key: 'href', label: 'リンク先', type: 'link' },
         ] },
-      FIELD.shape, FIELD.shapeMask, FIELD.plate, FIELD.plateShift,
+      FIELD.shape, FIELD.plate, FIELD.plateShift,
       FIELD.bg, FIELD.anchor,
     ],
     defaults: {
@@ -1700,7 +1695,7 @@ ${(p.items || []).map((it, i) => `      <div class="ico"${el(p, `ico${i}`, 'ia',
         options: [['16x9', '横長（16:9）'], ['4x3', '横長（4:3）'], ['1x1', '正方形'], ['9x16', '縦長（スマホ動画）']] },
       { key: 'auto', label: '自動で再生する（音は出ません）', type: 'toggle',
         hint: '動画ファイルのときだけ効きます' },
-      FIELD.shape, FIELD.shapeMask, FIELD.plate, FIELD.plateShift,
+      FIELD.shape, FIELD.plate, FIELD.plateShift,
       FIELD.bg, FIELD.anchor,
     ],
     defaults: {
@@ -1791,7 +1786,6 @@ ${p.more ? `    <div class="btn-row"><a class="btn ghost"${linkAttr(p.moreHref)}
           { key: 'image', label: '画像', type: 'image' },
         ] },
       FIELD.shape,
-      FIELD.shapeMask,
       FIELD.plate,
       FIELD.plateShift,
       FIELD.bg, FIELD.anchor,
@@ -2009,10 +2003,10 @@ ${p.note ? `    <p class="menu-note"${ed('note', '注記')}>${esc(p.note)}</p>` 
           { key: 'href', label: 'ボタンのリンク先', type: 'link' },
         ] },
       { key: 'btn', label: 'ボタンの文字', type: 'text' },
-      { key: 'btnStyle', label: 'ボタンの見た目', type: 'select', options: BTN_STYLES },
+      { key: 'btnStyle', label: 'ボタンの見た目', type: 'select', options: BTN_STYLES, gallery: 'btn' },
       { key: 'more', label: 'もっと見る', type: 'text' },
       { key: 'moreHref', label: 'そのリンク先', type: 'link' },
-      FIELD.shape, FIELD.shapeMask,
+      FIELD.shape,
       FIELD.bg, FIELD.anchor,
     ],
     defaults: {
@@ -2309,7 +2303,6 @@ ${(p.items || []).map((it, i) => `      <div class="exp-l" style="background:${e
           { key: 'image', label: '画像URL', type: 'image' },
         ] },
       FIELD.shape,
-      FIELD.shapeMask,
       FIELD.plate,
       FIELD.plateShift,
       FIELD.bg, FIELD.anchor,

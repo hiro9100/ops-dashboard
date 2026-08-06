@@ -111,15 +111,6 @@ input,select,textarea{font:inherit}
 }
 .panel-body{padding:14px;overflow-y:auto;flex:1;min-height:0}
 
-.tabs{display:flex;border-bottom:1px solid var(--line)}
-.tabs button{
-  flex:1;background:transparent;border:0;border-bottom:1px solid transparent;
-  padding:14px 4px 12px;font-size:11.5px;color:var(--tx3);font-weight:600;letter-spacing:.08em;
-  transition:color .14s
-}
-.tabs button:hover{color:var(--tx2)}
-.tabs button.on{color:var(--tx);border-bottom-color:var(--tx)}
-
 /* ================= 左：ブロック一覧 ================= */
 .blocklist{overflow-y:auto;flex:1;padding:8px;min-height:0}
 .bl-item{
@@ -350,6 +341,16 @@ input,select,textarea{font:inherit}
 .f input:focus,.f textarea:focus,.f select:focus{outline:none;border-color:var(--tx3);background:var(--panel3)}
 .f .hint{font-size:10.5px;color:var(--tx3);margin-top:5px;line-height:1.65}
 
+/* 「色と動き」「ページの設定」を開いたときの、内容へ戻る帯。
+   タブを外したので、戻り道はここにしかない。上に貼り付けておく。 */
+.pan-back{
+  position:sticky;top:0;z-index:4;width:100%;margin:0 0 14px;
+  background:var(--panel);border:none;border-bottom:1px solid var(--line);
+  padding:12px 2px;text-align:left;color:var(--tx2);font-size:12px;font-weight:700;
+  cursor:pointer;transition:color .14s
+}
+.pan-back:hover{color:var(--tx)}
+
 /* 見本のある項目。選択ボックスと「見本から選ぶ」を上下に並べていたが、
    同じことをする入口が2つあることになり、どちらを押すのか分からない。
    1つにまとめて、押すと見本が開く。
@@ -363,10 +364,7 @@ input,select,textarea{font:inherit}
 .f .gal-pick:hover{border-color:var(--line2);background:var(--panel3)}
 .f .gal-pick:focus-visible{outline:2px solid var(--tx3);outline-offset:2px}
 .f .gal-pick b{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.f .gal-pick i{
-  flex:none;font-style:normal;font-size:10.5px;font-weight:700;letter-spacing:.04em;
-  color:var(--tx3)
-}
+.f .gal-pick i{flex:none;font-style:normal;font-size:12px;color:var(--tx3)}
 .f .gal-pick:hover i{color:var(--tx2)}
 
 .f-row{display:flex;align-items:center;gap:9px}
