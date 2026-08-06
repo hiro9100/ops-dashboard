@@ -132,6 +132,27 @@ jobs:
           npx --yes firebase-tools@14 deploy --project bildy-4e45e --non-interactive --force \
             --only hosting,functions,storage,firestore
 
+      # 1日の上限を数える札（quota/）は、置いておいても読まない。
+      # 1日1万人だと1年で数百万件たまり、置き場代だけがかかる。
+      # 札には捨てどき（expireAt）を入れてあるので、それを見て消して
+      # もらう設定を、ここで入れる。すでに入っていれば何も起きない。
+      #
+      # ここは失敗しても止めない。入っていなくても動きはするし、
+      # 権限の話でサイトまで出せなくなるほうが困る。
+      - name: 数えた札の捨てどきを設定する
+        continue-on-error: true
+        run: |
+          gcloud auth activate-service-account --key-file="$RUNNER_TEMP/sa.json" --quiet
+          if gcloud firestore fields ttls update expireAt \
+               --collection-group=quota --enable-ttl \
+               --project=bildy-4e45e --quiet --async; then
+            echo "  ok   quota/expireAt の捨てどきを設定しました"
+          else
+            echo "  ※ 設定できませんでした。動きには影響しませんが、"
+            echo "     札がたまり続けます。手順は hp-builder/firebase/README.md の"
+            echo "     「数えた札を、置きっぱなしにしない」"
+          fi
+
       # deploy が「成功」で終わっても、一部の Function が作られていないこと
       # がある（2つの Function が同じ置き場バケツを同時に作ろうとして 409 に
       # なり、publishSite だけ落ちたのに全体は成功扱いだった）。
