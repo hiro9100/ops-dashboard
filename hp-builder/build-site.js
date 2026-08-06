@@ -18,7 +18,10 @@ const ROOT = __dirname;
 const OUT = path.join(ROOT, '..', 'docs');
 
 /* 先に各ページを作り直しておく（中身が古いまま公開されるのを防ぐ） */
-for (const s of ['build.js', 'examples/build-service-lp.js', 'examples/build-verdure.js',
+/* 公開ページで動いてよい JavaScript の指紋を、先に取り直す。
+   ここを忘れると、配信側が古い指紋のまま動き、まともなページまで
+   「よその script」と見なして弾く。組み立てに含めて、ずれないようにする。 */
+for (const s of ['tools/runtime-hash.js', 'build.js', 'examples/build-service-lp.js', 'examples/build-verdure.js',
   'examples/build-deco-demo.js', 'examples/build-scroll-demo.js', 'examples/build-collage-demo.js']) {
   execFileSync(process.execPath, [path.join(ROOT, s)], { cwd: ROOT, stdio: 'pipe' });
 }

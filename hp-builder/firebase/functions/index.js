@@ -38,6 +38,58 @@ const MARK = 'id="hp-builder-data"'; // このツールが作ったHTMLの目印
 const sha = (s) => crypto.createHash('sha256').update(s).digest('hex');
 const token = () => crypto.randomBytes(24).toString('base64url');
 
+/* 合言葉くらべ。長さで先に分かれると、そこから1文字ずつ当てられる。
+   同じ長さに揃えてから、時間の変わらないやり方でくらべる。 */
+function sameSecret(a, b) {
+  const x = Buffer.from(String(a || ''), 'utf8');
+  const y = Buffer.from(String(b || ''), 'utf8');
+  if (x.length !== y.length) { crypto.timingSafeEqual(x, x); return false; }
+  return crypto.timingSafeEqual(x, y);
+}
+
+/* 公開ページで動いてよい JavaScript の指紋。組み立てのときに作る。
+   これ以外は、預かるときに断り、配るときにも動かさない。 */
+let RUNTIME = { current: '', allowed: [] };
+try { RUNTIME = require('./runtime-hashes.json'); }
+catch (e) { console.error('runtime-hashes.json が読めません。公開を受け付けません', e); }
+
+const scriptHash = (body) =>
+  `sha256-${crypto.createHash('sha256').update(body, 'utf8').digest('base64')}`;
+
+/* 預かるHTMLの中で、動く JavaScript はこのツールの部品だけに限る。
+
+   公開ページは、こちらのドメインで配られる。そこで他人の JavaScript が
+   動くと、同じドメインに置いてある編集画面の控え（合言葉を含む）が
+   読める。実際に読めることを確かめてある。
+
+   type が application/json のものは、書いてあるだけで動かないので通す。 */
+function badScript(html) {
+  const re = /<script\b([^>]*)>([\s\S]*?)<\/script\s*>/gi;
+  let m;
+  while ((m = re.exec(html))) {
+    const attrs = m[1] || '';
+    const body = m[2] || '';
+    /* 外から読み込むものは、中身が見えないので一律で断る */
+    if (/\bsrc\s*=/i.test(attrs)) return 'よそから読み込む仕掛けは入れられません';
+    /* 動かない札のもの（組み立て情報など）は通す */
+    if (/type\s*=\s*["']?application\/json["']?/i.test(attrs)) continue;
+    if (!body.trim()) continue;
+    if (!RUNTIME.allowed.includes(scriptHash(body))) {
+      return 'このツールが入れたもの以外の仕掛けは入れられません';
+    }
+  }
+
+  /* 属性に直接書く動き（onclick= など）も、同じ理由で断る。
+
+     ここは script の中身を外してから見る。中身ごと見ると、部品の中の
+     「i < n」と、そのあとの「 on…=」が1つの札に見えて、まともなページまで
+     弾かれる（実際に弾かれた）。 */
+  const markup = html.replace(/<script\b[^>]*>[\s\S]*?<\/script\s*>/gi, '');
+  if (/<[^>]+\son[a-z]+\s*=/i.test(markup)) return '要素に直接書いた動き（on…=）は入れられません';
+  if (/\bhref\s*=\s*["']?\s*javascript:/i.test(markup)) return 'javascript: のリンクは入れられません';
+  return '';
+}
+
 /* サイトID。店名から読める形にして、後ろに衝突しない印を付ける。
    日本語の店名でもURLに出せるよう、英数字が無いときは印だけにする。 */
 function makeId(title) {
@@ -122,19 +174,32 @@ exports.publishSite = onRequest({ region: REGION, maxInstances: 10, cors: false,
     if (!home.html.includes(MARK)) {
       return res.status(400).json({ error: 'このツールで作ったページではないようです' });
     }
+    if (!RUNTIME.allowed.length) {
+      console.error('動きの部品の指紋が無いので、公開を受け付けられません');
+      return res.status(503).json({ error: 'いまは公開できません。少し待ってもう一度お試しください' });
+    }
+    for (const p of list) {
+      const why = badScript(p.html);
+      if (why) return res.status(400).json({ error: why });
+    }
 
     let id = String(siteId || '').trim();
     let tok = String(editToken || '');
     let isNew = false;
+    let prevPages = [];
 
     if (id) {
       /* 上書き。合言葉が合っているかだけを見る */
       if (!/^[a-z0-9-]{4,40}$/.test(id)) return res.status(400).json({ error: 'サイトIDの形が違います' });
       const snap = await db.collection('sites').doc(id).get();
       if (!snap.exists) return res.status(404).json({ error: 'そのサイトは見つかりませんでした' });
-      if (snap.data().tokenHash !== sha(tok)) {
+      if (!sameSecret(snap.data().tokenHash, sha(tok))) {
         return res.status(403).json({ error: 'このサイトを更新する合言葉が違います' });
       }
+      if (snap.data().disabled) {
+        return res.status(423).json({ error: 'このサイトは止まっています。お問い合わせください' });
+      }
+      prevPages = Array.isArray(snap.data().pages) ? snap.data().pages : [];
     } else {
       /* 新規 */
       if (!(await takeNewSiteSlot(clientIp(req)))) {
@@ -152,12 +217,17 @@ exports.publishSite = onRequest({ region: REGION, maxInstances: 10, cors: false,
         metadata: { cacheControl: 'no-store' },   // 配信側の見出しは serveSite で付ける
       })));
 
-    /* 前より減ったときに、消したページが残り続けないようにする */
-    const keep = new Set(list.map((p) => `sites/${id}/${p.path}.html`));
-    try {
-      const [olds] = await bucket().getFiles({ prefix: `sites/${id}/` });
-      await Promise.all(olds.filter((f) => !keep.has(f.name)).map((f) => f.delete()));
-    } catch (e) { console.warn('古いページを消せませんでした', e); }
+    /* 前より減ったときに、消したページが残り続けないようにする。
+
+       毎回そのサイトの置き場を一覧していたが、公開のたびに必ず1往復
+       増える。前に何を置いたかは自分で控えているので、それと今回の
+       差だけを消す（減っていないときは、一度も触らない）。 */
+    const before = (prevPages || []).filter((x) => !list.some((p) => p.path === x));
+    if (before.length) {
+      await Promise.all(before.map((x) =>
+        bucket().file(`sites/${id}/${x}.html`).delete().catch((e) =>
+          console.warn('古いページを消せませんでした', x, e.message))));
+    }
 
     await db.collection('sites').doc(id).set({
       title: String(title || '').slice(0, 120),
@@ -231,9 +301,18 @@ exports.submitForm = onRequest({ region: REGION, maxInstances: 10, cors: false, 
     const box = db.collection('sites').doc(id).collection('messages');
     await box.add({ name: nm, email: em, message: msg, at: FieldValue.serverTimestamp() });
 
-    /* 貯まりすぎたら古いものから捨てる。置きっぱなしにしない方針は公開と同じ */
-    const all = await box.orderBy('at', 'desc').offset(MAX_KEEP).limit(50).get();
-    await Promise.all(all.docs.map((doc) => doc.ref.delete()));
+    /* 貯まりすぎたら古いものから捨てる。置きっぱなしにしない方針は公開と同じ。
+
+       offset(500) で飛ばしていたが、Firestore は飛ばしたぶんも読んだ数に
+       入れる。1通届くたびに500件ぶん読むことになり、通数に比例して
+       効いてくる（1万人規模だと、ここだけで金額が跳ねる）。
+       件数を数えて、あふれたときだけ、古いほうから消す。 */
+    const cnt = await box.count().get();
+    const over = cnt.data().count - MAX_KEEP;
+    if (over > 0) {
+      const old = await box.orderBy('at', 'asc').limit(Math.min(over, 50)).get();
+      await Promise.all(old.docs.map((doc) => doc.ref.delete()));
+    }
 
     return res.json({ ok: true });
   } catch (e) {
@@ -255,7 +334,7 @@ exports.listMessages = onRequest({ region: REGION, maxInstances: 10, cors: false
 
     const site = await db.collection('sites').doc(id).get();
     if (!site.exists) return res.status(404).json({ error: 'そのサイトは見つかりませんでした' });
-    if (site.data().tokenHash !== sha(String(editToken || ''))) {
+    if (!sameSecret(site.data().tokenHash, sha(String(editToken || '')))) {
       return res.status(403).json({ error: 'このサイトを開く合言葉が違います' });
     }
 
@@ -386,6 +465,12 @@ exports.serveSite = onRequest({ region: REGION, maxInstances: 10, cors: false, m
     const raw = (parts[2] || 'index').replace(/\.html$/, '');
     if (!/^[a-z0-9-]{1,40}$/.test(raw)) return notFound(res);
 
+    /* 止めたサイトは配らない。苦情や乗っ取りに、その場で手を打てるように
+       （sites/<id> の disabled を true にするだけで止まる） */
+    const meta = await db.collection('sites').doc(id).get();
+    if (!meta.exists) return notFound(res);
+    if (meta.data().disabled) return gone(res);
+
     const file = bucket().file(`sites/${id}/${raw}.html`);
     const [exists] = await file.exists();
     if (!exists) return notFound(res);
@@ -394,13 +479,59 @@ exports.serveSite = onRequest({ region: REGION, maxInstances: 10, cors: false, m
     res.set('Content-Type', 'text/html; charset=utf-8');
     /* 1分だけ配信側に持たせる。直したものが出るまで待たせすぎない */
     res.set('Cache-Control', 'public, max-age=60, s-maxage=60');
-    res.set('X-Content-Type-Options', 'nosniff');
+    securityHeaders(res);
     return res.status(200).send(buf);
   } catch (e) {
     console.error('serve failed', e);
     return res.status(500).send('表示できませんでした');
   }
 });
+
+/* 他人の書いたHTMLを、こちらのドメインで配るときの守り。
+
+   ・script は、このツールの部品だけ動かす（指紋で照合）
+     預かるときにも検めているが、そこを抜けても、ここで動かない
+   ・外へ送る先を、絵と動画と自分のところだけに絞る
+     万一なにか動いても、持ち出す先が無い
+   ・枠に入れて出されるのを止める（別のサイトの一部に見せかけられる）
+   ・行き先を、外へ知らせない
+
+   いちばんの守りは、公開ページを編集画面と別のドメインに置くこと。
+   同じところに居るかぎり、抜けたときの被害が編集画面まで届く。
+   （firebase/README.md に手順を書いた） */
+function securityHeaders(res) {
+  const hashes = (RUNTIME.allowed || []).map((h) => `'${h}'`).join(' ');
+  res.set('Content-Security-Policy', [
+    "default-src 'none'",
+    `script-src ${hashes || "'none'"}`,
+    "style-src 'unsafe-inline'",
+    "img-src data: blob: https:",
+    "media-src data: blob: https:",
+    "font-src data: https:",
+    "connect-src 'self'",
+    "form-action 'self'",
+    "frame-ancestors 'none'",
+    "base-uri 'none'",
+  ].join('; '));
+  res.set('X-Content-Type-Options', 'nosniff');
+  res.set('X-Frame-Options', 'DENY');
+  res.set('Referrer-Policy', 'no-referrer');
+  res.set('Permissions-Policy', 'geolocation=(), microphone=(), camera=(), payment=()');
+  res.set('Cross-Origin-Opener-Policy', 'same-origin');
+  res.set('Cross-Origin-Resource-Policy', 'same-site');
+}
+
+function gone(res) {
+  res.set('Content-Type', 'text/html; charset=utf-8');
+  res.set('Cache-Control', 'no-store');
+  return res.status(410).send(`<!DOCTYPE html><html lang="ja"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1"><title>公開を止めています</title>
+<style>body{margin:0;min-height:100vh;display:grid;place-items:center;background:#fafafa;color:#27272a;
+font-family:"Helvetica Neue",Arial,"Hiragino Sans",Meiryo,sans-serif;text-align:center;padding:24px;line-height:1.9}
+h1{font-size:19px;margin:0 0 6px}p{color:#71717a;font-size:13.5px;margin:0}</style></head>
+<body><div><h1>このページは公開を止めています</h1>
+<p>お心当たりのある方は、お問い合わせください。</p></div></body></html>`);
+}
 
 function notFound(res) {
   res.set('Content-Type', 'text/html; charset=utf-8');
