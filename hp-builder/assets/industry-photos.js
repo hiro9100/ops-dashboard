@@ -62,7 +62,9 @@ const photoBase = () => photoBaseFound;
    写真を足したら、ここに1行足す。art/README.md にも書いてある。
    在るものとの食い違いは verify-indart.js が見ている。 */
 const INDUSTRY_PHOTOS = {
+  restaurant: ['restaurant-1.jpg', 'restaurant-2.jpg'],
   cafe: ['cafe-1.jpg', 'cafe-2.jpg', 'cafe-3.jpg'],
+  salon: ['salon-1.jpg', 'salon-2.jpg', 'salon-3.jpg'],
   gym: ['gym-1.jpg', 'gym-2.jpg', 'gym-3.jpg'],
 };
 

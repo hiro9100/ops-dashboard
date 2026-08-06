@@ -1501,6 +1501,12 @@ function sizeGalFrame(f, g) {
   f.style.transform = `scale(${g.gs})`;
 }
 
+/* 見本に出す型が使っている抜き型だけを足す。これが無いと「写真の形」を
+   使った型が、ただの四角に見える（選んでみるまで違いが分からない）。
+   「ブロックを足す」の一覧は BLOCKS の既定値をそのまま描くので形を持たない。
+   要るのは、顔をえらぶ一覧のほうだけ。 */
+const galShapes = (list) => [...new Set(list.map((x) => (x.props || {}).shape).filter(Boolean))];
+
 const galleryCSS = (g) => {
   const u = (px) => Math.round(px / g.gs);   // 画面上で px ぶんに見える大きさ
   return `
@@ -1567,6 +1573,11 @@ const fitJS = (g) => `
   fit();
   /* 写真が後から入ると高さが変わる。読み終わりで測り直す */
   addEventListener('load', fit);
+  /* 見ていた位置に戻す。ここで戻すのは、描かれる前に済ませるため。
+     読み終わってから戻すと、いちばん上が一瞬見えてから飛ぶ。
+     高さは上の fit() で決まっているので、この時点で戻せる。 */
+  var Y = ${Math.round(g.keepY || 0)};
+  if (Y) { scrollTo(0, Y); addEventListener('load', function () { scrollTo(0, Y); }); }
 })();
 `;
 
@@ -3774,6 +3785,10 @@ function renderBldHead() {
   $('#bldDone').disabled = st === 'hero' && !hasHero;
 }
 
+/* いま出している一覧の見分け。段が変わったかどうかの判断に使う */
+let galView = '';
+let galY = 0;      // その一覧で、どこまで見ていたか
+
 function renderBldGallery() {
   const st = bldStep();
   if (st !== 'hero' && st !== 'shape') return;
@@ -3800,14 +3815,39 @@ function renderBldGallery() {
       <div class="gc-meta"><b>${esc(p.label)}</b></div>
     </div>`).join('');
 
+  /* 中身を差し替えると、見ている位置が消えていちばん上に戻る。
+     顔は34枚あるので、下のほうで選んだ人が毎回上に飛ばされていた
+     （選ぶたびに探し直しになる）。同じ一覧を出し直すときは位置を戻す。
+
+     段が変わったときは戻さない。並んでいるものが別物なので、
+     前の位置に合わせても意味が無い。
+
+     位置は、その都度読むのでは間に合わない。選ぶと描き直しが続けて
+     2回走ることがあり（写真の取り込みで、もう一度）、2回目に読むときには
+     中身がもう空になっていて 0 しか返ってこない。だから中を見ている
+     あいだ、動くたびに控えておく。 */
+  const view = `${st}|${st === 'shape' ? bldShapeI : ''}`;
+  if (view !== galView) { galView = view; galY = 0; }
+  const keepY = galY;
+  g.keepY = keepY;
+
   f.srcdoc = `<!DOCTYPE html><html lang="ja"><head><meta charset="utf-8">
-<style>${themeCSS(state.theme)}\n${SITE_CSS}\n${galleryCSS(g)}</style></head>
+<style>${themeCSS(state.theme)}\n${SITE_CSS}\n${galleryCSS(g)}\n${shapeMaskCSS(galShapes(list))}</style></head>
 <body class="${esc(bodyClass())}"><div class="gg">${cards}</div>
 <script>${SITE_JS}<\/script><script>${fitJS(g)}<\/script></body></html>`;
 
   /* srcdoc を差し替えるたびに load が来るので、毎回付け直す
      （once で1回だけにすると、2段目以降が反応しなくなる） */
   f.onload = () => {
+    const w = f.contentWindow;
+    /* 中の script で戻しているが、間に合わなかったときのために */
+    if (keepY && !w.scrollY) w.scrollTo(0, keepY);
+    /* 読み込みのあいだは、写真が入るたびに高さが動いて位置も揺れる。
+       その揺れを「人が動かした」と勘違いして控えると、選ぶたびに
+       少しずつずれていく。落ち着くまでは控えない。 */
+    let settled = false;
+    setTimeout(() => { settled = true; }, 500);
+    w.addEventListener('scroll', () => { if (settled) galY = w.scrollY; }, { passive: true });
     f.contentDocument.addEventListener('click', (e) => {
       const k = e.target.closest('.gc')?.dataset.key;
       if (k) pickPreset(k);

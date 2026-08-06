@@ -804,11 +804,18 @@ input,select,textarea{font:inherit}
 .bld-steps{
   display:flex;gap:5px;margin-bottom:14px;overflow-x:auto;scrollbar-width:none;
   position:sticky;top:-26px;z-index:3;background:var(--panel);
-  margin-top:-26px;padding:26px 0 14px
+  margin-top:-26px;padding:26px 0 14px;
+  /* この帯は .modal-box.wide（縦に並べる箱）の中にいる。既定のままだと
+     中身が縦に長いときに、この帯まで縮められて、文字が半分に切れる。
+     実際そうなっていた（68px の帯が 40px に潰されていた）。縮めない。 */
+  flex:none
 }
 .bld-steps::-webkit-scrollbar{display:none}
 .bld-steps span{
-  flex:1;min-width:64px;white-space:nowrap;text-align:center;
+  /* 文字のぶんは必ず確保する。5つを画面幅で割ると、スマホでは
+     「かたちをえらぶ」が枠からはみ出して切れる。
+     入りきらないときは、細くするのではなく横に流す（親が overflow-x:auto）。 */
+  flex:1;min-width:max-content;white-space:nowrap;text-align:center;
   font-size:11px;font-weight:700;color:var(--tx2);
   padding:6px 8px;border-radius:7px;background:var(--panel2);border:1px solid var(--line)
 }
@@ -941,7 +948,7 @@ ${textFillCSS(usedFills(state))}
 <style>${themeCSS(state.theme)}\n${SITE_CSS}\n${ANIM_GAL_CSS}</style>
 <style>${themeCSS(state.theme)}\n${SITE_CSS}\n${shapeMaskCSS(Object.keys(SHAPE_MASKS))}\n${DECO_GAL_CSS}</style>
 <style>${SITE_CSS}\n${PAL_GAL_CSS}</style>
-<style>${themeCSS(state.theme)}\n${SITE_CSS}\n${galleryCSS(g)}</style>
+<style>${themeCSS(state.theme)}\n${SITE_CSS}\n${galleryCSS(g)}\n${shapeMaskCSS(galShapes(list))}</style>
 <div class="app">
   <!-- ================= 上部バー ================= -->
   <header class="topbar">
@@ -9828,7 +9835,9 @@ const photoBase = () => photoBaseFound;
    写真を足したら、ここに1行足す。art/README.md にも書いてある。
    在るものとの食い違いは verify-indart.js が見ている。 */
 const INDUSTRY_PHOTOS = {
+  restaurant: ['restaurant-1.jpg', 'restaurant-2.jpg'],
   cafe: ['cafe-1.jpg', 'cafe-2.jpg', 'cafe-3.jpg'],
+  salon: ['salon-1.jpg', 'salon-2.jpg', 'salon-3.jpg'],
   gym: ['gym-1.jpg', 'gym-2.jpg', 'gym-3.jpg'],
 };
 
@@ -9990,6 +9999,22 @@ const HERO_PRESETS = [
   { key: 'scroll-maskzoom', type: 'hero', label: 'Scroll: Mask Zoom',
     about: '文字の内側から写真が広がって全画面になる。いちばん派手。',
     props: { layout: 'cover', scroll: 'maskzoom', scrollLen: 240 } },
+
+  /* ---- 写真を、四角ではない形に抜く型。
+         抜き型そのものは前からあったが、「写真の形」を開いて選ばないと
+         出てこなかった。顔の一覧に並べておかないと、あることに気づけない。
+         形が効くのは写真を枠に入れる並び（cover では効かない）。 ---- */
+  { key: 'shape-dots', type: 'hero', label: 'Shape: Dots',
+    about: '丸がつながった格子で写真を抜く。やわらかい印象。カフェや教室に。',
+    props: { layout: 'split', shape: 'dots' } },
+
+  { key: 'shape-bars', type: 'hero', label: 'Shape: Bars',
+    about: '斜めの帯で写真を抜く。勢いが出る。ジムや工務店に。',
+    props: { layout: 'split', shape: 'bars' } },
+
+  { key: 'shape-wavebar', type: 'hero', label: 'Shape: Wave Bars',
+    about: '縦の棒が波打つ形で写真を抜く。音や律動を思わせる。',
+    props: { layout: 'split', shape: 'wavebar' } },
 
   { key: 'collage', type: 'collage', label: 'Collage',
     about: '敷き詰めた写真に、斜めの写真と縦書きの帯を重ねる。',
@@ -12317,6 +12342,12 @@ function sizeGalFrame(f, g) {
   f.style.transform = `scale(${g.gs})`;
 }
 
+/* 見本に出す型が使っている抜き型だけを足す。これが無いと「写真の形」を
+   使った型が、ただの四角に見える（選んでみるまで違いが分からない）。
+   「ブロックを足す」の一覧は BLOCKS の既定値をそのまま描くので形を持たない。
+   要るのは、顔をえらぶ一覧のほうだけ。 */
+const galShapes = (list) => [...new Set(list.map((x) => (x.props || {}).shape).filter(Boolean))];
+
 const galleryCSS = (g) => {
   const u = (px) => Math.round(px / g.gs);   // 画面上で px ぶんに見える大きさ
   return `
@@ -12383,6 +12414,11 @@ const fitJS = (g) => `
   fit();
   /* 写真が後から入ると高さが変わる。読み終わりで測り直す */
   addEventListener('load', fit);
+  /* 見ていた位置に戻す。ここで戻すのは、描かれる前に済ませるため。
+     読み終わってから戻すと、いちばん上が一瞬見えてから飛ぶ。
+     高さは上の fit() で決まっているので、この時点で戻せる。 */
+  var Y = ${Math.round(g.keepY || 0)};
+  if (Y) { scrollTo(0, Y); addEventListener('load', function () { scrollTo(0, Y); }); }
 })();
 `;
 
@@ -14590,6 +14626,10 @@ function renderBldHead() {
   $('#bldDone').disabled = st === 'hero' && !hasHero;
 }
 
+/* いま出している一覧の見分け。段が変わったかどうかの判断に使う */
+let galView = '';
+let galY = 0;      // その一覧で、どこまで見ていたか
+
 function renderBldGallery() {
   const st = bldStep();
   if (st !== 'hero' && st !== 'shape') return;
@@ -14616,14 +14656,39 @@ function renderBldGallery() {
       <div class="gc-meta"><b>${esc(p.label)}</b></div>
     </div>`).join('');
 
+  /* 中身を差し替えると、見ている位置が消えていちばん上に戻る。
+     顔は34枚あるので、下のほうで選んだ人が毎回上に飛ばされていた
+     （選ぶたびに探し直しになる）。同じ一覧を出し直すときは位置を戻す。
+
+     段が変わったときは戻さない。並んでいるものが別物なので、
+     前の位置に合わせても意味が無い。
+
+     位置は、その都度読むのでは間に合わない。選ぶと描き直しが続けて
+     2回走ることがあり（写真の取り込みで、もう一度）、2回目に読むときには
+     中身がもう空になっていて 0 しか返ってこない。だから中を見ている
+     あいだ、動くたびに控えておく。 */
+  const view = `${st}|${st === 'shape' ? bldShapeI : ''}`;
+  if (view !== galView) { galView = view; galY = 0; }
+  const keepY = galY;
+  g.keepY = keepY;
+
   f.srcdoc = `<!DOCTYPE html><html lang="ja"><head><meta charset="utf-8">
-<style>${themeCSS(state.theme)}\n${SITE_CSS}\n${galleryCSS(g)}</style></head>
+<style>${themeCSS(state.theme)}\n${SITE_CSS}\n${galleryCSS(g)}\n${shapeMaskCSS(galShapes(list))}</style></head>
 <body class="${esc(bodyClass())}"><div class="gg">${cards}</div>
 <script>${SITE_JS}<\/script><script>${fitJS(g)}<\/script></body></html>`;
 
   /* srcdoc を差し替えるたびに load が来るので、毎回付け直す
      （once で1回だけにすると、2段目以降が反応しなくなる） */
   f.onload = () => {
+    const w = f.contentWindow;
+    /* 中の script で戻しているが、間に合わなかったときのために */
+    if (keepY && !w.scrollY) w.scrollTo(0, keepY);
+    /* 読み込みのあいだは、写真が入るたびに高さが動いて位置も揺れる。
+       その揺れを「人が動かした」と勘違いして控えると、選ぶたびに
+       少しずつずれていく。落ち着くまでは控えない。 */
+    let settled = false;
+    setTimeout(() => { settled = true; }, 500);
+    w.addEventListener('scroll', () => { if (settled) galY = w.scrollY; }, { passive: true });
     f.contentDocument.addEventListener('click', (e) => {
       const k = e.target.closest('.gc')?.dataset.key;
       if (k) pickPreset(k);

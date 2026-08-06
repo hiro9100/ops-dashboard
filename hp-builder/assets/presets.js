@@ -69,6 +69,22 @@ const HERO_PRESETS = [
     about: '文字の内側から写真が広がって全画面になる。いちばん派手。',
     props: { layout: 'cover', scroll: 'maskzoom', scrollLen: 240 } },
 
+  /* ---- 写真を、四角ではない形に抜く型。
+         抜き型そのものは前からあったが、「写真の形」を開いて選ばないと
+         出てこなかった。顔の一覧に並べておかないと、あることに気づけない。
+         形が効くのは写真を枠に入れる並び（cover では効かない）。 ---- */
+  { key: 'shape-dots', type: 'hero', label: 'Shape: Dots',
+    about: '丸がつながった格子で写真を抜く。やわらかい印象。カフェや教室に。',
+    props: { layout: 'split', shape: 'dots' } },
+
+  { key: 'shape-bars', type: 'hero', label: 'Shape: Bars',
+    about: '斜めの帯で写真を抜く。勢いが出る。ジムや工務店に。',
+    props: { layout: 'split', shape: 'bars' } },
+
+  { key: 'shape-wavebar', type: 'hero', label: 'Shape: Wave Bars',
+    about: '縦の棒が波打つ形で写真を抜く。音や律動を思わせる。',
+    props: { layout: 'split', shape: 'wavebar' } },
+
   { key: 'collage', type: 'collage', label: 'Collage',
     about: '敷き詰めた写真に、斜めの写真と縦書きの帯を重ねる。',
     props: {} },
