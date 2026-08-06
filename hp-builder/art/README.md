@@ -28,6 +28,12 @@
 1. ここに `<業種>-1.jpg` … を置く
 2. `assets/industry-photos.js` の `INDUSTRY_PHOTOS` に1行足す
 
+PNG や大きすぎる写真は、そのまま置かずに落としてから置く。
+
+    node tools/photo-to-jpg.js ~/もらった.png art/gym-1.jpg
+
+PNG のままだと1枚2〜3MB。同じ見た目で 1/10 以下になる。
+
 **2つめを忘れると出ない。** ここに在るものと表の食い違いは
 `verify-indart.js` が見ている。
 
