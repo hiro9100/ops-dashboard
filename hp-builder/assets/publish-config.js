@@ -13,4 +13,11 @@ const PUBLISH = {
   endpoint: 'https://bildy-4e45e.web.app/api/publish',
   /* 公開されたページのアドレスの頭。独自ドメインを足したら、ここも足す */
   siteBase: 'https://bildy-4e45e.web.app/s/',
+
+  /* ヒーローの絵を作ってもらう窓口を出すか。いまは出さない。
+
+     出すときは、こちらと functions/.env の HP_IMAGE の両方を立てる。
+     片方だけだと、押せるのに断られる／窓口はあるのに出ない、になる。
+     鍵は Secret Manager にしか置かない。 */
+  image: false,
 };

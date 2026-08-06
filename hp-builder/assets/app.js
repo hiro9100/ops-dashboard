@@ -2808,7 +2808,7 @@ async function toDataURL(file) {
    受け取った絵は、写真を選んだときとまったく同じ道を通す
    （1600px・JPEG に落とす）。通さないと、公開の上限に引っかかる。
    ================================================================ */
-const imageEndpoint = () => (typeof PUBLISH === 'object' && PUBLISH.endpoint
+const imageEndpoint = () => (typeof PUBLISH === 'object' && PUBLISH.image && PUBLISH.endpoint
   ? PUBLISH.endpoint.replace(/\/publish$/, '/image') : '');
 const aiReady = () => !!imageEndpoint();
 
@@ -4498,6 +4498,10 @@ addEventListener('drop', (e) => {
   openSiteFile(f);
 });
 
+/* 入口へ戻る。ここでは何も消さない。
+   顔を選び直したときに、はじめて中身が入れ替わる（取り消しも効く）。 */
+$('#btnStart').addEventListener('click', () => { closeSheets(); openEasy(); });
+
 $('#btnReset').addEventListener('click', () => {
   if (!confirm('中身をすべて消して、はじめに戻ります。よろしいですか？')) return;
   localStorage.removeItem(STORE_KEY);
@@ -4624,19 +4628,31 @@ $$('[data-closesheet]').forEach((b) => b.addEventListener('click', closeSheets))
 addEventListener('resize', () => { if (!isMobile()) { closeSheets(); exitFocus(); } });
 
 /* ---------------- 起動 ---------------- */
+/* 中身がまだ無いページかどうか。ヘッダーとフッターは器なので数えない。
+   この2つしか無い画面は、作りかけではなく「まだ始めていない」画面。 */
+const notStarted = (st) => {
+  const pgs = (st && st.pages) || [];
+  return pgs.every((pg) => (pg.blocks || [])
+    .every((b) => b.type === 'header' || b.type === 'footer'));
+};
+
 (async function start() {
   await initPreview();
   const saved = load();
-  if (saved) {
+  if (saved && !notStarted(saved)) {
     state = saved;
     selected = page().blocks[1]?.id || page().blocks[0]?.id;
     refresh();
     resetHistory();
   } else {
-    /* 初回はかんたんモードを正面に出す。
-       テンプレート一覧は、そこから「テンプレートから選ぶ」で行ける。 */
-    state = buildState('corporate');
-    selected = page().blocks[1].id;
+    /* 入口を出す。
+
+       ここは「保存が無いとき」だけにしていた。だから一度でも触ると
+       二度と入口に戻れず、ヘッダーとフッターだけの画面で行き止まりに
+       なっていた（消す以外に戻る道が無かった）。
+       中身がまだ無いなら、保存があっても入口から始める。 */
+    state = saved && notStarted(saved) ? saved : buildState('corporate');
+    selected = page().blocks[1] ? page().blocks[1].id : page().blocks[0].id;
     refresh();
     resetHistory();
     openEasy();
