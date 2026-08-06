@@ -111,9 +111,20 @@ function badScript(html) {
      ここは script の中身を外してから見る。中身ごと見ると、部品の中の
      「i < n」と、そのあとの「 on…=」が1つの札に見えて、まともなページまで
      弾かれる（実際に弾かれた）。 */
-  const markup = html.replace(/<script\b[^>]*>[\s\S]*?<\/script\s*>/gi, '');
-  if (/<[^>]+\son[a-z]+\s*=/i.test(markup)) return '要素に直接書いた動き（on…=）は入れられません';
-  if (/\bhref\s*=\s*["']?\s*javascript:/i.test(markup)) return 'javascript: のリンクは入れられません';
+  let markup = html.replace(/<script\b[^>]*>[\s\S]*?<\/script\s*>/gi, '');
+
+  /* 属性の中の文字は、ブラウザが読むときに元へ戻る。
+     javascript&colon; や &#106;avascript: と書かれると、
+     そのままの形で探しても見つからない。先に戻してから探す。 */
+  markup = markup
+    .replace(/&#x([0-9a-f]+);?/gi, (m, h) => String.fromCharCode(parseInt(h, 16)))
+    .replace(/&#(\d+);?/g, (m, d) => String.fromCharCode(parseInt(d, 10)))
+    .replace(/&colon;/gi, ':').replace(/&Tab;|&NewLine;/gi, ' ');
+
+  /* 札の区切りは空白だけではない。<img src=x/onerror=…> のように
+     斜線でも区切れる（ブラウザはこれを別の札として読む）。 */
+  if (/<[^>]+[\s/]on[a-z]+\s*=/i.test(markup)) return '要素に直接書いた動き（on…=）は入れられません';
+  if (/\bhref\s*=\s*["']?\s*javascript\s*:/i.test(markup)) return 'javascript: のリンクは入れられません';
   return '';
 }
 
@@ -595,6 +606,11 @@ function securityHeaders(res) {
     "img-src data: blob: https:",
     "media-src data: blob: https:",
     "font-src data: https:",
+    /* 動画ブロックは、YouTube か Vimeo の再生器を枠で借りる。
+       ここを開けないと、動画を置いたページだけ空欄になる
+       （default-src 'none' は枠の中身も止めるため）。
+       借りられる先は、このツールが作れる2つだけに絞る。 */
+    'frame-src https://www.youtube-nocookie.com https://player.vimeo.com',
     `connect-src ${apiOrigin()}`,
     `form-action ${apiOrigin()}`,
     "frame-ancestors 'none'",
