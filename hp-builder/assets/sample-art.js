@@ -132,7 +132,7 @@ const isSampleArt = (v) => typeof v === 'string' && v.startsWith('data:image/svg
    絵と文字と地の色がちぐはぐにならない。
 
    ただし読めなくなるくらいなら寄せない。土台の色のままのほうがましで、
-   これは写真から色を作るとき（paletteFromPhotos）と同じ考えかた。 */
+   色みだけ業種に寄せて、明るさと濃さは元の配色から動かさない。 */
 function themeFromIndustry(base, key) {
   const a = ART[key];
   if (!a) return base;

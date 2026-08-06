@@ -1071,17 +1071,9 @@ ${textFillCSS(usedFills(state))}
     <p class="modal-sub" id="bldSub"></p>
     <p class="bld-anytime">中身も順番も、あとから。いまは形だけ決めます。</p>
 
-    <!-- ① 雰囲気（＝いちばん上）のときだけ出る、写真の欄 -->
+    <!-- ① 業種をえらぶ -->
     <div id="bldIndStep" hidden>
       <div class="ez-grid" id="bldInds"></div>
-    </div>
-
-    <div id="bldPhoto" hidden>
-      <button class="ez-drop sm" id="bldPick">
-        <b>写真</b>
-        <small id="bldPickSub">無ければ、こちらで見繕います</small>
-      </button>
-      <div class="ez-thumbs" id="bldThumbs"></div>
     </div>
 
     <!-- ② 必要なものをチェック -->
@@ -5692,7 +5684,7 @@ const isSampleArt = (v) => typeof v === 'string' && v.startsWith('data:image/svg
    絵と文字と地の色がちぐはぐにならない。
 
    ただし読めなくなるくらいなら寄せない。土台の色のままのほうがましで、
-   これは写真から色を作るとき（paletteFromPhotos）と同じ考えかた。 */
+   色みだけ業種に寄せて、明るさと濃さは元の配色から動かさない。 */
 function themeFromIndustry(base, key) {
   const a = ART[key];
   if (!a) return base;
@@ -10514,12 +10506,13 @@ const NEEDS = [
 
    対象は「いまホームページを持っていない人」。
    文章を書く、配色を決める、写真をどこに置くか考える——
-   そのどれもさせずに、業種と店名と写真だけで1枚を組み上げる。
+   そのどれもさせずに、業種をえらぶだけで1枚を組み上げる。
 
-     業種をえらぶ  →  店名を入れる  →  写真をえらぶ  →  完成
+     業種をえらぶ  →  顔をえらぶ  →  中身をえらぶ  →  かたちをえらぶ  →  完成
 
-   中身は既存のテンプレートを土台にして、店名の入った文章で上書きする。
-   配色は写真から拾う。写真が無いときは土台の配色のまま。
+   ここが持っているのは業種の一覧と、業種ごとの文章。
+   配色は業種から決め（themeFromIndustry）、写真は業種のものを使う
+   （industry-photos.js）。店名と連絡先は最後にまとめて聞く。
    ================================================================ */
 
 /* ---------------- 業種 ----------------
@@ -10738,17 +10731,6 @@ const RGB2HSL = (r, g, b) => {
   return [h, s, l];
 };
 
-const HSL2HEX = (h, s, l) => {
-  const c = (1 - Math.abs(2 * l - 1)) * s;
-  const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
-  const m = l - c / 2;
-  const t = h / 60;
-  const [r, g, b] = t < 1 ? [c, x, 0] : t < 2 ? [x, c, 0] : t < 3 ? [0, c, x]
-    : t < 4 ? [0, x, c] : t < 5 ? [x, 0, c] : [c, 0, x];
-  const hx = (v) => Math.round((v + m) * 255).toString(16).padStart(2, '0');
-  return `#${hx(r)}${hx(g)}${hx(b)}`;
-};
-
 const relLum = (hex) => {
   const n = parseInt(hex.slice(1), 16);
   const f = (v) => { v /= 255; return v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); };
@@ -10759,67 +10741,14 @@ const contrast = (a, b) => {
   return (x + 0.05) / (y + 0.05);
 };
 
-/* 写真の主役の色みを1つ返す。見つからなければ null */
-async function hueFromPhotos(dataURLs) {
-  const bins = new Array(24).fill(0);
-  for (const src of dataURLs.slice(0, 6)) {
-    const im = new Image();
-    try {
-      await new Promise((res, rej) => { im.onload = res; im.onerror = rej; im.src = src; });
-    } catch { continue; }
-    const cv = document.createElement('canvas');
-    cv.width = 48; cv.height = 48;
-    const cx = cv.getContext('2d', { willReadFrequently: true });
-    cx.drawImage(im, 0, 0, 48, 48);
-    const d = cx.getImageData(0, 0, 48, 48).data;
-    for (let i = 0; i < d.length; i += 4) {
-      const [h, s, l] = RGB2HSL(d[i], d[i + 1], d[i + 2]);
-      /* 白飛び・黒つぶれ・灰色は、色みを持っていないので数えない */
-      if (l < 0.12 || l > 0.92 || s < 0.18) continue;
-      bins[Math.floor(h / 15) % 24] += s;      // 鮮やかな画素ほど重く数える
-    }
-  }
-  const top = bins.indexOf(Math.max(...bins));
-  return Math.max(...bins) > 0 ? top * 15 + 7.5 : null;
-}
-
-/* 土台の配色の、色みだけ写真に合わせて差し替える。
-   背景と文字はそのままなので、読めなくなることがない。 */
-const AA = 4.5;   // 小さい文字でも読める境目（WCAG AA）
-
-async function paletteFromPhotos(baseTheme, dataURLs) {
-  const h = await hueFromPhotos(dataURLs);
-  if (h === null) return baseTheme;
-  const t = JSON.parse(JSON.stringify(baseTheme));
-
-  /* 明るさをどちらへ動かすかは、背景で決まる。
-     暗い背景で色を暗くしていくと、かえって読めなくなる
-     （bistro と demolition が実際にそうなった）。 */
-  const onDark = relLum(t.bg) < 0.35;
-  const step = onDark ? 0.02 : -0.02;
-  let l = onDark ? 0.56 : 0.46;
-  let primary = HSL2HEX(h, 0.58, l);
-  for (let i = 0; i < 40 && contrast(primary, t.bg) < AA; i++) {
-    const next = l + step;
-    if (next < 0.14 || next > 0.94) break;
-    l = next;
-    primary = HSL2HEX(h, 0.58, l);
-  }
-
-  /* それでも届かない色みなら、土台の配色のままにしておく。
-     読めない色を出すくらいなら、写真に寄せないほうがいい。 */
-  if (contrast(primary, t.bg) < AA) return baseTheme;
-
-  t.primary = primary;
-  t.accent = HSL2HEX((h + 20) % 360, 0.5,
-    onDark ? Math.min(0.86, l + 0.12) : Math.min(0.72, l + 0.2));
-  return t;
-}
-
 /* 業種ごとの文章は、順を追って組むときの①（ビジネス情報）で使う。
    業種を選んでおくと、そのあと足すヒーローや紹介・特徴の文章が、
    その業種のものになる（app.js の fillFromBiz）。
-   写真の差し込みは spreadPhotos が受け持つ。 */
+   写真の差し込みは spreadPhotos が受け持つ。
+
+   写真から配色を作る一式（hueFromPhotos／paletteFromPhotos／HSL2HEX）は、
+   顔をえらぶ画面から写真の欄を外したときに、呼ぶ人がいなくなったので
+   外した。配色は業種から決める（themeFromIndustry）。 */
 
 </script>
 <script>
@@ -14649,7 +14578,6 @@ function presetSample(p) {
    空の枠を並べても、その型が自分に合うのかは掴めない。 */
 const BLD_STEPS = ['ind', 'hero', 'needs', 'shape', 'done'];
 let bldI = 0;
-let bldPhotos = [];        // ①で選んだ写真
 let bldNeeds = [];         // ②でチェックした使い道のキー
 let bldShapeI = 0;         // ③でいま何個目を見ているか
 const bldNeedBlock = new Map();   // 使い道 → 置いたブロックのID
@@ -14714,7 +14642,6 @@ function renderBldHead() {
   $('#bldSub').textContent = sub;
 
   $('#bldIndStep').hidden = st !== 'ind';
-  $('#bldPhoto').hidden = st !== 'hero';
   $('#bldNeeds').hidden = st !== 'needs';
   $('#bldFinish').hidden = st !== 'done';
   $('#bldGal').hidden = st !== 'hero' && st !== 'shape';
@@ -14907,17 +14834,15 @@ function pickPreset(key) {
    空の枠に「IMAGE」と出ているページは作りかけにしか見えず、そこで
    手が止まる。写真が1枚も無くても、形が見えている状態にする。
 
-   すでに人が入れた写真には触らない（仮の絵と、①で選んだ写真だけ入れ替える）。 */
+   すでに人が入れた写真には触らない（仮の絵だけ入れ替える）。 */
 function spreadPhotos() {
   const ind = (state.biz && state.biz.ind) || 'company';
-  const mine = new Set(bldPhotos);
-  let i = 0, k = 0;
+  let k = 0;
   page().blocks.forEach((b) => {
     imageSlots(b).forEach((slot) => {
       const cur = getPath(b.props, slot);
-      if (cur && !isSampleArt(cur) && !mine.has(cur)) return;   // 人が入れたものは残す
-      if (i < bldPhotos.length) setPath(b.props, slot, bldPhotos[i++]);
-      else setPath(b.props, slot, sampleArt(ind, k++));
+      if (cur && !isSampleArt(cur)) return;   // 人が入れたものは残す
+      setPath(b.props, slot, sampleArt(ind, k++));
     });
   });
   upgradePhotos(ind);
@@ -14980,9 +14905,8 @@ $('#bldInds').addEventListener('click', (e) => {
   const k = e.target.closest('button')?.dataset.ind;
   if (!k) return;
   state.biz = Object.assign({}, state.biz, { ind: k });
-  /* 写真がまだ無いうちは、業種の色に寄せる。あとで写真を入れたら
-     そちらから作り直すので、ここで決めた色は残らない */
-  if (!bldPhotos.length) { state.theme = themeFromIndustry(state.theme, k); applyTone(); }
+  state.theme = themeFromIndustry(state.theme, k);
+  applyTone();
   renderBldInds();
   spreadPhotos();     // 仮の絵も、その業種のものに描き直す
   applyBiz();
@@ -15082,31 +15006,6 @@ function fillFromBiz(b) {
   }
 }
 
-/* ---------------- ② 写真 ---------------- */
-const bldPicker = document.createElement('input');
-bldPicker.type = 'file';
-bldPicker.accept = 'image/*';
-bldPicker.multiple = true;
-
-$('#bldPick').addEventListener('click', () => bldPicker.click());
-bldPicker.addEventListener('change', async () => {
-  const files = [...bldPicker.files].filter((f) => f.type.startsWith('image/'));
-  bldPicker.value = '';
-  if (!files.length) return;
-  flash('読み込んでいます…');
-  for (const f of files) {
-    try { bldPhotos.push(await toDataURL(f)); } catch { /* 読めない1枚は飛ばす */ }
-  }
-  $('#bldThumbs').innerHTML = bldPhotos.map((src) => `<img src="${esc(src)}" alt="">`).join('');
-  $('#bldPickSub').textContent = `${bldPhotos.length}枚。この先のブロックにも順に入ります`;
-  /* 写真に合わせて配色も寄せる。色をあとから選び直す手間を1つ減らす */
-  try { state.theme = await paletteFromPhotos(state.theme, bldPhotos); applyTone(); } catch { /* 色は元のまま */ }
-  spreadPhotos();
-  refresh();
-  refreshBld();
-  flash(`${bldPhotos.length}枚を入れました`);
-});
-
 /* ---------------- ④ 仕上げ ---------------- */
 $('#bldFinish').addEventListener('click', (e) => {
   const k = e.target.closest('[data-fin]')?.dataset.fin;
@@ -15132,7 +15031,6 @@ function finishBuild() {
 function openBuild(fresh) {
   bldBefore = state ? clone(state) : null;
 
-  bldPhotos = [];
   bldI = 0;
   bldShapeI = 0;
   bldNames.clear();
@@ -15142,8 +15040,6 @@ function openBuild(fresh) {
   selected = page().blocks[0].id;
   selectedEl = null;
   closed.clear();
-  $('#bldThumbs').innerHTML = '';
-  $('#bldPickSub').textContent = '無ければ、業種に合わせて見繕います';
   BIZ_FIELDS.forEach(([id, key]) => { $(`#${id}`).value = (state.biz && state.biz[key]) || ''; });
   $('#bizMore').open = false;
   renderBldInds();

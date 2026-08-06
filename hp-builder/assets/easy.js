@@ -3,12 +3,13 @@
 
    対象は「いまホームページを持っていない人」。
    文章を書く、配色を決める、写真をどこに置くか考える——
-   そのどれもさせずに、業種と店名と写真だけで1枚を組み上げる。
+   そのどれもさせずに、業種をえらぶだけで1枚を組み上げる。
 
-     業種をえらぶ  →  店名を入れる  →  写真をえらぶ  →  完成
+     業種をえらぶ  →  顔をえらぶ  →  中身をえらぶ  →  かたちをえらぶ  →  完成
 
-   中身は既存のテンプレートを土台にして、店名の入った文章で上書きする。
-   配色は写真から拾う。写真が無いときは土台の配色のまま。
+   ここが持っているのは業種の一覧と、業種ごとの文章。
+   配色は業種から決め（themeFromIndustry）、写真は業種のものを使う
+   （industry-photos.js）。店名と連絡先は最後にまとめて聞く。
    ================================================================ */
 
 /* ---------------- 業種 ----------------
@@ -227,17 +228,6 @@ const RGB2HSL = (r, g, b) => {
   return [h, s, l];
 };
 
-const HSL2HEX = (h, s, l) => {
-  const c = (1 - Math.abs(2 * l - 1)) * s;
-  const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
-  const m = l - c / 2;
-  const t = h / 60;
-  const [r, g, b] = t < 1 ? [c, x, 0] : t < 2 ? [x, c, 0] : t < 3 ? [0, c, x]
-    : t < 4 ? [0, x, c] : t < 5 ? [x, 0, c] : [c, 0, x];
-  const hx = (v) => Math.round((v + m) * 255).toString(16).padStart(2, '0');
-  return `#${hx(r)}${hx(g)}${hx(b)}`;
-};
-
 const relLum = (hex) => {
   const n = parseInt(hex.slice(1), 16);
   const f = (v) => { v /= 255; return v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); };
@@ -248,64 +238,11 @@ const contrast = (a, b) => {
   return (x + 0.05) / (y + 0.05);
 };
 
-/* 写真の主役の色みを1つ返す。見つからなければ null */
-async function hueFromPhotos(dataURLs) {
-  const bins = new Array(24).fill(0);
-  for (const src of dataURLs.slice(0, 6)) {
-    const im = new Image();
-    try {
-      await new Promise((res, rej) => { im.onload = res; im.onerror = rej; im.src = src; });
-    } catch { continue; }
-    const cv = document.createElement('canvas');
-    cv.width = 48; cv.height = 48;
-    const cx = cv.getContext('2d', { willReadFrequently: true });
-    cx.drawImage(im, 0, 0, 48, 48);
-    const d = cx.getImageData(0, 0, 48, 48).data;
-    for (let i = 0; i < d.length; i += 4) {
-      const [h, s, l] = RGB2HSL(d[i], d[i + 1], d[i + 2]);
-      /* 白飛び・黒つぶれ・灰色は、色みを持っていないので数えない */
-      if (l < 0.12 || l > 0.92 || s < 0.18) continue;
-      bins[Math.floor(h / 15) % 24] += s;      // 鮮やかな画素ほど重く数える
-    }
-  }
-  const top = bins.indexOf(Math.max(...bins));
-  return Math.max(...bins) > 0 ? top * 15 + 7.5 : null;
-}
-
-/* 土台の配色の、色みだけ写真に合わせて差し替える。
-   背景と文字はそのままなので、読めなくなることがない。 */
-const AA = 4.5;   // 小さい文字でも読める境目（WCAG AA）
-
-async function paletteFromPhotos(baseTheme, dataURLs) {
-  const h = await hueFromPhotos(dataURLs);
-  if (h === null) return baseTheme;
-  const t = JSON.parse(JSON.stringify(baseTheme));
-
-  /* 明るさをどちらへ動かすかは、背景で決まる。
-     暗い背景で色を暗くしていくと、かえって読めなくなる
-     （bistro と demolition が実際にそうなった）。 */
-  const onDark = relLum(t.bg) < 0.35;
-  const step = onDark ? 0.02 : -0.02;
-  let l = onDark ? 0.56 : 0.46;
-  let primary = HSL2HEX(h, 0.58, l);
-  for (let i = 0; i < 40 && contrast(primary, t.bg) < AA; i++) {
-    const next = l + step;
-    if (next < 0.14 || next > 0.94) break;
-    l = next;
-    primary = HSL2HEX(h, 0.58, l);
-  }
-
-  /* それでも届かない色みなら、土台の配色のままにしておく。
-     読めない色を出すくらいなら、写真に寄せないほうがいい。 */
-  if (contrast(primary, t.bg) < AA) return baseTheme;
-
-  t.primary = primary;
-  t.accent = HSL2HEX((h + 20) % 360, 0.5,
-    onDark ? Math.min(0.86, l + 0.12) : Math.min(0.72, l + 0.2));
-  return t;
-}
-
 /* 業種ごとの文章は、順を追って組むときの①（ビジネス情報）で使う。
    業種を選んでおくと、そのあと足すヒーローや紹介・特徴の文章が、
    その業種のものになる（app.js の fillFromBiz）。
-   写真の差し込みは spreadPhotos が受け持つ。 */
+   写真の差し込みは spreadPhotos が受け持つ。
+
+   写真から配色を作る一式（hueFromPhotos／paletteFromPhotos／HSL2HEX）は、
+   顔をえらぶ画面から写真の欄を外したときに、呼ぶ人がいなくなったので
+   外した。配色は業種から決める（themeFromIndustry）。 */

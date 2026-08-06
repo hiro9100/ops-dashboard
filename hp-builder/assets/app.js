@@ -3735,7 +3735,6 @@ function presetSample(p) {
    空の枠を並べても、その型が自分に合うのかは掴めない。 */
 const BLD_STEPS = ['ind', 'hero', 'needs', 'shape', 'done'];
 let bldI = 0;
-let bldPhotos = [];        // ①で選んだ写真
 let bldNeeds = [];         // ②でチェックした使い道のキー
 let bldShapeI = 0;         // ③でいま何個目を見ているか
 const bldNeedBlock = new Map();   // 使い道 → 置いたブロックのID
@@ -3800,7 +3799,6 @@ function renderBldHead() {
   $('#bldSub').textContent = sub;
 
   $('#bldIndStep').hidden = st !== 'ind';
-  $('#bldPhoto').hidden = st !== 'hero';
   $('#bldNeeds').hidden = st !== 'needs';
   $('#bldFinish').hidden = st !== 'done';
   $('#bldGal').hidden = st !== 'hero' && st !== 'shape';
@@ -3993,17 +3991,15 @@ function pickPreset(key) {
    空の枠に「IMAGE」と出ているページは作りかけにしか見えず、そこで
    手が止まる。写真が1枚も無くても、形が見えている状態にする。
 
-   すでに人が入れた写真には触らない（仮の絵と、①で選んだ写真だけ入れ替える）。 */
+   すでに人が入れた写真には触らない（仮の絵だけ入れ替える）。 */
 function spreadPhotos() {
   const ind = (state.biz && state.biz.ind) || 'company';
-  const mine = new Set(bldPhotos);
-  let i = 0, k = 0;
+  let k = 0;
   page().blocks.forEach((b) => {
     imageSlots(b).forEach((slot) => {
       const cur = getPath(b.props, slot);
-      if (cur && !isSampleArt(cur) && !mine.has(cur)) return;   // 人が入れたものは残す
-      if (i < bldPhotos.length) setPath(b.props, slot, bldPhotos[i++]);
-      else setPath(b.props, slot, sampleArt(ind, k++));
+      if (cur && !isSampleArt(cur)) return;   // 人が入れたものは残す
+      setPath(b.props, slot, sampleArt(ind, k++));
     });
   });
   upgradePhotos(ind);
@@ -4066,9 +4062,8 @@ $('#bldInds').addEventListener('click', (e) => {
   const k = e.target.closest('button')?.dataset.ind;
   if (!k) return;
   state.biz = Object.assign({}, state.biz, { ind: k });
-  /* 写真がまだ無いうちは、業種の色に寄せる。あとで写真を入れたら
-     そちらから作り直すので、ここで決めた色は残らない */
-  if (!bldPhotos.length) { state.theme = themeFromIndustry(state.theme, k); applyTone(); }
+  state.theme = themeFromIndustry(state.theme, k);
+  applyTone();
   renderBldInds();
   spreadPhotos();     // 仮の絵も、その業種のものに描き直す
   applyBiz();
@@ -4168,31 +4163,6 @@ function fillFromBiz(b) {
   }
 }
 
-/* ---------------- ② 写真 ---------------- */
-const bldPicker = document.createElement('input');
-bldPicker.type = 'file';
-bldPicker.accept = 'image/*';
-bldPicker.multiple = true;
-
-$('#bldPick').addEventListener('click', () => bldPicker.click());
-bldPicker.addEventListener('change', async () => {
-  const files = [...bldPicker.files].filter((f) => f.type.startsWith('image/'));
-  bldPicker.value = '';
-  if (!files.length) return;
-  flash('読み込んでいます…');
-  for (const f of files) {
-    try { bldPhotos.push(await toDataURL(f)); } catch { /* 読めない1枚は飛ばす */ }
-  }
-  $('#bldThumbs').innerHTML = bldPhotos.map((src) => `<img src="${esc(src)}" alt="">`).join('');
-  $('#bldPickSub').textContent = `${bldPhotos.length}枚。この先のブロックにも順に入ります`;
-  /* 写真に合わせて配色も寄せる。色をあとから選び直す手間を1つ減らす */
-  try { state.theme = await paletteFromPhotos(state.theme, bldPhotos); applyTone(); } catch { /* 色は元のまま */ }
-  spreadPhotos();
-  refresh();
-  refreshBld();
-  flash(`${bldPhotos.length}枚を入れました`);
-});
-
 /* ---------------- ④ 仕上げ ---------------- */
 $('#bldFinish').addEventListener('click', (e) => {
   const k = e.target.closest('[data-fin]')?.dataset.fin;
@@ -4218,7 +4188,6 @@ function finishBuild() {
 function openBuild(fresh) {
   bldBefore = state ? clone(state) : null;
 
-  bldPhotos = [];
   bldI = 0;
   bldShapeI = 0;
   bldNames.clear();
@@ -4228,8 +4197,6 @@ function openBuild(fresh) {
   selected = page().blocks[0].id;
   selectedEl = null;
   closed.clear();
-  $('#bldThumbs').innerHTML = '';
-  $('#bldPickSub').textContent = '無ければ、業種に合わせて見繕います';
   BIZ_FIELDS.forEach(([id, key]) => { $(`#${id}`).value = (state.biz && state.biz[key]) || ''; });
   $('#bizMore').open = false;
   renderBldInds();
