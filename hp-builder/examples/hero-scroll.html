@@ -2310,10 +2310,17 @@ p:last-child{margin-bottom:0}
    指定しないと中身なり（＝中は全部 position:absolute なので 0）に潰れ、
    まっさらな帯だけが出る。 */
 .clip-box{position:relative;width:100%;height:100vh;overflow:hidden}
+/* 2枚は重ねてあり、円で切って下の1枚を出す。
+
+   このとき、それぞれを1つのかたまりとして扱わないと、下の写真が上の
+   文字を隠せない。中の文字は z-index:2 を持っているので、かたまりに
+   なっていないと、両方の文字が同じ土俵に並んで、写真より前に出てくる。
+   結果、円の中で2つの見出しが重なって読めなくなる（実際そうなっていた）。
+   段を付けて、1枚まるごと前後させる。 */
 .clip-side{position:absolute;inset:0;display:grid;place-items:center;text-align:center;padding:0 24px}
-.clip-a{background:var(--c-surface)}
+.clip-a{background:var(--c-surface);z-index:1}
 .clip-b{background:linear-gradient(140deg,var(--c-primary),var(--c-accent));color:#fff;
-  clip-path:circle(var(--r,0%) at 50% 50%)}
+  clip-path:circle(var(--r,0%) at 50% 50%);z-index:2}
 .clip-side img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 .clip-side .in-txt{position:relative;z-index:2}
 .clip-box h3{font-size:clamp(24px,3.4722vw,69.4444px);font-weight:800;margin:0;font-family:var(--font-head)}

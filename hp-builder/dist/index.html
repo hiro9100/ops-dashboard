@@ -3559,10 +3559,17 @@ p:last-child{margin-bottom:0}
    指定しないと中身なり（＝中は全部 position:absolute なので 0）に潰れ、
    まっさらな帯だけが出る。 */
 .clip-box{position:relative;width:100%;height:100vh;overflow:hidden}
+/* 2枚は重ねてあり、円で切って下の1枚を出す。
+
+   このとき、それぞれを1つのかたまりとして扱わないと、下の写真が上の
+   文字を隠せない。中の文字は z-index:2 を持っているので、かたまりに
+   なっていないと、両方の文字が同じ土俵に並んで、写真より前に出てくる。
+   結果、円の中で2つの見出しが重なって読めなくなる（実際そうなっていた）。
+   段を付けて、1枚まるごと前後させる。 */
 .clip-side{position:absolute;inset:0;display:grid;place-items:center;text-align:center;padding:0 24px}
-.clip-a{background:var(--c-surface)}
+.clip-a{background:var(--c-surface);z-index:1}
 .clip-b{background:linear-gradient(140deg,var(--c-primary),var(--c-accent));color:#fff;
-  clip-path:circle(var(--r,0%) at 50% 50%)}
+  clip-path:circle(var(--r,0%) at 50% 50%);z-index:2}
 .clip-side img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 .clip-side .in-txt{position:relative;z-index:2}
 .clip-box h3{font-size:clamp(24px,3.4722vw,69.4444px);font-weight:800;margin:0;font-family:var(--font-head)}
@@ -12471,8 +12478,6 @@ body{margin:0;background:#0d1016;padding:${u(14)}px;
 .gc-scale .stack{gap:14px}
 .gc-scale .clip-box{height:360px}
 .gc-scale .clip-b{clip-path:circle(34% at 50% 50%)}
-/* 見本では手前の文字だけ出す。奥の文字も出すと、円の中で重なって読めない */
-.gc-scale .clip-b .in-txt{display:none}
 .gc-scale .shift-pane{min-height:360px}
 .gc-scale .tl-rail::after{transform:scaleY(.55)}
 .gc-scale .tl-item::before{border-color:var(--c-primary);background:var(--c-primary)}

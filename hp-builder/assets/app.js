@@ -1567,8 +1567,6 @@ body{margin:0;background:#0d1016;padding:${u(14)}px;
 .gc-scale .stack{gap:14px}
 .gc-scale .clip-box{height:360px}
 .gc-scale .clip-b{clip-path:circle(34% at 50% 50%)}
-/* 見本では手前の文字だけ出す。奥の文字も出すと、円の中で重なって読めない */
-.gc-scale .clip-b .in-txt{display:none}
 .gc-scale .shift-pane{min-height:360px}
 .gc-scale .tl-rail::after{transform:scaleY(.55)}
 .gc-scale .tl-item::before{border-color:var(--c-primary);background:var(--c-primary)}
