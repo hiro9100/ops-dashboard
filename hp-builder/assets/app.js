@@ -1891,19 +1891,19 @@ const HDR_ABOUT = {
 
 /* 文字の塗り。グラデーションはCSSだけ、絵のものは text-fills.js から */
 const TEXT_FILL_LIST = [
-  ['', 'None'],
-  ['gold', 'Gold'],
-  ['fire', 'Fire'],
-  ['metal', 'Metal'],
-  ['night', 'Night'],
-  ['rainbow', 'Rainbow'],
-  ['brand', 'Brand'],
-  ['glass', 'Glass'],
-  ['glint', 'Glint'],
-  ['flame', 'Flame Photo'],
-  ['polydark', 'Poly Dark'],
-  ['polylight', 'Poly Light'],
-  ['own', 'Custom'],
+  ['', 'なし'],
+  ['gold', '金'],
+  ['fire', '炎'],
+  ['metal', '金属'],
+  ['night', '夜空'],
+  ['rainbow', '虹'],
+  ['brand', 'テーマの色'],
+  ['glass', 'ガラス'],
+  ['glint', 'きらり'],
+  ['flame', '炎の写真'],
+  ['polydark', '多角形（濃い）'],
+  ['polylight', '多角形（淡い）'],
+  ['own', '持ち込みの画像'],
 ];
 
 const FTR_ABOUT = {
