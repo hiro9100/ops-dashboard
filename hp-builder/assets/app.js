@@ -3692,6 +3692,16 @@ function presetSample(p) {
   const def = BLOCKS[p.type];
   const props = Object.assign(clone(def.defaults), clone(p.props));
   const ind = (state && state.biz && state.biz.ind) || 'company';
+  /* 見本の文章も、選んだ業種のものにする。
+     「ここにいちばん伝えたいキャッチコピーを」のままだと、どの型も
+     同じ顔に見えて、自分の店に合うかどうかが掴めない。 */
+  const lead = p.type === 'hero' && industryLead();
+  if (lead) {
+    props.eyebrow = lead.eyebrow;
+    props.title = leadTitle(lead, props.layout);
+    props.text = lead.text;
+    if (PRESET_SAMPLE.side.has(props.side)) props.side = '';
+  }
   const b0 = { type: p.type, props };
   imageSlots(b0).forEach((slot, i) => {
     if (getPath(props, slot)) return;
@@ -4088,13 +4098,45 @@ function applyBiz() {
 
 /* 1つのブロックに、分かっている情報を入れる。
    すでに人が書き替えたところは触らない（初期値のときだけ入れる）。 */
+/* 型ごとに置いてある見本の文章。
+
+   「ここに、いちばん強いひとこと。」のような文は、型を見せるための
+   置きものであって、人が書いたものではない。ここを覚えておかないと、
+   人が直した文と区別が付かず、業種の文章で置きかえられない
+   （実際、型に文章のあるものは、ずっと置きもののままだった）。 */
+const PRESET_SAMPLE = (() => {
+  const out = { title: new Set(), text: new Set(), eyebrow: new Set(), side: new Set() };
+  [...HERO_PRESETS, ...SECTION_PRESETS, ...FOOTER_PRESETS].forEach((p) => {
+    Object.keys(out).forEach((k) => { if (p.props && p.props[k]) out[k].add(p.props[k]); });
+  });
+  return out;
+})();
+
+/* その業種の、いちばん上に出す一言。店名は使わない（まだ聞いていない）。
+   業種を選んでいなければ空。 */
+/* 型によって、入る言葉の長さがちがう。
+   「名前を大きく置く型」は1〜2行の短い言葉を前提に組んであるので、
+   長い一言をそのまま入れると3行になって写真からはみ出す。 */
+function leadTitle(lead, layout) {
+  return (layout === 'poster' && lead.short) ? lead.short : lead.title;
+}
+
+function industryLead() {
+  const k = state && state.biz && state.biz.ind;
+  const ind = k && INDUSTRIES.find((i) => i.key === k);
+  return (ind && ind.lead) || null;
+}
+
 function fillFromBiz(b) {
   const z = state.biz || {};
   const def = BLOCKS[b.type].defaults;
   const put = (key, val) => {
     if (!val) return;
     if (b.props[key] === undefined) return;
-    if (b.props[key] !== def[key]) return;   // 人が直したものは残す
+    const cur = b.props[key];
+    /* 人が直したものは残す。ただし、型に付いてきた見本の文章は
+       「まだ書き替えていない」ものとして扱う */
+    if (cur !== def[key] && !(PRESET_SAMPLE[key] && PRESET_SAMPLE[key].has(cur))) return;
     b.props[key] = val;
   };
   if (b.type === 'header' || b.type === 'footer') put('logo', z.name);
@@ -4113,7 +4155,14 @@ function fillFromBiz(b) {
   if (!ind) return;
   const c = ind.copy(z.name || 'お店の名前');
   if (b.type === 'hero') {
-    put('eyebrow', c.hero.eyebrow); put('title', c.hero.title); put('text', c.hero.text);
+    /* いちばん上は、店名ではなく一言を置く。店名はヘッダーとフッターに
+       出るので、ここで繰り返す必要はない。それに顔をえらぶ段では
+       まだ店名を聞いていないので、店名で組むと「お店の名前」と出る。 */
+    const lead = ind.lead || c.hero;
+    put('eyebrow', lead.eyebrow); put('title', leadTitle(lead, b.props.layout)); put('text', lead.text);
+    /* 「名前を大きく」の型だけは、わきに欧文が付く。業種の一言に
+       替えたあとも人名が残ると、ちぐはぐになる */
+    if (PRESET_SAMPLE.side.has(b.props.side)) b.props.side = '';
   }
   if (b.type === 'about') { put('title', c.about.title); put('body', c.about.body); }
   if (b.type === 'features' && JSON.stringify(b.props.items) === JSON.stringify(def.items)) {

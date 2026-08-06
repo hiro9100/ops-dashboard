@@ -13,10 +13,19 @@
 
 /* ---------------- 業種 ----------------
    tpl は土台にするテンプレート。copy はそこに被せる文章。
-   {n} は店名に置き換わる。 */
+   {n} は店名に置き換わる。
+
+   lead は、いちばん上に出す一言。店名を使わない。
+   short は、名前を大きく置く型（Poster）のための短い形。
+   あの型は1〜2行の短い言葉を前提に組んであるので、長い一言を入れると
+   3行になって写真からはみ出す（実際にはみ出した）。
+   顔をえらぶ段では、まだ店名を聞いていない（聞くのは最後）。
+   店名で組み立てた文章を出すと「お店の名前」と出てしまい、
+   置きっぱなしの見本にしか見えない。だから名前に頼らない文にする。 */
 const INDUSTRIES = [
   {
     key: 'cafe', label: 'カフェ・喫茶店', icon: '☕', tpl: 'shop',
+    lead: { eyebrow: 'CAFE', title: 'いい一日は、\n一杯からはじまる。', text: '焙煎したての豆を、注文を受けてから挽いて淹れています。', short: '今日の\n一杯。' },
     copy: (n) => ({
       hero: { eyebrow: 'CAFE', title: `${n}`, text: 'ゆっくり過ごせる時間と、ていねいに淹れた一杯を。' },
       about: { title: 'この場所のこと',
@@ -32,6 +41,7 @@ const INDUSTRIES = [
   },
   {
     key: 'restaurant', label: 'レストラン・居酒屋', icon: '🍽', tpl: 'bistro',
+    lead: { eyebrow: 'RESTAURANT', title: 'その日いちばんのものを。', text: '献立は毎朝、市場から届いたものを見てから決めています。', short: '今日の\n一皿。' },
     copy: (n) => ({
       hero: { eyebrow: 'RESTAURANT', title: `${n}`, text: '季節のものを、いちばんおいしい形で。' },
       about: { title: 'お店について',
@@ -47,6 +57,7 @@ const INDUSTRIES = [
   },
   {
     key: 'salon', label: '美容室・ネイル・エステ', icon: '✂', tpl: 'clinic',
+    lead: { eyebrow: 'SALON', title: '軽くなって、帰る。', text: '髪のことも、その日の気分も。話してから決めていきます。', short: '髪と、\n気分と。' },
     copy: (n) => ({
       hero: { eyebrow: 'SALON', title: `${n}`, text: '髪も気持ちも、軽くなって帰れる場所。' },
       about: { title: 'はじめての方へ',
@@ -62,6 +73,7 @@ const INDUSTRIES = [
   },
   {
     key: 'clinic', label: 'クリニック・歯科・整体', icon: '🩺', tpl: 'clinic',
+    lead: { eyebrow: 'CLINIC', title: '気になったときに、\n相談できる場所。', text: '小さなことでも構いません。まず話を聞くところから始めます。', short: 'まちの\n診療所。' },
     copy: (n) => ({
       hero: { eyebrow: 'CLINIC', title: `${n}`, text: '気になることを、そのままにしないために。' },
       about: { title: '当院について',
@@ -77,6 +89,7 @@ const INDUSTRIES = [
   },
   {
     key: 'builder', label: '工務店・リフォーム・解体', icon: '🔨', tpl: 'demolition',
+    lead: { eyebrow: 'WORKS', title: '住むほどに、\nよくなる家を。', text: '建てて終わりにしません。十年先の手入れまで見て考えます。', short: '家を、\nつくる。' },
     copy: (n) => ({
       hero: { eyebrow: 'CONSTRUCTION', title: `${n}`, text: '見積りから引き渡しまで、同じ担当が最後まで。' },
       about: { title: '私たちのこと',
@@ -92,6 +105,7 @@ const INDUSTRIES = [
   },
   {
     key: 'school', label: '教室・スクール', icon: '📚', tpl: 'corporate',
+    lead: { eyebrow: 'SCHOOL', title: '「わかった」が、\n積み上がっていく。', text: 'つまずいたところまで戻ります。急がず、確かめながら進みます。', short: '学ぶ、\n続ける。' },
     copy: (n) => ({
       hero: { eyebrow: 'SCHOOL', title: `${n}`, text: '続けられるところから、はじめましょう。' },
       about: { title: '教室について',
@@ -107,6 +121,7 @@ const INDUSTRIES = [
   },
   {
     key: 'shop', label: 'ショップ・小売', icon: '🛍', tpl: 'shop',
+    lead: { eyebrow: 'SHOP', title: '長く使えるものを、\n少しだけ。', text: '作り手の顔が見えるものを選んで、数をしぼって置いています。', short: '暮らしの\n道具。' },
     copy: (n) => ({
       hero: { eyebrow: 'SHOP', title: `${n}`, text: '長く使えるものだけを、置いています。' },
       about: { title: 'この店のこと',
@@ -122,6 +137,7 @@ const INDUSTRIES = [
   },
   {
     key: 'gym', label: 'ジム・スタジオ', icon: '🏋', tpl: 'studio',
+    lead: { eyebrow: 'GYM', title: '続けられる場所を。', text: 'きつさより続けやすさ。今日の体調に合わせて組み立てます。', short: '続ける、\nちから。' },
     copy: (n) => ({
       hero: { eyebrow: 'STUDIO', title: `${n}`, text: '続けられる形を、一緒に見つける。' },
       about: { title: 'はじめての方へ',
@@ -137,6 +153,7 @@ const INDUSTRIES = [
   },
   {
     key: 'office', label: '士業・事務所', icon: '⚖', tpl: 'recruit',
+    lead: { eyebrow: 'OFFICE', title: 'はじめの相談から、\nいっしょに。', text: 'むずかしい言い方はしません。分かる言葉でご説明します。', short: 'まず、\n相談から。' },
     copy: (n) => ({
       hero: { eyebrow: 'OFFICE', title: `${n}`, text: 'まず、話を聞くところから。' },
       about: { title: '事務所について',
@@ -152,6 +169,7 @@ const INDUSTRIES = [
   },
   {
     key: 'company', label: '会社・その他', icon: '🏢', tpl: 'corporate',
+    lead: { eyebrow: 'COMPANY', title: 'たしかな仕事を、\nこれからも。', text: '目の前のひとつずつを、きちんと。それを積み重ねてきました。', short: 'たしかな\n仕事を。' },
     copy: (n) => ({
       hero: { eyebrow: 'ABOUT US', title: `${n}`, text: 'わたしたちがしていることを、簡単に。' },
       about: { title: '会社について',
