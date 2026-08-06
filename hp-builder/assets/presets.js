@@ -17,55 +17,55 @@
 
 /* ---------------- ヒーロー（1段目） ---------------- */
 const HERO_PRESETS = [
-  { key: 'center', type: 'hero', label: 'Center',
+  { key: 'center', type: 'hero', label: '中央ぞろえ',
     about: 'いちばん素直な形。文章が主役のとき。',
     props: { layout: 'center' } },
 
-  { key: 'left', type: 'hero', label: 'Left',
+  { key: 'left', type: 'hero', label: '左ぞろえ',
     about: '読み出しが速い。文章が長めのときに。',
     props: { layout: 'left' } },
 
-  { key: 'split', type: 'hero', label: 'Split',
+  { key: 'split', type: 'hero', label: '左右ならび',
     about: '文章と写真を同じ重さで見せる。',
     props: { layout: 'split' } },
 
-  { key: 'cover', type: 'hero', label: 'Cover',
+  { key: 'cover', type: 'hero', label: '写真いっぱい',
     about: '写真の力で見せる。文字は写真の上に乗る。',
     props: { layout: 'cover' } },
 
-  { key: 'cover-glass', type: 'hero', label: 'Cover + Glass',
+  { key: 'cover-glass', type: 'hero', label: '写真いっぱい＋ガラス玉',
     about: 'ポインタに追いてガラスの円が動く。指の環境では自動で止まる。',
     props: { layout: 'cover', deco: 'glass', decoStrength: 70 } },
 
-  { key: 'center-clouds', type: 'hero', label: 'Center + Clouds',
+  { key: 'center-clouds', type: 'hero', label: '中央＋ただよう色',
     about: 'やわらかい色のかたまりがゆっくり漂う。',
     props: { layout: 'center', deco: 'clouds', decoStrength: 60 } },
 
-  { key: 'center-aurora', type: 'hero', label: 'Center + Aurora',
+  { key: 'center-aurora', type: 'hero', label: '中央＋光の帯',
     about: '背後で光の帯がゆっくり流れる。暗い配色と相性がいい。',
     props: { layout: 'center', deco: 'aurora', decoStrength: 65 } },
 
-  { key: 'center-dust', type: 'hero', label: 'Center + Dust',
+  { key: 'center-dust', type: 'hero', label: '中央＋光の粒',
     about: '細かい粒がゆっくり昇る。静かに動かしたいとき。',
     props: { layout: 'center', deco: 'dust', decoStrength: 55 } },
 
-  { key: 'cover-cursor', type: 'hero', label: 'Cover + Cursor',
+  { key: 'cover-cursor', type: 'hero', label: '写真いっぱい＋追う丸',
     about: 'ポインタを追う丸の中だけ、文字が反転して見える。',
     props: { layout: 'cover', deco: 'cursor', decoStrength: 60, decoLabel: 'SCROLL' } },
 
-  { key: 'scroll-zoomout', type: 'hero', label: 'Scroll: Zoom Out',
+  { key: 'scroll-zoomout', type: 'hero', label: 'スクロール：引いていく',
     about: '全画面の写真が、スクロールにつれて枠の中に収まっていく。',
     props: { layout: 'cover', scroll: 'zoomout', scrollLen: 200 } },
 
-  { key: 'scroll-parallax', type: 'hero', label: 'Scroll: Parallax',
+  { key: 'scroll-parallax', type: 'hero', label: 'スクロール：奥行き',
     about: '写真がゆっくり、文字が速く動いて奥行きが出る。',
     props: { layout: 'cover', scroll: 'parallax', scrollLen: 200 } },
 
-  { key: 'scroll-curtain', type: 'hero', label: 'Scroll: Curtain',
+  { key: 'scroll-curtain', type: 'hero', label: 'スクロール：幕が開く',
     about: 'スクロールに合わせて幕が開く。',
     props: { layout: 'cover', scroll: 'curtain', scrollLen: 200 } },
 
-  { key: 'scroll-maskzoom', type: 'hero', label: 'Scroll: Mask Zoom',
+  { key: 'scroll-maskzoom', type: 'hero', label: 'スクロール：文字から広がる',
     about: '文字の内側から写真が広がって全画面になる。いちばん派手。',
     props: { layout: 'cover', scroll: 'maskzoom', scrollLen: 240 } },
 
@@ -73,47 +73,47 @@ const HERO_PRESETS = [
          抜き型そのものは前からあったが、「写真の形」を開いて選ばないと
          出てこなかった。顔の一覧に並べておかないと、あることに気づけない。
          形が効くのは写真を枠に入れる並び（cover では効かない）。 ---- */
-  { key: 'shape-dots', type: 'hero', label: 'Shape: Dots',
+  { key: 'shape-dots', type: 'hero', label: '形：丸つなぎ',
     about: '丸がつながった格子で写真を抜く。やわらかい印象。カフェや教室に。',
     props: { layout: 'split', shape: 'dots', shapeBg: 'blur', bgBlur: 80 } },
 
-  { key: 'shape-bars', type: 'hero', label: 'Shape: Bars',
+  { key: 'shape-bars', type: 'hero', label: '形：ななめ帯',
     about: '斜めの帯で写真を抜く。勢いが出る。ジムや工務店に。',
     props: { layout: 'split', shape: 'bars', shapeBg: 'blur', bgBlur: 80 } },
 
-  { key: 'shape-wavebar', type: 'hero', label: 'Shape: Wave Bars',
+  { key: 'shape-wavebar', type: 'hero', label: '形：波の棒',
     about: '縦の棒が波打つ形で写真を抜く。音や律動を思わせる。',
     props: { layout: 'split', shape: 'wavebar', shapeBg: 'blur', bgBlur: 80 } },
 
-  { key: 'collage', type: 'collage', label: 'Collage',
+  { key: 'collage', type: 'collage', label: 'コラージュ',
     about: '敷き詰めた写真に、斜めの写真と縦書きの帯を重ねる。',
     props: {} },
 
   /* 下の縁を、まっすぐ切らずに流し込む型。縁だけが違うと5枚とも
      同じ絵に見えるので、地の色と並べかたもそれぞれ変えてある。 */
-  { key: 'melt-flow', type: 'hero', label: 'Curve: Flow',
+  { key: 'melt-flow', type: 'hero', label: '曲線：ゆるやか',
     about: '色の面が、ゆるやかな1本の曲がりで下と分かれる。いちばん素直。',
     props: { layout: 'center', bg: 'primary', melt: 'flow' } },
 
-  { key: 'melt-slope', type: 'hero', label: 'Curve: Slope',
+  { key: 'melt-slope', type: 'hero', label: '曲線：斜め上がり',
     about: '左が深く、右へ上がっていく縁。写真を右に置くときに。',
     props: { layout: 'split', bg: 'surface', melt: 'slope' } },
 
-  { key: 'melt-swell', type: 'hero', label: 'Curve: Swell',
+  { key: 'melt-swell', type: 'hero', label: '曲線：ふくらみ',
     about: '真ん中が大きくふくらむ縁。文字を真ん中に置くときに。',
     props: { layout: 'center', bg: 'dark', melt: 'swell' } },
 
-  { key: 'melt-drip', type: 'hero', label: 'Curve: Drip',
+  { key: 'melt-drip', type: 'hero', label: '曲線：したたり',
     about: 'ゆるい縁から、3つだけ大きく垂れる。',
     props: { layout: 'left', bg: 'primary', melt: 'drip' } },
 
-  { key: 'melt-photo', type: 'hero', label: 'Curve: Photo',
+  { key: 'melt-photo', type: 'hero', label: '曲線：写真を切る',
     about: '写真いっぱいの下を、曲がった縁で切り取る。',
     props: { layout: 'cover', melt: 'flow', overlay: 45 } },
 
   /* ---- 動画・色の面・線。ヒーローはページの質を左右するので、
          組ませるのではなく、出来上がった形から選んでもらう ---- */
-  { key: 'ribbon', type: 'hero', label: 'Ribbon',
+  { key: 'ribbon', type: 'hero', label: '縦帯＋動画',
     about: '後ろに動画か写真、薄い色の膜、縦に通る1本の帯。帯は下の段まで続いて見える。',
     props: {
       layout: 'ribbon', overlay: 58, scrollLabel: 'Scroll',
@@ -122,7 +122,7 @@ const HERO_PRESETS = [
       buttons: [{ label: 'About us', href: '#about', style: 'pill', arrow: true }],
     } },
 
-  { key: 'mark', type: 'hero', label: 'Logo Cut',
+  { key: 'mark', type: 'hero', label: 'ロゴ抜き',
     about: '地の色をロゴの形に抜いて、その中だけ色がゆっくり流れる。自分のロゴを読み込める。',
     props: {
       layout: 'mark', bg: '', scrollLabel: '',
@@ -132,7 +132,7 @@ const HERO_PRESETS = [
       buttons: [],
     } },
 
-  { key: 'lineart', type: 'hero', label: 'Line Art',
+  { key: 'lineart', type: 'hero', label: '線の背景',
     about: '細い線を何十本も重ねた気配だけの背景。白い地に、大きな文字を静かに置く。',
     props: {
       layout: 'lineart', art: 'flow', scrollLabel: 'Scroll Down',
@@ -142,7 +142,7 @@ const HERO_PRESETS = [
       buttons: [],
     } },
 
-  { key: 'lineart-fan', type: 'hero', label: 'Line Art (Fan)',
+  { key: 'lineart-fan', type: 'hero', label: '線の背景（扇）',
     about: '同じ線の背景で、重なる面のかたち。角のある業種に。',
     props: {
       layout: 'lineart', art: 'fan', scrollLabel: 'Scroll Down',
@@ -153,7 +153,7 @@ const HERO_PRESETS = [
 
   /* まるく切り抜いた写真が、大きさ違いで漂う型。
      大きな見出しが丸の上を横切って、そこだけ色が変わって見える。 */
-  { key: 'orbit', type: 'hero', label: 'Floating Circles',
+  { key: 'orbit', type: 'hero', label: '浮かぶ丸',
     about: 'まるく抜いた写真が、大きさを変えて浮かぶ。大きな見出しが上を横切る。',
     props: {
       layout: 'orbit', bg: '', eyebrow: 'BILLBOARD',
@@ -163,7 +163,7 @@ const HERO_PRESETS = [
       buttons: [{ label: 'About', href: '#about', style: 'ghost' }],
     } },
 
-  { key: 'orbit-5', type: 'hero', label: 'Floating Circles (5)',
+  { key: 'orbit-5', type: 'hero', label: '浮かぶ丸（5つ）',
     about: '丸を5つに増やした形。写真が多い業種、にぎやかに見せたいときに。',
     props: {
       layout: 'orbit', bg: 'surface', eyebrow: 'GALLERY',
@@ -175,7 +175,7 @@ const HERO_PRESETS = [
 
   /* 大きな名前を先に置き、写真をその下へ食い込ませる型。
      名前は写真の外へはみ出したまま残る。 */
-  { key: 'poster', type: 'hero', label: 'Poster',
+  { key: 'poster', type: 'hero', label: 'ポスター',
     about: '名前を大きく置き、ひとまわり内側の写真をその下へ食い込ませる。右わきに縦の欧文。',
     props: {
       layout: 'poster', bg: '', eyebrow: 'TROMBONE / ARRANGER',
@@ -185,7 +185,7 @@ const HERO_PRESETS = [
       buttons: [{ label: 'About', href: '#about', style: 'ghost' }],
     } },
 
-  { key: 'poster-shop', type: 'hero', label: 'Poster (Shop)',
+  { key: 'poster-shop', type: 'hero', label: 'ポスター（店）',
     about: '同じ組みかたで、店名を大きく。写真は縦長でも横長でも収まる。',
     props: {
       layout: 'poster', bg: 'surface', eyebrow: '', deco: 'grain',
@@ -197,7 +197,7 @@ const HERO_PRESETS = [
 
   /* 1つの商品だけを立てる型。写真を合成せず、線と色だけで
      光・枝・台を組む。香水・ボトル・器・道具など、形のあるもの向け。 */
-  { key: 'showcase', type: 'hero', label: 'Showcase',
+  { key: 'showcase', type: 'hero', label: '商品を立てる',
     about: '斜めに差す光、枝の影、載せる台。1つの商品だけを、静かに立てる。',
     props: {
       layout: 'showcase', bg: '', eyebrow: '',
@@ -207,7 +207,7 @@ const HERO_PRESETS = [
       buttons: [],
     } },
 
-  { key: 'showcase-buy', type: 'hero', label: 'Showcase (Buy)',
+  { key: 'showcase-buy', type: 'hero', label: '商品を立てる（購入）',
     about: '同じ組みかたで、買うボタンを1つだけ添える。単品の通販ページに。',
     props: {
       layout: 'showcase', bg: '', eyebrow: 'NEW ARRIVAL',
@@ -219,7 +219,7 @@ const HERO_PRESETS = [
 
   /* 輪の上に写真を置いて、時計回りに送る型。手前の1枚だけがはっきり見え、
      ほかは奥で小さく・ぼやけて・薄くなる。後ろにペンキのひと刷け。 */
-  { key: 'reel', type: 'hero', label: 'Reel',
+  { key: 'reel', type: 'hero', label: '回る写真',
     about: '写真が時計回りに入れ替わる。手前の1枚だけがはっきり、ほかは奥でぼやける。後ろにペンキのひと刷け。',
     props: {
       layout: 'reel', bg: '', eyebrow: 'RECRUIT | NEW GRADUATE',
@@ -229,7 +229,7 @@ const HERO_PRESETS = [
       buttons: [{ label: 'エントリー', href: '#entry', style: 'primary' }],
     } },
 
-  { key: 'duo', type: 'hero', label: 'Duo',
+  { key: 'duo', type: 'hero', label: '写真2枚＋中央文字',
     about: '写真2枚を左右に並べ、その境目に文字を置く。二人・二面・前と後を並べて見せたいときに。',
     props: {
       layout: 'duo', bg: '', eyebrow: '',
@@ -239,7 +239,7 @@ const HERO_PRESETS = [
       buttons: [],
     } },
 
-  { key: 'duo-cta', type: 'hero', label: 'Duo + Button',
+  { key: 'duo-cta', type: 'hero', label: '写真2枚＋ボタン',
     about: '同じ組みかたに、押してほしいボタンを1つ。二人で受ける店、二部門ある会社に。',
     props: {
       layout: 'duo', bg: '', eyebrow: 'SINCE 1998',
@@ -249,7 +249,7 @@ const HERO_PRESETS = [
       buttons: [{ label: 'ご予約はこちら', href: '#contact', style: 'primary' }],
     } },
 
-  { key: 'reel-5', type: 'hero', label: 'Reel (5)',
+  { key: 'reel-5', type: 'hero', label: '回る写真（5枚）',
     about: '同じ組みかたで5枚。人が多い会社、作品が多い工房に。',
     props: {
       layout: 'reel', bg: '', eyebrow: 'OUR WORK',
@@ -261,7 +261,7 @@ const HERO_PRESETS = [
 
   /* パッケージの表側を、そのままページの頭にした型。
      大きな品名、まわりの短い言葉、丸い印、帯のラベル。 */
-  { key: 'goods-pack', type: 'hero', label: 'Package',
+  { key: 'goods-pack', type: 'hero', label: 'パッケージ',
     about: '商品の顔をそのまま1枚に。品名を大きく、丸い印と帯のラベルを添える。',
     props: {
       layout: 'pack', bg: 'surface', melt: 'flow',
@@ -287,66 +287,66 @@ const SECTION_GROUPS = [
 
 const SECTION_PRESETS = [
   /* ============ 写真 ============ */
-  { key: 'about-left', type: 'about', group: '写真', label: 'Photo L / Text R',
+  { key: 'about-left', type: 'about', group: '写真', label: '写真左・文章右',
     about: '写真1枚に説明を添える。店や会社の紹介に。',
     props: { reverse: false } },
 
-  { key: 'about-right', type: 'about', group: '写真', label: 'Photo R / Text L',
+  { key: 'about-right', type: 'about', group: '写真', label: '写真右・文章左',
     about: '左右ちがい。上と続けて使うと交互になって流れが出る。',
     props: { reverse: true } },
 
-  { key: 'gallery', type: 'gallery', group: '写真', label: 'Gallery Grid',
+  { key: 'gallery', type: 'gallery', group: '写真', label: '写真を格子に',
     about: '同じ大きさの枠に敷き詰める。ギャラリー。', props: {} },
 
-  { key: 'hscroll', type: 'hscroll', group: '写真', label: 'H-Scroll',
+  { key: 'hscroll', type: 'hscroll', group: '写真', label: '横に流れる',
     about: '縦に読むと横に流れる。作品や事例を並べるとき。', props: {} },
 
-  { key: 'collage-mid', type: 'collage', group: '写真', label: 'Collage Band',
+  { key: 'collage-mid', type: 'collage', group: '写真', label: 'コラージュの帯',
     about: '大小の写真を隙間なく敷く。途中に挟んでも効く。', props: {} },
 
-  { key: 'video', type: 'video', group: '写真', label: 'Video',
+  { key: 'video', type: 'video', group: '写真', label: '動画',
     about: 'YouTube・Vimeo・動画ファイルのURLを貼るだけ。形も土台も写真と同じように使える。',
     props: {} },
 
-  { key: 'strip', type: 'strip', group: '写真', label: 'Photo Strip',
+  { key: 'strip', type: 'strip', group: '写真', label: '写真の帯',
     about: '数が多いものを途切れず流す。導入実績・取引先・受賞歴に。写真だけ／カードを選べる。',
     props: {} },
 
-  { key: 'strip-card', type: 'strip', group: '写真', label: 'Photo Strip (Cards)',
+  { key: 'strip-card', type: 'strip', group: '写真', label: '写真の帯（カード）',
     about: '流れる1枚ずつに見出しと説明が付く形。',
     props: { style: 'card', size: 'l' } },
 
-  { key: 'clipreveal', type: 'clipreveal', group: '写真', label: 'Clip Reveal',
+  { key: 'clipreveal', type: 'clipreveal', group: '写真', label: '円で切り替え',
     about: '円が広がって次の写真に入れ替わる。', props: {} },
 
   /* ============ 横に並べる（カード） ============ */
-  { key: 'features-icon', type: 'features', group: 'カード', label: 'Cards ×3 (Icon)',
+  { key: 'features-icon', type: 'features', group: 'カード', label: 'カード3つ（アイコン）',
     about: 'いちばん使う形。伝えたいことを3つに分ける。',
     props: { style: 'icon', cols: 'c3' } },
 
-  { key: 'features-num', type: 'features', group: 'カード', label: 'Cards ×3 (Number)',
+  { key: 'features-num', type: 'features', group: 'カード', label: 'カード3つ（番号）',
     about: '番号が大きく出る。順番に意味があるとき。',
     props: { style: 'num', cols: 'c3' } },
 
-  { key: 'features-paren', type: 'features', group: 'カード', label: 'Cards ×2 (01)',
+  { key: 'features-paren', type: 'features', group: 'カード', label: 'カード2つ（01）',
     about: '番号を控えめに置く形。落ち着いて見える。',
     props: { style: 'paren', cols: 'c2' } },
 
-  { key: 'features-image', type: 'features', group: 'カード', label: 'Cards ×3 (Photo)',
+  { key: 'features-image', type: 'features', group: 'カード', label: 'カード3つ（写真）',
     about: '上に写真、下に説明。事例や商品を並べるとき。',
     props: { style: 'image', cols: 'c3' } },
 
-  { key: 'icons', type: 'icons', group: 'カード', label: 'Icon Grid',
+  { key: 'icons', type: 'icons', group: 'カード', label: 'アイコンを格子に',
     about: '設備や条件を、絵と短い言葉で並べる。Wi-Fi・駐車場・禁煙など。',
     props: {} },
 
-  { key: 'pricing', type: 'pricing', group: 'カード', label: 'Pricing ×3',
+  { key: 'pricing', type: 'pricing', group: 'カード', label: '料金3つ',
     about: '真ん中だけ目立たせる形。', props: { cols: 'c3' } },
 
-  { key: 'stackcards', type: 'stackcards', group: 'カード', label: 'Stack',
+  { key: 'stackcards', type: 'stackcards', group: 'カード', label: '重なるカード',
     about: 'スクロールで手前に積み上がる。順に見せたいとき。', props: {} },
 
-  { key: 'carousel3d', type: 'carousel3d', group: 'カード', label: 'Carousel',
+  { key: 'carousel3d', type: 'carousel3d', group: 'カード', label: '回転カルーセル',
     about: '奥行きのある並び。写真が多いとき。', props: {} },
 
   { key: 'listing', type: 'listing', group: 'カード', label: 'Listing ×2',
@@ -358,26 +358,26 @@ const SECTION_PRESETS = [
     props: { cols: 'c3', btnStyle: 'link' } },
 
   /* ============ 縦に並べる（一覧） ============ */
-  { key: 'menu', type: 'menu', group: '一覧', label: 'Price List',
+  { key: 'menu', type: 'menu', group: '一覧', label: '料金の一覧',
     about: '左に品名、右に値段。お品書き・メニュー表に。', props: {} },
 
-  { key: 'news', type: 'news', group: '一覧', label: 'Dated List',
+  { key: 'news', type: 'news', group: '一覧', label: '日付つき一覧',
     about: '日付と見出しが縦に並ぶ。お知らせや予定に。', props: {} },
 
-  { key: 'faq', type: 'faq', group: '一覧', label: 'Accordion',
+  { key: 'faq', type: 'faq', group: '一覧', label: '押すと開く一覧',
     about: '見出しだけ並べて、押すと答えが出る。長い説明をたたむとき。', props: {} },
 
-  { key: 'floors', type: 'floors', group: '一覧', label: 'Floors',
+  { key: 'floors', type: 'floors', group: '一覧', label: 'フロア案内',
     about: '階数と内容を縦に並べる。', props: {} },
 
-  { key: 'timeline', type: 'timeline', group: '一覧', label: 'Timeline',
+  { key: 'timeline', type: 'timeline', group: '一覧', label: '沿革・流れ',
     about: '線が伸びながら項目が現れる。沿革や流れに。', props: {} },
 
-  { key: 'schedule', type: 'schedule', group: '一覧', label: 'Week Table',
+  { key: 'schedule', type: 'schedule', group: '一覧', label: '週の表',
     about: '縦が時間帯、横が曜日の表。丸と休みで示す。診療時間・営業時間に。',
     props: {} },
 
-  { key: 'schedule-class', type: 'schedule', group: '一覧', label: 'Week Table (Text)',
+  { key: 'schedule-class', type: 'schedule', group: '一覧', label: '週の表（文字）',
     about: '同じ表の桝目に、文字を入れる形。教室・スタジオのコマ表に。',
     props: {
       eyebrow: 'SCHEDULE', title: 'レッスン表', corner: '時間',
@@ -389,43 +389,43 @@ const SECTION_PRESETS = [
       ],
     } },
 
-  { key: 'slotstats', type: 'slotstats', group: '一覧', label: 'Big Numbers',
+  { key: 'slotstats', type: 'slotstats', group: '一覧', label: '大きな数字',
     about: '画面に入ると数字が回って止まる。実績を出すとき。',
     props: { cols: 'c3' } },
 
-  { key: 'svgdraw', type: 'svgdraw', group: '一覧', label: 'Line Chart',
+  { key: 'svgdraw', type: 'svgdraw', group: '一覧', label: '折れ線グラフ',
     about: '線が引かれ、下に同じ色の薄い膜が敷かれる。数字の変化を見せるとき。', props: {} },
 
-  { key: 'svgbar', type: 'svgdraw', group: '一覧', label: 'Bar Chart',
+  { key: 'svgbar', type: 'svgdraw', group: '一覧', label: '棒グラフ',
     about: '棒が下から立ち上がる。年ごとの比較や内訳に。',
     props: { kind: 'bar', eyebrow: 'RESULT', title: '数字で見る', text: '' } },
 
   /* ============ 文章・帯 ============ */
-  { key: 'rich', type: 'rich', group: '文章', label: 'Text',
+  { key: 'rich', type: 'rich', group: '文章', label: '文章',
     about: '決まった形に収まらない文章を置く欄。', props: {} },
 
-  { key: 'shift', type: 'shift', group: '文章', label: 'Statement',
+  { key: 'shift', type: 'shift', group: '文章', label: '大きな一文',
     about: '大きな文字を1行だけ置いて、間を作る。', props: {} },
 
-  { key: 'marquee', type: 'marquee', group: '文章', label: 'Marquee',
+  { key: 'marquee', type: 'marquee', group: '文章', label: '流れる文字',
     about: '文字が横に流れ続ける帯。区切りに置く。',
     props: { bg: 'primary' } },
 
-  { key: 'cta', type: 'cta', group: '文章', label: 'CTA Band',
+  { key: 'cta', type: 'cta', group: '文章', label: 'ひと押しの帯',
     about: '次にしてほしいことを1つだけ置く。予約や電話に。',
     props: { bg: 'primary' } },
 
   /* ============ その他 ============ */
-  { key: 'contact', type: 'contact', group: 'その他', label: 'Form',
+  { key: 'contact', type: 'contact', group: 'その他', label: '入力フォーム',
     about: '名前・連絡先・本文と送信ボタン。送信先はあとで設定する。', props: {} },
 
-  { key: 'slides', type: 'slides', group: 'その他', label: 'Slides',
+  { key: 'slides', type: 'slides', group: 'その他', label: 'スライド',
     about: '資料のように、1枚ずつ切り替わる。', props: {} },
 
-  { key: 'product3d', type: 'product3d', group: 'その他', label: 'Product 3D',
+  { key: 'product3d', type: 'product3d', group: 'その他', label: '商品を回す',
     about: 'スクロールで向きが変わる。物を売るとき。', props: {} },
 
-  { key: 'exploded', type: 'exploded', group: 'その他', label: 'Exploded',
+  { key: 'exploded', type: 'exploded', group: 'その他', label: '分解して見せる',
     about: '重なって1つになる図。中身や工程を見せるとき。', props: {} },
 ];
 
@@ -433,27 +433,27 @@ const SECTION_PRESETS = [
    ヒーロー・ブロックとは別の型として持つ。1ページに1つしか無く、
    選ぶと差し替えではなく、いまのフッターの見た目だけが変わる。 */
 const FOOTER_PRESETS = [
-  { key: 'ftr-bar', type: 'footer', label: 'Bar',
+  { key: 'ftr-bar', type: 'footer', label: '横一列',
     about: 'いちばん素直な形。どのページにも合う。',
     props: { style: 'bar' } },
 
-  { key: 'ftr-center', type: 'footer', label: 'Centered',
+  { key: 'ftr-center', type: 'footer', label: '中央ぞろえ',
     about: '名前・リンク・年を縦に真ん中で。静かに終わる。',
     props: { style: 'center' } },
 
-  { key: 'ftr-big', type: 'footer', label: 'Large',
+  { key: 'ftr-big', type: 'footer', label: '大きめ',
     about: '左にお店の一言、右にリンクを縦に並べる。住所や営業時間もここに。',
     props: { style: 'big', text: '月〜金 10:00–19:00／土 10:00–17:00\n東京都〇〇区〇〇 1-2-3' } },
 
-  { key: 'ftr-light', type: 'footer', label: 'Light',
+  { key: 'ftr-light', type: 'footer', label: '白地',
     about: '濃い地ではなく、薄い地に線を1本。全体を軽く見せたいとき。',
     props: { style: 'light' } },
 
-  { key: 'ftr-cta', type: 'footer', label: 'CTA',
+  { key: 'ftr-cta', type: 'footer', label: 'ひと押し付き',
     about: '最後にもう一度、してほしいことを置く。予約や問い合わせに。',
     props: { style: 'cta', text: 'ご相談はいつでもどうぞ。', cta: 'お問い合わせ', ctaHref: '#contact' } },
 
-  { key: 'ftr-minimal', type: 'footer', label: 'Minimal',
+  { key: 'ftr-minimal', type: 'footer', label: '最小',
     about: '名前と年だけの細い帯。中身で見せたいとき。',
     props: { style: 'minimal' } },
 ];
