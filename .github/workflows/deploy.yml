@@ -116,6 +116,12 @@ jobs:
           B=https://bildy-4e45e.web.app
           check "$B/"                 200 "サービスLP"
           check "$B/app/"             200 "編集ツール"
+          # 編集ツールは中身を分けて置いてある。骨組みだけ出て中身が
+          # 出ていないと、真っ白な画面になる。名前は指紋つきで毎回
+          # 変わるので、骨組みから読み取って、そのまま叩く。
+          for f in $(curl -s --max-time 30 "$B/app/" | grep -o 'a/[a-z-]*\.[0-9a-f]\{8\}\.\(js\|css\)' | sort -u); do
+            check "$B/app/$f"         200 "編集ツールの中身（$f）"
+          done
           check "$B/demo/"            200 "見本の一覧"
           # 中身の無いサイトIDは、配信の Function が 404 の画面を返す
           check "$B/s/nothing-here"   404 "公開ページの配信（serveSite）"

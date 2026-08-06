@@ -1725,7 +1725,9 @@ node verify-site.js    # 公開後と同じHTTP越しに確認（要 playwright�
 | パス | 中身 |
 | --- | --- |
 | `docs/index.html` | サービスLP（入口） |
-| `docs/app/index.html` | 編集ツール本体（1ファイル） |
+| `docs/app/index.html` | 編集ツール本体（骨組み。中身は `docs/app/a/` から読む） |
+| `docs/app/a/` | 中身を分けたもの。名前に指紋が入る（`app.1a2b3c4d.js`） |
+| `docs/app/offline.html` | 同じものの1枚版。落として `file://` で開ける |
 | `docs/demo/` | 作例4種と、その入口ページ |
 | `docs/art/` | 業種ごとの見本写真（元は `art/`） |
 

@@ -1,0 +1,953 @@
+/* ビルダー（編集画面）のUI。生成されるサイトの見た目とは無関係。 */
+*,*::before,*::after{box-sizing:border-box}
+:root{
+  /* 編集画面の地は、色みをできるだけ抜いた黒。青みや茶みが残っていると、
+     となりに置いたページの色がその分だけ違って見える。
+     色を持っていいのは、作っているページのほうだけ。 */
+  --bg:#0b0c0e;        /* いちばん奥 */
+  --panel:#121316;     /* 左右のパネル */
+  --panel2:#191b1f;    /* 欄とボタンの地 */
+  --panel3:#22252a;    /* 触れたとき */
+  --line:#24262b;      /* 罫線 */
+  --line2:#33363d;     /* 少し強い罫線 */
+  --tx:#eceef1;
+  --tx2:#8b9099;       /* 補助の文字 */
+  --tx3:#5f646d;       /* 名札・単位 */
+  --pri:#4a7cf7;
+  --danger:#e5484d;
+  --r:7px;
+
+  /* 画面の四隅の「触れない場所」。スマホの時計やホームバーが重なる帯で、
+     ここを避けないと上のバーが時計の下に潜って切れて見える（実機で起きた）。
+     パソコンでは 0 になるので、そのまま書いておける。
+     検査から差し替えられるよう、変数にしてから使う。 */
+  --sat: env(safe-area-inset-top, 0px);
+  --sab: env(safe-area-inset-bottom, 0px);
+}
+html,body{height:100%}
+body{
+  margin:0;background:var(--bg);color:var(--tx);
+  font-family:"Helvetica Neue",Arial,"Hiragino Kaku Gothic ProN","Hiragino Sans",Meiryo,sans-serif;
+  font-size:13px;line-height:1.7;overflow:hidden;
+}
+button{font:inherit;color:inherit;cursor:pointer}
+input,select,textarea{font:inherit}
+
+/* ================= 全体レイアウト ================= */
+.app{
+  /* dvh は、スマホで上下のバーが引っ込んだときの実際の高さ。
+     vh のままだと下のナビが画面の外に出る。読めない端末のために vh も残す */
+  height:100vh;height:100dvh;display:grid;
+  grid-template-columns:236px 1fr 348px;
+  grid-template-rows:calc(52px + var(--sat)) 1fr;
+  grid-template-areas:"top top top" "left stage right";
+}
+.topbar{
+  grid-area:top;display:flex;align-items:center;gap:10px;
+  padding:var(--sat) 14px 0;
+  background:var(--panel);border-bottom:1px solid var(--line);
+  /* シートを開いている間もここのボタン（取り消しなど）は押せるようにする */
+  position:relative;z-index:80
+}
+.brand{
+  font-size:12px;font-weight:700;letter-spacing:.14em;color:var(--tx2);
+  margin-right:8px;white-space:nowrap
+}
+.saved{color:var(--tx3);font-size:10.5px;letter-spacing:.04em;margin-right:auto;min-width:80px}
+
+.tb-btn{
+  background:var(--panel2);border:1px solid var(--line);border-radius:var(--r);
+  padding:7px 14px;font-size:12px;font-weight:600;letter-spacing:.02em;white-space:nowrap;
+  transition:background .14s,border-color .14s,color .14s
+}
+.tb-btn:hover{background:var(--panel3);border-color:var(--line2)}
+/* いちばん進めたい1つだけ、地と文字を入れ替える。
+   色を足すより、白黒がひっくり返るほうが強く、しかも配色を邪魔しない */
+.tb-btn.primary{background:var(--tx);border-color:var(--tx);color:#0b0c0e;font-weight:700}
+.tb-btn.primary:hover{background:#fff;border-color:#fff}
+.tb-btn.danger:hover{border-color:var(--danger);color:var(--danger)}
+:where(button,input,select,textarea):focus-visible{
+  outline:2px solid var(--pri);outline-offset:1px
+}
+
+/* たまにしか使わないものをしまう場所。
+   上のバーに全部並べると、初めての人が何から押せばいいか分からなくなる。 */
+.more-wrap{position:relative}
+.more-menu{
+  position:absolute;top:calc(100% + 8px);right:0;min-width:210px;z-index:90;
+  background:var(--panel2);border:1px solid var(--line);border-radius:var(--r);
+  padding:6px;box-shadow:0 18px 44px rgba(0,0,0,.55)
+}
+.more-menu[hidden]{display:none}
+.more-menu button{
+  display:block;width:100%;text-align:left;background:transparent;border:0;
+  padding:9px 11px;border-radius:6px;font-size:12.5px;color:var(--tx)
+}
+.more-menu button:hover{background:var(--panel3)}
+.more-menu button.danger{color:var(--danger)}
+
+.devices{display:flex;align-items:center;background:var(--panel2);
+  border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.devices button{background:transparent;border:0;padding:7px 13px;font-size:11.5px;
+  color:var(--tx3);letter-spacing:.04em;white-space:nowrap;transition:color .14s}
+.devices button:hover{color:var(--tx2)}
+.devices button i{font-style:normal}
+.devices button.on{background:var(--panel3);color:var(--tx);font-weight:700}
+/* 縮めて見せているときの倍率。出さないと「文字が小さい」と誤解される */
+.dev-zoom{
+  padding:0 10px;font-size:10px;font-weight:700;color:var(--tx3);
+  font-variant-numeric:tabular-nums;letter-spacing:.04em;
+  border-left:1px solid var(--line);align-self:stretch;display:grid;place-items:center
+}
+.dev-zoom[hidden]{display:none}
+
+/* ================= パネル共通 ================= */
+.panel{background:var(--panel);display:flex;flex-direction:column;min-height:0}
+.panel.left{grid-area:left;border-right:1px solid var(--line)}
+.panel.right{grid-area:right;border-left:1px solid var(--line)}
+.panel-h{
+  padding:14px 15px 12px;font-size:10px;font-weight:700;letter-spacing:.2em;
+  color:var(--tx3);border-bottom:1px solid var(--line)
+}
+.panel-body{padding:14px;overflow-y:auto;flex:1;min-height:0}
+
+/* ================= 左：ブロック一覧 ================= */
+.blocklist{overflow-y:auto;flex:1;padding:8px;min-height:0}
+.bl-item{
+  position:relative;display:flex;align-items:center;gap:9px;padding:9px 10px;
+  border-radius:var(--r);border:1px solid transparent;margin-bottom:2px;user-select:none;
+  transition:background .14s
+}
+.bl-item:hover{background:var(--panel2)}
+/* 選んでいるものは、枠で囲うより「左に1本」のほうが静か。
+   一覧が縦に並ぶので、線が揃って読み筋になる */
+.bl-item.on{background:var(--panel2)}
+.bl-item.on::before{
+  content:"";position:absolute;left:0;top:7px;bottom:7px;width:2px;
+  border-radius:2px;background:var(--tx)
+}
+.bl-ic{
+  width:24px;height:24px;flex:none;display:grid;place-items:center;
+  background:var(--panel2);border:1px solid var(--line);border-radius:6px;
+  font-size:12px;color:var(--tx3)
+}
+.bl-item.on .bl-ic{background:var(--panel3);border-color:var(--line2);color:var(--tx)}
+.bl-name{flex:1;min-width:0;font-size:12.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bl-sub{font-size:10px;color:var(--tx3);font-weight:400;letter-spacing:.04em}
+.bl-ops{
+  position:absolute;right:7px;top:50%;transform:translateY(-50%);
+  display:flex;gap:1px;background:linear-gradient(90deg,transparent,var(--panel2) 14px);
+  padding-left:18px;
+  /* 透明にするだけでは、見えないボタンにキーボードの焦点が入ってしまう。
+     visibility を落とせば、押せないし、焦点も飛ばない */
+  opacity:0;visibility:hidden;transition:opacity .12s,visibility .12s
+}
+.bl-item:hover .bl-ops,.bl-item.on .bl-ops{opacity:1;visibility:visible}
+.bl-ops button{
+  background:transparent;border:0;padding:2px 5px;font-size:12px;color:var(--tx2);border-radius:4px;line-height:1
+}
+.bl-ops button:hover{background:var(--panel3);color:var(--tx)}
+.bl-fixed{font-size:10px;color:var(--tx2);padding:0 4px}
+
+/* ドラッグ&ドロップ */
+.bl-item{cursor:grab}
+.bl-item:active{cursor:grabbing}
+.bl-item.dragging{opacity:.4}
+.bl-item.over-top{box-shadow:0 -2px 0 0 var(--pri)}
+.bl-item.over-bottom{box-shadow:0 2px 0 0 var(--pri)}
+.blocklist.dropping{background:#101114}
+.bl-grip{
+  color:var(--tx3);font-size:12px;line-height:1;cursor:grab;flex:none;
+  touch-action:none;             /* 指で掴んでいる間は一覧をスクロールさせない */
+  padding:6px 2px;margin:-6px 0
+}
+.bl-item:hover .bl-grip{color:var(--tx2)}
+.add-menu button{cursor:grab}
+.add-menu button:active{cursor:grabbing}
+
+/* 要素アニメのパネル */
+.el-panel{
+  border:1px solid var(--line2);border-radius:var(--r);background:#171a1f;
+  padding:12px;margin:-2px 0 16px
+}
+.el-panel .eh{display:flex;align-items:center;gap:8px;margin-bottom:11px}
+.el-panel .badge{
+  background:var(--tx);color:#0b0c0e;font-size:10px;font-weight:800;letter-spacing:.06em;
+  border-radius:4px;padding:2px 7px;flex:none
+}
+.el-panel .en{flex:1;font-size:12.5px;font-weight:700;overflow:hidden;
+  text-overflow:ellipsis;white-space:nowrap}
+.el-panel .ex{background:transparent;border:0;color:var(--tx2);padding:2px 5px;border-radius:4px;font-size:12px}
+.el-panel .ex:hover{background:var(--panel3);color:var(--tx)}
+.el-panel .f{margin-bottom:10px}
+.el-panel .f:last-child{margin-bottom:0}
+/* 置き場所の欄。数字は打たせない。つまむか、寄せるかの2つだけ */
+.place-f .nudge{display:flex;align-items:center;gap:6px;margin:8px 0}
+.place-f .nb{
+  width:32px;height:30px;flex:none;background:var(--panel2);color:var(--tx);
+  border:1px solid var(--line2);border-radius:var(--r);font-size:13px;line-height:1
+}
+.place-f .nb:hover{background:var(--panel3);border-color:var(--tx2)}
+.place-f .nv{margin-left:4px;font-size:11px;color:var(--tx2);letter-spacing:.03em}
+.el-panel .tb-btn.warn:hover{border-color:var(--danger);color:var(--danger)}
+.offs{display:grid;gap:6px}
+
+/* 絵を作ってもらう欄。たたんでおく——写真を選ぶより先に押されると、
+   そのぶん費用が出る */
+.ai-f{
+  margin-top:10px;border:1px dashed var(--line2);border-radius:var(--r);
+  padding:9px 10px;font-size:11.5px;color:var(--tx2)
+}
+.ai-f > summary{cursor:pointer;list-style:none;font-weight:700;color:var(--tx)}
+.ai-f > summary::-webkit-details-marker{display:none}
+.ai-f > summary::before{content:"▸ "}
+.ai-f[open] > summary{margin-bottom:8px}
+.ai-f[open] > summary::before{content:"▾ "}
+.ai-f textarea,.ai-f input[type=text]{
+  width:100%;background:var(--panel2);color:var(--tx);border:1px solid var(--line2);
+  border-radius:var(--r);padding:8px 9px;font:inherit;font-size:12px;line-height:1.75;resize:vertical
+}
+.ai-f .hint{margin:6px 0 8px}
+/* 選ぶだけで文が組み上がる。白紙の欄を出すと、そこで止まる人が多い */
+.pk-row{display:grid;gap:5px;margin-bottom:9px}
+.pk-l{font-size:10.5px;font-weight:700;color:var(--tx2);letter-spacing:.06em}
+.picks{display:flex;flex-wrap:wrap;gap:5px}
+.pk-c{
+  background:var(--panel2);color:var(--tx2);border:1px solid var(--line2);
+  border-radius:999px;padding:4px 11px;font-size:11.5px;line-height:1.6;white-space:nowrap
+}
+.pk-c:hover{border-color:var(--tx2);color:var(--tx)}
+.pk-c.on{background:var(--tx);border-color:var(--tx);color:#0b0c0e;font-weight:700}
+.ai-see{margin:4px 0 10px;font-size:11px}
+.ai-see > summary{cursor:pointer;list-style:none;color:var(--tx2)}
+.ai-see > summary::-webkit-details-marker{display:none}
+.ai-see > summary::before{content:"▸ "}
+.ai-see[open] > summary{margin-bottom:6px}
+.ai-see[open] > summary::before{content:"▾ "}
+
+.el-hint{
+  font-size:11.5px;color:var(--tx2);background:#131417;border:1px dashed var(--line);
+  border-radius:var(--r);padding:11px 12px;margin:-2px 0 16px;line-height:1.75
+}
+.el-hint > summary{cursor:pointer;list-style:none;font-weight:700;color:var(--tx2)}
+.el-hint > summary::-webkit-details-marker{display:none}
+.el-hint > summary::before{content:"▸ "}
+.el-hint[open] > summary{margin-bottom:8px}
+.el-hint[open] > summary::before{content:"▾ "}
+
+.add-wrap{position:relative;padding:10px;border-top:1px solid var(--line)}
+.add-btn{
+  width:100%;background:var(--panel2);border:1px dashed var(--line);border-radius:var(--r);
+  padding:10px;font-size:12.5px;font-weight:700;color:var(--tx2)
+}
+.add-btn:hover{color:var(--tx);border-color:var(--line2)}
+.add-btn.sub{margin-top:6px;font-weight:600;font-size:12px}
+.add-menu{
+  position:absolute;bottom:56px;left:10px;right:10px;background:var(--panel2);
+  border:1px solid var(--line);border-radius:var(--r);padding:6px;z-index:30;
+  box-shadow:0 16px 40px rgba(0,0,0,.5);max-height:340px;overflow-y:auto
+}
+.add-menu button{
+  display:flex;align-items:center;gap:9px;width:100%;background:transparent;border:0;
+  padding:9px 10px;border-radius:6px;font-size:12.5px;text-align:left
+}
+.add-menu button:hover{background:var(--panel3)}
+
+/* ================= 中央：プレビュー ================= */
+.stage{
+  grid-area:stage;background:#08090a;padding:20px;overflow:auto;
+  display:flex;justify-content:center;align-items:flex-start
+}
+/* プレビューの置き場。見取り図を左に出したとき、残りの幅がここになる。
+   幅の計算（applyDevice）はこの箱を見るので、見取り図のぶんが自然に引かれる */
+.pv{flex:1;min-width:0;display:flex;justify-content:center;align-items:flex-start}
+
+/* ---------- 左の見取り図（スマホでブロックを直しているあいだ） ----------
+   ページ全体を1本に縦圧縮して出す。いまどこを触っているかが分かり、
+   別のところを押せばそのまま移れる。パソコンでは出さない。 */
+.rail{
+  flex:none;width:88px;align-self:stretch;display:flex;flex-direction:column;
+  align-items:center;gap:6px;min-height:0
+}
+.rail[hidden]{display:none}
+.rail-out{
+  flex:none;width:100%;background:var(--panel2);border:1px solid var(--line);
+  border-radius:6px;padding:4px 0;font-size:13px;line-height:1.2;color:var(--tx2)
+}
+.rail-out:hover{color:var(--tx);border-color:var(--line2)}
+/* 長いページは、細くしすぎずに帯のほうを送る。
+   align-items が center のままだと、送っても上が切れて出せない */
+.rail-box{
+  flex:1;min-height:0;width:100%;overflow-y:auto;overflow-x:hidden;
+  display:flex;justify-content:center;align-items:flex-start;
+  scrollbar-width:none
+}
+.rail-box::-webkit-scrollbar{display:none}
+/* 縮めた絵の実寸を持つ箱。transform は場所を取らないので、これが無いと
+   縮めても元の大きさぶん場所を取る（プレビューの .fit と同じ理由） */
+/* margin:auto なら、収まるときは真ん中に置かれ、はみ出すときは
+   上を切らずにそのまま送れる（align-items:center だと上が切れて出せない） */
+.rail-in{
+  position:relative;margin:auto 0;flex:none;
+  background:#000;border-radius:5px;overflow:hidden;
+  box-shadow:0 4px 16px rgba(0,0,0,.6)
+}
+.rail-in iframe{
+  position:absolute;top:0;left:0;border:0;display:block;
+  transform-origin:top left;pointer-events:none
+}
+.rail-hits{position:absolute;inset:0}
+/* 触っていないところは伏せて、触っているところだけを明るく残す。
+   細いので、枠を足すより「まわりを暗くする」ほうが一目で分かる */
+.rl{
+  position:absolute;left:0;right:0;padding:0;border:0;border-radius:0;
+  background:rgba(6,8,12,.6);transition:background .15s
+}
+.rl.on{
+  background:transparent;border-radius:4px;z-index:2;
+  box-shadow:0 0 0 2px #fff,0 0 0 4px rgba(0,0,0,.5)
+}
+/* 縮めたぶんの大きさを持つ枠。transform は場所を取らないので、
+   これが無いと縮めても元の大きさぶん場所を取り、はみ出す */
+.fit{flex:0 0 auto;overflow:hidden;border-radius:8px;
+  box-shadow:0 1px 0 rgba(255,255,255,.06),0 24px 64px -12px rgba(0,0,0,.7);
+  transition:width .2s ease,height .2s ease}
+.frame{
+  background:#fff;overflow:hidden;transform-origin:top left;
+  transition:width .2s ease
+}
+.frame iframe{width:100%;height:100%;border:0;display:block}
+
+/* ================= 右：編集フォーム ================= */
+.f{margin-bottom:15px}
+.f > label{
+  display:block;font-size:11px;font-weight:600;color:var(--tx2);
+  letter-spacing:.04em;margin-bottom:6px
+}
+/* 書体の見本。選んだものが実際にどう出るかを、その場で見せる */
+.font-eg{
+  margin-top:6px;padding:7px 10px;border-radius:6px;
+  background:var(--panel2);border:1px solid var(--line);
+  color:var(--tx);font-size:16px;line-height:1.5;white-space:nowrap;
+  overflow:hidden;text-overflow:ellipsis
+}
+.f input[type=text],.f input[type=number],.f textarea,.f select{
+  width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:6px;
+  padding:9px 11px;color:var(--tx);font-size:12.5px;
+  transition:border-color .14s,background .14s
+}
+.f input[type=text]:hover,.f textarea:hover,.f select:hover{border-color:var(--line2)}
+.f textarea{resize:vertical;min-height:70px;line-height:1.7}
+.f input:focus,.f textarea:focus,.f select:focus{outline:none;border-color:var(--tx3);background:var(--panel3)}
+.f .hint{font-size:10.5px;color:var(--tx3);margin-top:5px;line-height:1.65}
+
+/* 「色と動き」「ページの設定」を開いたときの、内容へ戻る帯。
+   タブを外したので、戻り道はここにしかない。上に貼り付けておく。 */
+.pan-back{
+  position:sticky;top:0;z-index:4;width:100%;margin:0 0 14px;
+  background:var(--panel);border:none;border-bottom:1px solid var(--line);
+  padding:12px 2px;text-align:left;color:var(--tx2);font-size:12px;font-weight:700;
+  cursor:pointer;transition:color .14s
+}
+.pan-back:hover{color:var(--tx)}
+
+/* 見本のある項目。選択ボックスと「見本から選ぶ」を上下に並べていたが、
+   同じことをする入口が2つあることになり、どちらを押すのか分からない。
+   1つにまとめて、押すと見本が開く。
+   見た目は選択ボックスに寄せる（いまの中身が左、入口の印が右）。 */
+.f .gal-pick{
+  width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;
+  background:var(--panel2);border:1px solid var(--line);border-radius:6px;
+  padding:9px 11px;color:var(--tx);font-size:12.5px;text-align:left;cursor:pointer;
+  transition:border-color .14s,background .14s
+}
+.f .gal-pick:hover{border-color:var(--line2);background:var(--panel3)}
+.f .gal-pick:focus-visible{outline:2px solid var(--tx3);outline-offset:2px}
+.f .gal-pick b{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.f .gal-pick i{flex:none;font-style:normal;font-size:12px;color:var(--tx3)}
+.f .gal-pick:hover i{color:var(--tx2)}
+
+.f-row{display:flex;align-items:center;gap:9px}
+.f-row input[type=color]{
+  width:34px;height:30px;padding:0;background:none;border:1px solid var(--line);border-radius:6px;cursor:pointer
+}
+.f-row input[type=range]{flex:1;accent-color:var(--pri)}
+.f-val{
+  font-size:11px;color:var(--tx3);min-width:42px;text-align:right;
+  font-variant-numeric:tabular-nums
+}
+
+.sw{display:flex;align-items:center;gap:9px;cursor:pointer;font-size:12.5px;font-weight:600}
+.sw input{width:16px;height:16px;accent-color:var(--pri);cursor:pointer}
+
+.img-f{display:flex;gap:7px;align-items:center}
+.img-f input{flex:1;min-width:0}
+.img-f .pick{
+  flex:none;background:var(--panel2);border:1px solid var(--line);border-radius:6px;
+  padding:8px 10px;font-size:11.5px;white-space:nowrap
+}
+.img-f .pick:hover{border-color:var(--line2)}
+/* 絵をえらぶ。名前ではなく絵で選べるように、大きめに並べる */
+/* ================= ページ =================
+   1枚しかないうちは出さない（renderPageBar が hidden にする） */
+.pagebar[hidden]{display:none}
+.pagebar{
+  display:flex;gap:6px;overflow-x:auto;padding:9px 10px;flex:none;
+  border-bottom:1px solid var(--line);background:var(--panel2);scrollbar-width:thin
+}
+.pagebar .pg{
+  flex:none;display:flex;flex-direction:column;align-items:flex-start;gap:2px;
+  padding:7px 11px;border:1px solid var(--line);border-radius:8px;
+  background:var(--panel);color:var(--tx2);font-size:12.5px;font-weight:700;line-height:1.3;
+  white-space:nowrap;cursor:pointer
+}
+.pagebar .pg small{font-size:10px;font-weight:400;color:var(--tx3,#6b7280);letter-spacing:.02em}
+.pagebar .pg:hover{border-color:var(--line2)}
+.pagebar .pg.on{border-color:var(--line2);background:var(--panel3);color:var(--tx)}
+.pagebar .pg.add{justify-content:center;align-items:center;font-size:16px;padding:7px 13px;color:var(--tx2)}
+.pg-path{display:flex;align-items:center;gap:2px}
+.pg-path span{font-size:12px;color:var(--tx2);flex:none}
+.pg-path input{flex:1;min-width:0}
+.pg-kinds{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:6px}
+.pg-kinds button{
+  text-align:left;padding:11px 13px;border:1px solid var(--line);border-radius:9px;
+  background:var(--panel2);color:var(--tx);cursor:pointer
+}
+.pg-kinds button b{display:block;font-size:13px}
+.pg-kinds button small{display:block;font-size:11px;color:var(--tx2);margin-top:2px;line-height:1.5}
+.pg-kinds button.on{border-color:var(--tx3);background:var(--panel3)}
+.pg-ops{display:flex;flex-wrap:wrap;gap:6px;margin:2px 0 14px}
+.pg-ops .tb-btn{font-size:11.5px;padding:6px 10px}
+
+/* リンク先。種類をえらぶと、その下の欄が入れ替わる */
+.lk{display:flex;flex-direction:column;gap:6px}
+.lk .hint{margin:0}
+
+.ic-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:10px}
+.ic-head{
+  font-size:12px;font-weight:800;color:var(--tx2);letter-spacing:.06em;
+  margin:20px 0 9px;padding-bottom:7px;border-bottom:1px solid var(--line)
+}
+.ic-head:first-child{margin-top:4px}
+.ic-find{
+  width:100%;padding:11px 13px;margin:0 0 6px;font:inherit;font-size:13px;
+  background:var(--panel2);border:1px solid var(--line);border-radius:9px;color:var(--tx)
+}
+.ic-find:focus{outline:none;border-color:var(--tx3)}
+.ic-none{color:var(--tx2);font-size:13px;padding:22px 2px}
+.ic-cell{
+  display:flex;flex-direction:column;align-items:center;gap:7px;padding:14px 8px;
+  background:var(--panel2);border:1px solid var(--line);border-radius:10px;color:var(--tx)
+}
+.ic-cell:hover{border-color:var(--line2)}
+.ic-cell.on{border-color:var(--tx3);background:var(--panel3)}
+.ic-cell svg{width:34px;height:34px}
+.ic-cell small{font-size:10.5px;color:var(--tx2);line-height:1.4;text-align:center}
+/* 欄の中に出す、いま選ばれている絵 */
+.ico-pick{display:flex;align-items:center;justify-content:center;gap:9px}
+.ico-prev{display:grid;place-items:center;width:22px;height:22px;flex:none}
+.ico-prev svg{width:100%;height:100%}
+
+/* こまかい調整はたたんでおく。最初に見せるのは中身だけ */
+.adv{border-top:1px solid var(--line);margin-top:6px;padding-top:12px}
+.adv > summary{
+  cursor:pointer;font-size:12px;font-weight:700;color:var(--tx2);
+  list-style:none;padding:6px 0;user-select:none
+}
+.adv > summary::-webkit-details-marker{display:none}
+.adv > summary::before{content:"▸ ";color:var(--tx2)}
+.adv[open] > summary::before{content:"▾ "}
+.adv > summary:hover{color:var(--tx)}
+.adv > .f:first-of-type{margin-top:10px}
+
+.img-thumb{
+  width:100%;height:74px;object-fit:cover;border-radius:6px;margin-top:7px;
+  border:1px solid var(--line);background:#0a0c10;display:block
+}
+.pick.wide{width:100%;margin-top:7px;text-align:center;justify-content:center}
+
+/* 読み込んだ抜き型の下見。抜けるところが分かるよう、色を敷いて形だけ見せる */
+.mask-prev{
+  width:100%;height:96px;margin-top:8px;border-radius:6px;
+  background:linear-gradient(135deg,var(--pri),#8b5cf6);
+  -webkit-mask-size:contain;mask-size:contain;
+  -webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;
+  -webkit-mask-position:center;mask-position:center
+}
+
+/* 背景をぬく。透けたところが分かるよう、下に市松模様を敷く */
+.cut-view{
+  border:1px solid var(--line);border-radius:10px;overflow:hidden;margin-bottom:14px;
+  display:grid;place-items:center;padding:10px;min-height:210px;
+  background-color:#20242c;
+  background-image:
+    linear-gradient(45deg,#2a2f3a 25%,transparent 25%,transparent 75%,#2a2f3a 75%),
+    linear-gradient(45deg,#2a2f3a 25%,transparent 25%,transparent 75%,#2a2f3a 75%);
+  background-size:18px 18px;background-position:0 0,9px 9px
+}
+.cut-view canvas{max-width:100%;max-height:44vh;display:block;border-radius:4px}
+.cut-note{font-size:11.5px;color:var(--tx2);margin:-4px 0 12px;min-height:18px}
+
+/* 繰り返し項目 */
+.list{border:1px solid var(--line);border-radius:var(--r);padding:8px;background:#131417}
+.li{border:1px solid var(--line);border-radius:6px;margin-bottom:7px;background:var(--panel)}
+.li-h{display:flex;align-items:center;gap:6px;padding:7px 9px;cursor:pointer}
+.li-h .t{flex:1;font-size:12px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.li-h .n{font-size:10.5px;color:var(--tx2);font-weight:700;min-width:15px}
+.li-h button{background:transparent;border:0;color:var(--tx2);padding:2px 5px;border-radius:4px;font-size:12px;line-height:1}
+.li-h button:hover{background:var(--panel3);color:var(--tx)}
+.li-b{padding:2px 10px 10px;border-top:1px solid var(--line)}
+.li-b .f{margin:11px 0 0}
+.li-add{
+  width:100%;background:transparent;border:1px dashed var(--line);border-radius:6px;
+  padding:8px;font-size:12px;color:var(--tx2);font-weight:600
+}
+.li-add:hover{color:var(--tx);border-color:var(--line2)}
+
+.empty{color:var(--tx2);text-align:center;padding:44px 16px;font-size:12.5px;line-height:1.9}
+.sec-label{
+  font-size:10.5px;font-weight:800;letter-spacing:.14em;color:var(--tx2);
+  margin:22px 0 11px;padding-top:14px;border-top:1px solid var(--line)
+}
+.sec-label:first-child{margin-top:0;padding-top:0;border-top:0}
+.edit-head{
+  display:flex;align-items:center;gap:8px;margin:-2px 0 15px;padding-bottom:12px;
+  border-bottom:1px solid var(--line);font-weight:800;font-size:13.5px
+}
+
+/* ================= モーダル ================= */
+.modal{
+  position:fixed;inset:0;background:rgba(5,7,10,.72);display:grid;place-items:center;
+  z-index:100;padding:24px;backdrop-filter:blur(3px)
+}
+/* display 指定が hidden 属性に勝ってしまうので明示的に消す */
+.modal[hidden],.add-menu[hidden],.panel-body[hidden]{display:none}
+.modal-box{
+  background:var(--panel);border:1px solid var(--line);border-radius:14px;
+  padding:26px;width:100%;max-width:840px;max-height:88vh;overflow-y:auto
+}
+.modal-box.wide{max-width:960px;display:flex;flex-direction:column}
+.modal-box h2{margin:0 0 6px;font-size:18px}
+.modal-sub{margin:0 0 20px;color:var(--tx2);font-size:12.5px}
+.modal-foot{display:flex;justify-content:flex-end;gap:9px;margin-top:18px}
+/* 一覧の画面は中身が縦に長く、箱ごとスクロールする。
+   そのままだと「閉じる」が画面の外に出て押せないので、下に貼り付ける。 */
+.modal-box.wide .modal-foot{
+  position:sticky;bottom:-26px;z-index:2;
+  background:var(--panel);margin-bottom:-26px;padding:12px 0 14px
+}
+#codeArea{
+  width:100%;height:52vh;background:#0b0d12;border:1px solid var(--line);border-radius:8px;
+  color:#c9d4e2;padding:14px;font-family:Menlo,Consolas,monospace;font-size:11.5px;line-height:1.65;resize:none
+}
+
+.tpl-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.tpl-card{
+  background:var(--panel2);border:1px solid var(--line);border-radius:11px;overflow:hidden;
+  text-align:left;padding:0;transition:border-color .15s,transform .15s
+}
+.tpl-card:hover{border-color:var(--line2)}
+.tpl-prev{height:132px;display:flex;flex-direction:column;gap:5px;padding:13px}
+.tpl-prev .bar{height:9px;border-radius:2px;opacity:.9}
+.tpl-prev .big{height:24px;border-radius:3px;margin-top:5px}
+.tpl-prev .row{display:flex;gap:5px;margin-top:auto}
+.tpl-prev .row span{flex:1;height:30px;border-radius:3px}
+.tpl-meta{padding:12px 14px 15px;border-top:1px solid var(--line)}
+.tpl-meta b{display:block;font-size:13px;margin-bottom:3px}
+.tpl-meta small{color:var(--tx2);font-size:11px;line-height:1.65;display:block}
+
+@media(max-width:1180px){
+  .app{grid-template-columns:200px 1fr 300px}
+  .brand{display:none}
+}
+
+.el-tip{
+  font-size:11px;color:var(--tx2);background:#131417;border-radius:5px;
+  padding:6px 9px;margin:-3px 0 11px;line-height:1.6
+}
+
+/* ==========================================================
+   スマホ・タブレット対応
+   3カラム → プレビュー1枚＋下から出るシート
+   ========================================================== */
+.mnav{display:none}
+.sheet-close{display:none}
+.sheet-veil{
+  position:fixed;inset:0;background:rgba(5,7,10,.55);z-index:55;
+  opacity:0;transition:opacity .22s ease
+}
+.sheet-veil[hidden]{display:none}
+.sheet-veil.show{opacity:1}
+
+@media(hover:none){
+  /* タップ環境ではホバーが無いので、操作ボタンを常に出す */
+  .bl-ops{opacity:1}
+}
+
+@media(max-width:820px){
+  .app{
+    grid-template-columns:1fr;
+    grid-template-rows:calc(48px + var(--sat)) 1fr calc(60px + var(--sab));
+    grid-template-areas:"top" "stage" "nav";
+  }
+  /* 公開は下のナビに置いたので、上のバーからは外す */
+  .brand,#btnCode,#btnReset,#btnExport,#btnPublish{display:none}
+  /* 幅の切り替えは、スマホでも使える。上のバーには場所が無いので、
+     プレビューの下に小さく浮かせる。スマホから PC の並びを確かめたい、
+     という用があるので、隠してはいけない */
+  .devices{
+    position:fixed;left:50%;transform:translateX(-50%);
+    bottom:calc(68px + var(--sab));z-index:55;
+    background:rgba(24,28,36,.92);backdrop-filter:blur(8px);
+    box-shadow:0 8px 24px rgba(0,0,0,.5)
+  }
+  /* 狭いので、名前は頭の2文字だけにする（タブ／スマ） */
+  .devices button{padding:7px 12px;font-size:12px}
+  .devices button i{display:none}
+  .dev-zoom{padding:0 9px;font-size:10.5px}
+  /* シートを開いているあいだは邪魔になるので引っ込める */
+  body:has(.panel.open) .devices{opacity:0;pointer-events:none}
+  .topbar{gap:8px;padding:var(--sat) 10px 0}
+  .tb-btn{padding:7px 12px;font-size:12px}
+  .saved{min-width:0;font-size:11px}
+  .stage{padding:10px 10px 44px}
+  .fit{border-radius:8px}
+
+  /* パネルを下から出るシートにする */
+  .panel.left,.panel.right{
+    position:fixed;left:0;right:0;bottom:calc(60px + var(--sab));top:auto;z-index:60;
+    height:min(56vh,440px);border:0;border-top:1px solid var(--line);
+    border-radius:16px 16px 0 0;box-shadow:0 -18px 50px rgba(0,0,0,.55);
+    transform:translateY(calc(100% + 60px + var(--sab)));transition:transform .25s cubic-bezier(.2,.7,.3,1);
+    will-change:transform
+  }
+  .panel.open{transform:none}
+  .sheet-close{
+    display:block;width:44px;height:5px;border:0;border-radius:99px;background:var(--panel3);
+    margin:9px auto 3px;padding:0;flex:none
+  }
+  .panel-h{padding:8px 14px 10px}
+  .tabs button{padding:12px 4px}
+
+  /* 下部ナビ */
+  .mnav{
+    grid-area:nav;display:flex;background:var(--panel);
+    border-top:1px solid var(--line);z-index:70;position:relative;
+    padding-bottom:var(--sab)
+  }
+  .mnav button{
+    flex:1;background:transparent;border:0;color:var(--tx2);
+    font-size:10.5px;font-weight:700;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;gap:3px;padding:0
+  }
+  .mnav button span{font-size:15px;line-height:1}
+  .mnav button.on{color:var(--tx)}
+  .mnav button:last-child{color:var(--tx)}
+
+  /* 追加メニューはシートの中で上に開く */
+  .add-menu{bottom:52px;max-height:44vh}
+
+  /* モーダル */
+  .modal{padding:calc(12px + var(--sat)) 12px calc(12px + var(--sab));align-items:flex-end}
+  /* 高さは「画面 − 触れない帯 − 余白」まで。92dvh のままだと、
+     帯のぶんを足した高さになって上へはみ出す */
+  .modal-box{padding:18px;border-radius:14px 14px 0 0;
+    max-height:calc(100dvh - var(--sat) - var(--sab) - 24px)}
+  .tpl-grid{grid-template-columns:1fr;gap:12px}
+  .tpl-prev{height:100px}
+  #codeArea{height:46vh;font-size:10.5px}
+}
+
+@media(max-width:820px) and (orientation:landscape){
+  .panel.left,.panel.right{height:76vh}
+}
+
+/* ==========================================================
+   スマホ：1つのブロックを直しているあいだ（focus）
+
+   一覧から1つ選ぶと、画面がこう変わる。
+
+     上半分 … 左に「ページ全体の縦圧縮版」、右に選んだブロックだけ
+     下半分 … その場で直せる欄
+
+   一覧は消えず、細くなって左に残る。だから「いま何ページ目のどこか」を
+   見失わないし、別のところを押せばそのまま移れる。
+   ========================================================== */
+@media(max-width:820px){
+  .app.focus{
+    /* 上半分＝見取り図＋選んだブロック、下半分＝直す欄。
+       minmax(0,…) を付けないと、中身の高さで行が伸びて下がはみ出す */
+    grid-template-rows:calc(48px + var(--sat)) minmax(0,1fr) minmax(0,1fr) calc(60px + var(--sab));
+    grid-template-areas:"top" "stage" "right" "nav";
+  }
+  /* 上に一段あけるのは、幅の切り替えを置く場所。プレビューに重ねると、
+     ちょうど右上あたりの文字や写真が押せなくなる */
+  .app.focus .stage{padding:32px 8px 8px;gap:8px;align-items:stretch}
+  .app.focus .pv{align-items:flex-start}
+
+  /* 直す欄は、下から出るシートではなく画面の下半分に据える。
+     開け閉めしないので、つまみも幕も要らない */
+  .app.focus .panel.right{
+    position:static;grid-area:right;height:auto;min-height:0;z-index:1;
+    transform:none;border-radius:0;border-top:1px solid var(--line);
+    border-left:0;box-shadow:none;transition:none
+  }
+  .app.focus .panel.right .sheet-close{display:none}
+  .app.focus .panel.right .tabs button{padding:9px 4px}
+  .app.focus .panel-body{padding:12px 14px}
+
+  /* 幅の切り替えは、下半分に隠れてしまうので上へ移す。
+     stage に空けた一段に収める（プレビューには重ねない） */
+  .app.focus .devices{
+    left:auto;right:8px;transform:none;
+    top:calc(48px + var(--sat) + 3px);bottom:auto
+  }
+  .app.focus .devices button{padding:3px 9px;font-size:11px}
+  .app.focus .dev-zoom{font-size:10px}
+
+  /* 見取り図はスマホでは細く。画面の1/4以上を取らせない */
+  .app.focus .rail{width:min(76px,22vw)}
+}
+
+/* 見取り図はスマホ専用。パソコンでは左に一覧がずっと出ているので要らない */
+@media(min-width:821px){ .rail{display:none} }
+
+.edit-now{width:100%;margin-bottom:8px;background:var(--panel3);border-color:var(--line2)}
+.edit-now:hover{background:#2a2e34;border-color:var(--tx3)}
+
+/* 取り消し / やり直し */
+.tb-btn.ico{padding:6px 11px;font-size:15px;line-height:1.2}
+.tb-btn:disabled{opacity:.3;cursor:default}
+.tb-btn:disabled:hover{background:var(--panel2);border-color:var(--line)}
+@media(max-width:820px){
+  .tb-btn.ico{padding:6px 9px;font-size:16px}
+}
+
+/* ==========================================================
+   ブロック追加ギャラリー
+   ========================================================== */
+.cat-bar{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:14px}
+/* display を指定した時点で、標準の [hidden]{display:none} に勝ってしまう。
+   hidden を付けても消えないので、こちらで打ち消す。 */
+.cat-bar[hidden]{display:none}
+.cat-bar button{
+  background:var(--panel2);border:1px solid var(--line);border-radius:999px;
+  padding:6px 15px;font-size:12px;font-weight:700;color:var(--tx2);transition:.15s
+}
+.cat-bar button:hover{color:var(--tx);border-color:var(--line2)}
+.cat-bar button.on{background:var(--tx);border-color:var(--tx);color:#0b0c0e}
+.gal-wrap{
+  /* 高さは枠じたいが持つ。中の iframe は場所取りをしないので
+     （縮める都合で浮かせている）、枠が 0 に潰れないようにする。 */
+  flex:1;min-height:56vh;border:1px solid var(--line);border-radius:10px;
+  overflow:hidden;background:#0d1016;
+  /* 見本の iframe は広い幅で描いてから縮めるので、置き場所の基準が要る。
+     縮めても場所取りは元の大きさのままなので、浮かせないと
+     上の行（積み上がりの帯など）が押しつぶされる。 */
+  position:relative
+}
+/* iframe 側にも同じ下限が要る。枠は min-height しか持たない（高さは auto）ので、
+   height:100% だけでは基準が決まらず、中身なりの高さに潰れる。
+   実際にそれで一覧が150pxになり、2枚目から先が見えなくなった。 */
+.gal-wrap iframe{width:100%;height:100%;min-height:56vh;border:0;display:block}
+@media(max-width:820px){
+  /* 画面が狭いほど、見出し・説明・分類バーで縦が埋まる。
+     一覧の高さを控えめにして、箱ごと画面に収まるようにする。 */
+  .gal-wrap,.gal-wrap iframe{min-height:44vh}
+  .modal-box.wide{max-width:100%}
+}
+
+/* ==========================================================
+   かんたんモード
+   3画面しかないので、1画面あたりの要素をぎりぎりまで減らす。
+   指で押す前提なので、当たり判定を大きく取る。
+   ========================================================== */
+.ez-dots{display:flex;gap:6px;margin-bottom:16px}
+.ez-dots i{flex:1;height:3px;border-radius:2px;background:var(--line);transition:background .25s}
+.ez-dots i.on{background:var(--tx)}
+
+.ez-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:9px}
+.ez-grid button{
+  display:flex;align-items:center;gap:10px;text-align:left;
+  background:var(--panel2);border:1px solid var(--line);border-radius:12px;
+  padding:15px 14px;font-size:13px;font-weight:700;color:var(--tx);
+  transition:border-color .15s,transform .15s
+}
+.ez-grid button:hover{border-color:var(--line2);background:var(--panel3)}
+.ez-grid button b{font-size:21px;font-weight:400;line-height:1}
+
+.ez-input{
+  width:100%;box-sizing:border-box;background:var(--panel2);
+  border:1px solid var(--line);border-radius:12px;color:var(--tx);
+  padding:17px 16px;font-size:17px;font-family:inherit
+}
+.ez-input:focus{outline:0;border-color:var(--tx3)}
+
+.ez-drop{
+  width:100%;display:block;text-align:center;cursor:pointer;
+  background:var(--panel2);border:1.5px dashed var(--line);border-radius:14px;
+  padding:30px 18px;color:var(--tx);transition:border-color .15s,background .15s
+}
+.ez-drop:hover{border-color:var(--line2);background:var(--panel3)}
+.ez-drop b{display:block;font-size:15px;margin-bottom:5px}
+.ez-drop small{color:var(--tx2);font-size:11.5px;line-height:1.6}
+
+.ez-thumbs{display:flex;flex-wrap:wrap;gap:7px;margin-top:13px}
+.ez-thumbs:empty{display:none}
+.ez-thumbs img{
+  width:62px;height:62px;object-fit:cover;border-radius:9px;
+  border:1px solid var(--line);display:block
+}
+
+/* 起動して最初の分かれ道。選択肢は2つだけにする */
+.ez-ways{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.ez-ways button{
+  text-align:left;background:var(--panel2);border:1px solid var(--line);border-radius:14px;
+  padding:20px 18px;color:var(--tx);transition:border-color .15s,transform .15s
+}
+.ez-ways button:hover{border-color:var(--line2);background:var(--panel3)}
+.ez-ways b{display:block;font-size:15px;margin-bottom:7px}
+.ez-ways small{display:block;color:var(--tx2);font-size:12px;line-height:1.75}
+@media (max-width:640px){ .ez-ways{grid-template-columns:1fr} }
+
+/* ==========================================================
+   順を追って組む
+   ========================================================== */
+/* いま何段目かの帯。いくつあって、どこまで来たかを一目で出す。
+   箱ごとスクロールしても、いまどこかは見えていてほしいので上に貼り付ける
+   （「閉じる」を下に貼り付けているのと同じ理由）。 */
+.bld-steps{
+  display:flex;gap:5px;margin-bottom:14px;overflow-x:auto;scrollbar-width:none;
+  position:sticky;top:-26px;z-index:3;background:var(--panel);
+  margin-top:-26px;padding:26px 0 14px;
+  /* この帯は .modal-box.wide（縦に並べる箱）の中にいる。既定のままだと
+     中身が縦に長いときに、この帯まで縮められて、文字が半分に切れる。
+     実際そうなっていた（68px の帯が 40px に潰されていた）。縮めない。 */
+  flex:none
+}
+.bld-steps::-webkit-scrollbar{display:none}
+.bld-steps span{
+  /* 文字のぶんは必ず確保する。5つを画面幅で割ると、スマホでは
+     「かたちをえらぶ」が枠からはみ出して切れる。
+     入りきらないときは、細くするのではなく横に流す（親が overflow-x:auto）。 */
+  flex:1;min-width:max-content;white-space:nowrap;text-align:center;
+  font-size:11px;font-weight:700;color:var(--tx2);
+  padding:6px 8px;border-radius:7px;background:var(--panel2);border:1px solid var(--line)
+}
+.bld-steps span.past{color:var(--tx);border-color:var(--line2)}
+.bld-steps span.on{color:#0b0c0e;background:var(--tx);border-color:var(--tx)}
+
+/* どの段にも出す一言。戻せないと思うと、人は選べなくなって手が止まる */
+.bld-anytime{
+  margin:-12px 0 16px;font-size:11.5px;color:var(--tx2);
+  background:#131417;border:1px dashed var(--line);border-radius:8px;padding:9px 12px
+}
+.bld-anytime::before{content:"↺ ";color:var(--tx3);font-weight:700}
+
+/* ②「何が要るか」のチェック */
+.need-list{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:8px;
+  max-height:52vh;overflow-y:auto;padding-right:2px
+}
+.need{
+  display:flex;align-items:flex-start;gap:10px;cursor:pointer;
+  background:var(--panel2);border:1px solid var(--line);border-radius:11px;padding:13px 14px;
+  transition:border-color .15s,background .15s
+}
+.need:hover{border-color:var(--line2)}
+.need.on{border-color:var(--tx3);background:var(--panel3)}
+.need input{width:18px;height:18px;margin:1px 0 0;accent-color:var(--pri);flex:none}
+.need b{display:block;font-size:13px;font-weight:700}
+.need small{display:block;font-size:11.5px;color:var(--tx2);line-height:1.6;margin-top:2px}
+
+/* ③でいま見ているものを、積み上がりの帯で光らせる */
+.bld-strip span.on{border-color:var(--tx3);background:var(--panel3);color:var(--tx)}
+
+.ez-drop.sm{padding:16px 14px;margin-bottom:2px}
+.ez-drop.sm b{font-size:13.5px;margin-bottom:3px}
+#bldPhoto .ez-thumbs img{width:46px;height:46px}
+#bldFinish .ez-grid{grid-template-columns:repeat(auto-fill,minmax(132px,1fr));gap:7px;margin-bottom:16px}
+#bldFinish .ez-grid button{padding:11px 12px;font-size:12px}
+#bldFinish .ez-grid button b{font-size:17px}
+#bldFinish .ez-grid button.on{border-color:var(--tx3);background:var(--panel3)}
+#bldFinish{max-height:60vh;overflow-y:auto;padding-right:2px}
+
+/* 仕上げの入口。ここで終わりではなく、次に何ができるかを見せる */
+.fin-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}
+.fin-grid button{
+  text-align:left;background:var(--panel2);border:1px solid var(--line);border-radius:12px;
+  padding:16px 15px;color:var(--tx);transition:border-color .15s,transform .15s
+}
+.fin-grid button:hover{border-color:var(--line2);background:var(--panel3)}
+.fin-grid b{display:block;font-size:13.5px;margin-bottom:5px}
+.fin-grid small{display:block;color:var(--tx2);font-size:11.5px;line-height:1.7}
+@media (max-width:640px){ .fin-grid{grid-template-columns:1fr} }
+
+/* ==========================================================
+   公開する
+   ========================================================== */
+.pub-list{display:flex;flex-direction:column;gap:9px}
+.pub-list button{
+  display:block;width:100%;text-align:left;
+  background:var(--panel2);border:1px solid var(--line);border-radius:12px;
+  padding:15px 16px;color:var(--tx);transition:border-color .15s,transform .15s
+}
+.pub-list button:hover{border-color:var(--line2);background:var(--panel3)}
+.pub-list b{display:block;font-size:14px;margin-bottom:4px}
+.pub-list b em{
+  font-style:normal;font-size:10.5px;font-weight:800;color:var(--pri);
+  border:1px solid var(--pri);border-radius:4px;padding:1px 6px;margin-left:8px;vertical-align:1px
+}
+.pub-list small{display:block;color:var(--tx2);font-size:11.5px;line-height:1.7}
+
+.pub-steps{margin:0;padding:0 0 0 1.35em;color:var(--tx);font-size:13.5px;line-height:1.95}
+.pub-steps li{margin-bottom:13px}
+.pub-steps li::marker{color:var(--pri);font-weight:800}
+.pub-steps small{display:block;color:var(--tx2);font-size:11.5px;line-height:1.7;margin-top:2px}
+.pub-steps .tb-btn{margin-top:7px}
+.pub-note{color:var(--tx2);font-size:12.5px;line-height:1.85;margin:0 0 14px}
+.pub-live{
+  margin-top:13px;padding:13px 15px;border-radius:11px;
+  background:var(--panel2);border:1px solid var(--line);font-size:12.5px;line-height:1.8
+}
+.pub-live a{color:var(--pri);word-break:break-all;display:block;margin:5px 0 0}
+.pub-live b{display:block;font-size:11.5px;color:var(--tx2);font-weight:700}
+.pub-live small{display:block;color:var(--tx2);font-size:11.5px;line-height:1.7;margin-top:10px}
+.pub-acts{display:flex;flex-wrap:wrap;gap:7px;margin-top:12px}
+
+/* ==========================================================
+   部分ごとに選んで組む — いま何段目まで積んだかの帯
+   ========================================================== */
+.bld-strip{
+  display:flex;gap:6px;overflow-x:auto;padding-bottom:9px;margin-bottom:12px;
+  scrollbar-width:thin
+}
+.bld-strip:empty{display:none}
+.bld-strip span{
+  flex:none;display:inline-flex;align-items:center;gap:6px;
+  background:var(--panel2);border:1px solid var(--line);border-radius:999px;
+  padding:5px 12px;font-size:11.5px;font-weight:700;color:var(--tx2);white-space:nowrap
+}
+.bld-strip span i{font-style:normal;color:var(--pri);font-size:10.5px}
+/* 直前に積んだものが分かるように、最後の1つだけ色を付ける */
+.bld-strip span:last-child{border-color:var(--pri);color:var(--tx)}
+
+/* アニメーションのサンプル一覧を開くボタン */
+.anim-gal{
+  width:100%;margin-top:7px;background:var(--panel2);border:1px solid var(--line);border-radius:6px;
+  padding:9px;font-size:11.5px;font-weight:600;letter-spacing:.06em;color:var(--tx2);
+  transition:background .14s,border-color .14s,color .14s
+}
+.anim-gal:hover{background:var(--panel3);border-color:var(--line2);color:var(--tx)}
+
+/* ================= 届いたお問い合わせ ================= */
+.inbox{max-height:56vh;overflow-y:auto;margin-bottom:4px}
+.inbox-none{color:var(--tx2);font-size:13px;line-height:2;padding:26px 2px;text-align:center}
+.ib{border:1px solid var(--line);border-radius:9px;background:var(--panel2);padding:13px 15px;margin-bottom:9px}
+.ib-h{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 12px;margin-bottom:7px}
+.ib-h b{font-size:13.5px}
+.ib-h a{color:var(--pri);font-size:12px;text-decoration:none}
+.ib-h a:hover{text-decoration:underline}
+.ib-h time{margin-left:auto;color:var(--tx2);font-size:11px}
+.ib p{margin:0;font-size:13px;line-height:1.9;color:var(--tx);white-space:pre-wrap}
+

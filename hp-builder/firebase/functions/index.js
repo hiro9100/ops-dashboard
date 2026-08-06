@@ -32,11 +32,38 @@ const bucket = () => getStorage().bucket();
 const MAX_BYTES = 3 * 1024 * 1024;   // 1ページの上限。写真込みでもこれで足りる
 const MAX_SITE_BYTES = 12 * 1024 * 1024;  // サイト全体の上限
 const MAX_PAGES = 20;                // 1サイトのページ数
-const MAX_NEW_PER_DAY = 5;           // 同じ回線から1日に作れる新規サイト数
+const MAX_NEW_PER_DAY = 8;           // 同じ回線から1日に作れる新規サイト数
+/* 全体でも1日ぶんの上限を持つ。回線ごとの数えかたは、下に書いたとおり
+   完全ではない。抜けられたときに、青天井にならないための最後の壁。
+   ふつうの使われかたでは当たらない数にしてある（当たったら記録に残す）。 */
+const MAX_NEW_GLOBAL_PER_DAY = 800;
 const MARK = 'id="hp-builder-data"'; // このツールが作ったHTMLの目印
+/* 数えた札を置きっぱなしにしない。Firestore の TTL に消してもらう。
+   1日1万人だと1年で数百万件たまり、読まないものに置き場代がかかる。
+   （TTL の設定は一度だけ要る。firebase/README.md に手順を書いた） */
+const QUOTA_TTL_DAYS = 3;
 
 const sha = (s) => crypto.createHash('sha256').update(s).digest('hex');
 const token = () => crypto.randomBytes(24).toString('base64url');
+
+/* 公開ページのアドレスの頭。既定は同じところ（…web.app/s/）。
+
+   公開ページを別のドメインへ移すときは、.env の HP_SITE_BASE を
+   そちらにする。編集画面に返すアドレスも、ここ1か所で揃う。
+   なぜ移すのかは firebase/README.md の「別のドメインに移す」に書いた。 */
+const siteBase = () => {
+  const v = String(process.env.HP_SITE_BASE || '').trim();
+  if (v) return v.endsWith('/') ? v : `${v}/`;
+  return `https://${process.env.GCLOUD_PROJECT}.web.app/s/`;
+};
+
+/* 公開ページから、問い合わせの受け口へ送れるようにする先。
+   同じところに居るあいだは 'self'。別のドメインへ移したら、
+   受け口のあるドメインを名指しする（そうしないと守りが止める）。 */
+const apiOrigin = () => {
+  const v = String(process.env.HP_API_ORIGIN || '').trim();
+  return v || "'self'";
+};
 
 /* 合言葉くらべ。長さで先に分かれると、そこから1文字ずつ当てられる。
    同じ長さに揃えてから、時間の変わらないやり方でくらべる。 */
@@ -95,8 +122,31 @@ function badScript(html) {
 function makeId(title) {
   const slug = String(title || '').toLowerCase()
     .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 24);
-  const tail = crypto.randomBytes(3).toString('hex');
+  const tail = crypto.randomBytes(6).toString('hex');
   return slug ? `${slug}-${tail}` : `site-${tail}`;
+}
+
+/* 空いているIDを押さえる。
+
+   前は、作ったIDでいきなり書いていた（merge:true）。同じIDが先にあると、
+   他人のサイトの合言葉と中身を黙って上書きできてしまう。印が3バイト
+   しかなく、店名は「cafe」のように重なりやすいので、偶然でも起こりうる。
+
+   create() は、すでにあると必ず失敗する。だから読んでから書くのと違って、
+   同時に来ても片方しか通らない。空くまで数回だけ作り直す。 */
+async function claimId(title, tokenHash) {
+  for (let i = 0; i < 6; i += 1) {
+    const id = makeId(title);
+    try {
+      await db.collection('sites').doc(id).create({
+        tokenHash, createdAt: FieldValue.serverTimestamp(),
+      });
+      return id;
+    } catch (e) {
+      if (e.code !== 6 && !/ALREADY_EXISTS/i.test(String(e.message || ''))) throw e;
+    }
+  }
+  return '';
 }
 
 const cors = (res, origin) => {
@@ -107,21 +157,44 @@ const cors = (res, origin) => {
   res.set('Access-Control-Allow-Headers', 'Content-Type');
   res.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.set('Access-Control-Max-Age', '3600');
+  /* 返事に届いた問い合わせが入ることがある。途中の置き場に残さない */
+  res.set('Cache-Control', 'no-store');
+  res.set('X-Content-Type-Options', 'nosniff');
 };
 
-const clientIp = (req) =>
-  String(req.headers['x-forwarded-for'] || req.ip || '').split(',')[0].trim() || 'unknown';
+/* 送ってきた回線。
 
-/* 1日に作れる新規サイト数を、回線ごとに数える */
+   X-Forwarded-For の先頭を見ていたが、そこは送る側が好きに書ける。
+   前に何か書いておけば、毎回ちがう回線に見せられ、1日の上限を
+   いくらでも越えられる（数えている意味が無くなる）。
+
+   この列は、通ってきた順に後ろへ足されていく。いちばん後ろは
+   こちらの入口、その1つ前が、入口から見えた本当の相手。
+   ここは書き足す側しか触れないので、送る側には作れない。 */
+const clientIp = (req) => {
+  const parts = String(req.headers['x-forwarded-for'] || '')
+    .split(',').map((s) => s.trim()).filter(Boolean);
+  return parts[parts.length - 2] || parts[0] || String(req.ip || '') || 'unknown';
+};
+
+/* 数えた札の捨てどき。Firestore の TTL がこの日時を過ぎたものを消す */
+const ttlAt = () => new Date(Date.now() + QUOTA_TTL_DAYS * 86400 * 1000);
+
+/* 1日に作れる数を数える。回線ごとと、全体と、両方見る。
+   回線の見分けは完全ではないので、全体のぶんが最後の壁になる。 */
 async function takeNewSiteSlot(ip) {
   const day = new Date().toISOString().slice(0, 10);
-  const ref = db.collection('quota').doc(`${day}_${sha(ip).slice(0, 32)}`);
+  const mine = db.collection('quota').doc(`${day}_${sha(ip).slice(0, 32)}`);
+  const all = db.collection('quota').doc(`all_${day}`);
   return db.runTransaction(async (tx) => {
-    const snap = await tx.get(ref);
-    const n = snap.exists ? (snap.data().n || 0) : 0;
-    if (n >= MAX_NEW_PER_DAY) return false;
-    tx.set(ref, { n: n + 1, day, at: FieldValue.serverTimestamp() });
-    return true;
+    const [a, b] = await tx.getAll(mine, all);
+    const n = a.exists ? (a.data().n || 0) : 0;
+    const g = b.exists ? (b.data().n || 0) : 0;
+    if (n >= MAX_NEW_PER_DAY) return 'ip';
+    if (g >= MAX_NEW_GLOBAL_PER_DAY) return 'all';
+    tx.set(mine, { n: n + 1, day, at: FieldValue.serverTimestamp(), expireAt: ttlAt() });
+    tx.set(all, { n: g + 1, day, at: FieldValue.serverTimestamp(), expireAt: ttlAt() });
+    return '';
   });
 }
 
@@ -202,11 +275,22 @@ exports.publishSite = onRequest({ region: REGION, maxInstances: 10, cors: false,
       prevPages = Array.isArray(snap.data().pages) ? snap.data().pages : [];
     } else {
       /* 新規 */
-      if (!(await takeNewSiteSlot(clientIp(req)))) {
+      const full = await takeNewSiteSlot(clientIp(req));
+      if (full === 'ip') {
         return res.status(429).json({ error: `新しいサイトは1日${MAX_NEW_PER_DAY}件までです。明日またどうぞ` });
       }
-      id = makeId(title);
+      if (full === 'all') {
+        /* ここに当たるのは、ふつうの使われかたでは起きない。
+           記録に残して、翌朝いちばんに気づけるようにする */
+        console.error(`1日ぶんの新規作成が上限（${MAX_NEW_GLOBAL_PER_DAY}件）に達しました`);
+        return res.status(429).json({ error: 'いまは新しいサイトを作れません。時間をおいてお試しください' });
+      }
       tok = token();
+      id = await claimId(title, sha(tok));
+      if (!id) {
+        console.error('空いているサイトIDを作れませんでした');
+        return res.status(503).json({ error: '公開できませんでした。少し待ってもう一度お試しください' });
+      }
       isNew = true;
     }
 
@@ -238,7 +322,7 @@ exports.publishSite = onRequest({ region: REGION, maxInstances: 10, cors: false,
       ...(isNew ? { createdAt: FieldValue.serverTimestamp() } : {}),
     }, { merge: true });
 
-    const url = `https://${process.env.GCLOUD_PROJECT}.web.app/s/${id}`;
+    const url = `${siteBase()}${id}`;
     /* 合言葉は新規のときだけ返す。既存のものを問い合わせで引き出せると、
        合言葉を確かめている意味がなくなる。 */
     return res.json({ siteId: id, url, ...(isNew ? { editToken: tok } : {}) });
@@ -285,6 +369,9 @@ exports.submitForm = onRequest({ region: REGION, maxInstances: 10, cors: false, 
 
     const site = await db.collection('sites').doc(id).get();
     if (!site.exists) return res.status(404).json({ error: 'この送り先はもうありません' });
+    /* 止めたサイトは、ページも受け口も止める。
+       止めたあとに届き続けると、止めた意味が無い */
+    if (site.data().disabled) return res.status(410).json({ error: 'この送り先はもうありません' });
 
     /* 同じ回線からの送りすぎを止める。持ち主の受信箱が埋まらないように */
     const day = new Date().toISOString().slice(0, 10);
@@ -293,7 +380,7 @@ exports.submitForm = onRequest({ region: REGION, maxInstances: 10, cors: false, 
       const snap = await tx.get(qref);
       const n = snap.exists ? (snap.data().n || 0) : 0;
       if (n >= MAX_MSG_PER_DAY) return false;
-      tx.set(qref, { n: n + 1, day, at: FieldValue.serverTimestamp() });
+      tx.set(qref, { n: n + 1, day, at: FieldValue.serverTimestamp(), expireAt: ttlAt() });
       return true;
     });
     if (!okQuota) return res.status(429).json({ error: '送信が続いています。しばらく待ってからお試しください' });
@@ -423,7 +510,7 @@ if (IMAGE_ON) exports.generateImage = onRequest({
       const snap = await tx.get(qref);
       const n = snap.exists ? (snap.data().n || 0) : 0;
       if (n >= MAX_IMG_PER_DAY) return false;
-      tx.set(qref, { n: n + 1, day, at: FieldValue.serverTimestamp() });
+      tx.set(qref, { n: n + 1, day, at: FieldValue.serverTimestamp(), expireAt: ttlAt() });
       return true;
     });
     if (!okQuota) {
@@ -508,8 +595,8 @@ function securityHeaders(res) {
     "img-src data: blob: https:",
     "media-src data: blob: https:",
     "font-src data: https:",
-    "connect-src 'self'",
-    "form-action 'self'",
+    `connect-src ${apiOrigin()}`,
+    `form-action ${apiOrigin()}`,
     "frame-ancestors 'none'",
     "base-uri 'none'",
   ].join('; '));

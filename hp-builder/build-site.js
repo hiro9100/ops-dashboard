@@ -27,8 +27,14 @@ for (const s of ['tools/runtime-hash.js', 'build.js', 'examples/build-service-lp
 }
 
 fs.rmSync(OUT, { recursive: true, force: true });
-fs.mkdirSync(path.join(OUT, 'app'), { recursive: true });
 fs.mkdirSync(path.join(OUT, 'demo'), { recursive: true });
+
+/* 配信用の編集ツールは、中身を分けて指紋つきの名前で置く。
+   1枚もののままだと、出し直すたびに全員が 840KB を取り直すことになり、
+   1万人規模では配る量だけで足が出る（tools/build-app.js に理由を書いた）。
+   ※ この中で docs/app を作り直すので、app に何か入れるのはこのあと。 */
+execFileSync(process.execPath, [path.join(ROOT, 'tools/build-app.js'), path.join(OUT, 'app')],
+  { cwd: ROOT, stdio: 'inherit' });
 
 /* Pages は既定で Jekyll を通す。_ で始まる名前などが消されないよう止めておく */
 fs.writeFileSync(path.join(OUT, '.nojekyll'), '');
@@ -45,7 +51,9 @@ const KEEP = ['ops-dashboard_6.html'];
 
 const made = [
   put('examples/service-lp.html', 'index.html'),          // 入口はサービスLP
-  put('dist/index.html', 'app/index.html'),               // 編集ツール本体
+  /* 編集ツール本体。手元に落とす用の1枚もの（どこに置いても、
+     file:// で開いても動く）。配信用は下で分けて置く。 */
+  put('dist/index.html', 'app/offline.html'),
   put('examples/cafe-verdure.html', 'demo/cafe-verdure.html'),
   put('examples/hero-deco.html', 'demo/hero-deco.html'),
   put('examples/hero-scroll.html', 'demo/hero-scroll.html'),
