@@ -12,7 +12,7 @@ const PUBLISH = {
   /* 預ける先 */
   endpoint: 'https://bildy-4e45e.web.app/api/publish',
   /* 公開されたページのアドレスの頭。独自ドメインを足したら、ここも足す */
-  siteBase: 'https://bildy-4e45e.web.app/s/',
+  siteBase: 'https://bildy-4e45e-pages.web.app/s/',
 
   /* ヒーローの絵を作ってもらう窓口を出すか。いまは出さない。
 

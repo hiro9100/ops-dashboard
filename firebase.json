@@ -1,41 +1,105 @@
 {
-  "hosting": {
-    "public": "docs",
-    "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
-    "cleanUrls": true,
-    "headers": [
-      {
-        "source": "/art/**",
-        "headers": [
-          { "key": "Access-Control-Allow-Origin", "value": "*" },
-          { "key": "Cache-Control", "value": "public, max-age=2592000" }
-        ]
-      },
-      {
-        "source": "/app/a/**",
-        "headers": [
-          { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
-        ]
-      },
-      {
-        "source": "/app/**/*.html",
-        "headers": [
-          { "key": "Cache-Control", "value": "no-cache" }
-        ]
-      }
-    ],
-    "rewrites": [
-      { "source": "/s/**", "function": { "functionId": "serveSite", "region": "asia-northeast1" } },
-      { "source": "/api/publish", "function": { "functionId": "publishSite", "region": "asia-northeast1" } },
-      { "source": "/api/form", "function": { "functionId": "submitForm", "region": "asia-northeast1" } },
-      { "source": "/api/messages", "function": { "functionId": "listMessages", "region": "asia-northeast1" } },
-      { "source": "/api/image", "function": { "functionId": "generateImage", "region": "asia-northeast1" } }
-    ]
+  "hosting": [
+    {
+      "site": "bildy-4e45e",
+      "public": "docs",
+      "ignore": [
+        "firebase.json",
+        "**/.*",
+        "**/node_modules/**"
+      ],
+      "cleanUrls": true,
+      "headers": [
+        {
+          "source": "/art/**",
+          "headers": [
+            {
+              "key": "Access-Control-Allow-Origin",
+              "value": "*"
+            },
+            {
+              "key": "Cache-Control",
+              "value": "public, max-age=2592000"
+            }
+          ]
+        },
+        {
+          "source": "/app/a/**",
+          "headers": [
+            {
+              "key": "Cache-Control",
+              "value": "public, max-age=31536000, immutable"
+            }
+          ]
+        },
+        {
+          "source": "/app/**/*.html",
+          "headers": [
+            {
+              "key": "Cache-Control",
+              "value": "no-cache"
+            }
+          ]
+        }
+      ],
+      "rewrites": [
+        {
+          "source": "/api/publish",
+          "function": {
+            "functionId": "publishSite",
+            "region": "asia-northeast1"
+          }
+        },
+        {
+          "source": "/api/form",
+          "function": {
+            "functionId": "submitForm",
+            "region": "asia-northeast1"
+          }
+        },
+        {
+          "source": "/api/messages",
+          "function": {
+            "functionId": "listMessages",
+            "region": "asia-northeast1"
+          }
+        },
+        {
+          "source": "/api/image",
+          "function": {
+            "functionId": "generateImage",
+            "region": "asia-northeast1"
+          }
+        }
+      ]
+    },
+    {
+      "site": "bildy-4e45e-pages",
+      "public": "hp-builder/firebase/pages-root",
+      "ignore": [
+        "firebase.json",
+        "**/.*",
+        "**/node_modules/**"
+      ],
+      "rewrites": [
+        {
+          "source": "/s/**",
+          "function": {
+            "functionId": "serveSite",
+            "region": "asia-northeast1"
+          }
+        }
+      ]
+    }
+  ],
+  "storage": {
+    "rules": "hp-builder/firebase/storage.rules"
   },
-  "storage": { "rules": "hp-builder/firebase/storage.rules" },
   "firestore": {
     "rules": "hp-builder/firebase/firestore.rules",
     "indexes": "hp-builder/firebase/firestore.indexes.json"
   },
-  "functions": { "source": "hp-builder/firebase/functions" }
+  "functions": {
+    "source": "hp-builder/firebase/functions"
+  }
 }

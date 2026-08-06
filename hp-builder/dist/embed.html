@@ -9815,7 +9815,7 @@ const PUBLISH = {
   /* 預ける先 */
   endpoint: 'https://bildy-4e45e.web.app/api/publish',
   /* 公開されたページのアドレスの頭。独自ドメインを足したら、ここも足す */
-  siteBase: 'https://bildy-4e45e.web.app/s/',
+  siteBase: 'https://bildy-4e45e-pages.web.app/s/',
 
   /* ヒーローの絵を作ってもらう窓口を出すか。いまは出さない。
 
@@ -9855,12 +9855,17 @@ const PUBLISH = {
      ・作っているとき   hp-builder/index.html  → ./art/
      ・組み上げた1枚     dist/index.html        → ../art/
      ・公開の一式        docs/app/index.html    → ../art/
-     ・よそに置いた1枚   どこでも               → 公開の入れ物から借りる
+     ・よそに置いた1枚   どこでも               → 受け口のあるところから借りる
 
    どれになるかは、どこから開いたかで変わる。決め打ちにすると外れる。
    公開の入れ物（PUBLISH.siteBase）だけを見ていたころは、GitHub Pages から
    開いても、手元の dist/index.html から開いても、隣に写真が在るのに
-   見つけられなかった。順に試して、最初に読めたところを覚える。 */
+   見つけられなかった。順に試して、最初に読めたところを覚える。
+
+   最後の頼りは、受け口（PUBLISH.endpoint）のあるところ。写真は道具と
+   同じところに置いてあり、公開されたページの置き場とは別のことがある
+   （別のドメインへ移したとき）。公開の入れ物を頼りにすると、そこには
+   写真が無い。 */
 const photoBases = () => {
   const out = [];
   const add = (u) => { if (u && out.indexOf(u) < 0) out.push(u); };
@@ -9871,9 +9876,12 @@ const photoBases = () => {
       add(new URL('art/', here).href);        // 隣
       add(new URL('../art/', here).href);     // 1つ上（dist/ や app/ の中）
     }
-  } catch (e) { /* 開いた場所が読めない。下の公開の入れ物に頼る */ }
-  add((typeof PUBLISH === 'object' && PUBLISH.siteBase)
-    ? PUBLISH.siteBase.replace(/\/s\/$/, '/art/') : '');
+  } catch (e) { /* 開いた場所が読めない。下の受け口に頼る */ }
+  try {
+    if (typeof PUBLISH === 'object' && PUBLISH.endpoint) {
+      add(new URL('/art/', PUBLISH.endpoint).href);
+    }
+  } catch (e) { /* 受け口の形が読めない */ }
   return out;
 };
 

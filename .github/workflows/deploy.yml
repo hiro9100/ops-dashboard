@@ -79,6 +79,40 @@ jobs:
             console.log(`鍵を確認しました: ${j.client_email}`);
           '
 
+      # 公開されたページは、編集ツールとは別のドメインに置く。
+      # 同じところに居ると、公開ページで何かが動いた瞬間に、同じドメインの
+      # 編集画面の控え（合言葉）に手が届く。理由は hp-builder/firebase/README.md。
+      #
+      # 置き場は一度作れば残るので、ここは2回目からは何もしない。
+      # 作れなかったときは、その場で止める。中途半端に出すと
+      # 「公開はできるのにアドレスの先が無い」になる。
+      - name: 公開ページ用の置き場を用意する
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/sa.json
+        run: |
+          SITE=bildy-4e45e-pages
+          if npx --yes firebase-tools@14 hosting:sites:list --project bildy-4e45e --json \
+               | grep -q "\"$SITE\""; then
+            echo "  ok   $SITE はすでにあります"
+            exit 0
+          fi
+          echo "  $SITE を作ります（初回だけ）"
+          if npx --yes firebase-tools@14 hosting:sites:create "$SITE" \
+               --project bildy-4e45e --non-interactive; then
+            echo "  ok   作りました"
+          else
+            echo "" >&2
+            echo "$SITE を作れませんでした。" >&2
+            echo "名前がすでに世界のどこかで使われているか、鍵に Firebase Admin の" >&2
+            echo "権限が足りません（hp-builder/firebase/README.md の権限の表）。" >&2
+            echo "" >&2
+            echo "急ぐときは、firebase.json の置き場の指定を1つに戻し、" >&2
+            echo "そこの行き先の一覧に次の1行を戻せば、これまでどおりの形で出せます。" >&2
+            echo "  { \"source\": \"/s/**\", \"function\": { \"functionId\": \"serveSite\"," >&2
+            echo "    \"region\": \"asia-northeast1\" } }" >&2
+            exit 1
+          fi
+
       # firebase.json はリポジトリ直下に置いてある。
       # Hosting は firebase.json より上のフォルダを配信できず、配信するのは
       # 直下の docs/ なので、設定もここに無いと「outside of project directory」で
@@ -123,13 +157,28 @@ jobs:
             check "$B/app/$f"         200 "編集ツールの中身（$f）"
           done
           check "$B/demo/"            200 "見本の一覧"
-          # 中身の無いサイトIDは、配信の Function が 404 の画面を返す
-          check "$B/s/nothing-here"   404 "公開ページの配信（serveSite）"
           # 受け口は POST 専用。GET で 405 が返れば、Function が生きている
           check "$B/api/publish"      405 "公開の受け口（publishSite）"
           # 業種の見本写真。ここが404だと、顔をえらぶ画面が描いた絵のままになる
           # （出ていないことに気づけないので、名指しで確かめる）
           check "$B/art/cafe-1.jpg"   200 "業種の見本写真（art/）"
+
+          # 公開されたページは、別のドメインから配る。
+          P=https://bildy-4e45e-pages.web.app
+          # 中身の無いサイトIDは、配信の Function が 404 の画面を返す
+          check "$P/s/nothing-here"   404 "公開ページの配信（serveSite）"
+          check "$P/"                 200 "公開ページ側の入口"
+
+          # ここがいちばん大事。編集ツールと同じドメインからは、もう配らない。
+          # 配ってしまうと、他人のHTMLが編集画面と同じ持ち主として動く。
+          same=$(curl -s -o /dev/null -w '%{http_code}' --max-time 30 "$B/s/nothing-here" || echo 000)
+          if [ "$same" = "404" ]; then
+            echo "  ok   編集ツールと同じドメインからは配っていない ($B/s/… → 404)"
+          else
+            echo "  NG   $B/s/… がまだ生きています（→ $same）。分けた意味が無くなります"
+            ng=$((ng+1))
+          fi
+
           if [ "$ng" -gt 0 ]; then
             echo "出したはずのものが $ng 件、応答していません。" >&2
             exit 1
@@ -137,4 +186,4 @@ jobs:
           echo ""
           echo "$B/        サービスLP"
           echo "$B/app/    編集ツール"
-          echo "$B/s/<ID>  公開されたページ"
+          echo "$P/s/<ID>  公開されたページ"
