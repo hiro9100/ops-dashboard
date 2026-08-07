@@ -108,6 +108,9 @@ ${p.eyebrow ? `      <span class="eyebrow"${el(p, 'eyebrow', 'ta', '小見出し
 
 /* ボタン群 */
 /* ボタンの型。見た目・大きさ・矢印を、それぞれ別に選べる */
+/* 「単色に浮くシェイプ」で選べる形。土台と同じ色で置き、影で立てる */
+const EMB_SHAPES = ['squircle', 'circle', 'arch', 'blob'];
+
 const BTN_STYLES = [
   ['primary', 'ベタ塗り'],
   ['accent', 'アクセント'],
@@ -1087,7 +1090,8 @@ const BLOCKS = {
           ['orbit', 'まるい写真が浮かぶ'], ['poster', '大きな名前＋1枚の写真'],
           ['showcase', '1商品を立てる（光と台）'],
           ['reel', '写真がくるくる入れ替わる'],
-          ['duo', '写真2枚のあいだに文字']] },
+          ['duo', '写真2枚のあいだに文字'],
+          ['emboss', '単色に浮くシェイプ']] },
       /* ヒーローだけ、別の書体にできる。ここでサイトの雰囲気が決まるので、
          全体の設定より強く出したいことがある。空なら全体と同じ */
       /* FONTS は templates.js にあり、このファイルより後に読み込まれる。
@@ -1158,6 +1162,9 @@ const BLOCKS = {
       { key: 'scrollLabel', label: 'いちばん下の合図', type: 'text', adv: true,
         showIf: (p) => ['ribbon', 'lineart', 'mark'].includes(p.layout),
         hint: '空にすると出しません' },
+      { key: 'embShape', label: 'シェイプの形', type: 'select',
+        showIf: (p) => p.layout === 'emboss',
+        options: [['squircle', '角のまるい四角'], ['circle', '丸'], ['arch', 'アーチ'], ['blob', 'まるみ']] },
       { key: 'buttons', label: 'ボタン', type: 'list', addLabel: 'ボタンを追加', titleKey: 'label', item: FIELD.btnItem },
       /* ここから下は「演出」。ヒーローは型から選んでもらうのが本筋なので、
          型を選んだあとに直したい人だけが開けばいい。前に出すと、
@@ -1192,6 +1199,7 @@ const BLOCKS = {
       deco: 'none', decoStrength: 60, grain: false, decoLabel: 'SCROLL',
       melt: 'none', meltMask: '', meltDepth: 100,
       badge: '', badgeRing: '', tag: '',
+      embShape: 'squircle',
       markMask: '', art: 'flow', scrollLabel: 'Scroll', side: 'PORTFOLIO',
       mid: 'DE', notes: 'LIMITED 300 | ATELIER | EAU DE PARFUM',
       branchImg: '', shelfImg: '', inks: [], image2: '',
@@ -1332,6 +1340,15 @@ ${p.side ? `        <span class="pst-side"${el(p, 'side', 'ta', '右の縦書き
       ${p.eyebrow ? `<span class="eyebrow"${el(p, 'eyebrow', 'ta', '小見出し', 'eyebrow')}>${nl2br(p.eyebrow)}</span>` : ''}
       ${p.text ? `<p class="hero-text"${el(p, 'text', 'ta', '説明文', 'text')}>${nl2br(p.text)}</p>` : ''}
 ${heroMarks(p)}${buttons(p.buttons)}
+    </div>`
+          : p.layout === 'emboss'
+          /* 単色の土台に、同じ色のシェイプを1つ、真ん中に置く。
+             色が同じなので、くっきりした影だけがシェイプの輪郭を伝える。
+             それで「土台から浮いて出ている」立体感になる。文字はその上。 */
+          ? `    <div class="hero-in">
+      <div class="emb-stage">
+        <div class="emb-panel emb-${esc(EMB_SHAPES.includes(p.embShape) ? p.embShape : 'squircle')}">\n${body}\n        </div>
+      </div>
     </div>`
           : (p.layout === 'split' || p.layout === 'pack')
           ? `    <div class="hero-in">

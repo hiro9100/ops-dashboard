@@ -1673,6 +1673,65 @@ p:last-child{margin-bottom:0}
       var(--c-bg) 94%)
   }
 }
+/* ==========================================================
+   単色に浮くシェイプ（emboss）
+
+   土台とシェイプを同じ色にして、影だけで形の輪郭を伝える。
+   同じ色のまま「そこだけ持ち上がっている」ように見せる型。
+   文字はシェイプの上に乗せる（シェイプが中身を包む板になる）。
+
+   影は2枚。近くにくっきりした濃い影（立体感の主役）と、
+   遠くにやわらかい影（地に置いてある落ち着き）。どちらも土台と
+   同じ色の濃いほうを使うので、色が濁らない。
+   ========================================================== */
+.hero.emboss{
+  --emb-fill:var(--c-surface);
+  --emb-hi:color-mix(in srgb,var(--emb-fill) 52%,#fff);
+  --emb-sh:color-mix(in srgb,var(--emb-fill) 58%,#000);
+  --emb-sh2:color-mix(in srgb,var(--emb-fill) 72%,#000);
+  background:var(--emb-fill);
+}
+.hero.emboss.bg-primary{--emb-fill:var(--c-primary)}
+.hero.emboss.bg-dark{--emb-fill:var(--c-dark)}
+.hero.emboss .hero-in{min-height:min(80svh,780px);display:grid;place-items:center;
+  padding:clamp(40px,7vw,110px) 0}
+.emb-stage{display:grid;place-items:center;width:100%}
+.emb-panel{
+  position:relative;text-align:center;
+  max-width:min(92vw,600px);
+  padding:clamp(40px,6vw,84px) clamp(28px,5vw,66px);
+  background:var(--emb-fill);
+  /* 上の細い明るい縁＋近くのくっきり影＋遠くのやわらかい影 */
+  box-shadow:
+    inset 0 1px 0 var(--emb-hi),
+    14px 18px 5px -5px var(--emb-sh),
+    32px 42px 40px -18px var(--emb-sh2);
+}
+.emb-squircle{border-radius:clamp(40px,6vw,82px)}
+.emb-circle{aspect-ratio:1/1;display:grid;place-items:center;border-radius:50%;
+  width:min(92vw,560px);max-width:min(92vw,560px);padding:clamp(40px,7vw,84px)}
+.emb-arch{border-radius:clamp(130px,22vw,290px) clamp(130px,22vw,290px) clamp(36px,5vw,70px) clamp(36px,5vw,70px)}
+.emb-blob{border-radius:46% 54% 48% 52%/56% 46% 54% 44%}
+/* シェイプの中に収まる大きさに抑える。土台いっぱいではなく、
+   板の上に載る一言なので、通常のヒーローより一段小さくする。 */
+.hero.emboss .hero-title{font-size:clamp(24px,2.6vw,42px);line-height:1.3}
+.hero.emboss .hero-text{margin-inline:auto;font-size:clamp(14.5px,1vw,16.5px);max-width:26em}
+.hero.emboss .eyebrow{margin-bottom:14px}
+.hero.emboss .btn-row{justify-content:center;margin-top:clamp(22px,2.4vw,30px)}
+.hero.emboss .parts{align-items:center}
+@media(max-width:560px){
+  /* 細い画面では、横いっぱいのボタンが円の左右カーブからはみ出す。
+     円だけ角丸の板に切り替えて、中身が必ず収まるようにする。
+     角丸・アーチ・まるみは、下辺がまっすぐなのでそのままで収まる。 */
+  .emb-circle{aspect-ratio:auto;width:100%;max-width:100%;
+    border-radius:clamp(38px,10vw,56px);
+    padding:clamp(36px,8vw,52px) clamp(24px,6vw,38px)}
+}
+@supports not (color:color-mix(in srgb,red,blue)){
+  .hero.emboss{--emb-fill:#f2f3f5;--emb-hi:rgba(255,255,255,.6);
+    --emb-sh:rgba(15,23,42,.18);--emb-sh2:rgba(15,23,42,.12)}
+}
+
 .hero.center.cover .hero-in,.hero.left.cover .hero-in{padding:clamp(24px,3.3333vw,66.6667px) 0}
 
 /* ==========================================================
@@ -6046,6 +6105,9 @@ ${p.eyebrow ? `      <span class="eyebrow"${el(p, 'eyebrow', 'ta', '小見出し
 
 /* ボタン群 */
 /* ボタンの型。見た目・大きさ・矢印を、それぞれ別に選べる */
+/* 「単色に浮くシェイプ」で選べる形。土台と同じ色で置き、影で立てる */
+const EMB_SHAPES = ['squircle', 'circle', 'arch', 'blob'];
+
 const BTN_STYLES = [
   ['primary', 'ベタ塗り'],
   ['accent', 'アクセント'],
@@ -7025,7 +7087,8 @@ const BLOCKS = {
           ['orbit', 'まるい写真が浮かぶ'], ['poster', '大きな名前＋1枚の写真'],
           ['showcase', '1商品を立てる（光と台）'],
           ['reel', '写真がくるくる入れ替わる'],
-          ['duo', '写真2枚のあいだに文字']] },
+          ['duo', '写真2枚のあいだに文字'],
+          ['emboss', '単色に浮くシェイプ']] },
       /* ヒーローだけ、別の書体にできる。ここでサイトの雰囲気が決まるので、
          全体の設定より強く出したいことがある。空なら全体と同じ */
       /* FONTS は templates.js にあり、このファイルより後に読み込まれる。
@@ -7096,6 +7159,9 @@ const BLOCKS = {
       { key: 'scrollLabel', label: 'いちばん下の合図', type: 'text', adv: true,
         showIf: (p) => ['ribbon', 'lineart', 'mark'].includes(p.layout),
         hint: '空にすると出しません' },
+      { key: 'embShape', label: 'シェイプの形', type: 'select',
+        showIf: (p) => p.layout === 'emboss',
+        options: [['squircle', '角のまるい四角'], ['circle', '丸'], ['arch', 'アーチ'], ['blob', 'まるみ']] },
       { key: 'buttons', label: 'ボタン', type: 'list', addLabel: 'ボタンを追加', titleKey: 'label', item: FIELD.btnItem },
       /* ここから下は「演出」。ヒーローは型から選んでもらうのが本筋なので、
          型を選んだあとに直したい人だけが開けばいい。前に出すと、
@@ -7130,6 +7196,7 @@ const BLOCKS = {
       deco: 'none', decoStrength: 60, grain: false, decoLabel: 'SCROLL',
       melt: 'none', meltMask: '', meltDepth: 100,
       badge: '', badgeRing: '', tag: '',
+      embShape: 'squircle',
       markMask: '', art: 'flow', scrollLabel: 'Scroll', side: 'PORTFOLIO',
       mid: 'DE', notes: 'LIMITED 300 | ATELIER | EAU DE PARFUM',
       branchImg: '', shelfImg: '', inks: [], image2: '',
@@ -7270,6 +7337,15 @@ ${p.side ? `        <span class="pst-side"${el(p, 'side', 'ta', '右の縦書き
       ${p.eyebrow ? `<span class="eyebrow"${el(p, 'eyebrow', 'ta', '小見出し', 'eyebrow')}>${nl2br(p.eyebrow)}</span>` : ''}
       ${p.text ? `<p class="hero-text"${el(p, 'text', 'ta', '説明文', 'text')}>${nl2br(p.text)}</p>` : ''}
 ${heroMarks(p)}${buttons(p.buttons)}
+    </div>`
+          : p.layout === 'emboss'
+          /* 単色の土台に、同じ色のシェイプを1つ、真ん中に置く。
+             色が同じなので、くっきりした影だけがシェイプの輪郭を伝える。
+             それで「土台から浮いて出ている」立体感になる。文字はその上。 */
+          ? `    <div class="hero-in">
+      <div class="emb-stage">
+        <div class="emb-panel emb-${esc(EMB_SHAPES.includes(p.embShape) ? p.embShape : 'squircle')}">\n${body}\n        </div>
+      </div>
     </div>`
           : (p.layout === 'split' || p.layout === 'pack')
           ? `    <div class="hero-in">
@@ -10405,6 +10481,16 @@ const HERO_PRESETS = [
   { key: 'shape-wavebar', type: 'hero', label: '形：波の棒',
     about: '縦の棒が波打つ形で写真を抜く。音や律動を思わせる。',
     props: { layout: 'split', shape: 'wavebar', shapeBg: 'blur', bgBlur: 80 } },
+
+  /* ---- 単色の土台に、同じ色のシェイプを1つ。写真を使わず、影だけで
+         立体感を出す。ミニマルで質感のある顔。写真がまだ無い人にも強い。 ---- */
+  { key: 'emboss-tile', type: 'hero', label: '単色：浮くタイル',
+    about: '単色の土台に、同じ色の角丸タイルを1枚。くっきりした影で、そこだけ浮き上がって見える。写真いらずで質感が出る。',
+    props: { layout: 'emboss', bg: 'surface', embShape: 'squircle' } },
+
+  { key: 'emboss-circle', type: 'hero', label: '単色：浮く円',
+    about: '濃い単色の土台に、同じ色の円をひとつ。短い一言を、まん中で強く見せたいときに。',
+    props: { layout: 'emboss', bg: 'dark', embShape: 'circle' } },
 
   { key: 'collage', type: 'collage', label: 'コラージュ',
     about: '敷き詰めた写真に、斜めの写真と縦書きの帯を重ねる。',

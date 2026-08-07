@@ -85,6 +85,16 @@ const HERO_PRESETS = [
     about: '縦の棒が波打つ形で写真を抜く。音や律動を思わせる。',
     props: { layout: 'split', shape: 'wavebar', shapeBg: 'blur', bgBlur: 80 } },
 
+  /* ---- 単色の土台に、同じ色のシェイプを1つ。写真を使わず、影だけで
+         立体感を出す。ミニマルで質感のある顔。写真がまだ無い人にも強い。 ---- */
+  { key: 'emboss-tile', type: 'hero', label: '単色：浮くタイル',
+    about: '単色の土台に、同じ色の角丸タイルを1枚。くっきりした影で、そこだけ浮き上がって見える。写真いらずで質感が出る。',
+    props: { layout: 'emboss', bg: 'surface', embShape: 'squircle' } },
+
+  { key: 'emboss-circle', type: 'hero', label: '単色：浮く円',
+    about: '濃い単色の土台に、同じ色の円をひとつ。短い一言を、まん中で強く見せたいときに。',
+    props: { layout: 'emboss', bg: 'dark', embShape: 'circle' } },
+
   { key: 'collage', type: 'collage', label: 'コラージュ',
     about: '敷き詰めた写真に、斜めの写真と縦書きの帯を重ねる。',
     props: {} },
