@@ -343,64 +343,37 @@ p:last-child{margin-bottom:0}
 /* ==========================================================
    シェイプ・ヒーロー（丸つなぎ・ななめ帯・波の棒）
 
-   土台（ぼかし）も影も付けない。抜いた形の写真を、そのまま
-   大きく、画面の右端まで広げる。文字は左に、控えめに置く。
+   土台（ぼかし）も影も付けない。抜いた形の写真だけを、大きく。
+   ただし、画面からはみ出したり、左の文字に被って角がスパッと
+   切れたりしないよう、枠の中にきちんと収める。上下も切らない。
    ========================================================== */
-.hero.split:is(.shp-dots,.shp-bars,.shp-wavebar){overflow:hidden}
-
-/* 右側だけ枠の制限を外し、シェイプを画面の端まで届かせる。
-   左は、ふつうの本文が始まる位置にそろえる。 */
-.hero.split:is(.shp-dots,.shp-bars,.shp-wavebar) .wrap{
-  max-width:none;
-  padding-left:max(24px, calc((100vw - var(--max)) / 2 + 24px));
-  padding-right:0;
-}
 .hero.split:is(.shp-dots,.shp-bars,.shp-wavebar) .hero-in{
-  grid-template-columns:clamp(240px,30vw,380px) 1fr;
-  gap:clamp(24px,4vw,72px);
-  align-items:stretch;
-  min-height:min(88svh,880px);
+  grid-template-columns:1fr 1.12fr;
+  gap:clamp(28px,4vw,72px);
+  align-items:center;
 }
-.hero.split:is(.shp-dots,.shp-bars,.shp-wavebar) .hero-in > div:first-child{
-  align-self:center;
-}
-/* シェイプ単体：土台も影も無し。枠いっぱいに大きく。 */
+/* シェイプ単体：土台も影も無し。写真側を大きく。
+   幅は枠の中に収める（画面の端やテキストに被らせない）。 */
 .hero.split:is(.shp-dots,.shp-bars,.shp-wavebar) .hero-media{
   background:none;box-shadow:none;filter:none;transform:none;
-  aspect-ratio:auto;height:100%;width:100%;
-}
-/* 抜き型には、まわりに透明の余白がある（形ごとに幅が違う）。
-   そのままだと形が枠の中で小さく収まり、画面の端まで届かない。
-   形ごとに抜き型を拡大して、余白を枠の外へ追い出し、中身を枠いっぱいに
-   広げる（上下は少しはみ出して切れる＝大きく、端まで、の見え方）。
-   拡大率は、各形の透明余白（左右）から決めている。 */
-.hero.split.shp-dots .hero-media{
-  -webkit-mask-size:180% 180%;mask-size:180% 180%;
+  width:100%;height:auto;
   -webkit-mask-position:center;mask-position:center;
 }
-.hero.split.shp-bars .hero-media{
-  -webkit-mask-size:134% 134%;mask-size:134% 134%;
-  -webkit-mask-position:center;mask-position:center;
-}
-.hero.split.shp-wavebar .hero-media{
-  -webkit-mask-size:114% 114%;mask-size:114% 114%;
-  -webkit-mask-position:center;mask-position:center;
-}
+/* 抜き型には、形ごとに違う透明の余白が左右にある（丸つなぎは2割ずつ、
+   ななめ帯は1割、波の棒は少し）。そのままだと形が枠の中で小さく収まる。
+   横だけ、その余白ぶんを詰めて枠幅いっぱいに広げる。縦はそのまま
+   （＝上下を切らない）。枠の縦横比は、形の中身の比に合わせてゆがませない。 */
+.hero.split.shp-dots .hero-media{aspect-ratio:1/1;-webkit-mask-size:177% 100%;mask-size:177% 100%}
+.hero.split.shp-bars .hero-media{aspect-ratio:7/5;-webkit-mask-size:131% 100%;mask-size:131% 100%}
+.hero.split.shp-wavebar .hero-media{aspect-ratio:8/5;-webkit-mask-size:110% 100%;mask-size:110% 100%}
 
-/* スマホ：縦に積む。シェイプは画面の横いっぱいに大きく、文字の下に。 */
+/* スマホ：縦に積む。シェイプは文字の下に、枠いっぱいに（はみ出さない）。 */
 @media(max-width:760px){
-  .hero.split:is(.shp-dots,.shp-bars,.shp-wavebar) .wrap{
-    padding-left:0;padding-right:0;
-  }
   .hero.split:is(.shp-dots,.shp-bars,.shp-wavebar) .hero-in{
-    grid-template-columns:1fr;min-height:0;gap:0;
-  }
-  /* 文字は左右に余白をつけて読みやすく（枠の padding を外したぶん） */
-  .hero.split:is(.shp-dots,.shp-bars,.shp-wavebar) .hero-in > div:first-child{
-    padding:0 24px;
+    grid-template-columns:1fr;gap:0;
   }
   .hero.split:is(.shp-dots,.shp-bars,.shp-wavebar) .hero-media{
-    height:auto;aspect-ratio:1/1;width:100%;margin-top:clamp(20px,4vh,36px);
+    margin-top:clamp(20px,4vh,36px);
   }
 }
 /* ==========================================================
