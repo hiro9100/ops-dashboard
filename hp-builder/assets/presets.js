@@ -73,17 +73,18 @@ const HERO_PRESETS = [
          抜き型そのものは前からあったが、「写真の形」を開いて選ばないと
          出てこなかった。顔の一覧に並べておかないと、あることに気づけない。
          形が効くのは写真を枠に入れる並び（cover では効かない）。 ---- */
+  /* シェイプ単体を、大きく画面の端まで。土台（ぼかし）も影も付けない。 */
   { key: 'shape-dots', type: 'hero', label: '形：丸つなぎ',
     about: '丸がつながった格子で写真を抜く。やわらかい印象。カフェや教室に。',
-    props: { layout: 'split', shape: 'dots', shapeBg: 'blur', bgBlur: 80 } },
+    props: { layout: 'split', shape: 'dots' } },
 
   { key: 'shape-bars', type: 'hero', label: '形：ななめ帯',
     about: '斜めの帯で写真を抜く。勢いが出る。ジムや工務店に。',
-    props: { layout: 'split', shape: 'bars', shapeBg: 'blur', bgBlur: 80 } },
+    props: { layout: 'split', shape: 'bars' } },
 
   { key: 'shape-wavebar', type: 'hero', label: '形：波の棒',
     about: '縦の棒が波打つ形で写真を抜く。音や律動を思わせる。',
-    props: { layout: 'split', shape: 'wavebar', shapeBg: 'blur', bgBlur: 80 } },
+    props: { layout: 'split', shape: 'wavebar' } },
 
   /* ---- 単色の土台に、同じ色のシェイプを1つ。写真を使わず、影だけで
          立体感を出す。ミニマルで質感のある顔。写真がまだ無い人にも強い。 ---- */

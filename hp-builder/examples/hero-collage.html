@@ -319,98 +319,66 @@ p:last-child{margin-bottom:0}
 }
 
 /* ==========================================================
-   シェイプ・ヒーロー（丸つなぎ・ななめ帯・波の棒）の作り込み
+   シェイプ・ヒーロー（丸つなぎ・ななめ帯・波の棒）
 
-   写真の広告で使う「焦点送り」を、そのまま組む。
-   奥は同じ景色がやわらかくぼけていて、手前に主役だけが
-   くっきり合っている。あの見え方を3層で作る。
-
-     ① いちばん奥  … ブランド色のやわらかい光の面（形の土台）
-     ② その手前    … 同じ写真を大きくぼかしたもの（景色の余韻）
-     ③ いちばん手前… 形に抜いた、くっきりした写真（主役）
-
-   ①②があるので、③の抜けた隙間からは空白ではなく「ぼけた同じ景色」が
-   見える。だから形がばらけても、壊れて見えず、奥行きとして読める。
+   土台（ぼかし）も影も付けない。抜いた形の写真を、そのまま
+   大きく、画面の右端まで広げる。文字は左に、控えめに置く。
    ========================================================== */
-.hero.split:has(.hero-bg.blurbg){overflow:hidden}
+.hero.split:is(.shp-dots,.shp-bars,.shp-wavebar){overflow:hidden}
 
-/* 写真側をひとまわり大きく。文字と写真の重みを、写真へ寄せる */
-.hero.split:has(.hero-bg.blurbg) .hero-in{
-  grid-template-columns:1fr 1.18fr;
-  gap:clamp(26px,3vw,60px);
-  position:relative;
+/* 右側だけ枠の制限を外し、シェイプを画面の端まで届かせる。
+   左は、ふつうの本文が始まる位置にそろえる。 */
+.hero.split:is(.shp-dots,.shp-bars,.shp-wavebar) .wrap{
+  max-width:none;
+  padding-left:max(24px, calc((100vw - var(--max)) / 2 + 24px));
+  padding-right:0;
 }
-.hero.split:has(.hero-bg.blurbg) .hero-in > *{position:relative;z-index:1}
-
-/* ① ブランド色の光の面。抜いた形の土台になり、宙に浮かなくなる */
-.hero.split:has(.hero-bg.blurbg) .hero-in::before{
-  content:"";position:absolute;z-index:0;pointer-events:none;
-  right:-5%;top:0;width:62%;height:100%;
-  background:radial-gradient(72% 68% at 60% 46%,
-    color-mix(in srgb,var(--c-primary) 24%,transparent),transparent 72%);
-  filter:blur(34px);
+.hero.split:is(.shp-dots,.shp-bars,.shp-wavebar) .hero-in{
+  grid-template-columns:clamp(240px,30vw,380px) 1fr;
+  gap:clamp(24px,4vw,72px);
+  align-items:stretch;
+  min-height:min(88svh,880px);
 }
-
-/* ③ 抜いた形に、シルエットどおりの影を落とす。
-   box-shadow は形に沿わず四角い影になり、しかも mask に切られて消える。
-   drop-shadow なら、抜いた輪郭そのものに沿う。ばらけた形が1つの塊として
-   浮くよう、影は1方向・大きめのぼかし・低い位置に置く。 */
-.hero.split:has(.hero-bg.blurbg) .hero-media{
-  aspect-ratio:1/1;
-  background:none;box-shadow:none;
-  filter:drop-shadow(0 24px 30px rgba(15,23,42,.24))
-         drop-shadow(0 4px 8px rgba(15,23,42,.14));
-  transform:scale(1.06);
+.hero.split:is(.shp-dots,.shp-bars,.shp-wavebar) .hero-in > div:first-child{
+  align-self:center;
 }
-.hero.split:has(.hero-bg.blurbg) .hero-media img{filter:contrast(1.03) saturate(1.05)}
-
-/* ② 奥のぼかし。同じ写真をさらに大きく、色の生気を足して敷く。
-   一様なグレーの雲だと安く見えるので、彩度を上げて景色として残す。 */
-.hero.split:has(.hero-bg.blurbg) .hero-bg.blurbg img{
-  filter:blur(var(--bgblur,72px)) saturate(1.2);
-  transform:scale(1.5);
+/* シェイプ単体：土台も影も無し。枠いっぱいに大きく。 */
+.hero.split:is(.shp-dots,.shp-bars,.shp-wavebar) .hero-media{
+  background:none;box-shadow:none;filter:none;transform:none;
+  aspect-ratio:auto;height:100%;width:100%;
 }
-/* 膜は2枚重ね。
-
-   1枚目（横方向）… 左半分は地の色でしっかりふさぐ。文字の右端が
-     ぼけた景色にかかって読めなくなるのを、ここで確実に止める。
-   2枚目（放射）  … 写真側だけ、形の後ろの「ぼけた景色」を見せ、
-     外へ行くほど地の色に沈める。抜いた隙間が空白でなく景色になる。
-
-   上に書いたものが手前。文字を守る横方向を上に重ねる。 */
-.hero.split:has(.hero-bg.blurbg) .hero-bg.blurbg::after{
-  background:
-    linear-gradient(90deg,
-      var(--c-bg) 0 44%,
-      color-mix(in srgb,var(--c-bg) 55%,transparent) 58%,
-      transparent 68%),
-    radial-gradient(58% 126% at 77% 50%,
-      transparent 0 48%,
-      color-mix(in srgb,var(--c-bg) 34%,transparent) 68%,
-      color-mix(in srgb,var(--c-bg) 82%,transparent) 84%,
-      var(--c-bg) 96%)
+/* 抜き型には、まわりに透明の余白がある（形ごとに幅が違う）。
+   そのままだと形が枠の中で小さく収まり、画面の端まで届かない。
+   形ごとに抜き型を拡大して、余白を枠の外へ追い出し、中身を枠いっぱいに
+   広げる（上下は少しはみ出して切れる＝大きく、端まで、の見え方）。
+   拡大率は、各形の透明余白（左右）から決めている。 */
+.hero.split.shp-dots .hero-media{
+  -webkit-mask-size:180% 180%;mask-size:180% 180%;
+  -webkit-mask-position:center;mask-position:center;
+}
+.hero.split.shp-bars .hero-media{
+  -webkit-mask-size:134% 134%;mask-size:134% 134%;
+  -webkit-mask-position:center;mask-position:center;
+}
+.hero.split.shp-wavebar .hero-media{
+  -webkit-mask-size:114% 114%;mask-size:114% 114%;
+  -webkit-mask-position:center;mask-position:center;
 }
 
-/* スマホ。縦に積むと写真が下に離れて宙に浮くので、形を大きく中央に据え、
-   光の面もその真下へ移す。奥のぼけと合わせて、1つのまとまりに見せる。 */
+/* スマホ：縦に積む。シェイプは画面の横いっぱいに大きく、文字の下に。 */
 @media(max-width:760px){
-  /* :has で上げた指定が、この画面幅でも勝ってしまう（2列のまま残る）。
-     ここで明として1列へ戻す。specificity をそろえるため :has を付ける。 */
-  .hero.split:has(.hero-bg.blurbg) .hero-in{grid-template-columns:1fr}
-  .hero.split:has(.hero-bg.blurbg) .hero-media{
-    aspect-ratio:1/1;max-width:min(84vw,420px);
-    margin:clamp(18px,3vh,30px) auto 0;transform:none;
+  .hero.split:is(.shp-dots,.shp-bars,.shp-wavebar) .wrap{
+    padding-left:0;padding-right:0;
   }
-  .hero.split:has(.hero-bg.blurbg) .hero-in::before{
-    right:auto;left:50%;top:auto;bottom:0;
-    width:min(92vw,460px);height:52%;transform:translateX(-50%);
+  .hero.split:is(.shp-dots,.shp-bars,.shp-wavebar) .hero-in{
+    grid-template-columns:1fr;min-height:0;gap:0;
   }
-  .hero.split:has(.hero-bg.blurbg) .hero-bg.blurbg::after{
-    background:radial-gradient(90% 46% at 50% 78%,
-      transparent 0 40%,
-      color-mix(in srgb,var(--c-bg) 40%,transparent) 60%,
-      color-mix(in srgb,var(--c-bg) 86%,transparent) 80%,
-      var(--c-bg) 94%)
+  /* 文字は左右に余白をつけて読みやすく（枠の padding を外したぶん） */
+  .hero.split:is(.shp-dots,.shp-bars,.shp-wavebar) .hero-in > div:first-child{
+    padding:0 24px;
+  }
+  .hero.split:is(.shp-dots,.shp-bars,.shp-wavebar) .hero-media{
+    height:auto;aspect-ratio:1/1;width:100%;margin-top:clamp(20px,4vh,36px);
   }
 }
 /* ==========================================================
