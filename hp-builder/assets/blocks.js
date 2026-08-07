@@ -45,7 +45,7 @@ const media = (src, alt) => (src ? img(src, alt) : '<span class="ph" aria-hidden
 function sec(type, p, inner, extraClass = '') {
   const cls = ['sec', `sec-${type}`, p.bg ? `bg-${p.bg}` : '',
     p.shape ? `shp-${p.shape}` : '', ...plateCls(p), extraClass].filter(Boolean).join(' ');
-  return `<section class="${cls}"${attr('id', p.anchor)}${maskVar(p)}>\n  <div class="wrap">\n${inner}\n  </div>\n</section>`;
+  return `<section class="${cls}"${attr('id', p.anchor)}${maskVar(p)}>\n  <div class="wrap">\n${inner}${renderParts(p)}\n  </div>\n</section>`;
 }
 
 /* CSS変数をまとめて1つの style 属性にする。
@@ -134,6 +134,61 @@ function buttons(list, extraClass = '') {
     .join('\n');
   return items ? `    <div class="btn-row ${extraClass}">\n${items}\n    </div>` : '';
 }
+
+/* ================================================================
+   パーツ（あとから足す部品）
+
+   型の決まった欄とは別に、ボタン・テキスト・飾りを、どのブロックにも
+   好きなだけ足せるようにする。中身の下に、足した順に積む。
+
+   種類ごとに持つ値は違うが、置き場所（p.parts の配列）と描き方は共通。
+   ボタンだけは、隣り合っていれば1つの行にまとめて横に並べる
+   （1つずつ縦に積むと、間が抜けて見える）。
+   ================================================================ */
+const PART_KINDS = [['button', 'ボタン'], ['text', 'テキスト'], ['tag', 'ラベル'], ['line', '区切り線']];
+
+function partOne(pt) {
+  const kind = pt.kind || 'button';
+  if (kind === 'text') {
+    if (!pt.text) return '';
+    const look = ['big', 'small'].includes(pt.look) ? pt.look : 'normal';
+    const align = ['left', 'right'].includes(pt.align) ? pt.align : 'center';
+    return `      <p class="pt-txt pt-${look} pt-a-${align}">${nl2br(pt.text)}</p>`;
+  }
+  if (kind === 'tag') {
+    return pt.text ? `      <span class="pt-tag">${esc(pt.text)}</span>` : '';
+  }
+  if (kind === 'line') {
+    return '      <span class="pt-line" aria-hidden="true"></span>';
+  }
+  return '';   // button は下でまとめて並べる
+}
+
+function renderParts(p) {
+  const parts = p.parts || [];
+  if (!parts.length) return '';
+  const out = [];
+  let run = [];
+  const flush = () => {
+    if (!run.length) return;
+    out.push(buttons(run, 'pt-btns'));
+    run = [];
+  };
+  parts.forEach((pt) => {
+    if ((pt.kind || 'button') === 'button') {
+      if (pt.text) run.push({ label: pt.text, href: pt.href, style: pt.style, arrow: pt.arrow });
+      return;
+    }
+    flush();
+    const one = partOne(pt);
+    if (one) out.push(one);
+  });
+  flush();
+  if (!out.length) return '';
+  return `\n    <div class="parts">\n${out.join('\n')}\n    </div>`;
+}
+
+const isKind = (k) => (it) => (it.kind || 'button') === k;
 
 /* 文字アニメーションの一覧（サイト側CSSの ta-* と対応） */
 const TEXT_ANIMS = [
@@ -896,6 +951,33 @@ const FIELD = {
     { key: 'style', label: '見た目', type: 'select', options: BTN_STYLES, gallery: 'btn' },
     { key: 'arrow', label: '矢印をつける', type: 'toggle' },
   ],
+  /* あとから足すパーツ。種類を選ぶと、その種類の欄だけ出る。
+     中身（text）は種類が変わっても持ち越す（ボタン→テキストに
+     変えても、打った文字がそのまま残る）。 */
+  parts: {
+    key: 'parts', label: 'パーツを足す', type: 'list', addLabel: 'パーツを足す', titleKey: 'text',
+    /* あとから足す部品なので、最初の画面には出さず「詳細」の中に置く。
+       最初に見えるのは中身だけ、という並びは崩さない。 */
+    adv: true,
+    hint: 'ボタン・テキスト・飾りを、中身の下に足せます',
+    item: [
+      { key: 'kind', label: '種類', type: 'select', def: 'button', options: PART_KINDS },
+      /* ボタン */
+      { key: 'text', label: 'ボタンの文字', type: 'text', showIf: isKind('button') },
+      { key: 'href', label: 'リンク先', type: 'link', showIf: isKind('button') },
+      { key: 'style', label: '見た目', type: 'select', def: 'primary', options: BTN_STYLES, gallery: 'btn', showIf: isKind('button') },
+      { key: 'arrow', label: '矢印をつける', type: 'toggle', showIf: isKind('button') },
+      /* テキスト（key は text を共用する） */
+      { key: 'text', label: '文章', type: 'textarea', rows: 2, showIf: isKind('text') },
+      { key: 'look', label: '大きさ', type: 'select', def: 'normal',
+        options: [['normal', 'ふつう'], ['big', '大きく'], ['small', '小さめ']], showIf: isKind('text') },
+      { key: 'align', label: 'そろえ', type: 'select', def: 'center',
+        options: [['center', '中央'], ['left', '左'], ['right', '右']], showIf: isKind('text') },
+      /* ラベル（小さなピル型の飾り） */
+      { key: 'text', label: 'ラベルの文字', type: 'text', showIf: isKind('tag') },
+      /* 区切り線は、追加の設定なし */
+    ],
+  },
 };
 
 /* ============================================================
@@ -1269,7 +1351,7 @@ ${heroMarks(p)}${buttons(p.buttons)}
                 : p.layout === 'reel' ? paintLayer(p)
                   : p.layout === 'duo' ? duoLayer(p) : '';
       const guts = `${bg}${artLayer}${decoLayer(p)}  <div class="wrap">
-${inner}
+${inner}${renderParts(p)}
   </div>
 ${meltLayer(p)}`;
       const meltOn = p.melt && p.melt !== 'none';
@@ -2751,6 +2833,29 @@ ${slides}
 </section>`,
   },
 };
+
+/* パーツ欄を、パーツを描けるブロックにだけ配る。
+
+   sec() を通る段は下にパーツを積める。特殊な描き方の段（回る写真、
+   タイムライン、スライドなど）は積めない。手で一覧を持つと、段を足した
+   ときに付け忘れる。だから実際に空パーツを1つ入れて描いてみて、
+   .parts が出た段にだけ欄を付ける。段を足しても自動で付く。
+
+   ヘッダー・フッターは、あとから部品を足す場所ではないので外す。 */
+(function attachParts() {
+  const probe = [{ kind: 'tag', text: '·' }];
+  Object.keys(BLOCKS).forEach((t) => {
+    if (t === 'header' || t === 'footer') return;
+    const def = BLOCKS[t];
+    if (def.fields.some((f) => f.key === 'parts')) return;
+    let html = '';
+    try { html = def.render(Object.assign({}, def.defaults, { parts: probe })); }
+    catch (e) { return; }
+    if (!/class="parts"/.test(html)) return;   // この段はパーツを描けない
+    def.fields.push(FIELD.parts);
+    def.defaults.parts = [];
+  });
+})();
 
 /* 追加メニューに出す順番（ヘッダー・フッターは常設なので除く）。
    hero と collage はここに出さない。どちらも「ページの顔」で、

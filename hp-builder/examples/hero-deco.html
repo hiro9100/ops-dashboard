@@ -154,6 +154,37 @@ p:last-child{margin-bottom:0}
 .btn-row{display:flex;flex-wrap:wrap;gap:14px;margin-top:32px}
 .center .btn-row,.hero.center .btn-row{justify-content:center}
 
+/* ---------- あとから足すパーツ ----------
+   中身の下に、足したパーツを縦に積む。中身が中央ぞろえの段では中央、
+   左ぞろえのヒーローでは左に寄せる（テキストは1つずつ向きを選べる）。 */
+.parts{display:flex;flex-direction:column;align-items:center;
+  gap:clamp(12px,1.6vw,20px);margin-top:clamp(22px,2.6vw,36px)}
+.hero.left .parts,.hero.split .parts,.hero.pack .parts,.sec-head.left ~ * .parts{align-items:flex-start}
+.parts .btn-row{margin-top:0}
+.parts .pt-btns{justify-content:inherit}
+.pt-txt{margin:0;max-width:36em}
+.pt-a-left{text-align:left;align-self:flex-start}
+.pt-a-center{text-align:center}
+.pt-a-right{text-align:right;align-self:flex-end}
+.pt-big{font-size:clamp(20px,1.9vw,30px);font-weight:800;line-height:1.42;
+  letter-spacing:-.01em;color:var(--c-text)}
+.pt-normal{font-size:clamp(15px,.6vw + 13px,17px);line-height:1.85;color:var(--c-muted)}
+.pt-small{font-size:13px;line-height:1.7;color:var(--c-muted);letter-spacing:.02em}
+.pt-tag{display:inline-flex;align-items:center;padding:6px 15px;border-radius:999px;
+  font-size:12.5px;font-weight:700;letter-spacing:.06em;
+  background:color-mix(in srgb,var(--c-primary) 12%,transparent);color:var(--c-primary)}
+.pt-line{display:block;width:clamp(40px,5vw,64px);height:2px;border-radius:2px;
+  background:color-mix(in srgb,currentColor 24%,transparent)}
+@supports not (color:color-mix(in srgb,red,blue)){
+  .pt-tag{background:rgba(128,128,128,.14);color:var(--c-primary)}
+  .pt-line{background:rgba(128,128,128,.34)}
+}
+/* 写真いっぱい・濃い地のヒーローでは、地が暗いので明るい字にする */
+.hero.cover .pt-normal,.hero.cover .pt-small,
+.hero.bg-dark .pt-normal,.hero.bg-dark .pt-small,
+.hero.bg-primary .pt-normal,.hero.bg-primary .pt-small{color:rgba(255,255,255,.9)}
+.hero.cover .pt-big,.hero.bg-dark .pt-big,.hero.bg-primary .pt-big{color:#fff}
+
 /* ---------- ヘッダー ---------- */
 .hdr{
   position:relative;z-index:50;background:var(--c-bg);

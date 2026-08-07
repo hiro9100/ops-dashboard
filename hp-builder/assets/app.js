@@ -2815,7 +2815,14 @@ $('#tab-edit').addEventListener('click', (e) => {
     // 直前の項目と同じ形の空データを作る
     const fdef = findListField(b.type, path);
     const blank = {};
-    (fdef?.item || []).forEach((sf) => { blank[sf.key] = sf.type === 'toggle' ? false : ''; });
+    /* 初期値の指定（def）があれば、それを使う。パーツの「種類」のように、
+       空だと最初の欄が出てこないものを、はじめから決めておくため。
+       同じ key が複数あるとき（text をボタンとテキストで共用）は、
+       def を持つ定義があればそれを優先する。 */
+    (fdef?.item || []).forEach((sf) => {
+      if (sf.def !== undefined) blank[sf.key] = sf.def;
+      else if (!(sf.key in blank)) blank[sf.key] = sf.type === 'toggle' ? false : '';
+    });
     arr.push(blank);
     closed.delete(`${path}.${arr.length - 1}`);
   }
