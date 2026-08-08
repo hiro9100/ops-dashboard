@@ -2878,8 +2878,13 @@ ${slides}
    hero と collage はここに出さない。どちらも「ページの顔」で、
    組み立ての ①顔をえらぶ で選ぶもの。あとから足す部品ではない
    （collage は中ほどに置く帯としてなら Collage Band がある）。 */
+/* 「ブロックを足す」に並べるもの。
+
+   一覧（listing）と予定の表（schedule）は、前は組み立ての
+   「何が要るか」のチェックからしか置けなかった。その段を無くしたので、
+   ここに無いと、どこからも置けない部品になる。 */
 const ADDABLE = [
   'features', 'icons', 'about', 'gallery', 'video', 'strip', 'menu', 'floors', 'news', 'marquee', 'pricing', 'faq', 'cta', 'contact', 'rich',
   'slides', 'product3d', 'exploded', 'hscroll', 'stackcards', 'timeline', 'clipreveal',
-  'carousel3d', 'slotstats', 'svgdraw', 'shift',
+  'carousel3d', 'slotstats', 'svgdraw', 'shift', 'listing', 'schedule',
 ];

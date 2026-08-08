@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>かんたんHP作成ツール</title>
-<link rel="stylesheet" href="a/builder.44391be7.css">
+<link rel="stylesheet" href="a/builder.748028d5.css">
 </head>
 <body>
 
@@ -126,25 +126,43 @@
 <div class="modal" id="buildModal" hidden>
   <div class="modal-box wide">
     <div class="bld-steps" id="bldSteps"></div>
-    <h2 id="bldTitle">サイトの雰囲気をえらぶ</h2>
-    <p class="modal-sub" id="bldSub"></p>
-    <p class="bld-anytime">中身も順番も、あとから。いまは形だけ決めます。</p>
 
     <!-- ① 業種をえらぶ -->
     <div id="bldIndStep" hidden>
+      <h2>業種をえらぶ</h2>
+      <p class="modal-sub">色と、仮の写真がこれで決まります。あとから変えられます。</p>
       <div class="ez-grid" id="bldInds"></div>
     </div>
 
-    <!-- ② 必要なものをチェック -->
-    <div id="bldNeeds" hidden>
-      <div class="need-list" id="needList"></div>
+    <!-- ②〜 顔と中身を、1段ずつ。実物を見ながら左右で見くらべる。
+         次へで、下から上へ切り替わって次の段に移る。 -->
+    <div id="bldStage" hidden>
+      <div class="bld-head">
+        <div>
+          <h2 id="bldTitle"></h2>
+          <p class="modal-sub" id="bldSub"></p>
+        </div>
+        <button class="bld-off" id="bldOff" type="button">この段はいらない</button>
+      </div>
+      <div class="bld-view">
+        <div class="gal-wrap" id="bldGal"><iframe id="bldFrame" title="この段の見本"></iframe></div>
+        <button class="bld-arw prev" id="bldPrev" type="button" aria-label="前のかたち">‹</button>
+        <button class="bld-arw next" id="bldNext" type="button" aria-label="次のかたち">›</button>
+        <div class="bld-count" id="bldCount"></div>
+        <div class="bld-nomask" id="bldNoMask" hidden>
+          <div><b>この段は入れません</b><span>「やっぱり入れる」で戻せます</span></div>
+        </div>
+      </div>
+      <p class="bld-anytime">中身も順番も、あとから変えられます。</p>
     </div>
 
     <div class="bld-strip" id="bldStrip"></div>
-    <div class="gal-wrap" id="bldGal"><iframe id="bldFrame" title="部分の見本"></iframe></div>
 
-    <!-- ④ 仕上げ -->
+    <!-- ④ 仕上げ：組み上がった全体を見てから、細部の調整へ -->
     <div id="bldFinish" hidden>
+      <h2>組み上がりました</h2>
+      <p class="modal-sub">全体はこのとおりです。ここから細かいところを直せます。</p>
+      <div class="gal-wrap bld-whole"><iframe id="bldWhole" title="組み上がった全体"></iframe></div>
       <div class="fin-grid">
         <button data-fin="photo"><b>写真の寄せ</b>
           <small>プレビューの写真を押すと、その場で寄せたり動かしたり</small></button>
@@ -167,7 +185,6 @@
 
     <div class="modal-foot">
       <button class="tb-btn" id="bldCancel">やめる</button>
-      <button class="tb-btn" id="bldSkip" hidden>このまま進む</button>
       <button class="tb-btn" id="bldBack">もどる</button>
       <button class="tb-btn primary" id="bldDone">つぎへ</button>
     </div>
@@ -314,13 +331,13 @@
 <script src="a/icons.620b6751.js"></script>
 <script src="a/zip.b82c45c3.js"></script>
 <script src="a/sample-art.746b7bdf.js"></script>
-<script src="a/blocks.f2a1a0b6.js"></script>
+<script src="a/blocks.c0dde895.js"></script>
 <script src="a/templates.8052a0b1.js"></script>
 <script src="a/publish-config.0e2a4c76.js"></script>
 <script src="a/industry-photos.8323238c.js"></script>
 <script src="a/presets.e92774ec.js"></script>
 <script src="a/easy.c0306c79.js"></script>
 <script src="a/tone.65652351.js"></script>
-<script src="a/app.9ddc0825.js"></script>
+<script src="a/app.542a01c6.js"></script>
 </body>
 </html>

@@ -844,23 +844,100 @@ input,select,textarea{font:inherit}
 }
 .bld-anytime::before{content:"↺ ";color:var(--tx3);font-weight:700}
 
-/* ②「何が要るか」のチェック */
-.need-list{
-  display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:8px;
-  max-height:52vh;overflow-y:auto;padding-right:2px
-}
-.need{
-  display:flex;align-items:flex-start;gap:10px;cursor:pointer;
-  background:var(--panel2);border:1px solid var(--line);border-radius:11px;padding:13px 14px;
-  transition:border-color .15s,background .15s
-}
-.need:hover{border-color:var(--line2)}
-.need.on{border-color:var(--tx3);background:var(--panel3)}
-.need input{width:18px;height:18px;margin:1px 0 0;accent-color:var(--pri);flex:none}
-.need b{display:block;font-size:13px;font-weight:700}
-.need small{display:block;font-size:11.5px;color:var(--tx2);line-height:1.6;margin-top:2px}
+/* ==========================================================
+   1段ずつ、実物を見ながら積む画面
 
-/* ③でいま見ているものを、積み上がりの帯で光らせる */
+   「顔をえらぶ」も「中身を積む」も、やることは同じ。
+   ・まん中に実物を大きく1つ
+   ・左右の矢印（とスワイプ）で、ほかのかたちを見くらべる
+   ・要らない段は ✕ で外す
+   ・つぎへで、下から上へ切り替わって次の段に移る
+   ========================================================== */
+.bld-head{display:flex;align-items:flex-start;gap:14px;justify-content:space-between}
+.bld-head h2{margin:0 0 4px}
+.bld-head .modal-sub{margin:0 0 14px}
+.bld-off{
+  flex:none;background:transparent;border:1px solid var(--line2);color:var(--tx2);
+  border-radius:999px;padding:7px 14px;font:inherit;font-size:12px;cursor:pointer;
+  transition:border-color .15s,color .15s,background .15s
+}
+.bld-off:hover{border-color:var(--tx3);color:var(--tx)}
+.bld-off::before{content:"✕ ";font-weight:700}
+/* 外したあとは「戻せる」ことを、同じボタンで伝える */
+.bld-off.on{background:var(--pri);border-color:var(--pri);color:#fff}
+.bld-off.on::before{content:"↺ "}
+
+/* この一言は、もとは見出しのすぐ下にあったので上に詰めてあった。
+   いまは枠の下に置くので、その詰めを打ち消す（枠に重なっていた）。
+   縦は、実物を大きく見せるぶんだけ余裕がない。囲みを外して1行にする
+   （囲んだままだと、下の積み上がりの帯が footer に隠れた）。 */
+#bldStage .bld-anytime{
+  margin:9px 0 0;padding:0;background:none;border:0;font-size:11px
+}
+.bld-view{position:relative}
+/* 矢印は枠の上に重ねる。実物をできるだけ大きく見せたいので、外に置かない */
+.bld-arw{
+  position:absolute;top:50%;transform:translateY(-50%);z-index:4;
+  width:44px;height:64px;display:grid;place-items:center;
+  background:rgba(12,14,18,.72);border:1px solid rgba(255,255,255,.14);color:#fff;
+  font-size:26px;line-height:1;cursor:pointer;
+  border-radius:10px;backdrop-filter:blur(6px);
+  transition:background .15s,opacity .15s
+}
+.bld-arw:hover{background:rgba(12,14,18,.9)}
+.bld-arw.prev{left:10px}
+.bld-arw.next{right:10px}
+.bld-arw[hidden]{display:none}
+.bld-count{
+  position:absolute;left:50%;bottom:10px;transform:translateX(-50%);z-index:4;
+  background:rgba(12,14,18,.72);border:1px solid rgba(255,255,255,.14);color:#fff;
+  font-size:11.5px;letter-spacing:.06em;padding:5px 12px;border-radius:999px;
+  backdrop-filter:blur(6px);pointer-events:none
+}
+.bld-count:empty{display:none}
+/* 狭い画面では、実物がそのままの大きさで出る。まん中に矢印を重ねると
+   本文の上に乗ってしまうので、下に並べて置く（指はスワイプでも動く）。 */
+@media(max-width:560px){
+  .bld-arw{
+    top:auto;bottom:8px;transform:none;width:44px;height:34px;font-size:20px;
+    border-radius:999px
+  }
+  .bld-arw.prev{left:calc(50% - 78px)}
+  .bld-arw.next{right:calc(50% - 78px)}
+  .bld-count{bottom:12px}
+}
+/* 「いらない」を押したときの覆い。中身は残したまま、外したことを見せる */
+.bld-nomask{
+  position:absolute;inset:0;z-index:5;display:grid;place-items:center;
+  background:rgba(8,10,14,.78);backdrop-filter:blur(2px);border-radius:10px;text-align:center
+}
+/* display 指定が hidden 属性に勝つので、明示的に消す。
+   これが無いと、見えない覆いが矢印のクリックを飲む（実際に飲んだ） */
+.bld-nomask[hidden]{display:none}
+.bld-nomask b{display:block;font-size:14px;margin-bottom:4px}
+.bld-nomask span{font-size:11.5px;color:var(--tx2)}
+
+/* 段の切り替え。下から上へ、シュッと。
+   出ていくときは上へ抜け、入ってくるときは下から上がる。 */
+@keyframes bldUpOut{to{transform:translateY(-26px);opacity:0}}
+@keyframes bldUpIn{from{transform:translateY(30px);opacity:0}}
+#bldStage.out{animation:bldUpOut .17s cubic-bezier(.4,0,1,1) forwards}
+#bldStage.in{animation:bldUpIn .3s cubic-bezier(.2,.8,.3,1)}
+/* 左右の見くらべは、中の帯を動かす（下の film を参照）。
+   ここは段の切り替えだけ。 */
+@media (prefers-reduced-motion:reduce){
+  #bldStage.out,#bldStage.in{animation:none}
+}
+
+/* 組み上がった全体。中でスクロールして、ぜんぶ見られる */
+.bld-whole{min-height:46vh;margin-bottom:16px}
+.bld-whole iframe{min-height:46vh}
+
+/* 「何が要るか」を先にチェックさせる段は無くした。
+   要るかどうかは、実物を見てから ✕ で決めるほうが早い。
+   その段のCSS（.need-list / .need）も一緒に落とした。 */
+
+/* いま見ている段を、積み上がりの帯で光らせる */
 .bld-strip span.on{border-color:var(--tx3);background:var(--panel3);color:var(--tx)}
 
 .ez-drop.sm{padding:16px 14px;margin-bottom:2px}

@@ -846,23 +846,100 @@ input,select,textarea{font:inherit}
 }
 .bld-anytime::before{content:"↺ ";color:var(--tx3);font-weight:700}
 
-/* ②「何が要るか」のチェック */
-.need-list{
-  display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:8px;
-  max-height:52vh;overflow-y:auto;padding-right:2px
-}
-.need{
-  display:flex;align-items:flex-start;gap:10px;cursor:pointer;
-  background:var(--panel2);border:1px solid var(--line);border-radius:11px;padding:13px 14px;
-  transition:border-color .15s,background .15s
-}
-.need:hover{border-color:var(--line2)}
-.need.on{border-color:var(--tx3);background:var(--panel3)}
-.need input{width:18px;height:18px;margin:1px 0 0;accent-color:var(--pri);flex:none}
-.need b{display:block;font-size:13px;font-weight:700}
-.need small{display:block;font-size:11.5px;color:var(--tx2);line-height:1.6;margin-top:2px}
+/* ==========================================================
+   1段ずつ、実物を見ながら積む画面
 
-/* ③でいま見ているものを、積み上がりの帯で光らせる */
+   「顔をえらぶ」も「中身を積む」も、やることは同じ。
+   ・まん中に実物を大きく1つ
+   ・左右の矢印（とスワイプ）で、ほかのかたちを見くらべる
+   ・要らない段は ✕ で外す
+   ・つぎへで、下から上へ切り替わって次の段に移る
+   ========================================================== */
+.bld-head{display:flex;align-items:flex-start;gap:14px;justify-content:space-between}
+.bld-head h2{margin:0 0 4px}
+.bld-head .modal-sub{margin:0 0 14px}
+.bld-off{
+  flex:none;background:transparent;border:1px solid var(--line2);color:var(--tx2);
+  border-radius:999px;padding:7px 14px;font:inherit;font-size:12px;cursor:pointer;
+  transition:border-color .15s,color .15s,background .15s
+}
+.bld-off:hover{border-color:var(--tx3);color:var(--tx)}
+.bld-off::before{content:"✕ ";font-weight:700}
+/* 外したあとは「戻せる」ことを、同じボタンで伝える */
+.bld-off.on{background:var(--pri);border-color:var(--pri);color:#fff}
+.bld-off.on::before{content:"↺ "}
+
+/* この一言は、もとは見出しのすぐ下にあったので上に詰めてあった。
+   いまは枠の下に置くので、その詰めを打ち消す（枠に重なっていた）。
+   縦は、実物を大きく見せるぶんだけ余裕がない。囲みを外して1行にする
+   （囲んだままだと、下の積み上がりの帯が footer に隠れた）。 */
+#bldStage .bld-anytime{
+  margin:9px 0 0;padding:0;background:none;border:0;font-size:11px
+}
+.bld-view{position:relative}
+/* 矢印は枠の上に重ねる。実物をできるだけ大きく見せたいので、外に置かない */
+.bld-arw{
+  position:absolute;top:50%;transform:translateY(-50%);z-index:4;
+  width:44px;height:64px;display:grid;place-items:center;
+  background:rgba(12,14,18,.72);border:1px solid rgba(255,255,255,.14);color:#fff;
+  font-size:26px;line-height:1;cursor:pointer;
+  border-radius:10px;backdrop-filter:blur(6px);
+  transition:background .15s,opacity .15s
+}
+.bld-arw:hover{background:rgba(12,14,18,.9)}
+.bld-arw.prev{left:10px}
+.bld-arw.next{right:10px}
+.bld-arw[hidden]{display:none}
+.bld-count{
+  position:absolute;left:50%;bottom:10px;transform:translateX(-50%);z-index:4;
+  background:rgba(12,14,18,.72);border:1px solid rgba(255,255,255,.14);color:#fff;
+  font-size:11.5px;letter-spacing:.06em;padding:5px 12px;border-radius:999px;
+  backdrop-filter:blur(6px);pointer-events:none
+}
+.bld-count:empty{display:none}
+/* 狭い画面では、実物がそのままの大きさで出る。まん中に矢印を重ねると
+   本文の上に乗ってしまうので、下に並べて置く（指はスワイプでも動く）。 */
+@media(max-width:560px){
+  .bld-arw{
+    top:auto;bottom:8px;transform:none;width:44px;height:34px;font-size:20px;
+    border-radius:999px
+  }
+  .bld-arw.prev{left:calc(50% - 78px)}
+  .bld-arw.next{right:calc(50% - 78px)}
+  .bld-count{bottom:12px}
+}
+/* 「いらない」を押したときの覆い。中身は残したまま、外したことを見せる */
+.bld-nomask{
+  position:absolute;inset:0;z-index:5;display:grid;place-items:center;
+  background:rgba(8,10,14,.78);backdrop-filter:blur(2px);border-radius:10px;text-align:center
+}
+/* display 指定が hidden 属性に勝つので、明示的に消す。
+   これが無いと、見えない覆いが矢印のクリックを飲む（実際に飲んだ） */
+.bld-nomask[hidden]{display:none}
+.bld-nomask b{display:block;font-size:14px;margin-bottom:4px}
+.bld-nomask span{font-size:11.5px;color:var(--tx2)}
+
+/* 段の切り替え。下から上へ、シュッと。
+   出ていくときは上へ抜け、入ってくるときは下から上がる。 */
+@keyframes bldUpOut{to{transform:translateY(-26px);opacity:0}}
+@keyframes bldUpIn{from{transform:translateY(30px);opacity:0}}
+#bldStage.out{animation:bldUpOut .17s cubic-bezier(.4,0,1,1) forwards}
+#bldStage.in{animation:bldUpIn .3s cubic-bezier(.2,.8,.3,1)}
+/* 左右の見くらべは、中の帯を動かす（下の film を参照）。
+   ここは段の切り替えだけ。 */
+@media (prefers-reduced-motion:reduce){
+  #bldStage.out,#bldStage.in{animation:none}
+}
+
+/* 組み上がった全体。中でスクロールして、ぜんぶ見られる */
+.bld-whole{min-height:46vh;margin-bottom:16px}
+.bld-whole iframe{min-height:46vh}
+
+/* 「何が要るか」を先にチェックさせる段は無くした。
+   要るかどうかは、実物を見てから ✕ で決めるほうが早い。
+   その段のCSS（.need-list / .need）も一緒に落とした。 */
+
+/* いま見ている段を、積み上がりの帯で光らせる */
 .bld-strip span.on{border-color:var(--tx3);background:var(--panel3);color:var(--tx)}
 
 .ez-drop.sm{padding:16px 14px;margin-bottom:2px}
@@ -965,7 +1042,7 @@ ${textFillCSS(usedFills(state))}
 <style>${themeCSS(state.theme)}\n${SITE_CSS}\n${ANIM_GAL_CSS}</style>
 <style>${themeCSS(state.theme)}\n${SITE_CSS}\n${shapeMaskCSS(Object.keys(SHAPE_MASKS))}\n${DECO_GAL_CSS}</style>
 <style>${SITE_CSS}\n${PAL_GAL_CSS}</style>
-<style>${themeCSS(state.theme)}\n${SITE_CSS}\n${galleryCSS(g)}\n${shapeMaskCSS(galShapes(list))}</style>
+<style>${themeCSS(state.theme)}\n${SITE_CSS}\n${filmCSS(g, list.length)}\n${shapeMaskCSS(galShapes(list))}</style>
 <div class="app">
   <!-- ================= 上部バー ================= -->
   <header class="topbar">
@@ -1084,25 +1161,43 @@ ${textFillCSS(usedFills(state))}
 <div class="modal" id="buildModal" hidden>
   <div class="modal-box wide">
     <div class="bld-steps" id="bldSteps"></div>
-    <h2 id="bldTitle">サイトの雰囲気をえらぶ</h2>
-    <p class="modal-sub" id="bldSub"></p>
-    <p class="bld-anytime">中身も順番も、あとから。いまは形だけ決めます。</p>
 
     <!-- ① 業種をえらぶ -->
     <div id="bldIndStep" hidden>
+      <h2>業種をえらぶ</h2>
+      <p class="modal-sub">色と、仮の写真がこれで決まります。あとから変えられます。</p>
       <div class="ez-grid" id="bldInds"></div>
     </div>
 
-    <!-- ② 必要なものをチェック -->
-    <div id="bldNeeds" hidden>
-      <div class="need-list" id="needList"></div>
+    <!-- ②〜 顔と中身を、1段ずつ。実物を見ながら左右で見くらべる。
+         次へで、下から上へ切り替わって次の段に移る。 -->
+    <div id="bldStage" hidden>
+      <div class="bld-head">
+        <div>
+          <h2 id="bldTitle"></h2>
+          <p class="modal-sub" id="bldSub"></p>
+        </div>
+        <button class="bld-off" id="bldOff" type="button">この段はいらない</button>
+      </div>
+      <div class="bld-view">
+        <div class="gal-wrap" id="bldGal"><iframe id="bldFrame" title="この段の見本"></iframe></div>
+        <button class="bld-arw prev" id="bldPrev" type="button" aria-label="前のかたち">‹</button>
+        <button class="bld-arw next" id="bldNext" type="button" aria-label="次のかたち">›</button>
+        <div class="bld-count" id="bldCount"></div>
+        <div class="bld-nomask" id="bldNoMask" hidden>
+          <div><b>この段は入れません</b><span>「やっぱり入れる」で戻せます</span></div>
+        </div>
+      </div>
+      <p class="bld-anytime">中身も順番も、あとから変えられます。</p>
     </div>
 
     <div class="bld-strip" id="bldStrip"></div>
-    <div class="gal-wrap" id="bldGal"><iframe id="bldFrame" title="部分の見本"></iframe></div>
 
-    <!-- ④ 仕上げ -->
+    <!-- ④ 仕上げ：組み上がった全体を見てから、細部の調整へ -->
     <div id="bldFinish" hidden>
+      <h2>組み上がりました</h2>
+      <p class="modal-sub">全体はこのとおりです。ここから細かいところを直せます。</p>
+      <div class="gal-wrap bld-whole"><iframe id="bldWhole" title="組み上がった全体"></iframe></div>
       <div class="fin-grid">
         <button data-fin="photo"><b>写真の寄せ</b>
           <small>プレビューの写真を押すと、その場で寄せたり動かしたり</small></button>
@@ -1125,7 +1220,6 @@ ${textFillCSS(usedFills(state))}
 
     <div class="modal-foot">
       <button class="tb-btn" id="bldCancel">やめる</button>
-      <button class="tb-btn" id="bldSkip" hidden>このまま進む</button>
       <button class="tb-btn" id="bldBack">もどる</button>
       <button class="tb-btn primary" id="bldDone">つぎへ</button>
     </div>
@@ -8819,10 +8913,15 @@ ${slides}
    hero と collage はここに出さない。どちらも「ページの顔」で、
    組み立ての ①顔をえらぶ で選ぶもの。あとから足す部品ではない
    （collage は中ほどに置く帯としてなら Collage Band がある）。 */
+/* 「ブロックを足す」に並べるもの。
+
+   一覧（listing）と予定の表（schedule）は、前は組み立ての
+   「何が要るか」のチェックからしか置けなかった。その段を無くしたので、
+   ここに無いと、どこからも置けない部品になる。 */
 const ADDABLE = [
   'features', 'icons', 'about', 'gallery', 'video', 'strip', 'menu', 'floors', 'news', 'marquee', 'pricing', 'faq', 'cta', 'contact', 'rich',
   'slides', 'product3d', 'exploded', 'hscroll', 'stackcards', 'timeline', 'clipreveal',
-  'carousel3d', 'slotstats', 'svgdraw', 'shift',
+  'carousel3d', 'slotstats', 'svgdraw', 'shift', 'listing', 'schedule',
 ];
 
 </script>
@@ -12685,24 +12784,6 @@ function galGeom(f) {
   return { W, H, gs: Math.min(1, W / GAL_W), cols: W < 520 ? 1 : W < 900 ? 2 : 3 };
 }
 
-/* 見本の数に合わせて枠の高さを決める。
-   1段あたりのカードは cols 枚で、1枚はおよそ 0.72:1。
-   少ないときだけ縮め、多いときは今までどおり（中でスクロールさせる）。 */
-function fitGalHeight(wrap, n) {
-  if (!wrap) return;
-  const W = wrap.clientWidth || Math.min(window.innerWidth - 48, GAL_W);
-  const cols = W < 520 ? 1 : W < 900 ? 2 : 3;
-  const rows = Math.ceil(Math.max(1, n) / cols);
-  const need = Math.round((W / cols) * 0.86 * rows + 28);
-  /* flex:1 は flex-basis:0 なので、height だけ書いても効かない
-     （縦並びの中では flex-basis が高さを決める）。min-height（56vh）も
-     効いていると縮まないので、3つまとめてここで外す。
-     ほかの一覧は今までどおりにしたいので、CSSではなくここで当てる */
-  wrap.style.flex = '0 0 auto';
-  wrap.style.minHeight = '0';
-  wrap.style.height = `${Math.min(need, Math.round(window.innerHeight * 0.56))}px`;
-}
-
 /* iframe を広い幅で描かせて、枠のぶんだけ縮める */
 function sizeGalFrame(f, g) {
   f.style.position = 'absolute';
@@ -14991,113 +15072,221 @@ function presetSample(p) {
 /* ================================================================
    順を追って組む
 
-     ① 雰囲気をえらぶ（＝いちばん上）
-     ② 必要なものにチェック（使い道で選ぶ）
-     ③ ひとつずつ、かたちをえらぶ
-     ④ できました
+     ① 業種をえらぶ
+     ② サイトの顔をえらぶ
+     ③〜 中身を1段ずつ積む（アバウト → 強み → 写真 → 料金 → …）
+     ④ 組み上がった全体を見て、細部の調整へ
 
-   ②で「かたち」ではなく「使い道」を聞くのが要。型の一覧はかたちで
-   並んでいるが、かたちで選べるのは何を載せるか決まっている人だけ。
-   はじめての人はその前で止まる——「うちに何が要るのか」が分からない。
+   ②以降は、どの段も同じ見せかたにする。
+   ・まん中に「実物」を大きく1つ。並んだ小さなカードでは、それが
+     自分の店に合うのかが掴めない（顔はサイトの質に直結する）。
+   ・左右の矢印とスワイプで、ほかのかたちを見くらべる。
+   ・要らない段は ✕ で外す。先に「何が要るか」を全部聞いていたが、
+     はじめての人はそこで止まる——「うちに何が要るのか」が分からない。
+     実物を見せて「これは要る／要らない」を1つずつ決めるほうが早い。
+   ・つぎへで、下から上へ切り替わって次の段に移る。上に積み上がって
+     いく動きが、そのままページの組み上がりに重なる。
 
-   チェックした時点でページはもう組み上がっている。③はそれを1つずつ
-   見直すだけなので、途中でやめても完成品が手元に残る。
-
-   どの段にも「あとから変えられる」と出しておく。戻せないと思うと、
-   人は選べなくなって手が止まる。
+   どの段でも、その時点でページはもう組み上がっている。途中でやめても
+   完成品が手元に残る。
    ================================================================ */
 /* 業種を先に聞く。ここで配色と仮の写真が決まるので、次の「顔をえらぶ」で
    自分の店の色と絵が入った見本を見ながら選べる。
    空の枠を並べても、その型が自分に合うのかは掴めない。 */
-const BLD_STEPS = ['ind', 'hero', 'needs', 'shape', 'done'];
-let bldI = 0;
-let bldNeeds = [];         // ②でチェックした使い道のキー
-let bldShapeI = 0;         // ③でいま何個目を見ているか
-const bldNeedBlock = new Map();   // 使い道 → 置いたブロックのID
 
-const bldStep = () => BLD_STEPS[bldI];
+/* 積む順。よく要るものだけを並べる。ここに無いものも、あとから足せる。
+   多く並べるほど「つぎへ」を押す回数が増えるので、欲張らない。 */
+const BLD_NEEDS = ['about', 'features', 'photos', 'menu', 'cta', 'contact'];
 
-const BLD_HEAD = {
-  ind: ['① 業種をえらぶ', '色と、仮の写真がこれで決まります。あとから変えられます。'],
-  hero: ['② 顔をえらぶ', 'いちばん上に来る一枚。ここでサイトの印象が決まります。'],
-  needs: ['③ 中身をえらぶ', 'いま要りそうなものに印を。あとから足せます。'],
-  shape: ['④ かたちをえらぶ', '選んだものを、ひとつずつ。'],
-  done: ['出来ました', 'ここから細部を詰めます。'],
-};
+let bldStage = 'ind';      // 'ind' | 'pick' | 'done'
+let bldQ = [];             // 積む段の一覧
+let bldQI = 0;             // いま何段目か
+const bldNeedBlock = new Map();   // 段のキー → 置いたブロックのID
 
-/* ③で見ていく順。かたちが1つしかないものは選ばせない（見せるものが無い） */
-const shapeQueue = () => NEEDS.filter((n) => bldNeeds.includes(n.key) && n.picks.length > 1);
-const nowNeed = () => shapeQueue()[bldShapeI] || null;
+const bldNow = () => bldQ[bldQI] || null;
+const bldStep = () => (bldStage === 'pick' ? (bldNow() || {}).kind : bldStage);
+
+/* 段の一覧を組み立てる。先頭は必ず「顔」 */
+function buildBldQueue() {
+  const byKey = (k) => SECTION_PRESETS.find((p) => p.key === k);
+  bldQ = [{
+    kind: 'hero', key: 'hero', label: 'サイトの顔',
+    about: 'いちばん上に来る一枚。ここでサイトの印象が決まります。',
+    list: HERO_PRESETS, i: 0, off: false, must: true,
+  }];
+  BLD_NEEDS.forEach((k) => {
+    const n = NEEDS.find((x) => x.key === k);
+    if (!n) return;
+    const list = n.picks.map(byKey).filter(Boolean);
+    if (!list.length) return;
+    bldQ.push({ kind: 'need', key: n.key, label: n.label, about: n.about,
+      list, i: 0, off: false, must: false });
+  });
+  bldQI = 0;
+}
 
 function bldList() {
-  const st = bldStep();
-  if (st === 'hero') return HERO_PRESETS;
-  if (st === 'shape') {
-    const n = nowNeed();
-    if (!n) return [];
-    return n.picks.map((k) => SECTION_PRESETS.find((p) => p.key === k)).filter(Boolean);
-  }
-  return [];
+  const s = bldNow();
+  return bldStage === 'pick' && s ? s.list : [];
 }
 
 function renderBldSteps() {
-  const now = bldI;
-  $('#bldSteps').innerHTML = BLD_STEPS.map((k, i) => {
-    const label = BLD_HEAD[k][0].replace(/^[①-⑤]\s*/, '');
-    return `<span class="${i === now ? 'on' : (i < now ? 'past' : '')}">${esc(label)}</span>`;
-  }).join('');
+  /* 段は業種のぶんも入れて8つ前後になる。名前を全部並べると帯が長くなり、
+     いま何段目かが逆に読めない。大づかみな4つで出す。 */
+  const phase = bldStage === 'ind' ? 0 : bldStage === 'done' ? 3 : (bldQI === 0 ? 1 : 2);
+  $('#bldSteps').innerHTML = ['業種', '顔', '中身', '仕上げ']
+    .map((label, i) => `<span class="${i === phase ? 'on' : (i < phase ? 'past' : '')}">${esc(label)}</span>`)
+    .join('');
 }
 
 function renderBldStrip() {
   /* header と footer は最初から入っていて選ぶものではないので出さない */
   const picked = page().blocks.filter((b) => b.type !== 'header' && b.type !== 'footer');
-  const sel = bldStep() === 'shape' ? bldNeedBlock.get((nowNeed() || {}).key) : null;
+  const s = bldNow();
+  const sel = bldStage === 'pick' && s ? bldNeedBlock.get(s.key) : null;
   $('#bldStrip').innerHTML = picked
     .map((b, i) => `<span class="${b.id === sel ? 'on' : ''}"><i>${i + 1}</i>${esc(bldNames.get(b.id) || BLOCKS[b.type].label)}</span>`)
     .join('');
-  /* 積み上がりの帯は③でだけ出す。②では「1 Cover」だけが宙に浮いて見える */
-  $('#bldStrip').hidden = bldStep() !== 'shape' || !picked.length;
+  /* 積み上がりの帯は、中身を積みはじめてから出す。
+     顔だけのときは「1 Cover」が宙に浮いて見える */
+  $('#bldStrip').hidden = !(bldStage === 'pick' && bldQI > 0) || !picked.length;
   const on = $('#bldStrip .on');
   if (on) on.scrollIntoView({ block: 'nearest', inline: 'center' });
 }
 
 function renderBldHead() {
-  const st = bldStep();
-  let [title, sub] = BLD_HEAD[st];
-  const q = shapeQueue();
-  if (st === 'shape' && q.length) {
-    const n = nowNeed();
-    title = `④ ${n.label}の、かたちをえらぶ`;
-    sub = `${bldShapeI + 1} / ${q.length}　${n.about}`;
-  }
-  $('#bldTitle').textContent = title;
-  /* スマホでは説明が長いほど見本が見えなくなるので、要点だけにする */
-  $('#bldSub').textContent = sub;
+  const st = bldStage;
+  const s = bldNow();
 
   $('#bldIndStep').hidden = st !== 'ind';
-  $('#bldNeeds').hidden = st !== 'needs';
+  $('#bldStage').hidden = st !== 'pick';
   $('#bldFinish').hidden = st !== 'done';
-  $('#bldGal').hidden = st !== 'hero' && st !== 'shape';
-  /* ③は選ばなくても先へ行ける。いま置いてある形のままでいい人もいる */
-  $('#bldSkip').hidden = st !== 'shape';
 
-  const hasHero = page().blocks.some((b) => b.type === 'hero' || b.type === 'collage');
+  if (st === 'pick' && s) {
+    $('#bldTitle').textContent = s.label;
+    $('#bldSub').textContent = s.about;
+    /* 顔は外せない。無いとページが始まらない */
+    $('#bldOff').hidden = !!s.must;
+    $('#bldOff').classList.toggle('on', s.off);
+    $('#bldOff').textContent = s.off ? 'やっぱり入れる' : 'この段はいらない';
+    $('#bldNoMask').hidden = !s.off;
+    const many = s.list.length > 1 && !s.off;
+    $('#bldPrev').hidden = !many;
+    $('#bldNext').hidden = !many;
+    $('#bldCount').textContent = many ? `${s.i + 1} / ${s.list.length}` : '';
+  }
+
   $('#bldCancel').hidden = st === 'done';
-  $('#bldBack').hidden = bldI === 0;
-  $('#bldDone').textContent = st === 'done' ? '編集をはじめる'
-    : (st === 'shape' && bldShapeI < q.length - 1 ? 'つぎへ' : 'つぎへ');
-  /* 雰囲気を選ばずには進ませない。空のページから始まっているので、
-     何も無いまま先へ行っても選ぶものが見えない */
-  $('#bldDone').disabled = st === 'hero' && !hasHero;
+  $('#bldBack').hidden = st === 'ind';
+  $('#bldDone').textContent = st === 'done' ? '編集をはじめる' : 'つぎへ';
+  $('#bldDone').disabled = false;
 }
 
 /* いま出している一覧の見分け。段が変わったかどうかの判断に使う */
 let galView = '';
 let galY = 0;      // その一覧で、どこまで見ていたか
 
+/* 帯の中で、指を横に振ったときだけ、めくる合図を親へ送る。
+   縦に振ったときは、その段の中身を読むためのスクロールとして残す
+   （段によっては、枠より背が高いものがある）。 */
+const FILM_JS = `
+(function(){
+  var sx=0, sy=0, dx=0, on=false;
+  function send(d){ parent.postMessage({film:d}, '*'); }
+  addEventListener('touchstart', function(e){
+    var t=e.touches[0]; sx=t.clientX; sy=t.clientY; dx=0; on=true;
+  }, {passive:true});
+  addEventListener('touchmove', function(e){
+    if(!on) return;
+    var t=e.touches[0];
+    dx = t.clientX - sx;
+    if(Math.abs(dx) < Math.abs(t.clientY - sy)) on=false;   /* 縦に読んでいる */
+  }, {passive:true});
+  addEventListener('touchend', function(){
+    if(on && Math.abs(dx) > 44) send(dx < 0 ? 1 : -1);
+    on=false;
+  }, {passive:true});
+  /* パソコンでも、押したまま横に引けばめくれる */
+  var md=false;
+  addEventListener('mousedown', function(e){ md=true; sx=e.clientX; sy=e.clientY; dx=0; });
+  addEventListener('mousemove', function(e){ if(md) dx = e.clientX - sx; });
+  addEventListener('mouseup', function(e){
+    if(md && Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(e.clientY - sy)) send(dx < 0 ? 1 : -1);
+    md=false;
+  });
+})();
+`;
+
+/* 1段ぶんの見本を、横一列の帯にして1枚の枠に入れる。
+
+   絵を1枚ずつ差し替えるのではなく、帯を横にずらして見せる。差し替えだと
+   めくるたびにいったん白くなり、見くらべている感じにならない。
+   帯なら、ずらすだけなので指の動きにそのまま付いてくる。 */
+const filmCSS = (g, n) => {
+  const u = (px) => Math.round(px / g.gs);
+  return `
+html,body{margin:0;height:100%;overflow:hidden;background:#0d1016}
+.film{display:flex;height:100%;width:${n * 100}%;
+  transition:transform .34s cubic-bezier(.2,.8,.3,1)}
+/* 背の低い段は、枠のまん中に置く（上に寄せると下が大きく空く）。
+   枠より背の高い段は、上から見せてスクロールさせる。
+   safe を付けると、あふれたときに上が切れない。 */
+.fp{position:relative;flex:0 0 ${100 / n}%;height:100%;
+  display:flex;flex-direction:column;justify-content:safe center;
+  overflow-y:auto;overflow-x:hidden;background:var(--c-bg);scrollbar-width:none}
+/* 名前の札は絵の上に浮かせるので、この決めごとから外す */
+.fp > :not(.fp-name){flex:none;width:100%}
+.fp::-webkit-scrollbar{display:none}
+/* かたちの名前は、絵の上に小さく重ねる。下に置くと、そのぶん実物が小さくなる */
+.fp-name{
+  position:absolute;z-index:9;left:${u(12)}px;top:${u(12)}px;
+  background:rgba(12,14,18,.72);color:#fff;border-radius:${u(999)}px;
+  font-size:${u(11)}px;font-weight:700;letter-spacing:.04em;
+  padding:${u(5)}px ${u(12)}px;pointer-events:none;
+  font-family:"Helvetica Neue",Arial,"Hiragino Sans",Meiryo,sans-serif
+}
+@media (prefers-reduced-motion:reduce){.film{transition:none}}
+`;
+};
+
+/* 帯を描く大きさ。
+
+   ほかの一覧は、広い幅（1180px）で描いてから縮めている。並べて見くらべる
+   にはそれでよいが、この画面は「実物」を見せるのが役なので、スマホで
+   PCの姿を小さく映すと、字がつぶれて何も分からない。
+   狭い画面では縮めず、その幅のまま描く（＝スマホで見たときの実物）。 */
+function filmGeom(f) {
+  const wrap = f.parentElement;
+  const W = wrap.clientWidth || Math.min(window.innerWidth - 48, GAL_W);
+  const H = wrap.clientHeight || Math.round(window.innerHeight * 0.52);
+  const rw = W < 620 ? W : GAL_W;      // 描く幅
+  return { W, H, rw, gs: Math.min(1, W / rw) };
+}
+
+function sizeFilmFrame(f, g) {
+  f.style.position = 'absolute';
+  f.style.top = '0';
+  f.style.left = '0';
+  f.style.width = `${g.rw}px`;
+  f.style.minHeight = '0';
+  f.style.height = `${Math.round(g.H / g.gs)}px`;
+  f.style.transformOrigin = 'top left';
+  f.style.transform = `scale(${g.gs})`;
+}
+
+/* いま見ている位置へ、帯をずらす。枠を作り直さずに動かす */
+function slideFilm() {
+  const s = bldNow();
+  const f = $('#bldFrame');
+  if (!s || !f || !f.contentDocument) return;
+  const film = f.contentDocument.getElementById('film');
+  if (film) film.style.transform = `translateX(-${(s.i * 100) / s.list.length}%)`;
+}
+
 function renderBldGallery() {
-  const st = bldStep();
-  if (st !== 'hero' && st !== 'shape') return;
+  if (bldStage !== 'pick') return;
+  const s = bldNow();
+  if (!s) return;
   /* 実写がどこに置いてあるかを、1度だけ突き止める。
      見つかったらもう一度描き直す（1回目は描いた絵で出るので、待たせない） */
   if (photoReach === null) {
@@ -15105,66 +15294,71 @@ function renderBldGallery() {
     probeIndustryPhotos(ind0).then((ok) => { if (ok) renderBldGallery(); });
   }
   const f = $('#bldFrame');
-  const list = bldList();
-  /* 見本が2〜3枚しかない段では、枠を詰める。
-     決め打ちの高さのままだと、下に画面半分ぶんの空きが残る */
-  fitGalHeight(f.parentElement, list.length);
-  const g = galGeom(f);
-  sizeGalFrame(f, g);
+  const list = s.list;
+  /* 実物を主役にする段なので、枠は大きく取る。
+     カードを並べていたときのような「枚数に合わせた高さ」は要らない。 */
+  const wrap = f.parentElement;
+  wrap.style.flex = '0 0 auto';
+  wrap.style.minHeight = '0';
+  wrap.style.height = `${Math.round(Math.min(window.innerHeight * 0.56, 560))}px`;
+  const g = filmGeom(f);
+  sizeFilmFrame(f, g);
 
-  /* いま当たっている型。顔をえらぶ段では、どれを選んだのか印が付いて
-     いなかった（選んでも一覧の見た目が変わらないので、選べたのかどうか
-     分からない）。いま入っている顔の名前と突き合わせる。 */
-  const heroB = page().blocks.find((x) => x.type === 'hero' || x.type === 'collage');
-  const cur = st === 'shape'
-    ? bldNames.get(bldNeedBlock.get((nowNeed() || {}).key))
-    : (heroB ? bldNames.get(heroB.id) : null);
-  /* 説明は絵で足りる。名前だけ出し、言葉での補足はマウスを乗せたときに出す */
-  const cards = list.map((p) => `<div class="gc${p.label === cur ? ' on' : ''}" data-key="${esc(p.key)}" role="button" tabindex="0"
-      title="${esc(p.about || '')}">
-      <span class="gc-hit"></span>
-      <div class="gc-prev"><div class="gc-scale">${presetSample(p)}</div></div>
-      <div class="gc-meta"><b>${esc(p.label)}</b></div>
+  const panels = list.map((p) => `<div class="fp" data-key="${esc(p.key)}">
+      <span class="fp-name">${esc(p.label)}</span>
+      ${presetSample(p)}
     </div>`).join('');
 
-  /* 中身を差し替えると、見ている位置が消えていちばん上に戻る。
-     顔は34枚あるので、下のほうで選んだ人が毎回上に飛ばされていた
-     （選ぶたびに探し直しになる）。同じ一覧を出し直すときは位置を戻す。
-
-     段が変わったときは戻さない。並んでいるものが別物なので、
-     前の位置に合わせても意味が無い。
-
-     位置は、その都度読むのでは間に合わない。選ぶと描き直しが続けて
-     2回走ることがあり（写真の取り込みで、もう一度）、2回目に読むときには
-     中身がもう空になっていて 0 しか返ってこない。だから中を見ている
-     あいだ、動くたびに控えておく。 */
-  const view = `${st}|${st === 'shape' ? bldShapeI : ''}`;
-  if (view !== galView) { galView = view; galY = 0; }
-  const keepY = galY;
-  g.keepY = keepY;
+  /* 同じ段を描き直すだけのときは、見ている位置を保つ */
+  const view = `${s.key}|${list.length}`;
+  const same = view === galView;
+  galView = view;
 
   f.srcdoc = `<!DOCTYPE html><html lang="ja"><head><meta charset="utf-8">
-<style>${themeCSS(state.theme)}\n${SITE_CSS}\n${galleryCSS(g)}\n${shapeMaskCSS(galShapes(list))}</style></head>
-<body class="${esc(bodyClass())}"><div class="gg">${cards}</div>
-<script>${SITE_JS}<\/script><script>${fitJS(g)}<\/script></body></html>`;
+<style>${themeCSS(state.theme)}\n${SITE_CSS}\n${filmCSS(g, list.length)}\n${shapeMaskCSS(galShapes(list))}</style></head>
+<body class="${esc(bodyClass())}"><div class="film" id="film"${
+  s.i ? ` style="transform:translateX(-${(s.i * 100) / list.length}%)"` : ''}>${panels}</div>
+<script>${SITE_JS}<\/script><script>${FILM_JS}<\/script></body></html>`;
 
   /* srcdoc を差し替えるたびに load が来るので、毎回付け直す
      （once で1回だけにすると、2段目以降が反応しなくなる） */
-  f.onload = () => {
-    const w = f.contentWindow;
-    /* 中の script で戻しているが、間に合わなかったときのために */
-    if (keepY && !w.scrollY) w.scrollTo(0, keepY);
-    /* 読み込みのあいだは、写真が入るたびに高さが動いて位置も揺れる。
-       その揺れを「人が動かした」と勘違いして控えると、選ぶたびに
-       少しずつずれていく。落ち着くまでは控えない。 */
-    let settled = false;
-    setTimeout(() => { settled = true; }, 500);
-    w.addEventListener('scroll', () => { if (settled) galY = w.scrollY; }, { passive: true });
-    f.contentDocument.addEventListener('click', (e) => {
-      const k = e.target.closest('.gc')?.dataset.key;
-      if (k) pickPreset(k);
-    });
-  };
+  f.onload = () => { if (!same) slideFilm(); };
+}
+
+/* 帯からの「めくって」を受ける。枠の外の矢印と同じところへ通す。
+
+   受けるのは、その枠から来たものだけ。この道具は embed.html で人の
+   ページに埋め込んで使えるようにしてあるので、外側のページから同じ
+   合図を投げられる。いまは見本がめくれるだけだが、この入口に別の用が
+   増えたときに、外から触れる穴として残しておきたくない。 */
+addEventListener('message', (e) => {
+  const f = $('#bldFrame');
+  if (!f || e.source !== f.contentWindow) return;
+  const d = e.data && e.data.film;
+  if (d === 1 || d === -1) bldTurn(d);
+});
+
+/* かたちを1つ送る。端では止める（輪にすると、何周目か分からなくなる） */
+function bldTurn(dir) {
+  const s = bldNow();
+  if (bldStage !== 'pick' || !s || s.off) return;
+  const next = s.i + dir;
+  if (next < 0 || next >= s.list.length) return;
+  s.i = next;
+  slideFilm();
+  renderBldHead();
+}
+
+/* 組み上がった全体。中でスクロールして、ぜんぶ見られる。
+   細部を直しはじめる前に、いちど通しで見えるようにしておく。 */
+function renderBldWhole() {
+  if (bldStage !== 'done') return;
+  const f = $('#bldWhole');
+  if (!f) return;
+  const g = galGeom(f);
+  sizeGalFrame(f, g);
+  f.style.height = `${Math.round(g.H / g.gs)}px`;
+  f.srcdoc = pageHTML(page(), false);
 }
 
 function refreshBld() {
@@ -15172,95 +15366,60 @@ function refreshBld() {
   renderBldHead();
   renderBldStrip();
   renderBldGallery();
+  renderBldWhole();
 }
 
-/* ---------------- ② 必要なものをチェック ---------------- */
-function renderNeeds() {
-  $('#needList').innerHTML = NEEDS.map((n) => `<label class="need${bldNeeds.includes(n.key) ? ' on' : ''}">
-      <input type="checkbox" data-need="${esc(n.key)}"${bldNeeds.includes(n.key) ? ' checked' : ''}>
-      <span><b>${esc(n.label)}</b><small>${esc(n.about)}</small></span>
-    </label>`).join('');
-}
-$('#needList').addEventListener('change', (e) => {
-  const k = e.target.dataset.need;
-  if (!k) return;
-  bldNeeds = e.target.checked ? [...bldNeeds, k] : bldNeeds.filter((x) => x !== k);
-  renderNeeds();
-});
+/* いま見ているかたちを、ページに反映する。
 
-/* チェックしたものを、並び順どおりに置く。
-   ここで一度ページを組み上げてしまうので、③を飛ばしても完成品が残る。
-   すでに置いてあるものは触らない（②に戻って足し引きしても崩れない）。 */
-function applyNeeds() {
-  const want = NEEDS.filter((n) => bldNeeds.includes(n.key));
-  /* 外したものは消す */
-  [...bldNeedBlock.entries()].forEach(([k, id]) => {
-    if (want.some((n) => n.key === k)) return;
-    page().blocks = page().blocks.filter((b) => b.id !== id);
-    bldNames.delete(id);
-    bldNeedBlock.delete(k);
-  });
-  /* 足したものを、フッターの手前に順に積む */
-  want.forEach((n) => {
-    if (bldNeedBlock.has(n.key)) return;
-    const p = SECTION_PRESETS.find((x) => x.key === n.picks[0]);
-    if (!p) return;
-    const nb = makeBlock(p.type, p.props);
-    fillFromBiz(nb);
-    bldNames.set(nb.id, p.label);
-    bldNeedBlock.set(n.key, nb.id);
-    const fi = page().blocks.findIndex((b) => b.type === 'footer');
-    page().blocks.splice(fi < 0 ? page().blocks.length : fi, 0, nb);
-  });
-  spreadPhotos();
-  selected = page().blocks[1]?.id || page().blocks[0]?.id;
-  selectedEl = null;
-  refresh();
-}
+   段のキーごとに「どのブロックを置いたか」を覚えておき、選び直したら
+   その場で入れ替える（位置は動かさない）。外した段は消す。
+   これを段が変わるたびに通すので、どこでやめても完成品が残る。 */
+function commitStep(s) {
+  if (!s) return;
+  const oldId = bldNeedBlock.get(s.key);
+  const at = page().blocks.findIndex((b) => b.id === oldId);
 
-function pickPreset(key) {
-  const p = bldList().find((x) => x.key === key)
-    || [...HERO_PRESETS, ...SECTION_PRESETS, ...FOOTER_PRESETS].find((x) => x.key === key);
+  /* 外した段。置いてあれば取り除く */
+  if (s.off) {
+    if (at >= 0) {
+      page().blocks.splice(at, 1);
+      bldNames.delete(oldId);
+    }
+    bldNeedBlock.delete(s.key);
+    return;
+  }
+
+  const p = s.list[s.i];
   if (!p) return;
-  const st = bldStep();
+  /* 同じかたちのままなら、作り直さない（写真や打った字が消える） */
+  if (at >= 0 && bldNames.get(oldId) === p.label) return;
 
-  /* ①：雰囲気は1ページに1つ。選び直したら差し替える */
-  if (st === 'hero') {
+  const nb = makeBlock(p.type, p.props);
+  fillFromBiz(nb);
+  bldNames.set(nb.id, p.label);
+  bldNeedBlock.set(s.key, nb.id);
+
+  if (at >= 0) {
+    page().blocks.splice(at, 1, nb);
+    bldNames.delete(oldId);
+  } else if (s.kind === 'hero') {
+    /* 顔は1ページに1つ。前のものがあれば入れ替える */
     const old = page().blocks.find((b) => b.type === 'hero' || b.type === 'collage');
     if (old) {
-      page().blocks = page().blocks.filter((b) => b.id !== old.id);
+      const oi = page().blocks.indexOf(old);
+      page().blocks.splice(oi, 1, nb);
       bldNames.delete(old.id);
+    } else {
+      page().blocks.splice(1, 0, nb);
     }
-    const nb = makeBlock(p.type, p.props);
-    fillFromBiz(nb);
-    bldNames.set(nb.id, p.label);
+  } else {
+    /* 中身は、フッターの手前に順に積む。積む順＝段の順になる */
     const fi = page().blocks.findIndex((b) => b.type === 'footer');
     page().blocks.splice(fi < 0 ? page().blocks.length : fi, 0, nb);
-    spreadPhotos();
-    selected = nb.id;
-    selectedEl = null;
-    refresh();
-    return refreshBld();
   }
-
-  /* ③：いま見ている項目の形だけを、その場で入れ替える（位置は動かさない） */
-  const n = nowNeed();
-  if (st === 'shape' && n) {
-    const oldId = bldNeedBlock.get(n.key);
-    const at = page().blocks.findIndex((b) => b.id === oldId);
-    const nb = makeBlock(p.type, p.props);
-    fillFromBiz(nb);
-    bldNames.set(nb.id, p.label);
-    if (at >= 0) { page().blocks.splice(at, 1, nb); bldNames.delete(oldId); }
-    else page().blocks.splice(Math.max(1, page().blocks.length - 1), 0, nb);
-    bldNeedBlock.set(n.key, nb.id);
-    spreadPhotos();
-    selected = nb.id;
-    selectedEl = null;
-    refresh();
-    refreshBld();
-  }
+  spreadPhotos();
 }
+
 
 /* 写真の枠を、上のブロックから順に埋めていく。
    ①で選んだ写真を先に使い、足りなくなったら業種に合わせた仮の絵にする。
@@ -15317,11 +15476,40 @@ async function upgradePhotos(ind) {
   if (changed) { renderPreview(true); renderBldGallery(); }
 }
 
+/* 段の切り替え。下から上へ、シュッと。
+
+   いったん上へ抜けさせてから、中身を入れ替えて、下から上げる。
+   入れ替えを先にやると、動く前に次の絵が見えてしまい、
+   「上に積み上がった」ようには見えない。 */
+function bldSlide(fn) {
+  const box = $('#bldStage');
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (!box || box.hidden || reduce) { fn(); return; }
+  box.classList.remove('in');
+  box.classList.add('out');
+  setTimeout(() => {
+    box.classList.remove('out');
+    fn();
+    /* 中身が入れ替わったあとで、下から上げる */
+    if (!$('#bldStage').hidden) {
+      $('#bldStage').classList.add('in');
+      setTimeout(() => $('#bldStage').classList.remove('in'), 320);
+    }
+  }, 170);
+}
+
 function bldUndo() {
-  if (bldStep() === 'shape' && bldShapeI > 0) { bldShapeI -= 1; return refreshBld(); }
-  bldI = Math.max(0, bldI - 1);
-  if (bldStep() === 'shape') bldShapeI = Math.max(0, shapeQueue().length - 1);
-  refreshBld();
+  if (bldStage === 'done') {
+    bldSlide(() => { bldStage = 'pick'; bldQI = bldQ.length - 1; refreshBld(); });
+    return;
+  }
+  if (bldStage === 'pick' && bldQI > 0) {
+    bldSlide(() => { bldQI -= 1; refreshBld(); });
+    return;
+  }
+  if (bldStage === 'pick') {
+    bldSlide(() => { bldStage = 'ind'; refreshBld(); });
+  }
 }
 
 /* ---------------- ① ビジネス情報 ---------------- */
@@ -15464,11 +15652,11 @@ function finishBuild() {
 function openBuild(fresh) {
   bldBefore = state ? clone(state) : null;
 
-  bldI = 0;
-  bldShapeI = 0;
+  bldStage = 'ind';
   bldNames.clear();
   bldNeedBlock.clear();
-  bldNeeds = NEEDS.filter((n) => n.on).map((n) => n.key);   // よく要るものは最初から付けておく
+  buildBldQueue();
+  galView = '';
   if (fresh || !state) state = buildCustomState();
   selected = page().blocks[0].id;
   selectedEl = null;
@@ -15476,7 +15664,6 @@ function openBuild(fresh) {
   BIZ_FIELDS.forEach(([id, key]) => { $(`#${id}`).value = (state.biz && state.biz[key]) || ''; });
   $('#bizMore').open = false;
   renderBldInds();
-  renderNeeds();
   closeModal('#easyModal');
   exitFocus();     // 組み立て中はページ全体が見えていないと選べない
   refresh();
@@ -15492,25 +15679,44 @@ $('#bldCancel').addEventListener('click', () => {
   closeModal('#buildModal');
   refresh();
 });
-/* ③は「いまの形のままでいい」で飛ばせる */
-$('#bldSkip').addEventListener('click', () => bldNext(true));
-$('#bldDone').addEventListener('click', () => bldNext(false));
+$('#bldDone').addEventListener('click', () => bldNext());
+$('#bldPrev').addEventListener('click', () => bldTurn(-1));
+$('#bldNext').addEventListener('click', () => bldTurn(1));
+/* この段は要らない、を切り替える。押しても消さずに覆うだけにして、
+   すぐ戻せるようにする（消えると、戻し方が分からなくなる） */
+$('#bldOff').addEventListener('click', () => {
+  const s = bldNow();
+  if (!s || s.must) return;
+  s.off = !s.off;
+  commitStep(s);
+  refresh();
+  refreshBld();
+});
+/* 左右のキーでもめくれる（枠の外にいるとき用。中は帯側で受ける） */
+addEventListener('keydown', (e) => {
+  if ($('#buildModal').hidden || bldStage !== 'pick') return;
+  if (e.target.matches('input,textarea')) return;
+  if (e.key === 'ArrowRight') bldTurn(1);
+  if (e.key === 'ArrowLeft') bldTurn(-1);
+});
 
-function bldNext(skipAll) {
-  const st = bldStep();
-  if (st === 'ind' || st === 'hero') { bldI += 1; return refreshBld(); }
-  if (st === 'needs') {
-    applyNeeds();
-    bldShapeI = 0;
-    /* かたちを選ぶものが1つも無ければ、③は素通りする */
-    bldI += shapeQueue().length ? 1 : 2;
-    return refreshBld();
+function bldNext() {
+  if (bldStage === 'ind') {
+    bldSlide(() => { bldStage = 'pick'; bldQI = 0; refreshBld(); });
+    return;
   }
-  if (st === 'shape') {
-    const q = shapeQueue();
-    if (!skipAll && bldShapeI < q.length - 1) { bldShapeI += 1; return refreshBld(); }
-    bldI += 1;
-    return refreshBld();
+  if (bldStage === 'pick') {
+    /* いま見ているかたちを、ページに入れてから次へ */
+    commitStep(bldNow());
+    selected = page().blocks[1]?.id || page().blocks[0]?.id;
+    selectedEl = null;
+    refresh();
+    if (bldQI < bldQ.length - 1) {
+      bldSlide(() => { bldQI += 1; refreshBld(); });
+    } else {
+      bldSlide(() => { bldStage = 'done'; refreshBld(); });
+    }
+    return;
   }
   finishBuild();
   const n = page().blocks.filter((b) => b.type !== 'header' && b.type !== 'footer').length;
