@@ -15182,58 +15182,73 @@ function renderBldHead() {
   $('#bldDone').disabled = false;
 }
 
-/* いま出している一覧の見分け。段が変わったかどうかの判断に使う */
-let galView = '';
-let galY = 0;      // その一覧で、どこまで見ていたか
-
-/* 帯の中で、指を横に振ったときだけ、めくる合図を親へ送る。
+/* 帯の中で起きたことを、親へ知らせる。
    縦に振ったときは、その段の中身を読むためのスクロールとして残す
    （段によっては、枠より背が高いものがある）。 */
 const FILM_JS = `
 (function(){
-  var sx=0, sy=0, dx=0, on=false;
-  function send(d){ parent.postMessage({film:d}, '*'); }
-  addEventListener('touchstart', function(e){
-    var t=e.touches[0]; sx=t.clientX; sy=t.clientY; dx=0; on=true;
+  /* 指で動かすのは、ブラウザ本来の横スクロールに任せている。
+     こちらは「どこで止まったか」だけを親へ知らせる。
+     止まってから送るので、動かしている最中は何も出さない。 */
+  var t=0, last=-1;
+  addEventListener('scroll', function(){
+    clearTimeout(t);
+    t = setTimeout(function(){
+      var i = Math.round(scrollX / innerWidth);
+      if(i === last) return;
+      last = i;
+      parent.postMessage({filmAt:i}, '*');
+    }, 90);
   }, {passive:true});
-  addEventListener('touchmove', function(e){
-    if(!on) return;
-    var t=e.touches[0];
-    dx = t.clientX - sx;
-    if(Math.abs(dx) < Math.abs(t.clientY - sy)) on=false;   /* 縦に読んでいる */
-  }, {passive:true});
-  addEventListener('touchend', function(){
-    if(on && Math.abs(dx) > 44) send(dx < 0 ? 1 : -1);
-    on=false;
-  }, {passive:true});
-  /* パソコンでも、押したまま横に引けばめくれる */
-  var md=false;
-  addEventListener('mousedown', function(e){ md=true; sx=e.clientX; sy=e.clientY; dx=0; });
-  addEventListener('mousemove', function(e){ if(md) dx = e.clientX - sx; });
-  addEventListener('mouseup', function(e){
-    if(md && Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(e.clientY - sy)) send(dx < 0 ? 1 : -1);
-    md=false;
+  /* パソコンで、押したまま横に引く人のために。
+     スクロールそのものを動かすので、止まる位置の決まりはそのまま効く */
+  var md=false, sx=0, s0=0;
+  addEventListener('mousedown', function(e){ md=true; sx=e.clientX; s0=scrollX; });
+  addEventListener('mousemove', function(e){
+    if(!md) return;
+    e.preventDefault();
+    scrollTo(s0 - (e.clientX - sx), 0);
   });
+  addEventListener('mouseup', function(){ md=false; });
+  addEventListener('mouseleave', function(){ md=false; });
 })();
 `;
 
 /* 1段ぶんの見本を、横一列の帯にして1枚の枠に入れる。
 
-   絵を1枚ずつ差し替えるのではなく、帯を横にずらして見せる。差し替えだと
+   絵を1枚ずつ差し替えるのではなく、横に送って見せる。差し替えだと
    めくるたびにいったん白くなり、見くらべている感じにならない。
-   帯なら、ずらすだけなので指の動きにそのまま付いてくる。 */
+
+   送りかたは、ブラウザ本来の横スクロールに任せる。
+   はじめは帯ぜんぶを transform で動かしていたが、それだと帯が
+   まるごと1枚の面になる。顔は39種あるので、横1万2千画素の面。
+   iPhone は1画素を3×3の点で持つので、これだけで約160MBを取り、
+   タブごと落ちた（Safari が「問題が繰り返し発生しました」を出す）。
+   スクロールなら、いま見えているところだけを描くので、
+   見本が何種あっても取り分は画面1枚ぶんで済む。
+   指で送るのも端末まかせになり、iPhone では慣性もそのまま付く。 */
 const filmCSS = (g, n) => {
   const u = (px) => Math.round(px / g.gs);
   return `
-html,body{margin:0;height:100%;overflow:hidden;background:#0d1016}
-.film{display:flex;height:100%;width:${n * 100}%;
-  transition:transform .34s cubic-bezier(.2,.8,.3,1)}
+html{height:100%;scroll-snap-type:x mandatory;background:#0d1016}
+body{margin:0;height:100%;overflow-y:hidden;background:#0d1016}
+/* 送り終わりを1枚ずつで止める。棒は出さない（見本の邪魔になる） */
+html,body{scrollbar-width:none;-ms-overflow-style:none}
+html::-webkit-scrollbar,body::-webkit-scrollbar{width:0;height:0;display:none}
+.film{display:flex;height:100%;width:max-content}
 /* 背の低い段は、枠のまん中に置く（上に寄せると下が大きく空く）。
    枠より背の高い段は、上から見せてスクロールさせる。
    safe を付けると、あふれたときに上が切れない。 */
-.fp{position:relative;flex:0 0 ${100 / n}%;height:100%;
+.fp{position:relative;flex:0 0 ${Math.round(g.rw)}px;height:100%;
+  scroll-snap-align:start;scroll-snap-stop:always;
   display:flex;flex-direction:column;justify-content:safe center;
-  overflow-y:auto;overflow-x:hidden;background:var(--c-bg);scrollbar-width:none}
+  overflow-y:auto;overflow-x:hidden;background:var(--c-bg);scrollbar-width:none;
+  /* 見えていない見本は、描かない。39種あっても、抱えるのは
+     いま見えているぶんだけになる。大きさは外から決まっているので、
+     送り先の位置がずれることはない。
+     効かない端末（古い Safari）でも、ただ今までどおりになるだけ。 */
+  content-visibility:auto;
+  contain-intrinsic-size:${Math.round(g.rw)}px ${Math.round(g.H / g.gs)}px}
 /* 名前の札は絵の上に浮かせるので、この決めごとから外す */
 .fp > :not(.fp-name){flex:none;width:100%}
 .fp::-webkit-scrollbar{display:none}
@@ -15245,7 +15260,6 @@ html,body{margin:0;height:100%;overflow:hidden;background:#0d1016}
   padding:${u(5)}px ${u(12)}px;pointer-events:none;
   font-family:"Helvetica Neue",Arial,"Hiragino Sans",Meiryo,sans-serif
 }
-@media (prefers-reduced-motion:reduce){.film{transition:none}}
 `;
 };
 
@@ -15274,13 +15288,27 @@ function sizeFilmFrame(f, g) {
   f.style.transform = `scale(${g.gs})`;
 }
 
-/* いま見ている位置へ、帯をずらす。枠を作り直さずに動かす */
-function slideFilm() {
+/* こちらから動かしているあいだの行き先。
+
+   帯は「止まったところ」を知らせてくるが、それは少し遅れて届く。
+   続けて2回送ると、1回目の到着の知らせが2回目のあとに来ることがある。
+   そのまま受けると、2回目の送りが無かったことにされる（実際そうなった）。
+   行き先を覚えておいて、そこに着いた知らせだけを受ける。 */
+let filmWant = null;
+
+/* いま見ている位置へ、帯を送る。枠を作り直さずに動かす。
+   jump は、開いた直後など「動いて見せる必要がない」とき */
+function slideFilm(jump) {
   const s = bldNow();
   const f = $('#bldFrame');
-  if (!s || !f || !f.contentDocument) return;
-  const film = f.contentDocument.getElementById('film');
-  if (film) film.style.transform = `translateX(-${(s.i * 100) / s.list.length}%)`;
+  if (!s || !f) return;
+  const w = f.contentWindow;
+  if (!w || !w.document.getElementById('film')) return;
+  const smooth = !jump && !matchMedia('(prefers-reduced-motion: reduce)').matches;
+  /* すでにそこに居るなら、動かない＝知らせも来ない。
+     行き先を覚えたままにすると、そのあとの指の送りを受けなくなる */
+  filmWant = Math.round(w.scrollX / w.innerWidth) === s.i ? null : s.i;
+  w.scrollTo({ left: s.i * w.innerWidth, top: 0, behavior: smooth ? 'smooth' : 'auto' });
 }
 
 function renderBldGallery() {
@@ -15309,33 +15337,44 @@ function renderBldGallery() {
       ${presetSample(p)}
     </div>`).join('');
 
-  /* 同じ段を描き直すだけのときは、見ている位置を保つ */
-  const view = `${s.key}|${list.length}`;
-  const same = view === galView;
-  galView = view;
-
   f.srcdoc = `<!DOCTYPE html><html lang="ja"><head><meta charset="utf-8">
 <style>${themeCSS(state.theme)}\n${SITE_CSS}\n${filmCSS(g, list.length)}\n${shapeMaskCSS(galShapes(list))}</style></head>
-<body class="${esc(bodyClass())}"><div class="film" id="film"${
-  s.i ? ` style="transform:translateX(-${(s.i * 100) / list.length}%)"` : ''}>${panels}</div>
+<body class="${esc(bodyClass())}"><div class="film" id="film">${panels}</div>
 <script>${SITE_JS}<\/script><script>${FILM_JS}<\/script></body></html>`;
 
   /* srcdoc を差し替えるたびに load が来るので、毎回付け直す
-     （once で1回だけにすると、2段目以降が反応しなくなる） */
-  f.onload = () => { if (!same) slideFilm(); };
+     （once で1回だけにすると、2段目以降が反応しなくなる）。
+     描き直した直後は、見ていた位置へ動かさずに置く */
+  f.onload = () => slideFilm(true);
 }
 
-/* 帯からの「めくって」を受ける。枠の外の矢印と同じところへ通す。
+/* 帯からの知らせを受ける。指で送ったときの「いま何枚目か」が来る。
 
    受けるのは、その枠から来たものだけ。この道具は embed.html で人の
    ページに埋め込んで使えるようにしてあるので、外側のページから同じ
-   合図を投げられる。いまは見本がめくれるだけだが、この入口に別の用が
+   合図を投げられる。いまは見本が動くだけだが、この入口に別の用が
    増えたときに、外から触れる穴として残しておきたくない。 */
 addEventListener('message', (e) => {
   const f = $('#bldFrame');
   if (!f || e.source !== f.contentWindow) return;
-  const d = e.data && e.data.film;
-  if (d === 1 || d === -1) bldTurn(d);
+  const d = e.data || {};
+  /* 指で送って止まった位置。こちらから動かし直さない（送り合いになる） */
+  if (typeof d.filmAt === 'number') {
+    const s = bldNow();
+    if (bldStage !== 'pick' || !s || s.off) return;
+    const i = Math.max(0, Math.min(s.list.length - 1, d.filmAt));
+    /* こちらから送っている最中は、行き先に着いた知らせだけを受ける。
+       途中の位置を受けると、続けて押したぶんが巻き戻る */
+    if (filmWant !== null) {
+      if (i !== filmWant) return;
+      filmWant = null;
+    }
+    if (i === s.i) return;
+    s.i = i;
+    renderBldHead();
+    return;
+  }
+  if (d.film === 1 || d.film === -1) bldTurn(d.film);
 });
 
 /* かたちを1つ送る。端では止める（輪にすると、何周目か分からなくなる） */
@@ -15656,7 +15695,6 @@ function openBuild(fresh) {
   bldNames.clear();
   bldNeedBlock.clear();
   buildBldQueue();
-  galView = '';
   if (fresh || !state) state = buildCustomState();
   selected = page().blocks[0].id;
   selectedEl = null;
