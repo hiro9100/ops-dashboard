@@ -23,6 +23,34 @@
      検査から差し替えられるよう、変数にしてから使う。 */
   --sat: env(safe-area-inset-top, 0px);
   --sab: env(safe-area-inset-bottom, 0px);
+
+  /* ---- 動きの決めごと ----
+
+     道具っぽく見えるかどうかは、たいてい動きで決まる。
+     ばらばらの速さと曲線を並べると、寄せ集めに見える。
+     ここに数種だけ置いて、ぜんぶそこから引く。
+
+     曲線は「出ぎわは速く、止まりぎわはゆっくり」。物が減速して
+     止まるのと同じ形で、これが手に馴染む。逆（ゆっくり出て急に止まる）
+     は、機械が処理を終えたように見える。 */
+  --ez:cubic-bezier(.22,.78,.24,1);      /* ふだん使い。減速して止まる */
+  --ez-out:cubic-bezier(.16,.86,.2,1);   /* 入ってくるもの。長めに滑る */
+  --ez-in:cubic-bezier(.4,0,.85,.4);     /* 出ていくもの。加速して抜ける */
+  --d-tap:.11s;    /* 指が触れた合図。速いほど「効いた」と感じる */
+  --d:.22s;
+  --d-in:.34s;     /* 入ってくるもの。出るより長くとる */
+  --d-out:.17s;    /* 出ていくもの。待たされたくない */
+}
+
+/* 指で触ったときの灰色の四角を出さない。
+   これが出ているだけで、ページを触っているように見える */
+:where(button,a,label,summary,[role="button"]){-webkit-tap-highlight-color:transparent}
+
+/* 押した合図。ほんの少し縮むだけで、指に応えている感じが出る。
+   色だけ変える作りだと、押した瞬間が分からない（指で隠れる）。 */
+:where(button,[role="button"]):active:not(:disabled){transform:scale(.97)}
+@media (prefers-reduced-motion:reduce){
+  :where(button,[role="button"]):active:not(:disabled){transform:none}
 }
 html,body{height:100%}
 body{
@@ -58,7 +86,8 @@ input,select,textarea{font:inherit}
 .tb-btn{
   background:var(--panel2);border:1px solid var(--line);border-radius:var(--r);
   padding:7px 14px;font-size:12px;font-weight:600;letter-spacing:.02em;white-space:nowrap;
-  transition:background .14s,border-color .14s,color .14s
+  transition:background var(--d-tap) var(--ez),border-color var(--d-tap) var(--ez),
+    color var(--d-tap) var(--ez),transform var(--d-tap) var(--ez)
 }
 .tb-btn:hover{background:var(--panel3);border-color:var(--line2)}
 /* いちばん進めたい1つだけ、地と文字を入れ替える。
@@ -522,6 +551,26 @@ input,select,textarea{font:inherit}
 }
 /* display 指定が hidden 属性に勝ってしまうので明示的に消す */
 .modal[hidden],.add-menu[hidden],.panel-body[hidden]{display:none}
+
+/* 出し入れのしかた。
+
+   hidden を付け外しするだけだと、パッと出てパッと消える。
+   出た瞬間に画面が入れ替わるので、どこから来たのか分からない。
+   奥からすこし持ち上がって止まる、という1つの動きにする。
+   地のほうは先に馴染ませ、箱は少し遅れて長く滑らせる——
+   同時に動かすと、板が1枚めくれたようになる。 */
+@keyframes mdVeilIn{from{opacity:0}}
+@keyframes mdVeilOut{to{opacity:0}}
+@keyframes mdBoxIn{from{opacity:0;transform:translateY(16px) scale(.985)}}
+@keyframes mdBoxOut{to{opacity:0;transform:translateY(6px) scale(.992)}}
+.modal.opening{animation:mdVeilIn var(--d) var(--ez) both}
+.modal.opening>.modal-box{animation:mdBoxIn var(--d-in) var(--ez-out) both}
+.modal.closing{animation:mdVeilOut var(--d-out) var(--ez-in) both}
+.modal.closing>.modal-box{animation:mdBoxOut var(--d-out) var(--ez-in) both}
+@media (prefers-reduced-motion:reduce){
+  .modal.opening,.modal.opening>.modal-box,
+  .modal.closing,.modal.closing>.modal-box{animation:none}
+}
 .modal-box{
   background:var(--panel);border:1px solid var(--line);border-radius:14px;
   padding:26px;width:100%;max-width:840px;max-height:88vh;overflow-y:auto
@@ -653,6 +702,12 @@ input,select,textarea{font:inherit}
      帯のぶんを足した高さになって上へはみ出す */
   .modal-box{padding:18px;border-radius:14px 14px 0 0;
     max-height:calc(100dvh - var(--sat) - var(--sab) - 24px)}
+  /* 狭い画面では下に貼り付く形なので、下から立ち上がらせる。
+     まん中でふわっと出るのは、画面の下から出てくるものの動きではない */
+  @keyframes mdSheetIn{from{transform:translateY(100%)}}
+  @keyframes mdSheetOut{to{transform:translateY(100%)}}
+  .modal.opening>.modal-box{animation:mdSheetIn var(--d-in) var(--ez-out) both}
+  .modal.closing>.modal-box{animation:mdSheetOut var(--d-out) var(--ez-in) both}
   .tpl-grid{grid-template-columns:1fr;gap:12px}
   .tpl-prev{height:100px}
   #codeArea{height:46vh;font-size:10.5px}
@@ -882,9 +937,17 @@ input,select,textarea{font:inherit}
   background:rgba(12,14,18,.72);border:1px solid rgba(255,255,255,.14);color:#fff;
   font-size:26px;line-height:1;cursor:pointer;
   border-radius:10px;backdrop-filter:blur(6px);
-  transition:background .15s,opacity .15s
+  transition:background var(--d-tap) var(--ez),opacity var(--d) var(--ez),
+    transform var(--d-tap) var(--ez)
 }
 .bld-arw:hover{background:rgba(12,14,18,.9)}
+/* この矢印は位置決めに transform を使っているので、
+   押した合図はここで足す（共通の指定では上書きできない） */
+.bld-arw:active:not(:disabled){transform:translateY(-50%) scale(.9)}
+/* もう先が無いときは、そう見せる。押しても動かないボタンを
+   そのまま出しておくと、壊れているのかどちらか分からない */
+.bld-arw:disabled{opacity:.26;cursor:default}
+.bld-arw:disabled:hover{background:rgba(12,14,18,.72)}
 .bld-arw.prev{left:10px}
 .bld-arw.next{right:10px}
 .bld-arw[hidden]{display:none}
@@ -902,6 +965,7 @@ input,select,textarea{font:inherit}
     top:auto;bottom:8px;transform:none;width:44px;height:34px;font-size:20px;
     border-radius:999px
   }
+  .bld-arw:active:not(:disabled){transform:scale(.9)}
   .bld-arw.prev{left:calc(50% - 78px)}
   .bld-arw.next{right:calc(50% - 78px)}
   .bld-count{bottom:12px}
@@ -921,8 +985,8 @@ input,select,textarea{font:inherit}
    出ていくときは上へ抜け、入ってくるときは下から上がる。 */
 @keyframes bldUpOut{to{transform:translateY(-26px);opacity:0}}
 @keyframes bldUpIn{from{transform:translateY(30px);opacity:0}}
-#bldStage.out{animation:bldUpOut .17s cubic-bezier(.4,0,1,1) forwards}
-#bldStage.in{animation:bldUpIn .3s cubic-bezier(.2,.8,.3,1)}
+#bldStage.out{animation:bldUpOut var(--d-out) var(--ez-in) forwards}
+#bldStage.in{animation:bldUpIn var(--d-in) var(--ez-out)}
 /* 左右の見くらべは、中の帯を動かす（下の film を参照）。
    ここは段の切り替えだけ。 */
 @media (prefers-reduced-motion:reduce){

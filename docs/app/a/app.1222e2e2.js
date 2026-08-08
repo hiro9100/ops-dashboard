@@ -3677,8 +3677,46 @@ function applyPalette(i) {
 
 $('#palClose').addEventListener('click', () => closeModal('#palModal'));
 
-const openModal = (id) => { $(id).hidden = false; };
-const closeModal = (id) => { $(id).hidden = true; };
+/* ---- 画面の出し入れ ----
+
+   hidden を付け外しするだけだと、パッと出てパッと消える。
+   動きはCSSに書いてあるが、閉じるほうは「消えきるまで hidden に
+   できない」ので、終わりを待つぶんだけここで面倒を見る。
+
+   閉じかけているうちに開き直されることがある（別の画面へ移るとき）。
+   そのときは待ちを取り消して、すぐ出しなおす。 */
+const reduceMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+const closing = new Map();      // 要素 → 閉じ終わりの待ち
+
+const openModal = (id) => {
+  const m = $(id);
+  if (!m) return;
+  const w = closing.get(m);
+  if (w) { clearTimeout(w); closing.delete(m); }
+  m.classList.remove('closing', 'opening');
+  m.hidden = false;
+  if (reduceMotion()) return;
+  /* いちど外してから付け直さないと、2回目以降は動かない
+     （同じ animation が続いているものと見なされる） */
+  void m.offsetWidth;
+  m.classList.add('opening');
+};
+
+const closeModal = (id) => {
+  const m = $(id);
+  if (!m || m.hidden) return;
+  m.classList.remove('opening');
+  if (reduceMotion()) { m.hidden = true; return; }
+  m.classList.add('closing');
+  const w = closing.get(m);
+  if (w) clearTimeout(w);
+  /* animationend は、途中で外されると来ないことがある。時間で締める */
+  closing.set(m, setTimeout(() => {
+    closing.delete(m);
+    m.classList.remove('closing');
+    m.hidden = true;
+  }, 190));
+};
 
 /* ================================================================
    かんたんモード — 業種 → 店名 → 写真 → 完成
@@ -3857,6 +3895,10 @@ function renderBldHead() {
     const many = s.list.length > 1 && !s.off;
     $('#bldPrev').hidden = !many;
     $('#bldNext').hidden = !many;
+    /* 端に来たら、その向きは薄くする。押しても動かないものが
+       同じ濃さで出ていると、押し損なったのかどうか分からない */
+    $('#bldPrev').disabled = s.i <= 0;
+    $('#bldNext').disabled = s.i >= s.list.length - 1;
     $('#bldCount').textContent = many ? `${s.i + 1} / ${s.list.length}` : '';
   }
 
@@ -3871,30 +3913,114 @@ function renderBldHead() {
    （段によっては、枠より背が高いものがある）。 */
 const FILM_JS = `
 (function(){
-  /* 指で動かすのは、ブラウザ本来の横スクロールに任せている。
-     こちらは「どこで止まったか」だけを親へ知らせる。
-     止まってから送るので、動かしている最中は何も出さない。 */
-  var t=0, last=-1;
+  var el = document.documentElement;
+  var SNAP = 'x mandatory';
+  var raf = 0, last = -1, settle = 0;
+
+  /* 止まりぎわをゆっくりにする。
+     ブラウザ標準の smooth は速さも曲線も決め打ちで、
+     真ん中がいちばん速く、止まりぎわが唐突。指で送ったときの
+     慣性と形が違うので、矢印で送ったときだけ動きが浮く。
+     出ぎわを速く、止まりぎわを長く伸ばすと、指で放したときと
+     同じ止まりかたになる。 */
+  function ease(p){ var q = 1 - p; return 1 - q*q*q*q*q; }
+
+  /* となりの1枚を、先に描いておく。
+
+     見えていない見本は描かない作りにしてあるが（そうしないと
+     iPhone が抱えきれない）、その代わり、送った先の1枚は
+     「送っている最中に初めて描かれる」ことになる。そこで一度、
+     形を測って絵を置く手間がかかり、コマが飛ぶ。
+     止まったところで前後の1枚だけ先に描いておけば、次に送るときは
+     もう出来ている。抱えるのは3枚ぶんなので、取り分も増えない。 */
+  var fps = null, warmed = [];
+  function warm(i){
+    if(!fps) fps = document.querySelectorAll('.fp');
+    var want = [];
+    for(var k = i - 1; k <= i + 1; k++) if(fps[k]) want.push(k);
+    /* 窓から外れたものは、また描かないほうに戻す（抱えたままにしない） */
+    for(var a = 0; a < warmed.length; a++){
+      if(want.indexOf(warmed[a]) < 0) fps[warmed[a]].style.contentVisibility = '';
+    }
+    for(var c = 0; c < want.length; c++) fps[want[c]].style.contentVisibility = 'visible';
+    warmed = want;
+  }
+
+  function tell(){
+    var i = Math.round(scrollX / innerWidth);
+    warm(i);
+    if(i === last) return;
+    last = i;
+    parent.postMessage({filmAt:i}, '*');
+  }
+
+  /* 指で送ったとき。止まってから知らせる。
+     こちらで動かしている間は黙る（行き先はもう分かっている） */
   addEventListener('scroll', function(){
-    clearTimeout(t);
-    t = setTimeout(function(){
-      var i = Math.round(scrollX / innerWidth);
-      if(i === last) return;
-      last = i;
-      parent.postMessage({filmAt:i}, '*');
-    }, 90);
+    if(raf) return;
+    clearTimeout(settle);
+    settle = setTimeout(tell, 80);
   }, {passive:true});
-  /* パソコンで、押したまま横に引く人のために。
-     スクロールそのものを動かすので、止まる位置の決まりはそのまま効く */
-  var md=false, sx=0, s0=0;
-  addEventListener('mousedown', function(e){ md=true; sx=e.clientX; s0=scrollX; });
-  addEventListener('mousemove', function(e){
-    if(!md) return;
-    e.preventDefault();
-    scrollTo(s0 - (e.clientX - sx), 0);
-  });
-  addEventListener('mouseup', function(){ md=false; });
-  addEventListener('mouseleave', function(){ md=false; });
+
+  function glide(to, ms, then){
+    var from = scrollX;
+    if(raf){ cancelAnimationFrame(raf); raf = 0; }
+    if(Math.abs(to - from) < 1){ if(then) then(); else tell(); return; }
+    /* 端末まかせの「止まる位置」は、1コマごとの動かしを引き戻す。
+       動かしている間だけ外して、着いたら戻す */
+    el.style.scrollSnapType = 'none';
+    var t0 = 0;
+    raf = requestAnimationFrame(function step(now){
+      if(!t0) t0 = now;
+      var p = (now - t0) / ms;
+      if(p > 1) p = 1;
+      scrollTo(from + (to - from) * ease(p), 0);
+      if(p < 1){ raf = requestAnimationFrame(step); return; }
+      raf = 0;
+      el.style.scrollSnapType = SNAP;
+      if(then) then(); else tell();
+    });
+  }
+
+  window.__film = {
+    to: function(i, jump){
+      var to = i * innerWidth;
+      /* 遠くへ飛ぶときは、行き先がまだ描かれていない。先に頼んでおく */
+      warm(i);
+      if(jump){
+        el.style.scrollSnapType = 'none';
+        scrollTo(to, 0);
+        el.style.scrollSnapType = SNAP;
+        last = i;
+        return;
+      }
+      glide(to, 460);
+    },
+    /* もう先が無いとき。行き止まりに当たった手ざわりを返す。
+       帯ぜんぶを動かすと1枚の大きな面になってしまうので、
+       いま見えている1枚だけを動かす（そこは画面1枚ぶんで済む） */
+    bump: function(dir){
+      var i = Math.round(scrollX / innerWidth);
+      var fp = document.querySelectorAll('.fp')[i];
+      if(!fp || fp.dataset.bump) return;
+      fp.dataset.bump = '1';
+      var d = Math.min(34, innerWidth * 0.045) * -dir;
+      fp.style.transition = 'transform .13s cubic-bezier(.3,0,.7,1)';
+      fp.style.transform = 'translateX(' + d + 'px)';
+      setTimeout(function(){
+        fp.style.transition = 'transform .34s cubic-bezier(.16,.86,.2,1)';
+        fp.style.transform = '';
+        setTimeout(function(){
+          fp.style.transition = '';
+          delete fp.dataset.bump;
+        }, 340);
+      }, 130);
+    }
+  };
+
+  /* 開いた直後のぶん。ここで前後を描いておくと、
+     いちばん最初の送りからもう滑る */
+  warm(Math.round(scrollX / innerWidth));
 })();
 `;
 
@@ -3914,7 +4040,17 @@ const FILM_JS = `
 const filmCSS = (g, n) => {
   const u = (px) => Math.round(px / g.gs);
   return `
-html{height:100%;scroll-snap-type:x mandatory;background:#0d1016}
+html{height:100%;scroll-snap-type:x mandatory;background:#0d1016;
+  /* 端まで来たあとの引っぱりを、外に渡さない。
+     渡すと、iPhone では画面ごと「前に戻る」が始まってしまう */
+  overscroll-behavior-x:contain;
+  /* ここを auto に戻すのが要。
+     サイト側のCSSは scroll-behavior:smooth を敷いている（ページ内の
+     行き先へ滑らかに飛ばすため）。それが効いていると、こちらが
+     1コマずつ置いていく位置ひとつひとつが「滑らかに」動かされ、
+     追いつけずに、はじめは這うように遅く、最後だけ飛ぶ動きになる。
+     送りの曲線はこちらで作るので、ここは素の動きに戻す。 */
+  scroll-behavior:auto}
 body{margin:0;height:100%;overflow-y:hidden;background:#0d1016}
 /* 送り終わりを1枚ずつで止める。棒は出さない（見本の邪魔になる） */
 html,body{scrollbar-width:none;-ms-overflow-style:none}
@@ -3988,11 +4124,13 @@ function slideFilm(jump) {
   if (!s || !f) return;
   const w = f.contentWindow;
   if (!w || !w.document.getElementById('film')) return;
-  const smooth = !jump && !matchMedia('(prefers-reduced-motion: reduce)').matches;
   /* すでにそこに居るなら、動かない＝知らせも来ない。
      行き先を覚えたままにすると、そのあとの指の送りを受けなくなる */
   filmWant = Math.round(w.scrollX / w.innerWidth) === s.i ? null : s.i;
-  w.scrollTo({ left: s.i * w.innerWidth, top: 0, behavior: smooth ? 'smooth' : 'auto' });
+  /* 送りは帯の中で動かす。1コマずつの動かしを枠ごしにやると、
+     コマの間隔がそろわず、かくつきになって出る */
+  if (w.__film) w.__film.to(s.i, jump || reduceMotion());
+  else w.scrollTo({ left: s.i * w.innerWidth, top: 0 });
 }
 
 function renderBldGallery() {
@@ -4066,7 +4204,12 @@ function bldTurn(dir) {
   const s = bldNow();
   if (bldStage !== 'pick' || !s || s.off) return;
   const next = s.i + dir;
-  if (next < 0 || next >= s.list.length) return;
+  if (next < 0 || next >= s.list.length) {
+    /* 行き止まり。黙って何も起きないと、壊れたのかどうか分からない */
+    const w = $('#bldFrame').contentWindow;
+    if (w && w.__film && !reduceMotion()) w.__film.bump(dir);
+    return;
+  }
   s.i = next;
   slideFilm();
   renderBldHead();
