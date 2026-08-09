@@ -146,6 +146,14 @@
       </div>
       <div class="bld-view">
         <div class="gal-wrap" id="bldGal"><iframe id="bldFrame" title="この段の見本"></iframe></div>
+        <!-- 上のバーと同じ並び。ここでも PC の見えかたを確かめられる。
+             見本の上に浮かせる（縦に段を増やすと、そのぶん実物が小さくなる） -->
+        <div class="devices sm" id="bldDev">
+          <button data-w="1280" type="button">PC</button>
+          <button data-w="820" type="button">タブ<i>レット</i></button>
+          <button data-w="390" type="button">スマ<i>ホ</i></button>
+          <span class="dev-zoom" id="bldZoom"></span>
+        </div>
         <button class="bld-arw prev" id="bldPrev" type="button" aria-label="前のかたち">‹</button>
         <button class="bld-arw next" id="bldNext" type="button" aria-label="次のかたち">›</button>
         <div class="bld-count" id="bldCount"></div>

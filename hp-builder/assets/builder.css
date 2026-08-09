@@ -911,6 +911,36 @@ input,select,textarea{font:inherit}
 .bld-head{display:flex;align-items:flex-start;gap:14px;justify-content:space-between}
 .bld-head h2{margin:0 0 4px}
 .bld-head .modal-sub{margin:0 0 14px}
+
+/* 見る幅の切り替え。見本の右上に浮かせる。
+
+   見出しの列に置くと、そのぶん縦に段が増える。狭い画面では
+   実物がそれだけ小さくなり、下の一行がはみ出して見えなくなった。
+   枚数の札と同じ浮かせかたにすれば、場所を取らない。
+
+   上のバーにも同じものがあり、狭い画面ではそちらは画面下に
+   貼り付く浮き島になる。その指定をそのまま受け取ると、
+   箱の中のこれまで画面下へ飛んでいく（実際そうなった）ので、
+   ここで打ち消しておく。 */
+.devices.sm{
+  position:absolute;top:10px;right:10px;z-index:6;
+  transform:none;bottom:auto;left:auto;
+  background:rgba(12,14,18,.72);backdrop-filter:blur(6px);
+  border-color:rgba(255,255,255,.14);box-shadow:none
+}
+.devices.sm button{padding:5px 10px;font-size:11px;color:rgba(255,255,255,.55)}
+.devices.sm button:hover{color:rgba(255,255,255,.8)}
+.devices.sm button.on{background:rgba(255,255,255,.16);color:#fff}
+.devices.sm .dev-zoom{
+  padding:0 8px;font-size:9.5px;color:rgba(255,255,255,.5);
+  border-left-color:rgba(255,255,255,.14)
+}
+.devices.sm .dev-zoom:empty{display:none}
+@media(max-width:560px){
+  .devices.sm{top:8px;right:8px}
+  .devices.sm button{padding:5px 8px;font-size:10.5px}
+  .devices.sm button i{display:none}
+}
 .bld-off{
   flex:none;background:transparent;border:1px solid var(--line2);color:var(--tx2);
   border-radius:999px;padding:7px 14px;font:inherit;font-size:12px;cursor:pointer;

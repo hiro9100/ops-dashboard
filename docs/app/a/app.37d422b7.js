@@ -3900,6 +3900,7 @@ function renderBldHead() {
     $('#bldPrev').disabled = s.i <= 0;
     $('#bldNext').disabled = s.i >= s.list.length - 1;
     $('#bldCount').textContent = many ? `${s.i + 1} / ${s.list.length}` : '';
+    renderBldDev();
   }
 
   $('#bldCancel').hidden = st === 'done';
@@ -4083,24 +4084,37 @@ html::-webkit-scrollbar,body::-webkit-scrollbar{width:0;height:0;display:none}
 `;
 };
 
-/* 帯を描く大きさ。
+/* 顔をえらぶとき、どの幅で見せるか。
 
-   ほかの一覧は、広い幅（1180px）で描いてから縮めている。並べて見くらべる
-   にはそれでよいが、この画面は「実物」を見せるのが役なので、スマホで
-   PCの姿を小さく映すと、字がつぶれて何も分からない。
-   狭い画面では縮めず、その幅のまま描く（＝スマホで見たときの実物）。 */
+   ここは「実物」を見せるのが役なので、はじめはいま使っている端末の幅に
+   合わせる（スマホで開いていきなりPCの姿だと、何が起きたのか分からない）。
+   ただし、スマホで作っている人もPCでの見えかたは確かめたい。
+   逆もある。上のバーと同じ3つを、この画面にも置く。 */
+let bldDevW = 1280;
+const bldDevAuto = () => (matchMedia('(max-width:820px)').matches ? 390 : 1280);
+
+/* 帯を描く大きさ。
+   選んだ幅で描いて、枠に入りきらないぶんだけ縮める。
+   枠より狭いときは、縮めずにまん中へ置く（スマホの姿を実寸で見せる）。 */
 function filmGeom(f) {
   const wrap = f.parentElement;
   const W = wrap.clientWidth || Math.min(window.innerWidth - 48, GAL_W);
   const H = wrap.clientHeight || Math.round(window.innerHeight * 0.52);
-  const rw = W < 620 ? W : GAL_W;      // 描く幅
+  /* スマホの姿を、スマホで見ているとき。
+     390px で描いて縮めると、字が本当より小さく出る。この幅なら
+     枠にそのまま入るので、縮めずに実寸で見せる（＝いま持っている
+     端末での実物）。広い画面で選んだときは 390px で描いてまん中へ。 */
+  const rw = bldDevW <= 420 ? Math.min(bldDevW, Math.max(280, W)) : bldDevW;
   return { W, H, rw, gs: Math.min(1, W / rw) };
 }
 
 function sizeFilmFrame(f, g) {
+  const shown = g.rw * g.gs;
   f.style.position = 'absolute';
   f.style.top = '0';
-  f.style.left = '0';
+  /* 縮めずに済む幅のときは、枠のまん中に置く。
+     左端に寄せると、右に使われない帯が残って汚れて見える */
+  f.style.left = `${Math.max(0, Math.round((g.W - shown) / 2))}px`;
   f.style.width = `${g.rw}px`;
   f.style.minHeight = '0';
   f.style.height = `${Math.round(g.H / g.gs)}px`;
@@ -4200,6 +4214,28 @@ addEventListener('message', (e) => {
 });
 
 /* かたちを1つ送る。端では止める（輪にすると、何周目か分からなくなる） */
+/* いま選んでいる幅を、ボタンと倍率に映す。
+   倍率を出さないと、縮めて見せているだけなのに
+   「文字が小さいデザイン」と受け取られる（上のバーで実際にあった） */
+function renderBldDev() {
+  $$('#bldDev button').forEach((x) => x.classList.toggle('on', +x.dataset.w === bldDevW));
+  const f = $('#bldFrame');
+  const g = f ? filmGeom(f) : null;
+  const z = $('#bldZoom');
+  if (z) z.textContent = g && g.gs < 0.995 ? `${Math.round(g.gs * 100)}%` : '';
+}
+
+$('#bldDev').addEventListener('click', (e) => {
+  const b = e.target.closest('button');
+  if (!b) return;
+  const w = +b.dataset.w;
+  if (w === bldDevW) return;
+  bldDevW = w;
+  /* 見ていたかたちはそのまま。幅だけ描き直す */
+  renderBldGallery();
+  renderBldHead();
+});
+
 function bldTurn(dir) {
   const s = bldNow();
   if (bldStage !== 'pick' || !s || s.off) return;
@@ -4522,6 +4558,7 @@ function openBuild(fresh) {
   bldNames.clear();
   bldNeedBlock.clear();
   buildBldQueue();
+  bldDevW = bldDevAuto();
   if (fresh || !state) state = buildCustomState();
   selected = page().blocks[0].id;
   selectedEl = null;
