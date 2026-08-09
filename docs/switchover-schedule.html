@@ -1,0 +1,555 @@
+<title>乗り換えスケジュール自動計算 — アスリートクラス</title>
+<style>
+  :root{
+    --primary:#38B2F0; --primary-strong:#1A8ED6; --primary-soft:#EBF8FF;
+    --bg:#F4F8FB; --surface:#FFFFFF; --surface-2:#F8FBFD;
+    --text:#1A202C; --text-2:#4A5568; --text-3:#718096;
+    --border:#E2EEF5; --border-strong:#CBD5E0;
+    --danger:#C53030; --danger-bg:#FFF5F5; --danger-line:#F56565;
+    --warning:#9C6F14; --warning-bg:#FFFBEB; --warning-line:#ECC94B;
+    --success:#276749; --success-bg:#F0FFF4; --success-line:#48BB78;
+    color-scheme:light;
+    --radius:12px; --radius-lg:16px;
+    --shadow-sm:0 1px 3px rgba(26,60,90,.07), 0 1px 2px rgba(26,60,90,.04);
+    --shadow:0 4px 16px rgba(26,60,90,.07);
+    --sans:'Noto Sans JP','Hiragino Kaku Gothic ProN',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+    --mono:ui-monospace,SFMono-Regular,'SF Mono',Menlo,'Roboto Mono',monospace;
+  }
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]){
+      color-scheme:dark;
+      --primary:#5CC3F7; --primary-strong:#8FD6FA; --primary-soft:#12303F;
+      --bg:#101822; --surface:#17212D; --surface-2:#1D2836;
+      --text:#E3EBF2; --text-2:#A7B6C6; --text-3:#7F8FA3;
+      --border:#26374A; --border-strong:#3A4E66;
+      --danger:#FC8181; --danger-bg:#37191E; --danger-line:#E05252;
+      --warning:#ECC94B; --warning-bg:#332B12; --warning-line:#C9A227;
+      --success:#68D391; --success-bg:#14301E; --success-line:#3E9B63;
+      --shadow-sm:0 1px 3px rgba(0,0,0,.4);
+      --shadow:0 4px 16px rgba(0,0,0,.45);
+    }
+  }
+  :root[data-theme="dark"]{
+    color-scheme:dark;
+    --primary:#5CC3F7; --primary-strong:#8FD6FA; --primary-soft:#12303F;
+    --bg:#101822; --surface:#17212D; --surface-2:#1D2836;
+    --text:#E3EBF2; --text-2:#A7B6C6; --text-3:#7F8FA3;
+    --border:#26374A; --border-strong:#3A4E66;
+    --danger:#FC8181; --danger-bg:#37191E; --danger-line:#E05252;
+    --warning:#ECC94B; --warning-bg:#332B12; --warning-line:#C9A227;
+    --success:#68D391; --success-bg:#14301E; --success-line:#3E9B63;
+    --shadow-sm:0 1px 3px rgba(0,0,0,.4);
+    --shadow:0 4px 16px rgba(0,0,0,.45);
+  }
+
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--bg); color:var(--text);
+    font-family:var(--sans); line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1080px; margin:0 auto; padding:28px 20px 72px; display:flex; flex-direction:column; gap:22px}
+
+  /* ---- header ---- */
+  .masthead{display:flex; flex-wrap:wrap; align-items:flex-end; gap:12px 18px; border-bottom:2px solid var(--border); padding-bottom:14px}
+  .masthead h1{margin:0; font-size:1.5rem; font-weight:700; letter-spacing:.01em; text-wrap:balance}
+  .eyebrow{font-size:.7rem; font-weight:700; letter-spacing:.14em; color:var(--primary-strong); text-transform:uppercase}
+  .masthead p{margin:0; color:var(--text-3); font-size:.85rem; margin-left:auto}
+
+  /* ---- cards ---- */
+  .card{background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg); box-shadow:var(--shadow-sm)}
+  .card-hd{display:flex; align-items:baseline; gap:10px; padding:16px 20px 0}
+  .card-hd h2{margin:0; font-size:1rem; font-weight:700}
+  .card-hd span{font-size:.78rem; color:var(--text-3)}
+  .card-bd{padding:16px 20px 20px}
+
+  /* ---- form ---- */
+  .grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(215px,1fr)); gap:14px 16px}
+  .field{display:flex; flex-direction:column; gap:5px; min-width:0}
+  .field label{font-size:.78rem; font-weight:700; color:var(--text-2)}
+  .field .hint{font-size:.7rem; color:var(--text-3); line-height:1.4}
+  select,input{
+    font:inherit; font-size:.88rem; color:var(--text); background:var(--surface-2);
+    border:1px solid var(--border-strong); border-radius:var(--radius);
+    padding:8px 10px; width:100%; min-width:0;
+  }
+  select:focus-visible,input:focus-visible,button:focus-visible,summary:focus-visible{
+    outline:2px solid var(--primary); outline-offset:2px;
+  }
+  .row-sep{margin:18px 0 0; border:0; border-top:1px dashed var(--border); }
+  .adv summary{cursor:pointer; font-size:.8rem; font-weight:700; color:var(--text-2); padding:14px 0 0; list-style:none; display:flex; align-items:center; gap:6px}
+  .adv summary::before{content:"▸"; color:var(--primary-strong); transition:transform .15s}
+  .adv[open] summary::before{transform:rotate(90deg)}
+  .adv .grid{padding-top:12px}
+
+  /* ---- verdict tiles ---- */
+  .tiles{display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:14px}
+  .tile{background:var(--surface); border:1px solid var(--border); border-left:4px solid var(--border-strong); border-radius:var(--radius); padding:14px 16px; display:flex; flex-direction:column; gap:3px; box-shadow:var(--shadow-sm)}
+  .tile .k{font-size:.72rem; font-weight:700; letter-spacing:.06em; color:var(--text-3)}
+  .tile .v{font-family:var(--mono); font-variant-numeric:tabular-nums; font-size:1.42rem; font-weight:700; line-height:1.25}
+  .tile .s{font-size:.75rem; color:var(--text-2)}
+  .tile.stop{border-left-color:var(--danger-line); background:var(--danger-bg)}
+  .tile.stop .v{color:var(--danger)}
+  .tile.go{border-left-color:var(--primary); background:var(--primary-soft)}
+  .tile.go .v{color:var(--primary-strong)}
+  .tile.warn{border-left-color:var(--warning-line); background:var(--warning-bg)}
+  .tile.warn .v{color:var(--warning)}
+
+  .alert{border-radius:var(--radius); padding:12px 16px; font-size:.85rem; display:flex; gap:10px; align-items:flex-start; border:1px solid}
+  .alert b{font-weight:700}
+  .alert.bad{background:var(--danger-bg); border-color:var(--danger-line); color:var(--danger)}
+  .alert.ok{background:var(--success-bg); border-color:var(--success-line); color:var(--success)}
+  .alert.info{background:var(--warning-bg); border-color:var(--warning-line); color:var(--warning)}
+
+  /* ---- tables ---- */
+  .scroll{overflow-x:auto; -webkit-overflow-scrolling:touch}
+  table{border-collapse:collapse; width:100%; font-size:.85rem; min-width:640px}
+  th,td{text-align:left; padding:9px 12px; border-bottom:1px solid var(--border); vertical-align:top}
+  thead th{font-size:.72rem; letter-spacing:.06em; color:var(--text-3); font-weight:700; background:var(--surface-2); position:sticky; top:0; white-space:nowrap}
+  tbody tr:last-child td{border-bottom:0}
+  td.date{font-family:var(--mono); font-variant-numeric:tabular-nums; white-space:nowrap; font-weight:600}
+  td.num{font-family:var(--mono); font-variant-numeric:tabular-nums; white-space:nowrap; color:var(--text-2); text-align:right}
+  td.what{min-width:210px}
+  td.what b{display:block; font-weight:700}
+  td.what span{color:var(--text-2); font-size:.79rem}
+  tr.milestone td{background:var(--primary-soft)}
+  tr.milestone td.date{color:var(--primary-strong)}
+  tr.hard td.date{color:var(--danger)}
+  tr.past td{opacity:.5}
+  td.stripe{border-left:4px solid transparent; padding-left:9px}
+  tr.hard td.stripe{border-left-color:var(--danger-line)}
+  tr.milestone td.stripe{border-left-color:var(--primary)}
+  tr.soon td.stripe{border-left-color:var(--warning-line)}
+
+  .pill{display:inline-block; font-size:.68rem; font-weight:700; padding:2px 8px; border-radius:999px; white-space:nowrap; border:1px solid}
+  .pill.hard{color:var(--danger); background:var(--danger-bg); border-color:var(--danger-line)}
+  .pill.soft{color:var(--text-2); background:var(--surface-2); border-color:var(--border-strong)}
+  .pill.key{color:var(--primary-strong); background:var(--primary-soft); border-color:var(--primary)}
+  .pill.chk{color:var(--warning); background:var(--warning-bg); border-color:var(--warning-line)}
+
+  button.act{
+    font:inherit; font-size:.8rem; font-weight:700; cursor:pointer;
+    background:var(--primary); color:#06232F; border:0; border-radius:var(--radius);
+    padding:8px 16px;
+  }
+  button.act:hover{background:var(--primary-strong)}
+  button.ghost{background:transparent; color:var(--text-2); border:1px solid var(--border-strong)}
+  button.ghost:hover{background:var(--surface-2); color:var(--text)}
+  .actions{display:flex; gap:10px; flex-wrap:wrap; align-items:center}
+  .actions .note{font-size:.75rem; color:var(--text-3)}
+
+  .legend{display:flex; flex-wrap:wrap; gap:8px 16px; font-size:.75rem; color:var(--text-3); padding:0 20px 16px}
+  footer{font-size:.75rem; color:var(--text-3); border-top:1px solid var(--border); padding-top:14px; line-height:1.7}
+  footer a{color:var(--primary-strong)}
+  @media (max-width:560px){
+    .masthead p{margin-left:0; width:100%}
+    .tile .v{font-size:1.25rem}
+  }
+  @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="wrap">
+  <header class="masthead">
+    <div>
+      <div class="eyebrow">アスリートクラス 運営</div>
+      <h1>乗り換えスケジュール自動計算</h1>
+    </div>
+    <p>いま使っている引き落とし会社を選ぶと、止める期限と全工程の実日付が出ます</p>
+  </header>
+
+  <section class="card">
+    <div class="card-hd"><h2>条件を選ぶ</h2><span>祝日・銀行休業日を含めた営業日で逆算します</span></div>
+    <div class="card-bd">
+      <div class="grid">
+        <div class="field">
+          <label for="oldCo">いま使っている引き落とし会社</label>
+          <select id="oldCo"></select>
+          <div class="hint" id="oldNote"></div>
+        </div>
+        <div class="field">
+          <label for="oldDay">いまの引落日</label>
+          <select id="oldDay"></select>
+          <div class="hint">土日祝なら翌営業日に繰り越して計算します</div>
+        </div>
+        <div class="field">
+          <label for="newCo">乗り換え先の会社</label>
+          <select id="newCo"></select>
+          <div class="hint" id="newNote"></div>
+        </div>
+        <div class="field">
+          <label for="newDay">新しい引落日</label>
+          <select id="newDay"></select>
+          <div class="hint">27日型が最も一般的です</div>
+        </div>
+        <div class="field">
+          <label for="startMonth">新システムでの初回引落 月</label>
+          <input type="month" id="startMonth">
+          <div class="hint">ここが基準日（D）になります</div>
+        </div>
+      </div>
+
+      <details class="adv">
+        <summary>旧システム側の条件（分かる範囲で。空欄なら一般的な値で計算）</summary>
+        <div class="grid">
+          <div class="field">
+            <label for="saasLead">旧管理システムの請求確定 リードタイム</label>
+            <input type="number" id="saasLead" min="0" max="60" step="1" value="30">
+            <div class="hint">引落日の何日前に請求が確定するか。多くのSaaSは20〜30日前</div>
+          </div>
+          <div class="field">
+            <label for="notice">旧システムの解約通知</label>
+            <input type="number" id="notice" min="0" max="180" step="1" value="60">
+            <div class="hint">解約希望日の何日前までに通知が必要か（契約書で要確認）</div>
+          </div>
+          <div class="field">
+            <label for="margin">安全マージン</label>
+            <input type="number" id="margin" min="0" max="10" step="1" value="3">
+            <div class="hint">締切の何営業日前に連絡を完了させるか</div>
+          </div>
+        </div>
+      </details>
+    </div>
+  </section>
+
+  <div id="alerts" style="display:flex;flex-direction:column;gap:10px"></div>
+
+  <section class="tiles" id="tiles"></section>
+
+  <section class="card">
+    <div class="card-hd">
+      <h2>全工程スケジュール</h2><span id="anchorLabel"></span>
+    </div>
+    <div class="scroll">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:104px">期日</th>
+            <th style="width:58px">残り</th>
+            <th>工程</th>
+            <th style="width:96px">種別</th>
+            <th style="width:64px">D差</th>
+          </tr>
+        </thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+    <div class="legend">
+      <span><span class="pill hard">締切</span> 過ぎたら止まらない／間に合わない日</span>
+      <span><span class="pill key">節目</span> 引落・入金など結果が出る日</span>
+      <span><span class="pill chk">要確認</span> 契約書で実日付の確認が必要</span>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="card-hd"><h2>この2社の締切ルール</h2><span>公開情報ベースの目安</span></div>
+    <div class="scroll"><table id="ruleTable"><tbody></tbody></table></div>
+    <div class="card-bd actions">
+      <button class="act" id="copyBtn" type="button">スケジュールをコピー</button>
+      <button class="act ghost" id="printBtn" type="button">印刷 / PDF</button>
+      <span class="note" id="copyNote"></span>
+    </div>
+  </section>
+
+  <footer>
+    締切は契約単位で個別設定されていることが多く、上記は公開情報にもとづく目安です。必ず各社の年間スケジュール表（振替日ごとのデータ伝送期限一覧）で実日付を確定してください。<br>
+    祝日は春分・秋分の計算式と振替休日・国民の休日、および金融機関休業日（12/31〜1/3）を反映しています。
+  </footer>
+</div>
+
+<script>
+"use strict";
+
+/* ============ 祝日・営業日 ============ */
+const WD = ['日','月','火','水','木','金','土'];
+const holidayCache = {};
+
+function key(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function mkd(y,m,day){ return new Date(y, m-1, day); }
+function nthMonday(y,m,n){
+  const first = mkd(y,m,1);
+  const day = 1 + ((8 - first.getDay()) % 7) + 7*(n-1);
+  return mkd(y,m,day);
+}
+function holidaysOf(y){
+  if (holidayCache[y]) return holidayCache[y];
+  const set = new Set();
+  const push = d => set.add(key(d));
+  const shunbun = Math.floor(20.8431 + 0.242194*(y-1980) - Math.floor((y-1980)/4));
+  const shubun  = Math.floor(23.2488 + 0.242194*(y-1980) - Math.floor((y-1980)/4));
+  [ mkd(y,1,1), nthMonday(y,1,2), mkd(y,2,11), mkd(y,2,23), mkd(y,3,shunbun),
+    mkd(y,4,29), mkd(y,5,3), mkd(y,5,4), mkd(y,5,5), nthMonday(y,7,3),
+    mkd(y,8,11), nthMonday(y,9,3), mkd(y,9,shubun), nthMonday(y,10,2),
+    mkd(y,11,3), mkd(y,11,23)
+  ].forEach(push);
+
+  // 振替休日：日曜と重なったら後ろの最初の平日
+  const base = Array.from(set).sort();
+  base.forEach(k => {
+    const [yy,mm,dd] = k.split('-').map(Number);
+    const d = mkd(yy,mm,dd);
+    if (d.getDay() === 0){
+      let n = new Date(d);
+      do { n.setDate(n.getDate()+1); } while (set.has(key(n)));
+      set.add(key(n));
+    }
+  });
+  // 国民の休日：祝日に挟まれた平日（敬老の日と秋分の日の間など）
+  for (let m=1;m<=12;m++){
+    const last = new Date(y,m,0).getDate();
+    for (let dd=2; dd<last; dd++){
+      const d = mkd(y,m,dd);
+      if (set.has(key(d)) || d.getDay()===0) continue;
+      const p = mkd(y,m,dd-1), n = mkd(y,m,dd+1);
+      if (set.has(key(p)) && set.has(key(n))) set.add(key(d));
+    }
+  }
+  // 金融機関休業日
+  [mkd(y,12,31), mkd(y,1,2), mkd(y,1,3)].forEach(push);
+  holidayCache[y] = set;
+  return set;
+}
+function isBiz(d){
+  const w = d.getDay();
+  if (w === 0 || w === 6) return false;
+  return !holidaysOf(d.getFullYear()).has(key(d));
+}
+function addDays(d,n){ const r = new Date(d); r.setDate(r.getDate()+n); return r; }
+function nextBiz(d){ let r = new Date(d); while(!isBiz(r)) r = addDays(r,1); return r; }
+function prevBiz(d){ let r = new Date(d); while(!isBiz(r)) r = addDays(r,-1); return r; }
+function addBiz(d,n){
+  let r = new Date(d), step = n < 0 ? -1 : 1, left = Math.abs(n);
+  while (left > 0){ r = addDays(r, step); if (isBiz(r)) left--; }
+  return r;
+}
+function fmt(d){ return `${d.getMonth()+1}/${d.getDate()}(${WD[d.getDay()]})`; }
+function fmtFull(d){ return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')} (${WD[d.getDay()]})`; }
+function daysBetween(a,b){ return Math.round((stripT(b)-stripT(a))/86400000); }
+function stripT(d){ return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime(); }
+
+/* ============ 引き落とし会社 ============ */
+// cutoff.type : 'bd' = 引落日のN営業日前 / 'cd' = 暦N日前 / 'pm' = 前月のD日
+const PROVIDERS = [
+  { id:'muf',  name:'三菱UFJファクター（ワイドネット）', days:[6,12,20,26,27,'eom'],
+    cutoff:{type:'bd', n:6, time:'正午'}, result:{type:'bd', n:3}, payout:{type:'bd', n:6},
+    confident:true, note:'月6回から振替日を選択。締切は引落日の6営業日前 正午。' },
+  { id:'smbc', name:'SMBCファイナンスサービス', days:[5,6,8,23,26,27],
+    cutoff:{type:'cd', n:14, time:'正午'}, result:{type:'bd', n:3}, payout:{type:'bd', n:8},
+    confident:false, note:'27日固定型とセレクト型がある。紙の依頼書は前月27日着が別途必要。' },
+  { id:'gmo',  name:'GMOペイメントゲートウェイ / GMOイプシロン', days:[5,6,23,27],
+    cutoff:{type:'cd', n:14, time:'正午'}, result:{type:'bd', n:5}, payout:{type:'bd', n:8},
+    confident:true, note:'振替依頼の受付期間は前々月中旬〜引落日の約14日前 正午まで。' },
+  { id:'ricoh',name:'リコーリース（集金代行 / コレクト！）', days:[4,20,27],
+    cutoff:{type:'bd', n:10, time:''}, result:{type:'bd', n:4}, payout:{type:'bd', n:6},
+    confident:false, note:'締切は契約添付の年間スケジュール表で確定が必要（8〜10営業日前が一般的）。' },
+  { id:'rp',   name:'ロボットペイメント（サブスクペイ RP口座振替）', days:[10,26],
+    cutoff:{type:'pm', day:26, time:'11:00'}, result:{type:'bd', n:5}, payout:{type:'bd', n:11},
+    confident:true, note:'請求データは前月26日 11:00 まで。依頼書は初回引落の前月末までにJCB着。' },
+  { id:'yucho',name:'ゆうちょ銀行 自動払込み', days:[4,5,10,15,20,25,26,27,'eom'],
+    cutoff:{type:'bd', n:10, time:''}, result:{type:'bd', n:3}, payout:{type:'bd', n:5},
+    confident:false, note:'データ提出期限延長オプション利用時は払込日の1営業日前 17:00。' },
+  { id:'bank', name:'銀行の自行口座振替（地銀・信金と直接契約）', days:[4,5,10,15,20,25,26,27,'eom'],
+    cutoff:{type:'bd', n:8, time:''}, result:{type:'bd', n:3}, payout:{type:'bd', n:6},
+    confident:false, note:'銀行配布の年間日程表にある「データ伝送期限」が正。6〜10営業日前が目安。' },
+  { id:'card', name:'クレジットカード継続課金（カード決済）', days:[1,5,10,15,20,25,27,'eom'],
+    cutoff:{type:'bd', n:1, time:''}, result:{type:'bd', n:1}, payout:{type:'bd', n:20},
+    confident:true, note:'課金バッチ実行の前日までに定期課金をOFFにすれば止まる。締め日により入金は15日〜翌月末。' },
+  { id:'conveni', name:'コンビニ払い・後払い（atone / NP後払い 等）', days:[10,15,20,25,27,'eom'],
+    cutoff:{type:'bd', n:10, time:''}, result:{type:'bd', n:3}, payout:{type:'bd', n:15},
+    confident:false, note:'払込票は発券後は止められない。請求発行バッチの前に止める必要がある。' }
+];
+const byId = id => PROVIDERS.find(p => p.id === id);
+
+function debitDate(y,m,day){
+  // 月末指定は月をまたがないよう最終営業日に繰り上げ。日付指定は翌営業日に繰り下げ。
+  if (day === 'eom') return prevBiz(new Date(y, m, 0));
+  return nextBiz(mkd(y,m,day));
+}
+// 締切系は引落日から遡る
+function resolve(rule, base){
+  if (rule.type === 'bd') return addBiz(base, -rule.n);
+  if (rule.type === 'cd') return prevBiz(addDays(base, -rule.n));
+  if (rule.type === 'pm') return prevBiz(new Date(base.getFullYear(), base.getMonth()-1, rule.day));
+  return base;
+}
+// 結果返却・入金は引落日から進む
+function resolveAfter(rule, base){ return addBiz(base, rule.n); }
+function cutoffLabel(p){
+  const c = p.cutoff;
+  const t = c.time ? ` ${c.time}` : '';
+  if (c.type === 'bd') return `引落日の${c.n}営業日前${t}`;
+  if (c.type === 'cd') return `引落日の${c.n}日前${t}`;
+  if (c.type === 'pm') return `前月${c.day}日${t}`;
+  return '—';
+}
+
+/* ============ 画面 ============ */
+const $ = id => document.getElementById(id);
+const els = { oldCo:$('oldCo'), oldDay:$('oldDay'), newCo:$('newCo'), newDay:$('newDay'),
+  startMonth:$('startMonth'), saasLead:$('saasLead'), notice:$('notice'), margin:$('margin') };
+
+function fillProviders(sel, def){
+  sel.innerHTML = PROVIDERS.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+  sel.value = def;
+}
+function fillDays(sel, p, prefer){
+  sel.innerHTML = p.days.map(d => `<option value="${d}">${d === 'eom' ? '月末' : d + '日'}</option>`).join('');
+  sel.value = p.days.includes(prefer) ? prefer : p.days[p.days.length-1];
+}
+
+const today = new Date();
+fillProviders(els.oldCo, 'ricoh');
+fillProviders(els.newCo, 'muf');
+fillDays(els.oldDay, byId('ricoh'), 27);
+fillDays(els.newDay, byId('muf'), 27);
+{
+  const t = new Date(today.getFullYear(), today.getMonth()+3, 1);
+  els.startMonth.value = `${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,'0')}`;
+}
+
+els.oldCo.addEventListener('change', () => { fillDays(els.oldDay, byId(els.oldCo.value), 27); render(); });
+els.newCo.addEventListener('change', () => { fillDays(els.newDay, byId(els.newCo.value), 27); render(); });
+[els.oldDay, els.newDay, els.startMonth, els.saasLead, els.notice, els.margin]
+  .forEach(e => e.addEventListener('change', render));
+
+let lastPlan = null;
+
+function compute(){
+  const oldP = byId(els.oldCo.value), newP = byId(els.newCo.value);
+  const mv = els.startMonth.value;
+  if (!mv) return null;
+  const [Y, M] = mv.split('-').map(Number);
+  const oldDay = els.oldDay.value === 'eom' ? 'eom' : Number(els.oldDay.value);
+  const newDay = els.newDay.value === 'eom' ? 'eom' : Number(els.newDay.value);
+  const saasLead = Number(els.saasLead.value) || 0;
+  const noticeDays = Number(els.notice.value) || 0;
+  const marginBiz = Number(els.margin.value) || 0;
+
+  const D = debitDate(Y, M, newDay);                       // 新・初回引落日
+  const oldSameMonth = debitDate(Y, M, oldDay);            // 旧・止めたい月の引落日
+  const oldLast = debitDate(M === 1 ? Y-1 : Y, M === 1 ? 12 : M-1, oldDay); // 旧・最終引落
+
+  const newCut  = resolve(newP.cutoff, D);
+  const oldCut  = resolve(oldP.cutoff, oldSameMonth);
+  const saasFix = prevBiz(addDays(oldSameMonth, -saasLead));
+  const binding = stripT(saasFix) < stripT(oldCut) ? saasFix : oldCut;
+  const stopBy  = addBiz(binding, -marginBiz);
+
+  const cancelWish = new Date(D.getFullYear(), D.getMonth()+1, 0);  // 解約希望日＝初回引落月の月末
+  const noticeBy   = prevBiz(addDays(cancelWish, -noticeDays));
+
+  const steps = [
+    { off:-75, name:'カード決済の審査申請',        detail:'加盟店審査は5営業日〜3週間。特商法表記・返金規定・事業実態資料を先に用意', kind:'task' },
+    { off:-75, name:'口座振替の審査申請',          detail:'最長工程。審査2〜4週間＋口座登録のリードタイムが別途かかる', kind:'task' },
+    { off:-45, name:'審査通過・振替日と締切の確定', detail:'新旧両社の年間スケジュール表を入手し、実日付を確定させる', kind:'check' },
+    { off:-45, name:'保護者へ連絡①（予告）',       detail:'いつから／引落日／通帳の表示名が変わること／Web口振の登録依頼', kind:'task' },
+    { at:noticeBy, name:'旧システムへ解約通知',     detail:`解約希望日 ${fmt(cancelWish)} の${noticeDays}日前。データエクスポートは解約前に必ず取得`, kind:'check' },
+    { at:stopBy,  name:'旧システムの引き落としを止める', detail:`拘束条件は ${fmtFull(binding)}（${stripT(saasFix) < stripT(oldCut) ? '旧SaaSの請求確定' : '旧・収納代行の締切'}）。停止の証跡を残す`, kind:'hard' },
+    { off:-30, name:'口座振替の登録回収（Web口振 / 依頼書）', detail:'未登録者リストを毎週更新。間に合わない家庭は当月のみ振込かカードで回収', kind:'task' },
+    { off:-30, name:'コーチの登録',                detail:'権限ロール（管理者／コーチ／閲覧）を先に設計し、ログイン確認まで', kind:'task' },
+    { off:-25, name:'クラスの登録',                detail:'曜日・時間・定員・料金プラン。料金プランIDが請求のキーになるので命名規則を固定', kind:'task' },
+    { off:-20, name:'生徒名簿の移行',              detail:'氏名・生年月日・在籍クラス・料金・兄弟割・休会者。休会/退会者を請求対象に混ぜない', kind:'task' },
+    { at:oldLast, name:'旧システムでの最終引き落とし', detail:'ここまでは旧で回す。結果と振替不能者を確認', kind:'milestone' },
+    { off:-15, name:'請求データの照合',            detail:'旧最終月と新初回の請求額を1人ずつ突き合わせ、差分ゼロを確認', kind:'check' },
+    { at:addBiz(newCut,-2), name:'新システムへ初回請求データを提出', detail:`締切は ${fmtFull(newCut)}（${cutoffLabel(newP)}）。当日提出は事故になる`, kind:'hard' },
+    { off:-7,  name:'保護者へ連絡②（直前）',       detail:'引落日・通帳の表示名・残高確認のお願い。表示名の周知漏れが問い合わせの最大要因', kind:'task' },
+    { at:D, name:'新システムで引き落とし開始',      detail:'基準日（D）。当日は保護者からの問い合わせ窓口を空けておく', kind:'milestone' },
+    { at:resolveAfter(newP.result, D), name:'振替結果の確認・不能者のリカバリ', detail:`引落日の${newP.result.n}営業日後。不能者へ再請求し、旧側の二重引落がないかも同時に確認`, kind:'milestone' },
+    { at:resolveAfter(newP.payout, D), name:'入金', detail:`引落日の${newP.payout.n}営業日後に手数料控除後の金額が入金`, kind:'milestone' }
+    // 固定日（at）は算出済み。相対日（off）は土日祝に落ちないよう前営業日へ丸める
+  ].map(s => ({ ...s, date: s.at ? s.at : prevBiz(addDays(D, s.off)) }))
+   .sort((a,b) => stripT(a.date) - stripT(b.date));
+
+  return { oldP, newP, oldDay, newDay, D, oldSameMonth, oldLast, newCut, oldCut, saasFix,
+           binding, stopBy, noticeBy, cancelWish, steps, saasLead, noticeDays, marginBiz };
+}
+
+function render(){
+  const p = compute();
+  if (!p) return;
+  lastPlan = p;
+
+  /* --- tiles --- */
+  const dTo = d => { const n = daysBetween(today, d); return n < 0 ? `${-n}日超過` : n === 0 ? '今日' : `あと${n}日`; };
+  $('tiles').innerHTML = [
+    { c:'stop', k:'旧側に「止めて」と連絡する期限', v:fmtFull(p.stopBy), s:`拘束条件 ${fmt(p.binding)} の${p.marginBiz}営業日前 ／ ${dTo(p.stopBy)}` },
+    { c:'warn', k:'新側へ請求データを出す締切',     v:fmtFull(p.newCut), s:`${cutoffLabel(p.newP)} ／ ${dTo(p.newCut)}` },
+    { c:'go',   k:'新システムでの初回引き落とし',   v:fmtFull(p.D),      s:`旧の最終引落は ${fmt(p.oldLast)} ／ ${dTo(p.D)}` }
+  ].map(t => `<div class="tile ${t.c}"><div class="k">${t.k}</div><div class="v">${t.v}</div><div class="s">${t.s}</div></div>`).join('');
+
+  /* --- alerts --- */
+  const alerts = [];
+  const lead = daysBetween(today, p.D);
+  if (lead < 75) alerts.push({ c:'bad', t:'初回引落まで' + lead + '日しかありません。',
+    m:'口座振替は審査＋依頼書回収で最低75日みておく必要があります。初回引落を後ろにずらすか、初月はカード決済と振込だけで回してください。' });
+  if (daysBetween(today, p.stopBy) < 0) alerts.push({ c:'bad', t:'旧側を止める期限をすでに過ぎています。',
+    m:'この設定では旧システムの引き落としは止まりません（＝二重引落）。初回引落を1ヶ月後ろにずらすか、返金フローを先に決めてください。' });
+  if (!p.oldP.confident || !p.newP.confident) alerts.push({ c:'info', t:'締切が確定情報でない会社が含まれています。',
+    m:'該当社の年間スケジュール表（振替日ごとのデータ伝送期限一覧）を取り寄せて、実日付で上書きしてください。' });
+  if (alerts.length === 0) alerts.push({ c:'ok', t:'この日程なら間に合います。',
+    m:'ラグも二重引落も出ない構成です。あとは締切の実日付を契約書で裏取りしてください。' });
+  $('alerts').innerHTML = alerts.map(a => `<div class="alert ${a.c}"><span><b>${a.t}</b> ${a.m}</span></div>`).join('');
+
+  /* --- timeline --- */
+  $('anchorLabel').textContent = `D = ${fmtFull(p.D)}（新システムの初回引落日）`;
+  $('rows').innerHTML = p.steps.map(s => {
+    const n = daysBetween(today, s.date);
+    const cls = [];
+    if (n < 0) cls.push('past');
+    else if (n <= 7) cls.push('soon');
+    if (s.kind === 'hard') cls.push('hard');
+    if (s.kind === 'milestone') cls.push('milestone');
+    const pill = s.kind === 'hard' ? '<span class="pill hard">締切</span>'
+      : s.kind === 'milestone' ? '<span class="pill key">節目</span>'
+      : s.kind === 'check' ? '<span class="pill chk">要確認</span>'
+      : '<span class="pill soft">作業</span>';
+    const diff = daysBetween(p.D, s.date);
+    return `<tr class="${cls.join(' ')}">
+      <td class="stripe date">${fmtFull(s.date)}</td>
+      <td class="num">${n < 0 ? '—' : n === 0 ? '今日' : n + '日'}</td>
+      <td class="what"><b>${s.name}</b><span>${s.detail}</span></td>
+      <td>${pill}</td>
+      <td class="num">${diff === 0 ? 'D' : diff > 0 ? 'D+' + diff : 'D' + diff}</td>
+    </tr>`;
+  }).join('');
+
+  /* --- rule table --- */
+  const rule = (label, pr, day, debit) => `
+    <tr><td class="what"><b>${label}</b><span>${pr.name}</span></td>
+      <td class="date">${day === 'eom' ? '月末' : day + '日'} → ${fmtFull(debit)}</td>
+      <td>${cutoffLabel(pr)}</td>
+      <td class="date">${fmtFull(resolve(pr.cutoff, debit))}</td>
+      <td>${pr.confident ? '<span class="pill soft">公開情報あり</span>' : '<span class="pill chk">要確認</span>'}</td>
+    </tr>
+    <tr><td colspan="5" style="color:var(--text-2);font-size:.79rem">${pr.note}</td></tr>`;
+  $('ruleTable').innerHTML = `<thead><tr>
+      <th>区分</th><th>引落日</th><th>締切ルール</th><th>この月の締切</th><th>確度</th>
+    </tr></thead><tbody>
+      ${rule('いま使っている（旧）', p.oldP, p.oldDay, p.oldSameMonth)}
+      ${rule('乗り換え先（新）',     p.newP, p.newDay, p.D)}
+    </tbody>`;
+}
+
+/* --- copy / print --- */
+$('copyBtn').addEventListener('click', async () => {
+  const p = lastPlan; if (!p) return;
+  const lines = [
+    `# 乗り換えスケジュール（D = ${fmtFull(p.D)}）`, '',
+    `- 旧: ${p.oldP.name} / 引落日 ${p.oldDay === 'eom' ? '月末' : p.oldDay + '日'} / 締切 ${cutoffLabel(p.oldP)}`,
+    `- 新: ${p.newP.name} / 引落日 ${p.newDay === 'eom' ? '月末' : p.newDay + '日'} / 締切 ${cutoffLabel(p.newP)}`,
+    `- 旧を止める期限: ${fmtFull(p.stopBy)}`,
+    `- 新の請求データ締切: ${fmtFull(p.newCut)}`, '',
+    '| 期日 | 工程 | 種別 |', '|---|---|---|',
+    ...p.steps.map(s => `| ${fmtFull(s.date)} | ${s.name} | ${s.kind} |`)
+  ];
+  try {
+    await navigator.clipboard.writeText(lines.join('\n'));
+    $('copyNote').textContent = 'コピーしました';
+  } catch {
+    $('copyNote').textContent = 'コピーできませんでした。印刷から保存してください';
+  }
+  setTimeout(() => { $('copyNote').textContent = ''; }, 2600);
+});
+$('printBtn').addEventListener('click', () => window.print());
+
+render();
+</script>
