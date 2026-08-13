@@ -1,0 +1,881 @@
+<title>運動能力測定会パッケージ</title>
+<style>
+:root{
+  --ink:#0B1B26;
+  --ink-2:#22323D;
+  --slate:#5E7180;
+  --slate-2:#8397A5;
+  --paper:#FBFCFD;
+  --paper-2:#F1F6F9;
+  --card:#FFFFFF;
+  --mist:#DFEAF1;
+  --mist-2:#C8D9E4;
+  --sky:#1E96D8;
+  --sky-2:#38B2F0;
+  --sky-soft:#E8F5FD;
+  --flare:#E4572E;
+  --flare-soft:#FDEDE8;
+  --ok:#2F9E63;
+
+  --shadow-s:0 1px 2px rgba(11,27,38,.06), 0 2px 8px rgba(11,27,38,.05);
+  --shadow-m:0 2px 4px rgba(11,27,38,.05), 0 12px 32px rgba(11,27,38,.09);
+
+  --jp:'Hiragino Kaku Gothic ProN','Hiragino Sans','Yu Gothic','Noto Sans JP','Meiryo',sans-serif;
+  --mono:ui-monospace,'SF Mono','SFMono-Regular',Menlo,Consolas,'Liberation Mono',monospace;
+
+  --w:1100px;
+  --prose:660px;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --ink:#EAF2F7;
+    --ink-2:#C4D5E0;
+    --slate:#93A8B6;
+    --slate-2:#6F8492;
+    --paper:#08131B;
+    --paper-2:#0D1D27;
+    --card:#102430;
+    --mist:#1D3543;
+    --mist-2:#2A4655;
+    --sky:#4FB9F2;
+    --sky-2:#7FCEF7;
+    --sky-soft:#10303F;
+    --flare:#FF7E55;
+    --flare-soft:#33201A;
+    --ok:#4FC186;
+    --shadow-s:0 1px 2px rgba(0,0,0,.4);
+    --shadow-m:0 2px 4px rgba(0,0,0,.3), 0 14px 34px rgba(0,0,0,.45);
+  }
+}
+:root[data-theme="dark"]{
+  --ink:#EAF2F7;
+  --ink-2:#C4D5E0;
+  --slate:#93A8B6;
+  --slate-2:#6F8492;
+  --paper:#08131B;
+  --paper-2:#0D1D27;
+  --card:#102430;
+  --mist:#1D3543;
+  --mist-2:#2A4655;
+  --sky:#4FB9F2;
+  --sky-2:#7FCEF7;
+  --sky-soft:#10303F;
+  --flare:#FF7E55;
+  --flare-soft:#33201A;
+  --ok:#4FC186;
+  --shadow-s:0 1px 2px rgba(0,0,0,.4);
+  --shadow-m:0 2px 4px rgba(0,0,0,.3), 0 14px 34px rgba(0,0,0,.45);
+}
+
+*{box-sizing:border-box}
+body{
+  margin:0;
+  background:var(--paper);
+  color:var(--ink);
+  font-family:var(--jp);
+  font-size:16px;
+  line-height:1.85;
+  -webkit-font-smoothing:antialiased;
+  font-feature-settings:"palt" 1;
+}
+img,svg{max-width:100%}
+h1,h2,h3,h4{margin:0;line-height:1.35;text-wrap:balance;font-weight:800;letter-spacing:-.02em}
+p{margin:0}
+a{color:inherit}
+:focus-visible{outline:2px solid var(--sky);outline-offset:3px;border-radius:3px}
+
+.wrap{width:100%;max-width:var(--w);margin:0 auto;padding:0 24px}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums;font-feature-settings:"palt" 0}
+.eyebrow{
+  font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--sky);font-weight:600;
+}
+.scroll-x{overflow-x:auto;-webkit-overflow-scrolling:touch}
+
+/* ---------- section frame ---------- */
+.sec{padding:88px 0;border-top:1px solid var(--mist)}
+.sec-head{display:flex;flex-direction:column;gap:14px;margin-bottom:44px;max-width:var(--prose)}
+.sec-head h2{font-size:clamp(26px,4vw,38px)}
+.sec-head p{color:var(--slate);font-size:15px}
+
+/* ---------- hero ---------- */
+.hero{
+  background:
+    linear-gradient(180deg,rgba(11,27,38,0) 0%,rgba(11,27,38,.35) 100%),
+    radial-gradient(120% 90% at 82% 8%, #1B4A63 0%, #0B1B26 62%);
+  color:#EAF2F7;
+  position:relative;overflow:hidden;
+}
+/* lane rules — the track motif */
+.hero::before{
+  content:"";position:absolute;inset:0;pointer-events:none;
+  background-image:repeating-linear-gradient(90deg,
+    rgba(234,242,247,.055) 0 1px, transparent 1px 88px);
+}
+.hero-inner{
+  position:relative;
+  display:grid;grid-template-columns:1.08fr .92fr;gap:56px;align-items:center;
+  padding:84px 0 92px;
+}
+.hero-copy{display:flex;flex-direction:column;gap:26px;min-width:0}
+.hero h1{
+  font-size:clamp(38px,6.4vw,68px);letter-spacing:-.045em;line-height:1.12;font-weight:800;
+}
+.hero h1 .quiet{display:block;color:#7FCEF7;font-size:.44em;letter-spacing:.02em;font-weight:700;margin-bottom:16px;line-height:1.5}
+.hero-lede{color:#B7CDDA;font-size:17px;max-width:30em}
+.hero-lede b{color:#EAF2F7;font-weight:700}
+
+.pricebar{
+  display:flex;flex-wrap:wrap;align-items:stretch;gap:1px;
+  background:rgba(234,242,247,.14);border:1px solid rgba(234,242,247,.14);
+  border-radius:14px;overflow:hidden;width:fit-content;
+}
+.pricebar div{background:#0B1B26;padding:16px 24px;display:flex;flex-direction:column;gap:4px}
+.pricebar dt{font-size:11px;letter-spacing:.1em;color:#7E97A6;font-family:var(--mono);text-transform:uppercase}
+.pricebar dd{margin:0;font-size:24px;font-weight:800;letter-spacing:-.02em}
+.pricebar dd small{font-size:13px;font-weight:600;color:#B7CDDA;margin-left:3px}
+
+.cta-row{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+.btn{
+  display:inline-flex;align-items:center;gap:10px;
+  padding:15px 30px;border-radius:999px;font-weight:800;font-size:15px;
+  text-decoration:none;border:1px solid transparent;transition:transform .16s ease, box-shadow .16s ease, background .16s ease;
+}
+.btn-primary{background:var(--flare);color:#fff;box-shadow:0 6px 20px rgba(228,87,46,.35)}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 10px 26px rgba(228,87,46,.42)}
+.btn-ghost{border-color:rgba(234,242,247,.28);color:#EAF2F7}
+.btn-ghost:hover{background:rgba(234,242,247,.08)}
+@media (prefers-reduced-motion:reduce){.btn:hover{transform:none}}
+
+/* hero card = a report sheet fragment */
+.sheet{
+  background:#fff;color:#0B1B26;border-radius:18px;box-shadow:0 24px 60px rgba(0,0,0,.42);
+  overflow:hidden;
+}
+.sheet-top{
+  display:flex;justify-content:space-between;align-items:flex-start;gap:12px;
+  padding:16px 20px;border-bottom:1px solid #E4EDF3;
+}
+.sheet-top .who{font-size:15px;font-weight:800}
+.sheet-top .meta{font-size:11px;color:#5E7180;font-family:var(--mono);letter-spacing:.04em}
+.rank-badge{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  width:52px;height:52px;border-radius:12px;background:#0B1B26;color:#fff;flex:0 0 auto;
+}
+.rank-badge b{font-size:22px;line-height:1;font-weight:800;letter-spacing:-.03em}
+.rank-badge span{font-size:8px;letter-spacing:.16em;color:#7FCEF7;font-family:var(--mono);margin-top:3px}
+.sheet-body{display:grid;grid-template-columns:1fr 168px;gap:8px;padding:14px 18px 6px}
+.radar-wrap{min-width:0}
+.cat-list{display:flex;flex-direction:column;gap:6px;padding-top:6px}
+.cat{display:grid;grid-template-columns:1fr 22px;gap:8px;align-items:center;font-size:11px}
+.cat span{color:#22323D;white-space:nowrap}
+.cat i{
+  font-style:normal;font-family:var(--mono);font-weight:700;font-size:11px;text-align:center;
+  border-radius:4px;padding:1px 0;background:#F1F6F9;color:#22323D;
+}
+.cat i.hi{background:#E4572E;color:#fff}
+.cat i.mid{background:#E8F5FD;color:#0E6FA8}
+.sheet-foot{
+  display:flex;flex-wrap:wrap;gap:8px;align-items:center;
+  padding:12px 18px 16px;border-top:1px solid #E4EDF3;margin-top:6px;
+}
+.chip{
+  font-size:11px;font-weight:700;padding:5px 11px;border-radius:999px;
+  background:#F1F6F9;color:#22323D;
+}
+.chip.type{background:#0B1B26;color:#fff}
+.chip.sport{background:#E8F5FD;color:#0E6FA8}
+.sheet-note{font-size:10px;color:#8397A5;padding:0 18px 14px;font-family:var(--mono);letter-spacing:.04em}
+
+@media (max-width:900px){
+  .hero-inner{grid-template-columns:1fr;gap:40px;padding:64px 0 72px}
+}
+
+/* ---------- 3 reasons ---------- */
+.reasons{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+.reason{
+  background:var(--card);border:1px solid var(--mist);border-radius:16px;padding:28px 26px 30px;
+  display:flex;flex-direction:column;gap:12px;box-shadow:var(--shadow-s);
+}
+.reason h3{font-size:18px}
+.reason p{font-size:14px;color:var(--slate);line-height:1.9}
+.reason .tag{
+  font-family:var(--mono);font-size:10px;letter-spacing:.14em;color:var(--sky);
+  border:1px solid var(--mist-2);border-radius:999px;padding:3px 10px;width:fit-content;
+}
+@media (max-width:820px){.reasons{grid-template-columns:1fr}}
+
+/* ---------- money ---------- */
+.money{display:grid;grid-template-columns:1.15fr .85fr;gap:32px;align-items:start}
+.calc{
+  border:1px solid var(--mist);border-radius:16px;overflow:hidden;background:var(--card);
+  box-shadow:var(--shadow-s);
+}
+table{border-collapse:collapse;width:100%;font-size:14px}
+.calc th,.calc td{padding:13px 18px;text-align:right;border-bottom:1px solid var(--mist)}
+.calc th:first-child,.calc td:first-child{text-align:left}
+.calc thead th{
+  background:var(--paper-2);font-family:var(--mono);font-size:11px;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--slate);font-weight:600;
+}
+.calc tbody td{font-family:var(--mono);font-variant-numeric:tabular-nums;font-weight:600}
+.calc tbody td:first-child{font-family:var(--jp);font-weight:500;color:var(--ink-2)}
+.calc tbody tr:last-child td{border-bottom:none}
+.calc .profit{color:var(--ok);font-weight:800}
+.calc .even td{background:var(--paper-2);color:var(--slate)}
+.calc .even .profit{color:var(--slate)}
+.calc-cap{padding:12px 18px;font-size:12px;color:var(--slate-2);background:var(--paper-2);border-top:1px solid var(--mist)}
+
+.aside-note{display:flex;flex-direction:column;gap:18px}
+.stat{
+  border-left:3px solid var(--sky);padding:4px 0 4px 18px;display:flex;flex-direction:column;gap:5px;
+}
+.stat b{font-family:var(--mono);font-size:30px;font-weight:800;letter-spacing:-.03em;line-height:1.1}
+.stat span{font-size:13px;color:var(--slate);line-height:1.8}
+.stat.flare{border-left-color:var(--flare)}
+
+@media (max-width:900px){.money{grid-template-columns:1fr}}
+
+/* ---------- package ---------- */
+.pack{display:grid;grid-template-columns:repeat(2,1fr);gap:0;border:1px solid var(--mist);border-radius:16px;overflow:hidden;background:var(--card)}
+.pack-item{padding:28px 28px 30px;border-right:1px solid var(--mist);border-bottom:1px solid var(--mist);display:flex;flex-direction:column;gap:10px}
+.pack-item:nth-child(2n){border-right:none}
+.pack-item h3{font-size:16px}
+.pack-item p{font-size:14px;color:var(--slate);line-height:1.9}
+@media (max-width:760px){
+  .pack{grid-template-columns:1fr}
+  .pack-item{border-right:none}
+}
+
+/* ---------- report explain ---------- */
+.report{display:grid;grid-template-columns:1fr 1fr;gap:44px;align-items:center}
+.feat{display:flex;flex-direction:column;gap:22px}
+.feat-row{display:grid;grid-template-columns:96px 1fr;gap:18px;align-items:baseline}
+.feat-row dt{
+  font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--sky);font-weight:600;padding-top:4px;
+}
+.feat-row dd{margin:0}
+.feat-row dd b{display:block;font-size:16px;font-weight:800;margin-bottom:4px}
+.feat-row dd span{font-size:14px;color:var(--slate);line-height:1.9}
+
+.rankscale{
+  display:flex;gap:3px;margin-top:6px;flex-wrap:wrap;
+}
+.rankscale i{
+  font-style:normal;font-family:var(--mono);font-size:11px;font-weight:700;
+  padding:4px 9px;border-radius:5px;background:var(--paper-2);color:var(--slate);border:1px solid var(--mist);
+}
+.rankscale i:first-child{background:var(--flare);color:#fff;border-color:var(--flare)}
+.rankscale i:nth-child(2){background:var(--flare-soft);color:var(--flare);border-color:transparent}
+@media (max-width:900px){.report{grid-template-columns:1fr;gap:36px}}
+
+/* ---------- timeline ---------- */
+.tl{display:grid;grid-template-columns:repeat(auto-fit,minmax(168px,1fr));gap:0;border:1px solid var(--mist);border-radius:16px;overflow:hidden;background:var(--card)}
+.tl-step{padding:24px 22px 26px;border-right:1px solid var(--mist);display:flex;flex-direction:column;gap:9px}
+.tl-step:last-child{border-right:none}
+.tl-step time{font-family:var(--mono);font-size:12px;font-weight:700;color:var(--sky);letter-spacing:.04em}
+.tl-step b{font-size:15px;font-weight:800}
+.tl-step p{font-size:13px;color:var(--slate);line-height:1.85}
+.tl-step.by-us{background:var(--sky-soft)}
+.tl-legend{display:flex;gap:18px;flex-wrap:wrap;margin-top:16px;font-size:12px;color:var(--slate)}
+.tl-legend span{display:flex;align-items:center;gap:7px}
+.tl-legend i{width:11px;height:11px;border-radius:3px;background:var(--sky-soft);border:1px solid var(--mist-2);display:inline-block}
+.tl-legend i.club{background:var(--card)}
+@media (max-width:760px){
+  .tl{grid-template-columns:1fr}
+  .tl-step{border-right:none;border-bottom:1px solid var(--mist)}
+  .tl-step:last-child{border-bottom:none}
+}
+
+/* ---------- requirements ---------- */
+.req{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+.req-card{border:1px solid var(--mist);border-radius:16px;padding:26px;background:var(--card);display:flex;flex-direction:column;gap:14px}
+.req-card h3{font-size:15px;display:flex;align-items:center;gap:8px}
+.req-card ul{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:9px}
+.req-card li{font-size:14px;color:var(--slate);padding-left:18px;position:relative;line-height:1.8}
+.req-card li::before{
+  content:"";position:absolute;left:0;top:.72em;width:7px;height:7px;border-radius:2px;
+  background:var(--sky);
+}
+@media (max-width:820px){.req{grid-template-columns:1fr}}
+
+/* ---------- price ---------- */
+.plan{
+  border:1px solid var(--mist);border-radius:20px;background:var(--card);overflow:hidden;
+  box-shadow:var(--shadow-m);max-width:760px;
+}
+.plan-top{
+  padding:34px 36px;display:flex;flex-wrap:wrap;justify-content:space-between;gap:20px;align-items:flex-end;
+  border-bottom:1px solid var(--mist);
+}
+.plan-top .label{display:flex;flex-direction:column;gap:6px}
+.plan-top .label b{font-size:20px}
+.plan-top .label span{font-size:13px;color:var(--slate)}
+.plan-price{display:flex;align-items:baseline;gap:6px;font-family:var(--mono)}
+.plan-price .amt{font-size:48px;font-weight:800;letter-spacing:-.04em;line-height:1}
+.plan-price .unit{font-size:14px;color:var(--slate);font-weight:600}
+.plan-list{padding:26px 36px 30px;display:grid;grid-template-columns:1fr 1fr;gap:12px 28px}
+.plan-list div{font-size:14px;color:var(--ink-2);padding-left:22px;position:relative;line-height:1.8}
+.plan-list div::before{
+  content:"";position:absolute;left:2px;top:.55em;width:10px;height:6px;
+  border-left:2px solid var(--ok);border-bottom:2px solid var(--ok);transform:rotate(-45deg);
+}
+.plan-foot{padding:18px 36px 24px;background:var(--paper-2);border-top:1px solid var(--mist);font-size:13px;color:var(--slate);line-height:1.9}
+@media (max-width:640px){
+  .plan-list{grid-template-columns:1fr}
+  .plan-top,.plan-list,.plan-foot{padding-left:24px;padding-right:24px}
+}
+
+/* ---------- faq ---------- */
+.faq{max-width:var(--prose);display:flex;flex-direction:column;gap:0;border-top:1px solid var(--mist)}
+details{border-bottom:1px solid var(--mist)}
+summary{
+  cursor:pointer;padding:20px 34px 20px 0;font-weight:700;font-size:15px;position:relative;
+  list-style:none;line-height:1.7;
+}
+summary::-webkit-details-marker{display:none}
+summary::after{
+  content:"";position:absolute;right:6px;top:29px;width:9px;height:9px;
+  border-right:2px solid var(--slate);border-bottom:2px solid var(--slate);
+  transform:rotate(45deg);transition:transform .2s ease;
+}
+details[open] summary::after{transform:rotate(-135deg);top:32px}
+details p{padding:0 0 22px;font-size:14px;color:var(--slate);line-height:1.95}
+@media (prefers-reduced-motion:reduce){summary::after{transition:none}}
+
+/* ---------- closing ---------- */
+.close{
+  background:radial-gradient(120% 120% at 20% 0%, #1B4A63 0%, #0B1B26 65%);
+  color:#EAF2F7;text-align:center;padding:96px 0 104px;position:relative;overflow:hidden;
+}
+.close::before{
+  content:"";position:absolute;inset:0;pointer-events:none;
+  background-image:repeating-linear-gradient(90deg,rgba(234,242,247,.05) 0 1px,transparent 1px 88px);
+}
+.close-inner{position:relative;display:flex;flex-direction:column;align-items:center;gap:24px}
+.close h2{font-size:clamp(28px,4.6vw,44px);letter-spacing:-.035em}
+.close p{color:#B7CDDA;font-size:16px;max-width:34em}
+
+footer{padding:34px 0 44px;border-top:1px solid var(--mist);background:var(--paper)}
+.foot-inner{display:flex;flex-wrap:wrap;gap:14px;justify-content:space-between;align-items:center}
+.foot-inner small{font-size:12px;color:var(--slate-2);font-family:var(--mono);letter-spacing:.04em}
+.foot-inner .disc{font-size:12px;color:var(--slate-2);max-width:52ch;line-height:1.8}
+</style>
+
+<header class="hero">
+  <div class="wrap hero-inner">
+    <div class="hero-copy">
+      <h1>
+        <span class="quiet">クラブ向け／運動能力測定会パッケージ</span>
+        測定員は、<br>来ません。
+      </h1>
+      <p class="hero-lede">
+        測定員を派遣する測定会は、人件費と日程調整がそのまま原価になります。
+        このパッケージは<b>クラブのコーチが自分たちで測る</b>方式。
+        だから料金は1回定額、日程はクラブの都合だけで決められます。
+      </p>
+
+      <dl class="pricebar">
+        <div>
+          <dt>Club fee</dt>
+          <dd>¥20,000<small>／1回</small></dd>
+        </div>
+        <div>
+          <dt>Participant fee</dt>
+          <dd>クラブが設定<small>自由</small></dd>
+        </div>
+        <div>
+          <dt>Break-even</dt>
+          <dd>10<small>名（参加費2,000円時）</small></dd>
+        </div>
+      </dl>
+
+      <div class="cta-row">
+        <a class="btn btn-primary" href="#apply">開催を申し込む</a>
+        <a class="btn btn-ghost" href="#money">収支を見る</a>
+      </div>
+    </div>
+
+    <!-- 成績表サンプル（当日の成果物） -->
+    <div class="sheet" role="img" aria-label="成績表サンプル。小学4年生男子、総合ランクA、タイプは瞬発型。8カテゴリのレーダーチャートと、向いているスポーツの候補が並んでいる。">
+      <div class="sheet-top">
+        <div>
+          <div class="who">田中 蓮</div>
+          <div class="meta">小4・男子 ／ 2026.04.18</div>
+        </div>
+        <div class="rank-badge"><b>A</b><span>TOTAL</span></div>
+      </div>
+
+      <div class="sheet-body">
+        <div class="radar-wrap">
+          <svg viewBox="0 0 400 392" width="100%" height="auto" aria-hidden="true">
+            <g fill="none" stroke="#DFEAF1" stroke-width="1">
+              <polygon points="200.0,182.8 209.3,186.7 213.2,196.0 209.3,205.3 200.0,209.2 190.7,205.3 186.8,196.0 190.7,186.7"/>
+              <polygon points="200.0,156.4 228.0,168.0 239.6,196.0 228.0,224.0 200.0,235.6 172.0,224.0 160.4,196.0 172.0,168.0"/>
+              <polygon points="200.0,130.0 246.7,149.3 266.0,196.0 246.7,242.7 200.0,262.0 153.3,242.7 134.0,196.0 153.3,149.3"/>
+              <polygon points="200.0,103.6 265.3,130.7 292.4,196.0 265.3,261.3 200.0,288.4 134.7,261.3 107.6,196.0 134.7,130.7"/>
+              <polygon points="200.0,77.2 284.0,112.0 318.8,196.0 284.0,280.0 200.0,314.8 116.0,280.0 81.2,196.0 116.0,112.0"/>
+            </g>
+            <g stroke="#DFEAF1" stroke-width="1">
+              <line x1="200" y1="196" x2="200" y2="64"/>
+              <line x1="200" y1="196" x2="293.3" y2="102.7"/>
+              <line x1="200" y1="196" x2="332" y2="196"/>
+              <line x1="200" y1="196" x2="293.3" y2="289.3"/>
+              <line x1="200" y1="196" x2="200" y2="328"/>
+              <line x1="200" y1="196" x2="106.7" y2="289.3"/>
+              <line x1="200" y1="196" x2="68" y2="196"/>
+              <line x1="200" y1="196" x2="106.7" y2="102.7"/>
+            </g>
+            <!-- 前回 -->
+            <polygon points="200.0,111.5 270.9,125.1 295.0,196.0 248.5,244.5 200.0,254.1 164.5,231.5 136.6,196.0 147.7,143.7"
+                     fill="none" stroke="#8397A5" stroke-width="1.5" stroke-dasharray="4 4"/>
+            <!-- 今回 -->
+            <polygon points="200.0,101.0 282.1,113.9 308.2,196.0 254.1,250.1 200.0,254.1 166.4,229.6 128.7,196.0 140.3,136.3"
+                     fill="rgba(30,150,216,.16)" stroke="#1E96D8" stroke-width="2.5" stroke-linejoin="round"/>
+            <g fill="#1E96D8">
+              <circle cx="200.0" cy="101.0" r="4.5"/>
+              <circle cx="282.1" cy="113.9" r="4.5"/>
+              <circle cx="308.2" cy="196.0" r="4.5"/>
+              <circle cx="254.1" cy="250.1" r="4.5"/>
+              <circle cx="200.0" cy="254.1" r="4.5"/>
+              <circle cx="166.4" cy="229.6" r="4.5"/>
+              <circle cx="128.7" cy="196.0" r="4.5"/>
+              <circle cx="140.3" cy="136.3" r="4.5"/>
+            </g>
+            <g fill="#5E7180" font-size="17" font-family="'Hiragino Kaku Gothic ProN','Yu Gothic',sans-serif" font-weight="600">
+              <text x="200" y="43" text-anchor="middle">走力</text>
+              <text x="313.9" y="90" text-anchor="start">瞬発力</text>
+              <text x="345" y="201" text-anchor="start">ジャンプ</text>
+              <text x="313.9" y="318" text-anchor="start">筋力</text>
+              <text x="200" y="361" text-anchor="middle">持久力</text>
+              <text x="86.1" y="318" text-anchor="end">柔軟性</text>
+              <text x="55" y="201" text-anchor="end">バランス</text>
+              <text x="86.1" y="90" text-anchor="end">テクニック</text>
+            </g>
+          </svg>
+        </div>
+
+        <div class="cat-list">
+          <div class="cat"><span>瞬発力</span><i class="hi">SS</i></div>
+          <div class="cat"><span>ジャンプ力</span><i class="mid">S</i></div>
+          <div class="cat"><span>走力</span><i class="mid">S</i></div>
+          <div class="cat"><span>テクニック</span><i>A</i></div>
+          <div class="cat"><span>筋力</span><i>A</i></div>
+          <div class="cat"><span>バランス</span><i>B</i></div>
+          <div class="cat"><span>持久力</span><i>C</i></div>
+          <div class="cat"><span>柔軟性</span><i>D</i></div>
+        </div>
+      </div>
+
+      <div class="sheet-foot">
+        <span class="chip type">瞬発型</span>
+        <span class="chip sport">陸上短距離</span>
+        <span class="chip sport">バレーボール</span>
+        <span class="chip sport">バスケットボール</span>
+        <span class="chip">全国 上位27%</span>
+      </div>
+      <div class="sheet-note">SAMPLE ／ 測定翌日に参加者全員へ配信されます</div>
+    </div>
+  </div>
+</header>
+
+<main>
+
+<!-- ============ 1. なぜ測定会か ============ -->
+<section class="sec">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow">Why measurement</span>
+      <h2>体験会には来ない親が、<br>測定会には申し込む。</h2>
+      <p>体験会は「入会を迫られる場」に見えます。測定会は「わが子の今を知る場」に見えます。同じ60分でも、保護者にとっての意味がまったく違います。</p>
+    </div>
+
+    <div class="reasons">
+      <div class="reason">
+        <span class="tag">集客</span>
+        <h3>非会員が申し込める理由になる</h3>
+        <p>入会前提ではないので、他クラブに通っている子も、まだ何もしていない子も参加できます。募集の間口が体験会より確実に広くなります。</p>
+      </div>
+      <div class="reason">
+        <span class="tag">継続</span>
+        <h3>在籍している子が辞めにくくなる</h3>
+        <p>春と秋に測ると、成長が数字と前回比で見えます。「通わせている意味」が保護者に伝わる状態を、年2回つくれます。</p>
+      </div>
+      <div class="reason">
+        <span class="tag">収益</span>
+        <h3>それ単体で黒字になる</h3>
+        <p>参加費はクラブが自由に決められます。原価は1回20,000円の定額のみ。参加人数が増えても追加費用はかかりません。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 2. 収支 ============ -->
+<section class="sec" id="money">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow">Economics</span>
+      <h2>10名で元が取れて、<br>30名で4万円残る。</h2>
+      <p>参加費2,000円で試算した場合の、クラブの手取りです。参加費はクラブが決めるものなので、3,000円に設定すれば同じ人数でも手取りは大きく変わります。</p>
+    </div>
+
+    <div class="money">
+      <div class="calc">
+        <div class="scroll-x">
+          <table>
+            <thead>
+              <tr><th>参加人数</th><th>参加費収入</th><th>パッケージ料金</th><th>クラブ手取り</th></tr>
+            </thead>
+            <tbody>
+              <tr class="even"><td>10名</td><td>¥20,000</td><td>−¥20,000</td><td class="profit">±¥0</td></tr>
+              <tr><td>20名</td><td>¥40,000</td><td>−¥20,000</td><td class="profit">+¥20,000</td></tr>
+              <tr><td>30名</td><td>¥60,000</td><td>−¥20,000</td><td class="profit">+¥40,000</td></tr>
+              <tr><td>40名</td><td>¥80,000</td><td>−¥20,000</td><td class="profit">+¥60,000</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="calc-cap">参加費2,000円で算出。会場費・人件費は各クラブの状況によるため含みません。</p>
+      </div>
+
+      <div class="aside-note">
+        <div class="stat flare">
+          <b>+¥288,000</b>
+          <span>非会員15名が参加して3名が入会した場合の年間月謝（月8,000円×12ヶ月）。測定会の利益より、こちらが本命です。</span>
+        </div>
+        <div class="stat">
+          <b>¥0</b>
+          <span>人数が増えたときの追加料金。参加者が何名でもパッケージ料金は変わりません。</span>
+        </div>
+        <div class="stat">
+          <b>年2回</b>
+          <span>推奨頻度。春と秋に測ると前回比が出せるので、成長を数字で見せられます。</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 3. 届くもの ============ -->
+<section class="sec">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow">What you get</span>
+      <h2>20,000円に含まれるもの</h2>
+      <p>測定の設計・採点・レポート作成はすべてこちらが持ちます。クラブがやるのは、人を集めて当日測るところまでです。</p>
+    </div>
+
+    <div class="pack">
+      <div class="pack-item">
+        <h3>測定マニュアルと手順動画</h3>
+        <p>種目ごとに、スタート姿勢・計測の起点・やり直しの判断までを短い動画で統一します。初めてのコーチでも同じ手順で測れる状態にします。</p>
+      </div>
+      <div class="pack-item">
+        <h3>アプリの測定会モード</h3>
+        <p>受付から記録入力までタブレット／スマホで完結。カウントダウン・タイマー・回数カウントが内蔵されているので、紙とストップウォッチの二重管理が要りません。</p>
+      </div>
+      <div class="pack-item">
+        <h3>参加者ごとの成績表</h3>
+        <p>測定翌日に自動生成。レーダーチャート、8カテゴリのランク、全国順位、タイプ判定、向いているスポーツまで入ったA4一枚。そのまま保護者に配信できます。</p>
+      </div>
+      <div class="pack-item">
+        <h3>クラブ向け集計レポート</h3>
+        <p>参加者全体の分布と、クラブの平均が全国のどこにあるか。次のクラス設計や、保護者説明会でそのまま使える形で出します。</p>
+      </div>
+      <div class="pack-item">
+        <h3>入会見込みリスト</h3>
+        <p>非会員の参加者のうち、伸びしろが大きい子・特定カテゴリが突出している子を抽出します。声のかけ方の例文つきでお渡しします。</p>
+      </div>
+      <div class="pack-item">
+        <h3>告知チラシのテンプレート</h3>
+        <p>日付と会場を入れるだけで刷れるチラシと、SNS・LINE配信用の文面。募集開始から当日までの逆算スケジュールも添えます。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 4. 成績表 ============ -->
+<section class="sec">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow">The report</span>
+      <h2>参加費の価値は、<br>この一枚で決まる。</h2>
+      <p>測定会の満足度は、当日ではなく翌日に決まります。保護者の手元に何が残るか。ここに一番力を入れています。</p>
+    </div>
+
+    <div class="report">
+      <dl class="feat">
+        <div class="feat-row">
+          <dt>Radar</dt>
+          <dd>
+            <b>8カテゴリのレーダーチャート</b>
+            <span>走力・瞬発力・ジャンプ力・筋力・持久力・柔軟性・バランス・テクニック。前回の記録を点線で重ねるので、どこが伸びてどこが止まったかが一目でわかります。</span>
+          </dd>
+        </div>
+        <div class="feat-row">
+          <dt>Rank</dt>
+          <dd>
+            <b>SSからHまでの10段階ランク</b>
+            <span>同じ学年・同じ性別の中での偏差値から算出します。「クラスで速いほう」ではなく、全国のどこにいるかがわかります。</span>
+            <div class="rankscale">
+              <i>SS</i><i>S</i><i>A</i><i>B</i><i>C</i><i>D</i><i>E</i><i>F</i><i>G</i><i>H</i>
+            </div>
+          </dd>
+        </div>
+        <div class="feat-row">
+          <dt>Rank+</dt>
+          <dd>
+            <b>全国ランキング</b>
+            <span>種目別・カテゴリ別・学年別の順位。子ども本人が一番食いつくのがここです。次も出たいと言い出します。</span>
+          </dd>
+        </div>
+        <div class="feat-row">
+          <dt>Type</dt>
+          <dd>
+            <b>タイプ判定</b>
+            <span>瞬発型・バネ型・スタミナ型・しなやか型・バランス型など、8カテゴリのバランスから今の身体のタイプを判定します。</span>
+          </dd>
+        </div>
+        <div class="feat-row">
+          <dt>Sports</dt>
+          <dd>
+            <b>向いているスポーツ</b>
+            <span>タイプと各カテゴリの数値から、相性のよい競技を提示します。進路を決めるものではなく、次に何を試すかの手がかりとして出しています。</span>
+          </dd>
+        </div>
+        <div class="feat-row">
+          <dt>Video</dt>
+          <dd>
+            <b>測定動画の保存</b>
+            <span>測定中の動画をアプリに残せます。保護者も見られるので、当日来られなかった家族にも共有できます。</span>
+          </dd>
+        </div>
+      </dl>
+
+      <div class="sheet" aria-hidden="true">
+        <div class="sheet-top">
+          <div>
+            <div class="who">成績表（表面）</div>
+            <div class="meta">A4 ／ 1枚 ／ PDF配信</div>
+          </div>
+          <div class="rank-badge"><b>A</b><span>TOTAL</span></div>
+        </div>
+        <div class="sheet-body" style="grid-template-columns:1fr">
+          <div class="cat-list" style="gap:8px">
+            <div class="cat" style="grid-template-columns:1fr 64px 22px">
+              <span>瞬発力</span><i style="background:transparent;color:#5E7180">偏差値 69</i><i class="hi">SS</i>
+            </div>
+            <div class="cat" style="grid-template-columns:1fr 64px 22px">
+              <span>ジャンプ力</span><i style="background:transparent;color:#5E7180">偏差値 66</i><i class="mid">S</i>
+            </div>
+            <div class="cat" style="grid-template-columns:1fr 64px 22px">
+              <span>走力</span><i style="background:transparent;color:#5E7180">偏差値 61</i><i class="mid">S</i>
+            </div>
+            <div class="cat" style="grid-template-columns:1fr 64px 22px">
+              <span>テクニック</span><i style="background:transparent;color:#5E7180">偏差値 57</i><i>A</i>
+            </div>
+            <div class="cat" style="grid-template-columns:1fr 64px 22px">
+              <span>筋力</span><i style="background:transparent;color:#5E7180">偏差値 54</i><i>A</i>
+            </div>
+            <div class="cat" style="grid-template-columns:1fr 64px 22px">
+              <span>バランス</span><i style="background:transparent;color:#5E7180">偏差値 52</i><i>B</i>
+            </div>
+            <div class="cat" style="grid-template-columns:1fr 64px 22px">
+              <span>持久力</span><i style="background:transparent;color:#5E7180">偏差値 47</i><i>C</i>
+            </div>
+            <div class="cat" style="grid-template-columns:1fr 64px 22px">
+              <span>柔軟性</span><i style="background:transparent;color:#5E7180">偏差値 43</i><i>D</i>
+            </div>
+          </div>
+        </div>
+        <div class="sheet-foot">
+          <span class="chip type">瞬発型</span>
+          <span class="chip">全国 3,412位 ／ 12,480人中</span>
+        </div>
+        <div class="sheet-note">SAMPLE ／ 数値は説明用のサンプルです</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 5. 当日の流れ ============ -->
+<section class="sec">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow">On the day</span>
+      <h2>クラブがやるのは、<br>集めて、測るところまで。</h2>
+      <p>採点も、レポートづくりも、配信もこちら側の作業です。当日終わったら解散して大丈夫です。</p>
+    </div>
+
+    <div class="tl">
+      <div class="tl-step">
+        <time>−4週</time>
+        <b>募集</b>
+        <p>チラシとSNS文面をお渡しします。クラブは日付と会場を入れて配るだけです。</p>
+      </div>
+      <div class="tl-step">
+        <time>−1週</time>
+        <b>準備</b>
+        <p>手順動画でコーチが予習。備品チェックリストで足りないものを確認します。</p>
+      </div>
+      <div class="tl-step">
+        <time>当日</time>
+        <b>測定</b>
+        <p>受付からステーションを回して測定。記録はその場でアプリに入力します。</p>
+      </div>
+      <div class="tl-step by-us">
+        <time>翌日</time>
+        <b>採点・レポート生成</b>
+        <p>学年別・男女別の偏差値でランクを算出し、成績表を自動生成します。</p>
+      </div>
+      <div class="tl-step by-us">
+        <time>翌日</time>
+        <b>配信・リスト提出</b>
+        <p>保護者へ成績表を配信。クラブへ集計レポートと入会見込みリストをお渡しします。</p>
+      </div>
+    </div>
+    <div class="tl-legend">
+      <span><i class="club"></i>クラブが行う</span>
+      <span><i></i>こちらで行う</span>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 6. 必要なもの ============ -->
+<section class="sec">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow">Requirements</span>
+      <h2>用意していただくもの</h2>
+      <p>特別な機材は要りません。ふだんの練習で使っているもので、ほとんど足ります。</p>
+    </div>
+
+    <div class="req">
+      <div class="req-card">
+        <h3>会場</h3>
+        <ul>
+          <li>体育館1面、または同等の屋内スペース</li>
+          <li>直線20m以上が取れること</li>
+          <li>床が滑らず、段差や危険物がないこと</li>
+          <li>屋外グラウンドでも実施できます</li>
+        </ul>
+      </div>
+      <div class="req-card">
+        <h3>人員</h3>
+        <ul>
+          <li>コーチ2〜3名（参加30名の場合）</li>
+          <li>測定経験は不要です</li>
+          <li>受付を保護者ボランティアに任せる形でも回ります</li>
+        </ul>
+      </div>
+      <div class="req-card">
+        <h3>備品</h3>
+        <ul>
+          <li>メジャー、コーン、ラインテープ</li>
+          <li>ストップウォッチ（スマホで代用可）</li>
+          <li>入力用のタブレットまたはスマホ</li>
+          <li>不足分は事前にリストでお知らせします</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 7. 料金 ============ -->
+<section class="sec" id="apply">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow">Pricing</span>
+      <h2>料金</h2>
+      <p>1回ごとの申し込みです。継続契約も、最低実施回数の縛りもありません。</p>
+    </div>
+
+    <div class="plan">
+      <div class="plan-top">
+        <div class="label">
+          <b>測定会パッケージ</b>
+          <span>1回・人数無制限</span>
+        </div>
+        <div class="plan-price">
+          <span class="amt">¥20,000</span>
+          <span class="unit">／回</span>
+        </div>
+      </div>
+      <div class="plan-list">
+        <div>測定マニュアルと手順動画</div>
+        <div>アプリの測定会モード</div>
+        <div>参加者ごとの成績表（A4・PDF）</div>
+        <div>クラブ向け集計レポート</div>
+        <div>入会見込みリスト</div>
+        <div>告知チラシのテンプレート</div>
+        <div>参加人数による追加料金なし</div>
+        <div>参加費はクラブが自由に設定</div>
+      </div>
+      <div class="plan-foot">
+        参加費の設定、集める人数、会員・非会員の比率はすべてクラブの裁量です。こちらから指定することはありません。
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 8. FAQ ============ -->
+<section class="sec">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow">FAQ</span>
+      <h2>よくあるご質問</h2>
+    </div>
+
+    <div class="faq">
+      <details>
+        <summary>測定員がいなくて、記録の正確さは大丈夫ですか。</summary>
+        <p>絶対値の精度は、専門の測定員が測る場合に及びません。そこは正直にお伝えしています。そのうえで、手順を統一すれば「同じ条件で測った前回との比較」は十分に信頼できます。成績表も、全国比較より前回比を主役に置いた構成にしています。</p>
+      </details>
+      <details>
+        <summary>コーチが測定に慣れていないのですが。</summary>
+        <p>種目ごとの手順動画で、スタート姿勢から計測の起点、やり直しの判断まで統一します。初回はこちらでオンラインの事前確認も行います。測定経験は必要ありません。</p>
+      </details>
+      <details>
+        <summary>入力ミスや、明らかにおかしい記録が出たときは。</summary>
+        <p>種目ごとに上限値と下限値を設定しているので、範囲外の数値は入力時点でエラーになります。前回から大きく変動した記録は自動でフラグが立ち、こちらで確認したうえでレポートに反映します。</p>
+      </details>
+      <details>
+        <summary>非会員を集めても大丈夫ですか。</summary>
+        <p>むしろそのために使っていただくものです。入会見込みリストは非会員の参加者を対象に作成します。他クラブに在籍している子の参加も制限していません。</p>
+      </details>
+      <details>
+        <summary>参加費はいくらに設定すべきですか。</summary>
+        <p>2,000円から3,000円で設定されるクラブが多い想定です。2,000円なら10名で原価を回収できます。ただし金額はクラブが自由に決めるもので、こちらから指定や推奨価格の強制はしません。</p>
+      </details>
+      <details>
+        <summary>怪我が起きたときの責任は。</summary>
+        <p>当日の運営はクラブの管理下で行われるため、事故対応はクラブの責任範囲となります。ウォーミングアップの手順書と、保護者向けの同意書テンプレートをパッケージに含めていますので、必ず運用してください。</p>
+      </details>
+      <details>
+        <summary>年に何回やるのがいいですか。</summary>
+        <p>春と秋の年2回をおすすめしています。半年あくと成長が数字に出るので前回比が意味を持ちますし、募集のタイミングを毎年同じ時期に固定できます。</p>
+      </details>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<section class="close">
+  <div class="wrap close-inner">
+    <span class="eyebrow" style="color:#7FCEF7">Get started</span>
+    <h2>まず1回、春に測ってみませんか。</h2>
+    <p>日程を決めていただければ、その4週間前から募集用の一式をお渡しします。継続の縛りはないので、1回試してから判断していただけます。</p>
+    <div class="cta-row" style="justify-content:center">
+      <a class="btn btn-primary" href="#apply">開催を申し込む</a>
+      <a class="btn btn-ghost" href="#money">資料を請求する</a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap foot-inner">
+    <small>ATHLETE SCORE ／ 運動能力測定会パッケージ</small>
+    <p class="disc">成績表に表示される「向いているスポーツ」は、測定結果から相性のよい競技を提示するものであり、競技成績や将来の適性を保証するものではありません。</p>
+  </div>
+</footer>
